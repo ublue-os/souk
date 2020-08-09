@@ -4,8 +4,14 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
+log = "0.4.8"
+pretty_env_logger = "0.4"
 gtk = { version = "0.9", features = ["v3_22"] }
-glib = "0.10"
+gtk-macros = "0.2.0"
+gdk = "0.13.0"
+libhandy = { git="https://gitlab.gnome.org/World/Rust/libhandy-rs" }
+glib = { version = "0.10", features = ["v2_50"] }
 gio = { version = "0.9", features = ["v2_46"] }
 gettext-rs= { version = "0.4", features = ["gettext-system"] }
 flatpak = { git="https://gitlab.gnome.org/haecker-felix/flatpak-rs" }
+appstream-rs = { git = "https://github.com/bilelmoussaoui/something/" }

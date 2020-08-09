@@ -2,5 +2,7 @@
 <gresources>
   <gresource prefix="/de/haeckerfelix/FlatpakFrontend">
     <file>gtk/window.ui</file>
+    <file>gtk/app_details.ui</file>
+    <file>gtk/style.css</file>
   </gresource>
 </gresources>

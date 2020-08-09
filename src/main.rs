@@ -1,35 +1,40 @@
-use gtk::prelude::*;
-use gio::prelude::*;
-use gettextrs::*;
-use std::env;
+#[macro_use]
+extern crate log;
+extern crate pretty_env_logger;
+#[macro_use]
+extern crate glib;
+#[macro_use]
+extern crate gtk_macros;
 
+use gettextrs::*;
+
+mod app;
+mod ui;
 mod config;
-mod window;
-use crate::window::Window;
+
+use crate::app::FfApplication;
 
 fn main() {
+    // Initialize logger
+    pretty_env_logger::init();
+
+    // Initialize GTK
     gtk::init().unwrap_or_else(|_| panic!("Failed to initialize GTK."));
 
+    // Initialize libhandy
+    libhandy::init();
+
+    // Setup language / translations
     setlocale(LocaleCategory::LcAll, "");
     bindtextdomain("flatpak-frontend", config::LOCALEDIR);
     textdomain("flatpak-frontend");
 
-    let res = gio::Resource::load(config::PKGDATADIR.to_owned() + "/flatpak-frontend.gresource")
-                                .expect("Could not load resources");
+    // Load gresources
+    let res = gio::Resource::load(config::PKGDATADIR.to_owned() + "/flatpak-frontend.gresource").expect("Could not load resources");
     gio::resources_register(&res);
 
-    let app = gtk::Application::new(Some("de.haeckerfelix.FlatpakFrontend"), Default::default()).unwrap();
-    app.connect_activate(move |app| {
-        let window = Window::new();
-
-        window.widget.set_application(Some(app));
-        app.add_window(&window.widget);
-        window.widget.present();
-    });
-
-
-    let args: Vec<String> = env::args().collect();
-    app.run(&args);
-
+    // Start application itself
+    // Run app itself
+    FfApplication::run();
 }
 

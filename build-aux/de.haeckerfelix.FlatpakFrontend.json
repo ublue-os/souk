@@ -15,7 +15,12 @@
         "--device=dri",
         "--filesystem=~/.local/share/flatpak",
         "--filesystem=xdg-data/meson",
-        "--filesystem=/var/lib/flatpak"
+        "--filesystem=/var/lib/flatpak",
+        "--filesystem=xdg-run/dconf",
+        "--filesystem=~/.config/dconf:ro",
+        "--talk-name=ca.desrt.dconf",
+        "--env=DCONF_USER_CONFIG_DIR=.config/dconf"
+
     ],
     "build-options": {
         "append-path" : "/usr/lib/sdk/rust-stable/bin",
@@ -23,9 +28,11 @@
             "--share=network"
         ],
         "env" : {
+            "G_MESSAGES_DEBUG" : "none",
             "RUSTFLAGS" : "--remap-path-prefix =../",
             "CARGO_HOME" : "/run/build/flatpak-frontend/cargo",
             "RUST_BACKTRACE" : "1",
+            "RUST_LOG" : "flatpak_frontend=debug",
             "MOUNT_FUSE_PATH" : "../tmp/"
         }
     },
@@ -170,6 +177,28 @@
                 }
             ]
         },
+        {
+            "name" : "libhandy",
+            "buildsystem" : "meson",
+            "config-opts" : [
+                "-Dintrospection=enabled",
+                "-Dtests=false",
+                "-Dexamples=false",
+                "-Dvapi=false",
+                "-Dglade_catalog=disabled"
+            ],
+            "cleanup" : [
+                "/include",
+                "/lib/pkgconfig"
+            ],
+            "sources" : [
+                {
+                    "type" : "git",
+                    "url" : "https://gitlab.gnome.org/GNOME/libhandy"
+                }
+            ]
+        },
+
         {
             "name": "flatpak-frontend",
             "builddir": true,

@@ -1,13 +1,23 @@
+vcs_tag    = run_command('git', 'rev-parse', '--short', 'HEAD').stdout().strip()
+localedir  = join_paths(get_option('prefix'), get_option('localedir'))
+
+# Configuration file
 conf = configuration_data()
+conf.set_quoted('NAME', 'FlatpakFrontend')
+conf.set_quoted('PKGNAME', meson.project_name())
+conf.set_quoted('APP_ID', 'de.haeckerfelix.FlatpakFrontend')
 conf.set_quoted('VERSION', meson.project_version())
-conf.set_quoted('localedir', join_paths(get_option('prefix'), get_option('localedir')))
-conf.set_quoted('pkgdatadir', pkgdatadir)
+conf.set_quoted('PROFILE', 'devel')
+conf.set_quoted('VCS_TAG', vcs_tag)
+conf.set_quoted('LOCALEDIR', localedir)
+conf.set_quoted('PKGDATADIR', pkgdatadir)
 
 configure_file(
     input: 'config.rs.in',
     output: 'config.rs',
     configuration: conf
 )
+
 # Copy the config.rs output to the source directory.
 run_command(
   'cp',
@@ -17,9 +27,13 @@ run_command(
 )
 
 sources = files(
+  'ui/app_details.rs',
+  'ui/mod.rs',
+  'ui/window.rs',
+
+  'app.rs',
   'config.rs',
   'main.rs',
-  'window.rs',
 )
 
 cargo_script = find_program(join_paths(meson.source_root(), 'build-aux/cargo.sh'))
