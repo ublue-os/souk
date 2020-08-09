@@ -1,0 +1,11 @@
+[package]
+name = "flatpak-frontend"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+gtk = { version = "0.9", features = ["v3_22"] }
+glib = "0.10"
+gio = { version = "0.9", features = ["v2_46"] }
+gettext-rs= { version = "0.4", features = ["gettext-system"] }
+flatpak = { git="https://gitlab.gnome.org/haecker-felix/flatpak-rs" }

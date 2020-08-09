@@ -1,0 +1,4 @@
+data/de.haeckerfelix.FlatpakFrontend.desktop.in
+data/de.haeckerfelix.FlatpakFrontend.appdata.xml.in
+data/de.haeckerfelix.FlatpakFrontend.gschema.xml
+src/window.ui
