@@ -41,20 +41,23 @@ impl ScreenshotsBox {
         }
         self.screenshots = screenshots.clone();
 
+        get_widget!(self.builder, gtk::Box, screenshots_box);
         get_widget!(self.builder, libhandy::Carousel, carousel);
         utils::remove_all_items(&carousel);
-
+        screenshots_box.set_visible(false);
 
         for screenshot in screenshots{
             for image in screenshot.images{
                 match image{
                     Image::Source{url, width, height} => {
                         let c = carousel.clone();
+                        let ssb = screenshots_box.clone();
                         let fut = Self::download_image(url, 350).map(move |result|{
                             match result{
                                 Ok(pixbuf) => {
                                     let image = gtk::Image::from_pixbuf(Some(&pixbuf));
                                     image.set_visible(true);
+                                    ssb.set_visible(true);
                                     c.add(&image);
                                 },
                                 Err(err) => warn!("Unable to download thumbnail: {}", err),
