@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.36.0 -->
+<interface>
+  <requires lib="gtk+" version="3.22"/>
+  <requires lib="libhandy" version="0.0"/>
+  <object class="GtkBox" id="project_urls_box">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="orientation">vertical</property>
+    <child>
+      <object class="GtkListBox" id="listbox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="selection_mode">none</property>
+        <property name="activate_on_single_click">False</property>
+        <child>
+          <object class="HdyActionRow" id="donation_row">
+            <property name="can_focus">True</property>
+            <property name="no_show_all">True</property>
+            <property name="selectable">False</property>
+            <property name="icon_name">emblem-favorite-symbolic</property>
+            <property name="subtitle" translatable="yes">subtitle</property>
+            <property name="title" translatable="yes">Donate</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">detach-symbolic</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="HdyActionRow" id="translate_row">
+            <property name="can_focus">True</property>
+            <property name="no_show_all">True</property>
+            <property name="selectable">False</property>
+            <property name="icon_name">chat-message-new-symbolic</property>
+            <property name="subtitle" translatable="yes">subtitle</property>
+            <property name="title" translatable="yes">Contribute translations</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">detach-symbolic</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="HdyActionRow" id="homepage_row">
+            <property name="can_focus">True</property>
+            <property name="no_show_all">True</property>
+            <property name="selectable">False</property>
+            <property name="icon_name">user-home-symbolic</property>
+            <property name="subtitle" translatable="yes">subtitle</property>
+            <property name="title" translatable="yes">Project Website</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">detach-symbolic</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="HdyActionRow" id="bugtracker_row">
+            <property name="can_focus">True</property>
+            <property name="no_show_all">True</property>
+            <property name="selectable">False</property>
+            <property name="icon_name">face-sad-symbolic</property>
+            <property name="subtitle" translatable="yes">subtitle</property>
+            <property name="title" translatable="yes">Report an issue</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">detach-symbolic</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="HdyActionRow" id="help_row">
+            <property name="can_focus">True</property>
+            <property name="no_show_all">True</property>
+            <property name="selectable">False</property>
+            <property name="icon_name">help-browser-symbolic</property>
+            <property name="subtitle" translatable="yes">subtitle</property>
+            <property name="title" translatable="yes">Help</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">detach-symbolic</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="HdyActionRow" id="faq_row">
+            <property name="can_focus">True</property>
+            <property name="no_show_all">True</property>
+            <property name="selectable">False</property>
+            <property name="icon_name">preferences-system-details-symbolic</property>
+            <property name="subtitle" translatable="yes">subtitle</property>
+            <property name="title" translatable="yes">Frequently Asked Questions</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">detach-symbolic</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="HdyActionRow" id="contact_url">
+            <property name="can_focus">True</property>
+            <property name="no_show_all">True</property>
+            <property name="selectable">False</property>
+            <property name="icon_name">mail-unread-symbolic</property>
+            <property name="subtitle" translatable="yes">subtitle</property>
+            <property name="title" translatable="yes">Contact</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">detach-symbolic</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <style>
+          <class name="content"/>
+        </style>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">3</property>
+      </packing>
+    </child>
+  </object>
+</interface>

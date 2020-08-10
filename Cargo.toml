@@ -17,3 +17,4 @@ gettext-rs= { version = "0.4", features = ["gettext-system"] }
 flatpak = { git="https://gitlab.gnome.org/haecker-felix/flatpak-rs" }
 appstream-rs = { git = "https://github.com/bilelmoussaoui/something/" }
 chrono = "0.4.13"
+url = "2.1.1"

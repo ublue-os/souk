@@ -211,6 +211,7 @@ dependencies = [
  "libhandy",
  "log",
  "pretty_env_logger",
+ "url",
 ]
 
 [[package]]

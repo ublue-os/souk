@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use crate::app::Action;
 use crate::appstream_cache::AppStreamCache;
-use crate::ui::{ReleasesBox, utils};
+use crate::ui::{ReleasesBox, ProjectUrlsBox, utils};
 
 pub struct AppDetailsPage {
     pub widget: gtk::Box,
@@ -20,6 +20,7 @@ pub struct AppDetailsPage {
     active_remote: RefCell<Option<flatpak::Remote>>,
 
     releases_box: RefCell<ReleasesBox>,
+    project_urls_box: RefCell<ProjectUrlsBox>,
 
     builder: gtk::Builder,
     sender: Sender<Action>,
@@ -31,6 +32,7 @@ impl AppDetailsPage {
         get_widget!(builder, gtk::Box, app_details_page);
 
         let releases_box = RefCell::new(ReleasesBox::new());
+        let project_urls_box = RefCell::new(ProjectUrlsBox::new());
 
         let app_details_page = Rc::new(Self {
             widget: app_details_page,
@@ -39,6 +41,7 @@ impl AppDetailsPage {
             metadata: RefCell::new(None),
             active_remote: RefCell::new(None),
             releases_box,
+            project_urls_box,
             builder,
             sender,
         });
@@ -51,6 +54,9 @@ impl AppDetailsPage {
     fn setup_widgets(self: Rc<Self>){
         get_widget!(self.builder, gtk::Box, releases_box);
         releases_box.add(&self.releases_box.borrow().widget);
+
+        get_widget!(self.builder, gtk::Box, project_urls_box);
+        project_urls_box.add(&self.project_urls_box.borrow().widget);
     }
 
     fn setup_signals(self: Rc<Self>) {
@@ -96,19 +102,20 @@ impl AppDetailsPage {
         get_widget!(self.builder, gtk::Image, icon_image);
         get_widget!(self.builder, gtk::Label, title_label);
         get_widget!(self.builder, gtk::Label, summary_label);
-        get_widget!(self.builder, gtk::Label, version_label);
+        //get_widget!(self.builder, gtk::Label, version_label);
         get_widget!(self.builder, gtk::Label, developer_label);
-        get_widget!(self.builder, gtk::Label, project_group_label);
-        get_widget!(self.builder, gtk::Label, license_label);
+        //get_widget!(self.builder, gtk::Label, project_group_label);
+        //get_widget!(self.builder, gtk::Label, license_label);
 
         utils::set_icon(remote.as_ref().unwrap(), &icon_image, &c.icons[0], 128);
         utils::set_label_translatable_string(&title_label, Some(c.name.clone()));
         utils::set_label_translatable_string(&summary_label, c.summary.clone());
-        utils::set_label(&version_label, Some(c.releases[0].version.clone()));
+        //utils::set_label(&version_label, Some(c.releases[0].version.clone()));
         utils::set_label_translatable_string(&developer_label, c.developer_name.clone());
-        utils::set_label(&project_group_label, c.project_group.clone());
-        utils::set_license_label(&license_label, c.project_license.clone());
+        //utils::set_label(&project_group_label, c.project_group.clone());
+        //utils::set_license_label(&license_label, c.project_license.clone());
 
         self.releases_box.borrow_mut().set_releases(c.releases.clone());
+        self.project_urls_box.borrow_mut().set_project_urls(c.urls.clone());
     }
 }

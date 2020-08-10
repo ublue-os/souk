@@ -15,14 +15,14 @@ impl ReleasesBox {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/releases_box.ui");
         get_widget!(builder, gtk::Box, releases_box);
 
-        let app_tile = Self {
+        let releases_box = Self {
             widget: releases_box,
             releases: None,
             builder,
         };
 
-        app_tile.setup_signals();
-        app_tile
+        releases_box.setup_signals();
+        releases_box
     }
 
     fn setup_signals(&self) {
