@@ -26,12 +26,12 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="show_close_button">True</property>
-                <property name="centering_policy">strict</property>
                 <child type="title">
                   <object class="HdyViewSwitcherTitle" id="view_switcher_title">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="stack">main_stack</property>
+                    <property name="title">Software</property>
                   </object>
                 </child>
                 <child>
@@ -55,6 +55,28 @@
                     <property name="pack_type">end</property>
                   </packing>
                 </child>
+                <child>
+                  <object class="GtkButton" id="search_button">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="valign">center</property>
+                    <property name="action_name">win.show-discover</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="icon_name">system-search-symbolic</property>
+                      </object>
+                    </child>
+                    <style>
+                      <class name="image-button"/>
+                    </style>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -73,38 +95,7 @@
                     <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Explore page</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="firefox_button">
-                        <property name="label" translatable="yes">Mozilla Firefox</property>
-                        <property name="width_request">150</property>
-                        <property name="height_request">150</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="halign">start</property>
-                        <property name="valign">start</property>
-                        <property name="margin_start">22</property>
-                        <property name="margin_end">22</property>
-                        <property name="margin_top">22</property>
-                        <property name="margin_bottom">22</property>
-                        <property name="always_show_image">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
+                      <placeholder/>
                     </child>
                   </object>
                   <packing>

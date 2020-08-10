@@ -31,8 +31,7 @@ impl ObjectSubclass for FfApplicationWindowPrivate {
     glib_object_subclass!();
 
     fn new() -> Self {
-        let window_builder =
-            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/window.ui");
+        let window_builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/window.ui");
 
         Self { window_builder }
     }
@@ -78,10 +77,7 @@ glib_wrapper! {
 impl FfApplicationWindow {
     pub fn new(sender: Sender<Action>, app: FfApplication) -> Self {
         // Create new GObject and downcast it into FfApplicationWindow
-        let window = glib::Object::new(FfApplicationWindow::static_type(), &[])
-            .unwrap()
-            .downcast::<FfApplicationWindow>()
-            .unwrap();
+        let window = glib::Object::new(FfApplicationWindow::static_type(), &[]).unwrap().downcast::<FfApplicationWindow>().unwrap();
 
         app.add_window(&window.clone());
         window.setup_widgets();
@@ -92,16 +88,14 @@ impl FfApplicationWindow {
 
     pub fn setup_widgets(&self) {
         let self_ = FfApplicationWindowPrivate::from_instance(self);
-        let app: FfApplication = self
-            .get_application()
-            .unwrap()
-            .downcast::<FfApplication>()
-            .unwrap();
+        let app: FfApplication = self.get_application().unwrap().downcast::<FfApplication>().unwrap();
         let app_private = FfApplicationPrivate::from_instance(&app);
 
         // wire everything up
         get_widget!(self_.window_builder, gtk::Box, app_details_box);
-        app_details_box.add(&app_private.app_details.widget);
+        app_details_box.add(&app_private.app_details_page.widget);
+        get_widget!(self_.window_builder, gtk::Box, explore_box);
+        explore_box.add(&app_private.explore_page.widget);
 
         // Add headerbar/content to the window itself
         get_widget!(self_.window_builder, gtk::Box, window);
@@ -113,17 +107,8 @@ impl FfApplicationWindow {
 
         // deck
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
-        window_deck.connect_property_visible_child_notify(
-            clone!(@strong self as this => move |_| {
-                this.sync_ui_state();
-            }),
-        );
-
-        // firefox button
-        get_widget!(self_.window_builder, gtk::Button, firefox_button);
-        firefox_button.connect_clicked(clone!(@strong sender => move |_| {
-            send!(sender, Action::ViewSet(View::AppDetails));
-            send!(sender, Action::ViewShowAppDetails(AppId("org.mozilla.firefox".to_string())));
+        window_deck.connect_property_visible_child_notify(clone!(@strong self as this => move |_| {
+            this.sync_ui_state();
         }));
     }
 

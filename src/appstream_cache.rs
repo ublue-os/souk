@@ -14,11 +14,8 @@ pub struct AppStreamCache {
 
 impl AppStreamCache {
     pub fn new() -> Rc<Self> {
-        let installation =
-            flatpak::Installation::new_system(Some(&gio::Cancellable::new())).unwrap();
-        let remotes = installation
-            .list_remotes(Some(&gio::Cancellable::new()))
-            .unwrap();
+        let installation = flatpak::Installation::new_system(Some(&gio::Cancellable::new())).unwrap();
+        let remotes = installation.list_remotes(Some(&gio::Cancellable::new())).unwrap();
         let mut collections = HashMap::new();
 
         // Parse data
@@ -46,10 +43,9 @@ impl AppStreamCache {
 
         for (remote, collection) in &self.collections {
             let mut iter = collection.components.iter();
-            iter.find(|component| component.id == app_id)
-                .map(|component| {
-                    components.insert(remote.clone(), component.clone());
-                });
+            iter.find(|component| component.id == app_id).map(|component| {
+                components.insert(remote.clone(), component.clone());
+            });
         }
 
         components

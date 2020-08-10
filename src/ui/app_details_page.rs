@@ -12,11 +12,11 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
 
-use crate::ui::utils;
 use crate::app::Action;
 use crate::appstream_cache::AppStreamCache;
+use crate::ui::utils;
 
-pub struct AppDetails {
+pub struct AppDetailsPage {
     pub widget: gtk::Box,
     appstream_cache: Rc<AppStreamCache>,
 
@@ -28,14 +28,13 @@ pub struct AppDetails {
     sender: Sender<Action>,
 }
 
-impl AppDetails {
+impl AppDetailsPage {
     pub fn new(sender: Sender<Action>, appstream_cache: Rc<AppStreamCache>) -> Rc<Self> {
-        let builder =
-            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_details.ui");
-        get_widget!(builder, gtk::Box, app_details);
+        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_details_page.ui");
+        get_widget!(builder, gtk::Box, app_details_page);
 
-        let details = Rc::new(Self {
-            widget: app_details,
+        let app_details_page = Rc::new(Self {
+            widget: app_details_page,
             appstream_cache,
             app_id: RefCell::new(None),
             metadata: RefCell::new(None),
@@ -44,8 +43,8 @@ impl AppDetails {
             sender,
         });
 
-        details.clone().setup_signals();
-        details
+        app_details_page.clone().setup_signals();
+        app_details_page
     }
 
     fn setup_signals(self: Rc<Self>) {
@@ -69,19 +68,15 @@ impl AppDetails {
 
         get_widget!(self.builder, gtk::ComboBoxText, source_combobox);
         source_combobox.remove_all();
-        source_combobox.set_visible(false);
+        source_combobox.set_visible(self.metadata.borrow().as_ref().unwrap().len() > 1 );
 
-        if self.metadata.borrow().as_ref().unwrap().len() > 1 {
-            source_combobox.set_visible(true);
+        for (remote, _c) in self.metadata.borrow().as_ref().unwrap() {
+            let id = remote.get_name().unwrap().to_string();
+            let title = remote.get_title().unwrap().to_string();
 
-            for (remote, _c) in self.metadata.borrow().as_ref().unwrap() {
-                let id = remote.get_name().unwrap().to_string();
-                let title = remote.get_title().unwrap().to_string();
-
-                source_combobox.insert(0, Some(&id), &title);
-                source_combobox.set_active(Some(0));
-                *self.active_remote.borrow_mut() = Some(remote.clone());
-            }
+            source_combobox.insert(0, Some(&id), &title);
+            source_combobox.set_active(Some(0));
+            *self.active_remote.borrow_mut() = Some(remote.clone());
         }
 
         self.display_values();
@@ -90,11 +85,7 @@ impl AppDetails {
     fn display_values(&self) {
         let metadata = self.metadata.borrow();
         let remote = self.active_remote.borrow();
-        let c = metadata
-            .as_ref()
-            .unwrap()
-            .get(remote.as_ref().unwrap())
-            .unwrap();
+        let c = metadata.as_ref().unwrap().get(remote.as_ref().unwrap()).unwrap();
 
         get_widget!(self.builder, gtk::Image, icon_image);
         get_widget!(self.builder, gtk::Label, title_label);
@@ -104,12 +95,12 @@ impl AppDetails {
         get_widget!(self.builder, gtk::Label, project_group_label);
         get_widget!(self.builder, gtk::Label, license_label);
 
-        utils::set_icon(remote.as_ref().unwrap(), icon_image, &c.icons[0]);
-        utils::set_label_translatable_string(title_label, Some(c.name.clone()));
-        utils::set_label_translatable_string(summary_label, c.summary.clone());
-        utils::set_label(version_label, Some(c.releases[0].version.clone()));
-        utils::set_label_translatable_string(developer_label, c.developer_name.clone());
-        utils::set_label(project_group_label, c.project_group.clone());
-        utils::set_license_label(license_label, c.project_license.clone());
+        utils::set_icon(remote.as_ref().unwrap(), &icon_image, &c.icons[0], 128);
+        utils::set_label_translatable_string(&title_label, Some(c.name.clone()));
+        utils::set_label_translatable_string(&summary_label, c.summary.clone());
+        utils::set_label(&version_label, Some(c.releases[0].version.clone()));
+        utils::set_label_translatable_string(&developer_label, c.developer_name.clone());
+        utils::set_label(&project_group_label, c.project_group.clone());
+        utils::set_license_label(&license_label, c.project_license.clone());
     }
 }
