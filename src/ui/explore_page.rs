@@ -1,20 +1,12 @@
-use appstream_rs::enums::Icon;
-use appstream_rs::TranslatableString;
-use appstream_rs::{AppId, Collection, Component};
-use flatpak::prelude::*;
-use flatpak::InstallationExt;
-use gio::prelude::*;
+use appstream_rs::AppId;
 use glib::Sender;
 use gtk::prelude::*;
 
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::app::Action;
 use crate::appstream_cache::AppStreamCache;
-use crate::ui::{AppTile, utils};
+use crate::ui::AppTile;
 
 pub struct ExplorePage {
     pub widget: gtk::Box,

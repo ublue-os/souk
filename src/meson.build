@@ -31,6 +31,7 @@ sources = files(
   'ui/app_tile.rs',
   'ui/explore_page.rs',
   'ui/mod.rs',
+  'ui/releases_box.rs',
   'ui/utils.rs',
   'ui/window.rs',
 

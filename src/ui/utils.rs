@@ -3,6 +3,7 @@ use appstream_rs::{License, TranslatableString};
 use flatpak::prelude::*;
 use gio::prelude::*;
 use gtk::prelude::*;
+use chrono::{DateTime, Utc};
 
 use std::path::PathBuf;
 
@@ -23,6 +24,13 @@ pub fn set_label_translatable_string(label: &gtk::Label, text: Option<Translatab
 pub fn set_license_label(label: &gtk::Label, license: Option<License>) {
     match license {
         Some(license) => label.set_text(&license.0),
+        None => label.set_text("–"),
+    };
+}
+
+pub fn set_date_label(label: &gtk::Label, date: Option<DateTime<Utc>>) {
+    match date {
+        Some(date) => label.set_text(&date.format("%Y-%m-%d").to_string()),
         None => label.set_text("–"),
     };
 }

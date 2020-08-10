@@ -1,0 +1,44 @@
+use appstream_rs::Release;
+use gtk::prelude::*;
+
+use crate::ui::utils;
+
+pub struct ReleasesBox {
+    pub widget: gtk::Box,
+    releases: Option<Vec<Release>>,
+
+    builder: gtk::Builder,
+}
+
+impl ReleasesBox {
+    pub fn new() -> Self {
+        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/releases_box.ui");
+        get_widget!(builder, gtk::Box, releases_box);
+
+        let app_tile = Self {
+            widget: releases_box,
+            releases: None,
+            builder,
+        };
+
+        app_tile.setup_signals();
+        app_tile
+    }
+
+    fn setup_signals(&self) {
+
+    }
+
+    pub fn set_releases (&mut self, releases: Vec<Release>){
+        let release = releases[0].clone();
+
+        get_widget!(self.builder, gtk::Label, date_label);
+        get_widget!(self.builder, gtk::Label, header_label);
+
+        utils::set_date_label(&date_label, release.date.clone());
+        header_label.set_text(&format!("New in Version {}", &release.version));
+
+        self.releases = Some(releases);
+
+    }
+}

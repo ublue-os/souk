@@ -1,20 +1,15 @@
-use appstream_rs::enums::Icon;
-use appstream_rs::TranslatableString;
-use appstream_rs::{AppId, Collection, Component};
+use appstream_rs::{AppId, Component};
 use flatpak::prelude::*;
-use flatpak::InstallationExt;
-use gio::prelude::*;
 use glib::Sender;
 use gtk::prelude::*;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::app::Action;
 use crate::appstream_cache::AppStreamCache;
-use crate::ui::utils;
+use crate::ui::{ReleasesBox, utils};
 
 pub struct AppDetailsPage {
     pub widget: gtk::Box,
@@ -23,6 +18,8 @@ pub struct AppDetailsPage {
     app_id: RefCell<Option<AppId>>,
     metadata: RefCell<Option<HashMap<flatpak::Remote, Component>>>,
     active_remote: RefCell<Option<flatpak::Remote>>,
+
+    releases_box: RefCell<ReleasesBox>,
 
     builder: gtk::Builder,
     sender: Sender<Action>,
@@ -33,18 +30,27 @@ impl AppDetailsPage {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_details_page.ui");
         get_widget!(builder, gtk::Box, app_details_page);
 
+        let releases_box = RefCell::new(ReleasesBox::new());
+
         let app_details_page = Rc::new(Self {
             widget: app_details_page,
             appstream_cache,
             app_id: RefCell::new(None),
             metadata: RefCell::new(None),
             active_remote: RefCell::new(None),
+            releases_box,
             builder,
             sender,
         });
 
+        app_details_page.clone().setup_widgets();
         app_details_page.clone().setup_signals();
         app_details_page
+    }
+
+    fn setup_widgets(self: Rc<Self>){
+        get_widget!(self.builder, gtk::Box, releases_box);
+        releases_box.add(&self.releases_box.borrow().widget);
     }
 
     fn setup_signals(self: Rc<Self>) {
@@ -102,5 +108,7 @@ impl AppDetailsPage {
         utils::set_label_translatable_string(&developer_label, c.developer_name.clone());
         utils::set_label(&project_group_label, c.project_group.clone());
         utils::set_license_label(&license_label, c.project_license.clone());
+
+        self.releases_box.borrow_mut().set_releases(c.releases.clone());
     }
 }

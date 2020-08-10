@@ -5,6 +5,7 @@
     <file>gtk/app_details_page.ui</file>
     <file>gtk/app_tile.ui</file>
     <file>gtk/explore_page.ui</file>
+    <file>gtk/releases_box.ui</file>
     <file>gtk/style.css</file>
   </gresource>
 </gresources>

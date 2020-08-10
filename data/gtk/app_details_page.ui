@@ -177,7 +177,7 @@
                                           <object class="GtkLabel" id="developer_label">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label">Summary</property>
+                                            <property name="label">Developer</property>
                                             <property name="wrap">True</property>
                                             <property name="xalign">0</property>
                                             <style>
@@ -319,24 +319,23 @@
                                   <packing>
                                     <property name="expand">False</property>
                                     <property name="fill">True</property>
-                                    <property name="position">1</property>
+                                    <property name="position">0</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkBox" id="details">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="orientation">vertical</property>
+                                    <property name="spacing">22</property>
+                                    <property name="homogeneous">True</property>
                                     <child>
-                                      <object class="GtkLabel">
+                                      <object class="GtkBox" id="releases_box">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="margin_bottom">6</property>
-                                        <property name="label" translatable="yes">Details</property>
-                                        <property name="xalign">0</property>
-                                        <style>
-                                          <class name="title-3"/>
-                                        </style>
+                                        <property name="orientation">vertical</property>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -351,33 +350,6 @@
                                         <property name="halign">start</property>
                                         <property name="row_spacing">3</property>
                                         <property name="column_spacing">12</property>
-                                        <child>
-                                          <object class="GtkLabel">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">Developer</property>
-                                            <property name="xalign">0</property>
-                                            <style>
-                                              <class name="dim-label"/>
-                                            </style>
-                                          </object>
-                                          <packing>
-                                            <property name="left_attach">0</property>
-                                            <property name="top_attach">0</property>
-                                          </packing>
-                                        </child>
-                                        <child>
-                                          <object class="GtkLabel" id="summary_labe">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="label">label</property>
-                                            <property name="xalign">0</property>
-                                          </object>
-                                          <packing>
-                                            <property name="left_attach">1</property>
-                                            <property name="top_attach">0</property>
-                                          </packing>
-                                        </child>
                                         <child>
                                           <object class="GtkLabel">
                                             <property name="visible">True</property>
@@ -459,6 +431,12 @@
                                             <property name="top_attach">1</property>
                                           </packing>
                                         </child>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -470,7 +448,7 @@
                                   <packing>
                                     <property name="expand">False</property>
                                     <property name="fill">True</property>
-                                    <property name="position">2</property>
+                                    <property name="position">1</property>
                                   </packing>
                                 </child>
                               </object>

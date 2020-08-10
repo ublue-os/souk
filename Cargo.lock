@@ -199,6 +199,7 @@ name = "flatpak-frontend"
 version = "0.1.0"
 dependencies = [
  "appstream-rs",
+ "chrono",
  "flatpak",
  "gdk",
  "gdk-pixbuf",

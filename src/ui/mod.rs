@@ -9,6 +9,9 @@ pub use app_tile::AppTile;
 mod explore_page;
 pub use explore_page::ExplorePage;
 
+mod releases_box;
+pub use releases_box::ReleasesBox;
+
 mod window;
 pub use window::FfApplicationWindow;
 pub use window::View;

@@ -1,4 +1,3 @@
-use appstream_rs::AppId;
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;

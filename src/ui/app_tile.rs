@@ -1,20 +1,9 @@
-use appstream_rs::enums::Icon;
-use appstream_rs::TranslatableString;
-use appstream_rs::{AppId, Collection, Component};
-use flatpak::prelude::*;
-use flatpak::InstallationExt;
-use gio::prelude::*;
+use appstream_rs::Component;
 use glib::Sender;
 use gtk::prelude::*;
 
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::rc::Rc;
-
 use crate::ui::utils;
 use crate::app::Action;
-use crate::appstream_cache::AppStreamCache;
 
 pub struct AppTile {
     pub widget: gtk::Button,
@@ -51,7 +40,7 @@ impl AppTile {
 
     fn setup_signals(&self) {
         get_widget!(self.builder, gtk::Button, app_tile);
-        app_tile.connect_clicked(clone!(@strong self.sender as sender, @strong self.component as component => move |cb|{
+        app_tile.connect_clicked(clone!(@strong self.sender as sender, @strong self.component as component => move |_|{
             send!(sender, Action::ViewShowAppDetails(component.id.clone()));
         }));
     }
