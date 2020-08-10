@@ -25,6 +25,7 @@
                 <property name="can_focus">False</property>
                 <property name="margin_start">12</property>
                 <property name="margin_end">12</property>
+                <property name="maximum_size">900</property>
                 <child>
                   <object class="GtkBox">
                     <property name="visible">True</property>
