@@ -24,7 +24,7 @@ checksum = "6b602bfe940d21c130f3895acd65221e8a61270debe89d628b9cb4e3ccb8569b"
 [[package]]
 name = "appstream-rs"
 version = "0.1.0"
-source = "git+https://github.com/bilelmoussaoui/something/#480650484649d89cea548f015ca1afa3b3a489b4"
+source = "git+https://github.com/bilelmoussaoui/something/#03d25c62eade759e1198f7fe3215e9247b195e4a"
 dependencies = [
  "anyhow",
  "chrono",
@@ -201,6 +201,7 @@ dependencies = [
  "appstream-rs",
  "flatpak",
  "gdk",
+ "gdk-pixbuf",
  "gettext-rs",
  "gio",
  "glib",

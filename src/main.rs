@@ -9,8 +9,9 @@ extern crate gtk_macros;
 use gettextrs::*;
 
 mod app;
-mod ui;
+mod appstream_cache;
 mod config;
+mod ui;
 
 use crate::app::FfApplication;
 
@@ -30,11 +31,11 @@ fn main() {
     textdomain("flatpak-frontend");
 
     // Load gresources
-    let res = gio::Resource::load(config::PKGDATADIR.to_owned() + "/flatpak-frontend.gresource").expect("Could not load resources");
+    let res = gio::Resource::load(config::PKGDATADIR.to_owned() + "/flatpak-frontend.gresource")
+        .expect("Could not load resources");
     gio::resources_register(&res);
 
     // Start application itself
     // Run app itself
     FfApplication::run();
 }
-

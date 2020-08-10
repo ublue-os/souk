@@ -1,3 +1,4 @@
+use appstream_rs::AppId;
 use gio::subclass::prelude::ApplicationImpl;
 use gio::{self, prelude::*, ApplicationFlags};
 use glib::subclass;
@@ -6,11 +7,12 @@ use glib::translate::*;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use gtk::subclass::application::GtkApplicationImpl;
-use appstream_rs::AppId;
 
 use std::cell::RefCell;
 use std::env;
+use std::rc::Rc;
 
+use crate::appstream_cache::AppStreamCache;
 use crate::config;
 use crate::ui::{AppDetails, FfApplicationWindow, View};
 
@@ -25,7 +27,9 @@ pub struct FfApplicationPrivate {
     sender: Sender<Action>,
     receiver: RefCell<Option<Receiver<Action>>>,
 
-    pub app_details: AppDetails,
+    appstream_cache: Rc<AppStreamCache>,
+
+    pub app_details: Rc<AppDetails>,
 
     window: RefCell<Option<FfApplicationWindow>>,
 }
@@ -42,15 +46,18 @@ impl ObjectSubclass for FfApplicationPrivate {
         let (sender, r) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
         let receiver = RefCell::new(Some(r));
 
-        let app_details = AppDetails::new(sender.clone());
+        let appstream_cache = AppStreamCache::new();
+
+        let app_details = AppDetails::new(sender.clone(), appstream_cache.clone());
 
         let window = RefCell::new(None);
 
         Self {
             sender,
             receiver,
+            appstream_cache,
             app_details,
-            window
+            window,
         }
     }
 }
@@ -77,7 +84,9 @@ impl ApplicationImpl for FfApplicationPrivate {
         }
 
         // No window available -> we have to create one
-        let app = ObjectSubclass::get_instance(self).downcast::<FfApplication>().unwrap();
+        let app = ObjectSubclass::get_instance(self)
+            .downcast::<FfApplication>()
+            .unwrap();
         let window = app.create_window();
         window.present();
         self.window.replace(Some(window));
@@ -105,14 +114,25 @@ glib_wrapper! {
 // FfApplication implementation itself
 impl FfApplication {
     pub fn run() {
-        info!("{} ({}) ({})", config::NAME, config::APP_ID, config::VCS_TAG);
+        info!(
+            "{} ({}) ({})",
+            config::NAME,
+            config::APP_ID,
+            config::VCS_TAG
+        );
         info!("Version: {} ({})", config::VERSION, config::PROFILE);
 
         // Create new GObject and downcast it into FfApplication
-        let app = glib::Object::new(FfApplication::static_type(), &[("application-id", &Some(config::APP_ID)), ("flags", &ApplicationFlags::empty())])
-            .unwrap()
-            .downcast::<FfApplication>()
-            .unwrap();
+        let app = glib::Object::new(
+            FfApplication::static_type(),
+            &[
+                ("application-id", &Some(config::APP_ID)),
+                ("flags", &ApplicationFlags::empty()),
+            ],
+        )
+        .unwrap()
+        .downcast::<FfApplication>()
+        .unwrap();
 
         // Start running gtk::Application
         let args: Vec<String> = env::args().collect();
@@ -140,12 +160,16 @@ impl FfApplication {
         match action {
             Action::ViewSet(view) => self_.window.borrow().as_ref().unwrap().set_view(view),
             Action::ViewShowAppDetails(app_id) => {
-                self_.window.borrow().as_ref().unwrap().set_view(View::AppDetails);
+                self_
+                    .window
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .set_view(View::AppDetails);
                 self_.app_details.show_details(app_id);
-            },
+            }
             Action::ViewGoBack => self_.window.borrow().as_ref().unwrap().go_back(),
         }
         glib::Continue(true)
     }
 }
-

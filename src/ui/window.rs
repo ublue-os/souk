@@ -1,3 +1,4 @@
+use appstream_rs::AppId;
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
@@ -6,7 +7,6 @@ use glib::Sender;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{BinImpl, ContainerImpl, WidgetImpl, WindowImpl};
 use libhandy::prelude::*;
-use appstream_rs::AppId;
 
 use crate::app::{Action, FfApplication, FfApplicationPrivate};
 
@@ -31,11 +31,10 @@ impl ObjectSubclass for FfApplicationWindowPrivate {
     glib_object_subclass!();
 
     fn new() -> Self {
-        let window_builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/window.ui");
+        let window_builder =
+            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/window.ui");
 
-        Self {
-            window_builder,
-        }
+        Self { window_builder }
     }
 }
 
@@ -79,7 +78,10 @@ glib_wrapper! {
 impl FfApplicationWindow {
     pub fn new(sender: Sender<Action>, app: FfApplication) -> Self {
         // Create new GObject and downcast it into FfApplicationWindow
-        let window = glib::Object::new(FfApplicationWindow::static_type(), &[]).unwrap().downcast::<FfApplicationWindow>().unwrap();
+        let window = glib::Object::new(FfApplicationWindow::static_type(), &[])
+            .unwrap()
+            .downcast::<FfApplicationWindow>()
+            .unwrap();
 
         app.add_window(&window.clone());
         window.setup_widgets();
@@ -90,7 +92,11 @@ impl FfApplicationWindow {
 
     pub fn setup_widgets(&self) {
         let self_ = FfApplicationWindowPrivate::from_instance(self);
-        let app: FfApplication = self.get_application().unwrap().downcast::<FfApplication>().unwrap();
+        let app: FfApplication = self
+            .get_application()
+            .unwrap()
+            .downcast::<FfApplication>()
+            .unwrap();
         let app_private = FfApplicationPrivate::from_instance(&app);
 
         // wire everything up
@@ -107,9 +113,11 @@ impl FfApplicationWindow {
 
         // deck
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
-        window_deck.connect_property_visible_child_notify(clone!(@strong self as this => move |_| {
-            this.sync_ui_state();
-        }));
+        window_deck.connect_property_visible_child_notify(
+            clone!(@strong self as this => move |_| {
+                this.sync_ui_state();
+            }),
+        );
 
         // firefox button
         get_widget!(self_.window_builder, gtk::Button, firefox_button);
@@ -168,10 +176,10 @@ impl FfApplicationWindow {
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
 
         let deck_child_name = window_deck.get_visible_child_name().unwrap();
-        let current_view = if deck_child_name == "app-details"{
+        let current_view = if deck_child_name == "app-details" {
             View::AppDetails
-        }else{
-            match main_stack.get_visible_child_name().unwrap().as_str(){
+        } else {
+            match main_stack.get_visible_child_name().unwrap().as_str() {
                 "explore" => View::Explore,
                 "installed" => View::Installed,
                 "updates" => View::Updates,
@@ -199,15 +207,14 @@ impl FfApplicationWindow {
             View::Installed => {
                 main_stack.set_visible_child_name("installed");
                 window_deck.set_visible_child_name("main");
-            },
+            }
             View::Updates => {
                 main_stack.set_visible_child_name("updates");
                 window_deck.set_visible_child_name("main");
-            },
+            }
             View::AppDetails => {
                 window_deck.set_visible_child_name("app-details");
             }
         }
     }
 }
-

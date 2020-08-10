@@ -9,6 +9,7 @@ pretty_env_logger = "0.4"
 gtk = { version = "0.9", features = ["v3_22"] }
 gtk-macros = "0.2.0"
 gdk = "0.13.0"
+gdk-pixbuf = "0.9.0"
 libhandy = { git="https://gitlab.gnome.org/World/Rust/libhandy-rs" }
 glib = { version = "0.10", features = ["v2_50"] }
 gio = { version = "0.9", features = ["v2_46"] }

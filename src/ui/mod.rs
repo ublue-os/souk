@@ -1,3 +1,5 @@
+mod utils;
+
 mod app_details;
 pub use app_details::AppDetails;
 

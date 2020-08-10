@@ -29,9 +29,11 @@ run_command(
 sources = files(
   'ui/app_details.rs',
   'ui/mod.rs',
+  'ui/utils.rs',
   'ui/window.rs',
 
   'app.rs',
+  'appstream_cache.rs',
   'config.rs',
   'main.rs',
 )
