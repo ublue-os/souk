@@ -15,6 +15,9 @@ pub use explore_page::ExplorePage;
 mod releases_box;
 pub use releases_box::ReleasesBox;
 
+mod screenshots_box;
+pub use screenshots_box::ScreenshotsBox;
+
 mod window;
 pub use window::FfApplicationWindow;
 pub use window::View;

@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use crate::app::Action;
 use crate::appstream_cache::AppStreamCache;
-use crate::ui::{ReleasesBox, ProjectUrlsBox, utils};
+use crate::ui::{ReleasesBox, ProjectUrlsBox, ScreenshotsBox, utils};
 
 pub struct AppDetailsPage {
     pub widget: gtk::Box,
@@ -19,6 +19,7 @@ pub struct AppDetailsPage {
     metadata: RefCell<Option<HashMap<flatpak::Remote, Component>>>,
     active_remote: RefCell<Option<flatpak::Remote>>,
 
+    screenshots_box: RefCell<ScreenshotsBox>,
     releases_box: RefCell<ReleasesBox>,
     project_urls_box: RefCell<ProjectUrlsBox>,
 
@@ -31,6 +32,7 @@ impl AppDetailsPage {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_details_page.ui");
         get_widget!(builder, gtk::Box, app_details_page);
 
+        let screenshots_box = RefCell::new(ScreenshotsBox::new());
         let releases_box = RefCell::new(ReleasesBox::new());
         let project_urls_box = RefCell::new(ProjectUrlsBox::new());
 
@@ -40,6 +42,7 @@ impl AppDetailsPage {
             app_id: RefCell::new(None),
             metadata: RefCell::new(None),
             active_remote: RefCell::new(None),
+            screenshots_box,
             releases_box,
             project_urls_box,
             builder,
@@ -52,6 +55,9 @@ impl AppDetailsPage {
     }
 
     fn setup_widgets(self: Rc<Self>){
+        get_widget!(self.builder, gtk::Box, screenshots_box);
+        screenshots_box.add(&self.screenshots_box.borrow().widget);
+
         get_widget!(self.builder, gtk::Box, releases_box);
         releases_box.add(&self.releases_box.borrow().widget);
 
@@ -115,6 +121,7 @@ impl AppDetailsPage {
         //utils::set_label(&project_group_label, c.project_group.clone());
         //utils::set_license_label(&license_label, c.project_license.clone());
 
+        self.screenshots_box.borrow_mut().set_screenshots(c.screenshots.clone());
         self.releases_box.borrow_mut().set_releases(c.releases.clone());
         self.project_urls_box.borrow_mut().set_project_urls(c.urls.clone());
     }

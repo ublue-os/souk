@@ -33,12 +33,14 @@ sources = files(
   'ui/mod.rs',
   'ui/project_urls_box.rs',
   'ui/releases_box.rs',
+  'ui/screenshots_box.rs',
   'ui/utils.rs',
   'ui/window.rs',
 
   'app.rs',
   'appstream_cache.rs',
   'config.rs',
+  'error.rs',
   'main.rs',
 )
 

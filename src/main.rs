@@ -11,6 +11,7 @@ use gettextrs::*;
 mod app;
 mod appstream_cache;
 mod config;
+mod error;
 mod ui;
 
 use crate::app::FfApplication;
