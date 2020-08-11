@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use crate::app::Action;
 use crate::appstream_cache::AppStreamCache;
-use crate::ui::{ReleasesBox, ProjectUrlsBox, ScreenshotsBox, utils};
+use crate::ui::{AppButtonsBox, ReleasesBox, ProjectUrlsBox, ScreenshotsBox, utils};
 
 pub struct AppDetailsPage {
     pub widget: gtk::Box,
@@ -19,6 +19,7 @@ pub struct AppDetailsPage {
     metadata: RefCell<Option<HashMap<flatpak::Remote, Component>>>,
     active_remote: RefCell<Option<flatpak::Remote>>,
 
+    app_buttons_box: RefCell<AppButtonsBox>,
     screenshots_box: RefCell<ScreenshotsBox>,
     releases_box: RefCell<ReleasesBox>,
     project_urls_box: RefCell<ProjectUrlsBox>,
@@ -32,6 +33,7 @@ impl AppDetailsPage {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_details_page.ui");
         get_widget!(builder, gtk::Box, app_details_page);
 
+        let app_buttons_box = RefCell::new(AppButtonsBox::new(appstream_cache.clone()));
         let screenshots_box = RefCell::new(ScreenshotsBox::new());
         let releases_box = RefCell::new(ReleasesBox::new());
         let project_urls_box = RefCell::new(ProjectUrlsBox::new());
@@ -42,6 +44,7 @@ impl AppDetailsPage {
             app_id: RefCell::new(None),
             metadata: RefCell::new(None),
             active_remote: RefCell::new(None),
+            app_buttons_box,
             screenshots_box,
             releases_box,
             project_urls_box,
@@ -55,6 +58,9 @@ impl AppDetailsPage {
     }
 
     fn setup_widgets(self: Rc<Self>){
+        get_widget!(self.builder, gtk::Box, app_buttons_box);
+        app_buttons_box.add(&self.app_buttons_box.borrow().widget);
+
         get_widget!(self.builder, gtk::Box, screenshots_box);
         screenshots_box.add(&self.screenshots_box.borrow().widget);
 
@@ -82,7 +88,7 @@ impl AppDetailsPage {
 
     pub fn show_details(&self, app_id: AppId) {
         *self.app_id.borrow_mut() = Some(app_id.clone());
-        *self.metadata.borrow_mut() = Some(self.appstream_cache.get_components(app_id));
+        *self.metadata.borrow_mut() = Some(self.appstream_cache.get_components_for_app_id(app_id));
 
         get_widget!(self.builder, gtk::ComboBoxText, source_combobox);
         source_combobox.remove_all();
@@ -121,6 +127,10 @@ impl AppDetailsPage {
         //utils::set_label(&project_group_label, c.project_group.clone());
         //utils::set_license_label(&license_label, c.project_license.clone());
 
+        let app_id = self.app_id.borrow().as_ref().unwrap().clone();
+        let remote = self.active_remote.borrow().as_ref().unwrap().clone();
+
+        self.app_buttons_box.borrow_mut().set_app(app_id, remote);
         self.screenshots_box.borrow_mut().set_screenshots(c.screenshots.clone());
         self.releases_box.borrow_mut().set_releases(c.releases.clone());
         self.project_urls_box.borrow_mut().set_project_urls(c.urls.clone());

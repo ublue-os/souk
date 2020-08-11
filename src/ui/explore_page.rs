@@ -36,20 +36,25 @@ impl ExplorePage {
     fn setup_widgets(self: Rc<Self>) {
         get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
 
-        let firefox_components = self.appstream_cache.get_components(AppId("org.mozilla.firefox".to_string()));
+        let firefox_components = self.appstream_cache.get_components_for_app_id(AppId("org.mozilla.firefox".to_string()));
         let (r,c) = firefox_components.iter().next().unwrap();
         let firefox_tile = AppTile::new(self.sender.clone(), c.clone(), &r);
         editors_picks_flowbox.add(&firefox_tile.widget);
 
-        let shortwave_components = self.appstream_cache.get_components(AppId("de.haeckerfelix.Shortwave".to_string()));
+        let shortwave_components = self.appstream_cache.get_components_for_app_id(AppId("de.haeckerfelix.Shortwave".to_string()));
         let (r,c) = shortwave_components.iter().next().unwrap();
         let shortwave_tile = AppTile::new(self.sender.clone(), c.clone(), &r);
         editors_picks_flowbox.add(&shortwave_tile.widget);
 
-        let podcast_components = self.appstream_cache.get_components(AppId("org.gnome.Podcasts".to_string()));
+        let podcast_components = self.appstream_cache.get_components_for_app_id(AppId("org.gnome.Podcasts".to_string()));
         let (r,c) = podcast_components.iter().next().unwrap();
         let podcasts_tile = AppTile::new(self.sender.clone(), c.clone(), &r);
         editors_picks_flowbox.add(&podcasts_tile.widget);
+
+        let contrast_components = self.appstream_cache.get_components_for_app_id(AppId("org.gnome.design.Contrast".to_string()));
+        let (r,c) = contrast_components.iter().next().unwrap();
+        let contrast_tile = AppTile::new(self.sender.clone(), c.clone(), &r);
+        editors_picks_flowbox.add(&contrast_tile.widget);
 
         editors_picks_flowbox.show_all();
     }

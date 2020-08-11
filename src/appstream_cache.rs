@@ -10,12 +10,13 @@ use std::rc::Rc;
 
 pub struct AppStreamCache {
     collections: HashMap<Remote, Collection>,
+    system_install: flatpak::Installation,
 }
 
 impl AppStreamCache {
     pub fn new() -> Rc<Self> {
-        let installation = flatpak::Installation::new_system(Some(&gio::Cancellable::new())).unwrap();
-        let remotes = installation.list_remotes(Some(&gio::Cancellable::new())).unwrap();
+        let system_install = flatpak::Installation::new_system(Some(&gio::Cancellable::new())).unwrap();
+        let remotes = system_install.list_remotes(Some(&gio::Cancellable::new())).unwrap();
         let mut collections = HashMap::new();
 
         // Parse data
@@ -35,10 +36,34 @@ impl AppStreamCache {
             }
         }
 
-        Rc::new(Self { collections })
+        Rc::new(Self { collections, system_install })
     }
 
-    pub fn get_components(&self, app_id: AppId) -> HashMap<flatpak::Remote, Component> {
+    /// checks if an app is installed (optionally a remote can specified)
+    pub fn is_installed (&self, app_id: AppId, remote: Option<&flatpak::Remote>) -> bool {
+        let mut result = false;
+
+        let installed_refs = self.get_installed_refs();
+        for package in installed_refs {
+            result = package.get_name().unwrap().to_string() == app_id.0;
+
+            remote.map(|remote|{
+                result = remote.get_name().unwrap().to_string() == package.get_origin().unwrap().to_string();
+            });
+        }
+        result
+    }
+
+    pub fn get_installed_refs(&self) -> Vec<flatpak::InstalledRef>{
+        self.system_install.list_installed_refs(Some(&gio::Cancellable::new())).unwrap()
+    }
+
+    pub fn get_system_remotes(&self) -> Vec<flatpak::Remote>{
+        self.system_install.list_remotes(Some(&gio::Cancellable::new())).unwrap()
+    }
+
+    /// Returns appstream components for a specific AppId
+    pub fn get_components_for_app_id(&self, app_id: AppId) -> HashMap<flatpak::Remote, Component> {
         let mut components = HashMap::new();
 
         for (remote, collection) in &self.collections {

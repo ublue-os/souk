@@ -27,6 +27,7 @@ run_command(
 )
 
 sources = files(
+  'ui/app_buttons_box.rs',
   'ui/app_details_page.rs',
   'ui/app_tile.rs',
   'ui/explore_page.rs',

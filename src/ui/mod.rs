@@ -1,5 +1,8 @@
 mod utils;
 
+mod app_buttons_box;
+pub use app_buttons_box::AppButtonsBox;
+
 mod app_details_page;
 pub use app_details_page::AppDetailsPage;
 

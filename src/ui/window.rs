@@ -101,7 +101,7 @@ impl FfApplicationWindow {
         self.add(&window);
     }
 
-    fn setup_signals(&self, sender: Sender<Action>) {
+    fn setup_signals(&self, _sender: Sender<Action>) {
         let self_ = FfApplicationWindowPrivate::from_instance(self);
 
         // deck
