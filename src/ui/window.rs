@@ -101,7 +101,7 @@ impl FfApplicationWindow {
         self.add(&window);
     }
 
-    fn setup_signals(&self, _sender: Sender<Action>) {
+    fn setup_signals(&self, sender: Sender<Action>) {
         let self_ = FfApplicationWindowPrivate::from_instance(self);
 
         // deck
@@ -109,6 +109,21 @@ impl FfApplicationWindow {
         window_deck.connect_property_visible_child_notify(clone!(@strong self as this => move |_| {
             this.sync_ui_state();
         }));
+
+        // main stack
+        get_widget!(self_.window_builder, gtk::Stack, main_stack);
+        main_stack.connect_property_visible_child_notify(clone!(@strong self as this => move |_| {
+            this.sync_ui_state();
+        }));
+
+        // back button (mouse)
+        self.connect_button_press_event(clone!(@strong sender => move |_, event|{
+            if event.get_button() == 8 {
+                send!(sender, Action::ViewGoBack);
+            }
+            Inhibit(false)
+        }));
+
     }
 
     fn setup_gactions(&self, sender: Sender<Action>) {
