@@ -58,7 +58,6 @@ impl FlatpakBackend {
     }
 
     pub fn get_installed_packages(self: Rc<Self>) -> Vec<Package> {
-        warn!("get installed");
         let mut installed_packages = Vec::new();
 
         let mut system_refs = self.system_installation.list_installed_refs(Some(&gio::Cancellable::new())).unwrap();
@@ -97,8 +96,17 @@ impl FlatpakBackend {
         }
     }
 
-    pub fn is_package_installed(self: Rc<Self>, package: Package) -> bool {
-        false
+    pub fn is_package_installed(self: Rc<Self>, package: &Package) -> bool {
+        let mut result = false;
+
+        let installed_packages = self.clone().get_installed_packages();
+        let mut iter = installed_packages.into_iter();
+        iter.find(|p| package == p).map(|package| {
+            result = true;
+            return result;
+        });
+
+        result
     }
 
     pub fn install_package(self: Rc<Self>, package: Package) {}

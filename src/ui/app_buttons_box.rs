@@ -5,14 +5,12 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::flatpak_backend::FlatpakBackend;
+use crate::package::Package;
 
 pub struct AppButtonsBox {
     pub widget: gtk::Box,
     flatpak_backend: Rc<FlatpakBackend>,
-
-    remote: Option<Remote>,
-    component: Option<Component>,
-    transaction: Option<Transaction>,
+    package: Option<Package>,
 
     builder: gtk::Builder,
 }
@@ -22,16 +20,12 @@ impl AppButtonsBox {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_buttons_box.ui");
         get_widget!(builder, gtk::Box, app_buttons_box);
 
-        let remote = None;
-        let component = None;
-        let transaction = None;
+        let package = None;
 
         let app_buttons_box = Self {
             widget: app_buttons_box,
             flatpak_backend,
-            remote,
-            component,
-            transaction,
+            package,
             builder,
         };
 
@@ -41,41 +35,22 @@ impl AppButtonsBox {
 
     fn setup_signals(&self) {
         get_widget!(self.builder, gtk::Button, install_button);
-        install_button.connect_clicked(clone!(@strong self.remote as remote, @strong self.transaction as transaction => move |_|{
+        install_button.connect_clicked(clone!(@strong self.flatpak_backend as flatpak_backend, @strong self.package as package => move |_|{
 
 
         }));
     }
 
-    pub fn set_app(&mut self, component: Component, remote: Remote) {
+    pub fn set_package(&mut self, package: Package) {
         get_widget!(self.builder, gtk::Stack, button_stack);
-        /*
 
-        //match self.appstream_cache.is_installed(component.clone(), Some(&remote)){
-        //    true => {
-        //        button_stack.set_visible_child_name("installed");
-        //    },
-        //    false => {
-        button_stack.set_visible_child_name("install");
-        //    }
-        //};
-
-        self.remote = Some(remote);
-        //self.component = Some(component);
-        self.transaction = Some(self.appstream_cache.create_transaction());
-
-        let transaction = self.transaction.as_ref().unwrap();
-
-        match &component.bundle[0] {
-            Bundle::Flatpak { runtime, sdk, name } => {
-                //self.appstream_cache.system_install.install(&self.remote.as_ref().unwrap().get_name().unwrap(), flatpak::RefKind::App, "de.haeckerfelix.Shortwave",
-                //Some("x86_64"), Some("stable"), None, Some(&gio::Cancellable::new())).unwrap();
-
-                //warn!("Name {}", name);
-                //transaction.add_install(&self.remote.as_ref().unwrap().get_name().unwrap(), &name, &[]).unwrap();
-                //transaction.run(Some(&gio::Cancellable::new())).unwrap();
+        match self.flatpak_backend.clone().is_package_installed(&package){
+            true => {
+                button_stack.set_visible_child_name("installed");
+            },
+            false => {
+                button_stack.set_visible_child_name("install");
             }
-            _ => (),
-        };*/
+        };
     }
 }

@@ -79,7 +79,7 @@ impl AppDetailsPage {
 
     fn display_values(&self) {
         let package = self.package.borrow().clone().to_owned();
-        let c = package.unwrap().component.clone();
+        let c = package.clone().unwrap().component.clone();
 
         get_widget!(self.builder, gtk::Image, icon_image);
         get_widget!(self.builder, gtk::Label, title_label);
@@ -97,7 +97,7 @@ impl AppDetailsPage {
         //utils::set_label(&project_group_label, c.project_group.clone());
         //utils::set_license_label(&license_label, c.project_license.clone());
 
-        //self.app_buttons_box.borrow_mut().set_app(c.clone(), remote);
+        self.app_buttons_box.borrow_mut().set_package(package.unwrap().clone());
         self.screenshots_box.borrow_mut().set_screenshots(c.screenshots.clone());
         self.releases_box.borrow_mut().set_releases(c.releases.clone());
         self.project_urls_box.borrow_mut().set_project_urls(c.urls.clone());

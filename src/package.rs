@@ -4,9 +4,7 @@ use flatpak::{Remote, RemoteExt};
 use std::rc::Rc;
 use std::fmt;
 
-use crate::flatpak_backend::FlatpakBackend;
-
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Package {
     pub component: Component,
     remote: Remote,
