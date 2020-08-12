@@ -15,6 +15,9 @@ pub use project_urls_box::ProjectUrlsBox;
 mod explore_page;
 pub use explore_page::ExplorePage;
 
+mod installed_page;
+pub use installed_page::InstalledPage;
+
 mod releases_box;
 pub use releases_box::ReleasesBox;
 

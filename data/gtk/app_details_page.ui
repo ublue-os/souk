@@ -106,40 +106,13 @@
                                     <property name="can_focus">False</property>
                                     <property name="valign">center</property>
                                     <child>
-                                      <object class="GtkBox">
+                                      <object class="GtkBox" id="app_buttons_box">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="valign">center</property>
-                                        <property name="spacing">6</property>
+                                        <property name="orientation">vertical</property>
                                         <child>
-                                          <object class="GtkBox" id="app_buttons_box">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">False</property>
-                                            <property name="orientation">vertical</property>
-                                            <child>
-                                              <placeholder/>
-                                            </child>
-                                          </object>
-                                          <packing>
-                                            <property name="expand">False</property>
-                                            <property name="fill">True</property>
-                                            <property name="position">0</property>
-                                          </packing>
-                                        </child>
-                                        <child>
-                                          <object class="GtkComboBoxText" id="source_combobox">
-                                            <property name="can_focus">False</property>
-                                            <property name="no_show_all">True</property>
-                                            <property name="active_id">flathub</property>
-                                            <items>
-                                              <item id="flathub" translatable="yes">Flathub</item>
-                                            </items>
-                                          </object>
-                                          <packing>
-                                            <property name="expand">False</property>
-                                            <property name="fill">True</property>
-                                            <property name="position">1</property>
-                                          </packing>
+                                          <placeholder/>
                                         </child>
                                       </object>
                                       <packing>

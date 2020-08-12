@@ -5,25 +5,25 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::appstream_cache::AppStreamCache;
+use crate::flatpak_backend::FlatpakBackend;
 use crate::ui::AppTile;
 
 pub struct ExplorePage {
     pub widget: gtk::Box,
-    appstream_cache: Rc<AppStreamCache>,
+    flatpak_backend: Rc<FlatpakBackend>,
 
     builder: gtk::Builder,
     sender: Sender<Action>,
 }
 
 impl ExplorePage {
-    pub fn new(sender: Sender<Action>, appstream_cache: Rc<AppStreamCache>) -> Rc<Self> {
+    pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/explore_page.ui");
         get_widget!(builder, gtk::Box, explore_page);
 
         let explore_page = Rc::new(Self {
             widget: explore_page,
-            appstream_cache,
+            flatpak_backend,
             builder,
             sender,
         });
@@ -34,32 +34,20 @@ impl ExplorePage {
     }
 
     fn setup_widgets(self: Rc<Self>) {
+        self.clone().add_tile("de.haeckerfelix.Shortwave".to_string());
+        self.clone().add_tile("de.haeckerfelix.Fragments".to_string());
+        self.clone().add_tile("org.gnome.Podcasts".to_string());
+        self.clone().add_tile("org.gnome.design.IconLibrary".to_string());
+        self.clone().add_tile("org.gnome.design.Contrast".to_string());
+    }
+
+    fn add_tile(self: Rc<Self>, app_id: String){
         get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
-
-        let firefox_components = self.appstream_cache.get_components_for_app_id(AppId("org.mozilla.firefox".to_string()));
-        let (r,c) = firefox_components.iter().next().unwrap();
-        let firefox_tile = AppTile::new(self.sender.clone(), c.clone(), &r);
-        editors_picks_flowbox.add(&firefox_tile.widget);
-
-        let shortwave_components = self.appstream_cache.get_components_for_app_id(AppId("de.haeckerfelix.Shortwave".to_string()));
-        let (r,c) = shortwave_components.iter().next().unwrap();
-        let shortwave_tile = AppTile::new(self.sender.clone(), c.clone(), &r);
-        editors_picks_flowbox.add(&shortwave_tile.widget);
-
-        let podcast_components = self.appstream_cache.get_components_for_app_id(AppId("org.gnome.Podcasts".to_string()));
-        let (r,c) = podcast_components.iter().next().unwrap();
-        let podcasts_tile = AppTile::new(self.sender.clone(), c.clone(), &r);
-        editors_picks_flowbox.add(&podcasts_tile.widget);
-
-        let contrast_components = self.appstream_cache.get_components_for_app_id(AppId("org.gnome.design.Contrast".to_string()));
-        let (r,c) = contrast_components.iter().next().unwrap();
-        let contrast_tile = AppTile::new(self.sender.clone(), c.clone(), &r);
-        editors_picks_flowbox.add(&contrast_tile.widget);
-
+        let package = self.flatpak_backend.clone().get_package("app".to_string(), app_id, "x86_64".to_string(), "stable".to_string()).unwrap();
+        let tile = AppTile::new(self.sender.clone(), package);
+        editors_picks_flowbox.add(&tile.widget);
         editors_picks_flowbox.show_all();
     }
 
-    fn setup_signals(self: Rc<Self>) {
-
-    }
+    fn setup_signals(self: Rc<Self>) {}
 }

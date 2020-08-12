@@ -13,6 +13,4 @@ pub enum Error {
 
     #[error("Network error: {0}")]
     NetworkError(#[from] isahc::Error),
-
 }
-

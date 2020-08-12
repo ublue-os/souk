@@ -1,4 +1,3 @@
-use appstream_rs::AppId;
 use gio::subclass::prelude::ApplicationImpl;
 use gio::{self, prelude::*, ApplicationFlags};
 use glib::subclass;
@@ -12,14 +11,15 @@ use std::cell::RefCell;
 use std::env;
 use std::rc::Rc;
 
-use crate::appstream_cache::AppStreamCache;
 use crate::config;
-use crate::ui::{AppDetailsPage, ExplorePage, FfApplicationWindow, View};
+use crate::package::Package;
+use crate::flatpak_backend::FlatpakBackend;
+use crate::ui::{AppDetailsPage, ExplorePage, InstalledPage, FfApplicationWindow, View};
 
 #[derive(Debug, Clone)]
 pub enum Action {
     ViewSet(View),
-    ViewShowAppDetails(AppId),
+    ViewShowAppDetails(Package),
     ViewGoBack,
 }
 
@@ -27,9 +27,10 @@ pub struct FfApplicationPrivate {
     sender: Sender<Action>,
     receiver: RefCell<Option<Receiver<Action>>>,
 
-    appstream_cache: Rc<AppStreamCache>,
+    flatpak_backend: Rc<FlatpakBackend>,
 
     pub explore_page: Rc<ExplorePage>,
+    pub installed_page: Rc<InstalledPage>,
     pub app_details_page: Rc<AppDetailsPage>,
 
     window: RefCell<Option<FfApplicationWindow>>,
@@ -47,18 +48,20 @@ impl ObjectSubclass for FfApplicationPrivate {
         let (sender, r) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
         let receiver = RefCell::new(Some(r));
 
-        let appstream_cache = AppStreamCache::new();
+        let flatpak_backend = FlatpakBackend::new();
 
-        let explore_page = ExplorePage::new(sender.clone(), appstream_cache.clone());
-        let app_details_page = AppDetailsPage::new(sender.clone(), appstream_cache.clone());
+        let explore_page = ExplorePage::new(sender.clone(), flatpak_backend.clone());
+        let installed_page = InstalledPage::new(sender.clone(), flatpak_backend.clone());
+        let app_details_page = AppDetailsPage::new(sender.clone(), flatpak_backend.clone());
 
         let window = RefCell::new(None);
 
         Self {
             sender,
             receiver,
-            appstream_cache,
+            flatpak_backend,
             explore_page,
+            installed_page,
             app_details_page,
             window,
         }
@@ -149,9 +152,9 @@ impl FfApplication {
 
         match action {
             Action::ViewSet(view) => self_.window.borrow().as_ref().unwrap().set_view(view),
-            Action::ViewShowAppDetails(app_id) => {
+            Action::ViewShowAppDetails(package) => {
                 self_.window.borrow().as_ref().unwrap().set_view(View::AppDetails);
-                self_.app_details_page.show_details(app_id);
+                self_.app_details_page.show_details(package);
             }
             Action::ViewGoBack => self_.window.borrow().as_ref().unwrap().go_back(),
         }

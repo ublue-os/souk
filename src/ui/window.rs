@@ -95,6 +95,8 @@ impl FfApplicationWindow {
         app_details_box.add(&app_private.app_details_page.widget);
         get_widget!(self_.window_builder, gtk::Box, explore_box);
         explore_box.add(&app_private.explore_page.widget);
+        get_widget!(self_.window_builder, gtk::Box, installed_box);
+        installed_box.add(&app_private.installed_page.widget);
 
         // Add headerbar/content to the window itself
         get_widget!(self_.window_builder, gtk::Box, window);
@@ -123,7 +125,6 @@ impl FfApplicationWindow {
             }
             Inhibit(false)
         }));
-
     }
 
     fn setup_gactions(&self, sender: Sender<Action>) {

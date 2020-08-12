@@ -1,14 +1,14 @@
 use appstream_rs::{Image, Screenshot};
+use futures_util::future::FutureExt;
+use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
-use gdk_pixbuf::Pixbuf;
-use futures_util::future::FutureExt;
 
 use crate::error::Error;
 use crate::ui::utils;
 
-pub struct ScreenshotsBox    {
+pub struct ScreenshotsBox {
     pub widget: gtk::Box,
     screenshots: Vec<Screenshot>,
     builder: gtk::Builder,
@@ -31,12 +31,10 @@ impl ScreenshotsBox {
         screenshots_box
     }
 
-    fn setup_signals(&self) {
+    fn setup_signals(&self) {}
 
-    }
-
-    pub fn set_screenshots (&mut self, screenshots: Vec<Screenshot>){
-        if self.screenshots == screenshots{
+    pub fn set_screenshots(&mut self, screenshots: Vec<Screenshot>) {
+        if self.screenshots == screenshots {
             return;
         }
         self.screenshots = screenshots.clone();
@@ -46,32 +44,30 @@ impl ScreenshotsBox {
         utils::remove_all_items(&carousel);
         screenshots_box.set_visible(false);
 
-        for screenshot in screenshots{
-            for image in screenshot.images{
-                match image{
-                    Image::Source{url, width, height} => {
+        for screenshot in screenshots {
+            for image in screenshot.images {
+                match image {
+                    Image::Source { url, width, height } => {
                         let c = carousel.clone();
                         let ssb = screenshots_box.clone();
-                        let fut = Self::download_image(url, 350).map(move |result|{
-                            match result{
-                                Ok(pixbuf) => {
-                                    let image = gtk::Image::from_pixbuf(Some(&pixbuf));
-                                    image.set_visible(true);
-                                    ssb.set_visible(true);
-                                    c.add(&image);
-                                },
-                                Err(err) => warn!("Unable to download thumbnail: {}", err),
+                        let fut = Self::download_image(url, 350).map(move |result| match result {
+                            Ok(pixbuf) => {
+                                let image = gtk::Image::from_pixbuf(Some(&pixbuf));
+                                image.set_visible(true);
+                                ssb.set_visible(true);
+                                c.add(&image);
                             }
+                            Err(err) => warn!("Unable to download thumbnail: {}", err),
                         });
                         spawn!(fut);
-                    },
+                    }
                     _ => (),
                 }
             }
         }
     }
 
-    async fn download_image(url: url::Url, size: i32) -> Result<Pixbuf, Error>{
+    async fn download_image(url: url::Url, size: i32) -> Result<Pixbuf, Error> {
         let mut response = Request::get(url.to_string()).redirect_policy(RedirectPolicy::Follow).body(()).unwrap().send_async().await?;
         let mut body = response.body_mut();
         let mut bytes = vec![];

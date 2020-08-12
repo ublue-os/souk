@@ -31,6 +31,7 @@ sources = files(
   'ui/app_details_page.rs',
   'ui/app_tile.rs',
   'ui/explore_page.rs',
+  'ui/installed_page.rs',
   'ui/mod.rs',
   'ui/project_urls_box.rs',
   'ui/releases_box.rs',
@@ -39,10 +40,11 @@ sources = files(
   'ui/window.rs',
 
   'app.rs',
-  'appstream_cache.rs',
   'config.rs',
   'error.rs',
+  'flatpak_backend.rs',
   'main.rs',
+  'package.rs',
 )
 
 cargo_script = find_program(join_paths(meson.source_root(), 'build-aux/cargo.sh'))

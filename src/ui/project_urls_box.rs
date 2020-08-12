@@ -1,4 +1,4 @@
-use appstream_rs::enums::ProjectUrl;
+use appstream_rs::ProjectUrl;
 use gtk::prelude::*;
 use libhandy::prelude::*;
 
@@ -14,15 +14,12 @@ impl ProjectUrlsBox {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/project_urls_box.ui");
         get_widget!(builder, gtk::Box, project_urls_box);
 
-        let project_urls_box = Self {
-            widget: project_urls_box,
-            builder,
-        };
+        let project_urls_box = Self { widget: project_urls_box, builder };
 
         project_urls_box
     }
 
-    pub fn set_project_urls (&mut self, urls: Vec<ProjectUrl>){
+    pub fn set_project_urls(&mut self, urls: Vec<ProjectUrl>) {
         get_widget!(self.builder, gtk::ListBox, listbox);
         listbox.set_no_show_all(false);
 
@@ -42,7 +39,7 @@ impl ProjectUrlsBox {
         faq_row.set_visible(false);
         contact_url.set_visible(false);
 
-        for url in urls{
+        for url in urls {
             match url {
                 ProjectUrl::Donation(url) => Self::set_row(&donation_row, url),
                 ProjectUrl::Translate(url) => Self::set_row(&translate_row, url),
@@ -56,7 +53,7 @@ impl ProjectUrlsBox {
         }
     }
 
-    fn set_row(row: &libhandy::ActionRow, url: url::Url){
+    fn set_row(row: &libhandy::ActionRow, url: url::Url) {
         row.set_visible(true);
         row.set_subtitle(Some(&url.to_string()));
     }

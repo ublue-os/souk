@@ -1,9 +1,8 @@
-use appstream_rs::enums::Icon;
-use appstream_rs::{License, TranslatableString};
+use appstream_rs::{License, Icon, TranslatableString};
+use chrono::{DateTime, Utc};
 use flatpak::prelude::*;
 use gio::prelude::*;
 use gtk::prelude::*;
-use chrono::{DateTime, Utc};
 
 use std::path::PathBuf;
 
@@ -16,7 +15,7 @@ pub fn set_label(label: &gtk::Label, text: Option<String>) {
 
 pub fn set_label_translatable_string(label: &gtk::Label, text: Option<TranslatableString>) {
     match text {
-        Some(text) => label.set_text(&text.0.get("default").unwrap()),
+        Some(text) => label.set_text(&text.get_default().unwrap_or(&"???".to_string())),
         None => label.set_text("–"),
     };
 }
@@ -60,4 +59,3 @@ where
         container.remove(&widget);
     }
 }
-
