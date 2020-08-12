@@ -1,5 +1,5 @@
 use appstream_rs::{Bundle, Component};
-use flatpak::{Remote, RemoteExt};
+use flatpak::{Remote, RemoteExt, Ref};
 
 use std::rc::Rc;
 use std::fmt;
@@ -33,6 +33,10 @@ impl Package{
 
     pub fn get_origin(&self) -> String {
         self.remote.get_name().unwrap().to_string()
+    }
+
+    pub fn as_flatpak_ref(&self) -> Ref {
+        flatpak::Ref::parse(&self.get_full_ref_name()).unwrap()
     }
 }
 

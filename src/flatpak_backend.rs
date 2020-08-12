@@ -1,7 +1,8 @@
 use appstream_rs::{Bundle, Collection};
 use flatpak::prelude::*;
-use flatpak::{Installation, InstallationExt, RefKind};
+use flatpak::{Installation, InstallationExt, TransactionExt, RefKind};
 use gio::prelude::*;
+use glib::prelude::*;
 use bus::{Bus, BusReader};
 
 use std::rc::Rc;
@@ -37,7 +38,12 @@ pub struct FlatpakBackend {
 impl FlatpakBackend {
     pub fn new() -> Rc<Self> {
         let system_installation = flatpak::Installation::new_system(Some(&gio::Cancellable::new())).unwrap();
-        let user_installation = flatpak::Installation::new_user(Some(&gio::Cancellable::new())).unwrap();
+
+        let mut user_path = glib::get_home_dir().unwrap();
+        user_path.push(".local");
+        user_path.push("share");
+        user_path.push("flatpak");
+        let user_installation = flatpak::Installation::new_for_path(&gio::File::new_for_path(user_path), true, Some(&gio::Cancellable::new())).unwrap();
 
         let message_bus = RefCell::new(Bus::new(10));
         let packages = RefCell::new(HashMap::new());
@@ -53,6 +59,8 @@ impl FlatpakBackend {
         backend
     }
 
+    /// Returns receiver which can be used to subscribe to backend messages.
+    /// Receives message when something happens on Flatpak side (e.g. install/uninstall/update/...)
     pub fn get_message_receiver(self: Rc<Self>) -> BusReader<BackendMessage>{
         self.message_bus.borrow_mut().add_rx()
     }
@@ -89,7 +97,6 @@ impl FlatpakBackend {
 
     pub fn get_package(self: Rc<Self>, kind: String, name: String, arch: String, branch: String) -> Option<Package>{
         let id = format!("{}/{}/{}/{}", kind, name, arch, branch);
-        debug!("search for {}", &id);
         match self.packages.borrow().get(&id){
             Some(package) => Some(package.to_owned()),
             None => None,
@@ -109,7 +116,11 @@ impl FlatpakBackend {
         result
     }
 
-    pub fn install_package(self: Rc<Self>, package: Package) {}
+    pub fn install_package(self: Rc<Self>, package: Package) {
+        let transaction = flatpak::Transaction::new_for_installation(&self.user_installation, Some(&gio::Cancellable::new())).unwrap();
+        transaction.add_install(&package.get_origin(), &package.get_full_ref_name(), &[]).unwrap();
+        transaction.run(Some(&gio::Cancellable::new())).unwrap();
+    }
 
     pub fn update_package(self: Rc<Self>, package: Package) {}
 
