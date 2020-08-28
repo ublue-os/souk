@@ -47,7 +47,7 @@ impl ScreenshotsBox {
         for screenshot in screenshots {
             for image in screenshot.images {
                 match image {
-                    Image::Source { url, width, height } => {
+                    Image::Source { url, width: _, height: _ } => {
                         let c = carousel.clone();
                         let ssb = screenshots_box.clone();
                         let fut = Self::download_image(url, 350).map(move |result| match result {

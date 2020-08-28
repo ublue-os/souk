@@ -2,12 +2,11 @@ use glib::Sender;
 use gtk::prelude::*;
 
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::flatpak_backend::FlatpakBackend;
-use crate::package::Package;
+use crate::backend::FlatpakBackend;
+use crate::backend::Package;
 use crate::ui::{utils, AppButtonsBox, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
 
 pub struct AppDetailsPage {

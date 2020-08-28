@@ -1,10 +1,9 @@
-use appstream_rs::{Bundle, Component};
-use flatpak::{Remote, RemoteExt, Ref};
+use appstream_rs::Component;
+use flatpak::{Remote, RemoteExt};
 
-use std::rc::Rc;
 use std::fmt;
 
-use crate::utils;
+use crate::backend::utils;
 
 #[derive(Clone, PartialEq)]
 pub struct Package {

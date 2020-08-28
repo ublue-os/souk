@@ -1,11 +1,10 @@
-use appstream_rs::AppId;
 use glib::Sender;
 use gtk::prelude::*;
 
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::flatpak_backend::FlatpakBackend;
+use crate::backend::FlatpakBackend;
 use crate::ui::AppTile;
 
 pub struct ExplorePage {

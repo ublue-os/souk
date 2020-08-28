@@ -27,6 +27,11 @@ run_command(
 )
 
 sources = files(
+  'backend/flatpak_backend.rs',
+  'backend/mod.rs',
+  'backend/package.rs',
+  'backend/utils.rs',
+
   'ui/app_buttons_box.rs',
   'ui/app_details_page.rs',
   'ui/app_tile.rs',
@@ -42,10 +47,7 @@ sources = files(
   'app.rs',
   'config.rs',
   'error.rs',
-  'flatpak_backend.rs',
   'main.rs',
-  'package.rs',
-  'utils.rs',
 )
 
 cargo_script = find_program(join_paths(meson.source_root(), 'build-aux/cargo.sh'))

@@ -1,8 +1,7 @@
 use appstream_rs::{Bundle, Collection};
 use flatpak::prelude::*;
-use flatpak::{Installation, InstallationExt, TransactionExt, RefKind};
+use flatpak::{Installation, InstallationExt, RefKind};
 use gio::prelude::*;
-use glib::prelude::*;
 use bus::{Bus, BusReader};
 
 use std::rc::Rc;
@@ -10,7 +9,7 @@ use std::cell::RefCell;
 use std::path::PathBuf;
 use std::collections::HashMap;
 
-use crate::package::Package;
+use crate::backend::Package;
 
 pub enum PackageState{
     Installed,
@@ -108,7 +107,7 @@ impl FlatpakBackend {
 
         let installed_packages = self.clone().get_installed_packages();
         let mut iter = installed_packages.into_iter();
-        iter.find(|p| package == p).map(|package| {
+        iter.find(|p| package == p).map(|_| {
             result = true;
             return result;
         });
@@ -116,13 +115,9 @@ impl FlatpakBackend {
         result
     }
 
-    pub fn install_package(self: Rc<Self>, package: Package) {
+    pub fn install_package(self: Rc<Self>, _package: Package) {
 
     }
-
-    pub fn update_package(self: Rc<Self>, package: Package) {}
-
-    pub fn remove_package(self: Rc<Self>, package: Package) {}
 
     fn reload_appstream_data(self: Rc<Self>) {
         let mut packages: HashMap<String, Package> = HashMap::new();
@@ -150,7 +145,7 @@ impl FlatpakBackend {
                     for component in collection.components{
                         let bundle = &component.bundle[0];
                         match bundle {
-                            Bundle::Flatpak{runtime, sdk, id} => {
+                            Bundle::Flatpak{runtime: _, sdk: _, id} => {
                                 let package = Package::new(component.clone(), remote.clone());
                                 packages.insert(id.clone(), package);
                             },

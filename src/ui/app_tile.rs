@@ -1,10 +1,9 @@
-use appstream_rs::Component;
 use glib::Sender;
 use gtk::prelude::*;
 
 use crate::app::Action;
 use crate::ui::utils;
-use crate::package::Package;
+use crate::backend::Package;
 
 pub struct AppTile {
     pub widget: gtk::Button,

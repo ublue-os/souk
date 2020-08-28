@@ -1,12 +1,10 @@
-use appstream_rs::Component;
-use flatpak::{InstallationExt, Remote, RemoteExt, Transaction, TransactionExt};
 use gtk::prelude::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::flatpak_backend::FlatpakBackend;
-use crate::package::Package;
+use crate::backend::FlatpakBackend;
+use crate::backend::Package;
 
 pub struct AppButtonsBox {
     pub widget: gtk::Box,

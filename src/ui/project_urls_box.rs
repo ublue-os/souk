@@ -2,8 +2,6 @@ use appstream_rs::ProjectUrl;
 use gtk::prelude::*;
 use libhandy::prelude::*;
 
-use crate::ui::utils;
-
 pub struct ProjectUrlsBox {
     pub widget: gtk::Box,
     builder: gtk::Builder,

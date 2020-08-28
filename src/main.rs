@@ -8,14 +8,11 @@ extern crate gtk_macros;
 
 use gettextrs::*;
 
-mod flatpak_backend;
-mod package;
-
+mod backend;
 mod app;
 mod config;
 mod error;
 mod ui;
-mod utils;
 
 use crate::app::FfApplication;
 

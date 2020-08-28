@@ -12,8 +12,8 @@ use std::env;
 use std::rc::Rc;
 
 use crate::config;
-use crate::package::Package;
-use crate::flatpak_backend::FlatpakBackend;
+use crate::backend::Package;
+use crate::backend::FlatpakBackend;
 use crate::ui::{AppDetailsPage, ExplorePage, InstalledPage, FfApplicationWindow, View};
 
 #[derive(Debug, Clone)]
