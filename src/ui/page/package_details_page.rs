@@ -9,7 +9,7 @@ use crate::backend::FlatpakBackend;
 use crate::backend::Package;
 use crate::ui::{utils, AppButtonsBox, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
 
-pub struct AppDetailsPage {
+pub struct PackageDetailsPage {
     pub widget: gtk::Box,
     flatpak_backend: Rc<FlatpakBackend>,
     package: RefCell<Option<Package>>,
@@ -23,10 +23,10 @@ pub struct AppDetailsPage {
     sender: Sender<Action>,
 }
 
-impl AppDetailsPage {
+impl PackageDetailsPage {
     pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_details_page.ui");
-        get_widget!(builder, gtk::Box, app_details_page);
+        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/package_details_page.ui");
+        get_widget!(builder, gtk::Box, package_details_page);
 
         let package = RefCell::new(None);
 
@@ -35,8 +35,8 @@ impl AppDetailsPage {
         let releases_box = RefCell::new(ReleasesBox::new());
         let project_urls_box = RefCell::new(ProjectUrlsBox::new());
 
-        let app_details_page = Rc::new(Self {
-            widget: app_details_page,
+        let package_details_page = Rc::new(Self {
+            widget: package_details_page,
             flatpak_backend,
             package,
             app_buttons_box,
@@ -47,9 +47,9 @@ impl AppDetailsPage {
             sender,
         });
 
-        app_details_page.clone().setup_widgets();
-        app_details_page.clone().setup_signals();
-        app_details_page
+        package_details_page.clone().setup_widgets();
+        package_details_page.clone().setup_signals();
+        package_details_page
     }
 
     fn setup_widgets(self: Rc<Self>) {

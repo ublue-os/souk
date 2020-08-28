@@ -92,7 +92,7 @@ impl FfApplicationWindow {
 
         // wire everything up
         get_widget!(self_.window_builder, gtk::Box, app_details_box);
-        app_details_box.add(&app_private.app_details_page.widget);
+        app_details_box.add(&app_private.package_details_page.widget);
         get_widget!(self_.window_builder, gtk::Box, explore_box);
         explore_box.add(&app_private.explore_page.widget);
         get_widget!(self_.window_builder, gtk::Box, installed_box);

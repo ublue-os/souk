@@ -1,6 +1,7 @@
 mod flatpak_backend;
-mod package;
-mod utils;
-
-pub use package::Package;
 pub use flatpak_backend::FlatpakBackend;
+
+mod package;
+pub use package::Package;
+
+mod utils;
