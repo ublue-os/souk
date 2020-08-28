@@ -14,7 +14,7 @@ use std::rc::Rc;
 use crate::config;
 use crate::backend::Package;
 use crate::backend::FlatpakBackend;
-use crate::ui::page::{PackageDetailsPage, ExplorePage, InstalledPage};
+use crate::ui::page::{ExplorePage, InstalledPage, PackageDetailsPage};
 use crate::ui::{FfApplicationWindow, View};
 
 #[derive(Debug, Clone)]
@@ -32,7 +32,6 @@ pub struct FfApplicationPrivate {
 
     pub explore_page: Rc<ExplorePage>,
     pub installed_page: Rc<InstalledPage>,
-    pub package_details_page: Rc<PackageDetailsPage>,
 
     window: RefCell<Option<FfApplicationWindow>>,
 }
@@ -53,7 +52,6 @@ impl ObjectSubclass for FfApplicationPrivate {
 
         let explore_page = ExplorePage::new(sender.clone(), flatpak_backend.clone());
         let installed_page = InstalledPage::new(sender.clone(), flatpak_backend.clone());
-        let package_details_page = PackageDetailsPage::new(sender.clone(), flatpak_backend.clone());
 
         let window = RefCell::new(None);
 
@@ -63,7 +61,6 @@ impl ObjectSubclass for FfApplicationPrivate {
             flatpak_backend,
             explore_page,
             installed_page,
-            package_details_page,
             window,
         }
     }
@@ -154,8 +151,8 @@ impl FfApplication {
         match action {
             Action::ViewSet(view) => self_.window.borrow().as_ref().unwrap().set_view(view),
             Action::ViewShowAppDetails(package) => {
-                self_.window.borrow().as_ref().unwrap().set_view(View::AppDetails);
-                self_.package_details_page.show_details(package);
+                let page = PackageDetailsPage::new(package, self_.sender.clone(), self_.flatpak_backend.clone());
+                self_.window.borrow().as_ref().unwrap().add_package_details_page(page);
             }
             Action::ViewGoBack => self_.window.borrow().as_ref().unwrap().go_back(),
         }

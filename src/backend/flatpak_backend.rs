@@ -1,4 +1,5 @@
-use appstream_rs::{Bundle, Collection};
+use appstream::Collection;
+use appstream::enums::Bundle;
 use flatpak::prelude::*;
 use flatpak::{Installation, InstallationExt, RefKind};
 use gio::prelude::*;
@@ -143,7 +144,7 @@ impl FlatpakBackend {
                     info!("Loaded appstream data: {:?}", &appstream_file);
                     // Iterate appstream components, and look for components which we need
                     for component in collection.components{
-                        let bundle = &component.bundle[0];
+                        let bundle = &component.bundles[0];
                         match bundle {
                             Bundle::Flatpak{runtime: _, sdk: _, id} => {
                                 let package = Package::new(component.clone(), remote.clone());

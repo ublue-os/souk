@@ -1,4 +1,4 @@
-use appstream_rs::Release;
+use appstream::types::Release;
 use gtk::prelude::*;
 
 use crate::ui::utils;

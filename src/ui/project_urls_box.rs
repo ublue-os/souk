@@ -1,4 +1,4 @@
-use appstream_rs::ProjectUrl;
+use appstream::enums::ProjectUrl;
 use gtk::prelude::*;
 use libhandy::prelude::*;
 

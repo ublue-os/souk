@@ -1,4 +1,4 @@
-use appstream_rs::{Image, Screenshot};
+use appstream::types::{Image, Screenshot};
 use futures_util::future::FutureExt;
 use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
@@ -46,23 +46,18 @@ impl ScreenshotsBox {
 
         for screenshot in screenshots {
             for image in screenshot.images {
-                match image {
-                    Image::Source { url, width: _, height: _ } => {
-                        let c = carousel.clone();
-                        let ssb = screenshots_box.clone();
-                        let fut = Self::download_image(url, 350).map(move |result| match result {
-                            Ok(pixbuf) => {
-                                let image = gtk::Image::from_pixbuf(Some(&pixbuf));
-                                image.set_visible(true);
-                                ssb.set_visible(true);
-                                c.add(&image);
-                            }
-                            Err(err) => warn!("Unable to download thumbnail: {}", err),
-                        });
-                        spawn!(fut);
+                let c = carousel.clone();
+                let ssb = screenshots_box.clone();
+                let fut = Self::download_image(image.url, 350).map(move |result| match result {
+                    Ok(pixbuf) => {
+                        let image = gtk::Image::from_pixbuf(Some(&pixbuf));
+                        image.set_visible(true);
+                        ssb.set_visible(true);
+                        c.add(&image);
                     }
-                    _ => (),
-                }
+                    Err(err) => warn!("Unable to download thumbnail: {}", err),
+                });
+                spawn!(fut);
             }
         }
     }

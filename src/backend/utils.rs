@@ -1,7 +1,8 @@
-use appstream_rs::{Bundle, Component};
+use appstream::Component;
+use appstream::enums::Bundle;
 
 pub fn get_flatpak_ref (component: &Component) -> String {
-    match &component.bundle[0]{
+    match &component.bundles[0]{
         Bundle::Flatpak{id, runtime: _, sdk: _} => {
             return id.clone();
         },

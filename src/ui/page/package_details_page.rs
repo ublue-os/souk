@@ -7,12 +7,12 @@ use std::rc::Rc;
 use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
-use crate::ui::{utils, AppButtonsBox, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
+use crate::ui::{utils, AppButtonsBox, ProjectUrlsBox, ReleasesBox, ScreenshotsBox, AppTile};
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
     flatpak_backend: Rc<FlatpakBackend>,
-    package: RefCell<Option<Package>>,
+    package: Package,
 
     app_buttons_box: RefCell<AppButtonsBox>,
     screenshots_box: RefCell<ScreenshotsBox>,
@@ -24,18 +24,16 @@ pub struct PackageDetailsPage {
 }
 
 impl PackageDetailsPage {
-    pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
+    pub fn new(package: Package, sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Self {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/package_details_page.ui");
         get_widget!(builder, gtk::Box, package_details_page);
-
-        let package = RefCell::new(None);
 
         let app_buttons_box = RefCell::new(AppButtonsBox::new(flatpak_backend.clone()));
         let screenshots_box = RefCell::new(ScreenshotsBox::new());
         let releases_box = RefCell::new(ReleasesBox::new());
         let project_urls_box = RefCell::new(ProjectUrlsBox::new());
 
-        let package_details_page = Rc::new(Self {
+        let package_details_page = Self {
             widget: package_details_page,
             flatpak_backend,
             package,
@@ -45,14 +43,27 @@ impl PackageDetailsPage {
             project_urls_box,
             builder,
             sender,
-        });
+        };
 
-        package_details_page.clone().setup_widgets();
-        package_details_page.clone().setup_signals();
+        // TODO: Make this dynamic
+        package_details_page.add_tile("de.haeckerfelix.Fragments".to_string());
+        package_details_page.add_tile("de.haeckerfelix.Remotely".to_string());
+
+        package_details_page.setup_widgets();
+        package_details_page.setup_signals();
+        package_details_page.display_values();
         package_details_page
     }
 
-    fn setup_widgets(self: Rc<Self>) {
+    fn add_tile(&self, app_id: String){
+        get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
+        let package = self.flatpak_backend.clone().get_package("app".to_string(), app_id, "x86_64".to_string(), "stable".to_string()).unwrap();
+        let tile = AppTile::new(self.sender.clone(), package);
+        other_apps_flowbox.add(&tile.widget);
+        other_apps_flowbox.show_all();
+    }
+
+    fn setup_widgets(&self) {
         get_widget!(self.builder, gtk::Box, app_buttons_box);
         app_buttons_box.add(&self.app_buttons_box.borrow().widget);
 
@@ -66,19 +77,12 @@ impl PackageDetailsPage {
         project_urls_box.add(&self.project_urls_box.borrow().widget);
     }
 
-    fn setup_signals(self: Rc<Self>) {
+    fn setup_signals(&self) {
 
-    }
-
-    pub fn show_details(&self, package: Package) {
-        *self.package.borrow_mut() = Some(package);
-
-        self.display_values();
     }
 
     fn display_values(&self) {
-        let package = self.package.borrow().clone().to_owned();
-        let c = package.clone().unwrap().component.clone();
+        let c = self.package.component.clone();
 
         get_widget!(self.builder, gtk::Image, icon_image);
         get_widget!(self.builder, gtk::Label, title_label);
@@ -96,7 +100,7 @@ impl PackageDetailsPage {
         //utils::set_label(&project_group_label, c.project_group.clone());
         //utils::set_license_label(&license_label, c.project_license.clone());
 
-        self.app_buttons_box.borrow_mut().set_package(package.unwrap().clone());
+        self.app_buttons_box.borrow_mut().set_package(self.package.clone());
         self.screenshots_box.borrow_mut().set_screenshots(c.screenshots.clone());
         self.releases_box.borrow_mut().set_releases(c.releases.clone());
         self.project_urls_box.borrow_mut().set_project_urls(c.urls.clone());

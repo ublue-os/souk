@@ -8,6 +8,7 @@ use gtk::subclass::prelude::{BinImpl, ContainerImpl, WidgetImpl, WindowImpl};
 use libhandy::prelude::*;
 
 use crate::app::{Action, FfApplication, FfApplicationPrivate};
+use crate::ui::page::PackageDetailsPage;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum View {
@@ -91,8 +92,6 @@ impl FfApplicationWindow {
         let app_private = FfApplicationPrivate::from_instance(&app);
 
         // wire everything up
-        get_widget!(self_.window_builder, gtk::Box, app_details_box);
-        app_details_box.add(&app_private.package_details_page.widget);
         get_widget!(self_.window_builder, gtk::Box, explore_box);
         explore_box.add(&app_private.explore_page.widget);
         get_widget!(self_.window_builder, gtk::Box, installed_box);
@@ -162,12 +161,33 @@ impl FfApplicationWindow {
     pub fn go_back(&self) {
         debug!("Go back to previous view");
         let self_ = FfApplicationWindowPrivate::from_instance(self);
-
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
+
+        // the package details pages don't have a name set
+        let is_details_page = window_deck.get_visible_child_name().is_none();
+        let widget = window_deck.get_visible_child().unwrap();
+
+        // navigate back
         window_deck.navigate(libhandy::NavigationDirection::Back);
+
+        // remove details page when necessary
+        if is_details_page {
+            // we need a small timeout here, otherwise the animation wouldn't be visible
+            glib::timeout_add_local(200, move||{
+                window_deck.remove(&widget);
+                glib::Continue(false)
+            });
+        }
 
         // Make sure that the rest of the UI is correctly synced
         self.sync_ui_state();
+    }
+
+    pub fn add_package_details_page (&self, page: PackageDetailsPage){
+        let self_ = FfApplicationWindowPrivate::from_instance(self);
+        get_widget!(self_.window_builder, libhandy::Deck, window_deck);
+        window_deck.add(&page.widget);
+        window_deck.set_visible_child(&page.widget);
     }
 
     fn sync_ui_state(&self) {
@@ -175,8 +195,7 @@ impl FfApplicationWindow {
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
 
-        let deck_child_name = window_deck.get_visible_child_name().unwrap();
-        let current_view = if deck_child_name == "app-details" {
+        let current_view = if window_deck.get_visible_child_name().is_none() {
             View::AppDetails
         } else {
             match main_stack.get_visible_child_name().unwrap().as_str() {

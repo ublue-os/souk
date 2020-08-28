@@ -1,4 +1,4 @@
-use appstream_rs::Component;
+use appstream::Component;
 use flatpak::{Remote, RemoteExt};
 
 use std::fmt;

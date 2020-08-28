@@ -170,19 +170,6 @@
             <property name="name">main</property>
           </packing>
         </child>
-        <child>
-          <object class="GtkBox" id="app_details_box">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="orientation">vertical</property>
-            <child>
-              <placeholder/>
-            </child>
-          </object>
-          <packing>
-            <property name="name">app-details</property>
-          </packing>
-        </child>
       </object>
       <packing>
         <property name="expand">True</property>
