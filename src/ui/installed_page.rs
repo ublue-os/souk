@@ -38,6 +38,7 @@ impl InstalledPage {
 
         let packages = self.flatpak_backend.clone().get_installed_packages();
         for package in packages{
+            debug!("Installed package: {:?}", &package);
             let tile = AppTile::new(self.sender.clone(), package);
             installed_flowbox.add(&tile.widget);
         }

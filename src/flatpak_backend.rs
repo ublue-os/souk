@@ -117,9 +117,7 @@ impl FlatpakBackend {
     }
 
     pub fn install_package(self: Rc<Self>, package: Package) {
-        let transaction = flatpak::Transaction::new_for_installation(&self.user_installation, Some(&gio::Cancellable::new())).unwrap();
-        transaction.add_install(&package.get_origin(), &package.get_full_ref_name(), &[]).unwrap();
-        transaction.run(Some(&gio::Cancellable::new())).unwrap();
+
     }
 
     pub fn update_package(self: Rc<Self>, package: Package) {}

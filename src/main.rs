@@ -15,6 +15,7 @@ mod app;
 mod config;
 mod error;
 mod ui;
+mod utils;
 
 use crate::app::FfApplication;
 

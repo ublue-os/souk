@@ -19,8 +19,6 @@ impl AppTile {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_tile.ui");
         get_widget!(builder, gtk::Button, app_tile);
 
-        warn!("{:#?}", &package.component);
-
         let app_tile = Self {
             widget: app_tile,
             package,
