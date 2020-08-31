@@ -1,4 +1,4 @@
-use appstream::types::{Image, Screenshot};
+use appstream::types::Screenshot;
 use futures_util::future::FutureExt;
 use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;

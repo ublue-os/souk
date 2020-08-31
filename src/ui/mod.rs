@@ -1,5 +1,5 @@
-mod utils;
 pub mod page;
+mod utils;
 
 mod app_buttons_box;
 pub use app_buttons_box::AppButtonsBox;

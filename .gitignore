@@ -27,3 +27,4 @@ tags.*
 **/#*#
 **/tags.*
 config.rs
+packages.db

@@ -41,7 +41,8 @@
             "CARGO_HOME" : "/run/build/flatpak-frontend/cargo",
             "RUST_BACKTRACE" : "1",
             "RUST_LOG" : "flatpak_frontend=debug",
-            "MOUNT_FUSE_PATH" : "../tmp/"
+            "MOUNT_FUSE_PATH" : "../tmp/",
+            "G_MESSAGES_DEBUG" : "none"
         }
     },
     "cleanup": [

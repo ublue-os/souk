@@ -1,7 +1,7 @@
 use gtk::prelude::*;
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
@@ -42,10 +42,10 @@ impl AppButtonsBox {
     pub fn set_package(&mut self, package: Package) {
         get_widget!(self.builder, gtk::Stack, button_stack);
 
-        match self.flatpak_backend.clone().is_package_installed(&package){
+        match self.flatpak_backend.clone().is_package_installed(&package) {
             true => {
                 button_stack.set_visible_child_name("installed");
-            },
+            }
             false => {
                 button_stack.set_visible_child_name("install");
             }

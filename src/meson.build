@@ -32,6 +32,13 @@ sources = files(
   'backend/package.rs',
   'backend/utils.rs',
 
+  'database/connection.rs',
+  'database/models.rs',
+  'database/mod.rs',
+  'database/package_database.rs',
+  'database/queries.rs',
+  'database/schema.rs',
+
   'ui/page/explore_page.rs',
   'ui/page/installed_page.rs',
   'ui/page/mod.rs',
@@ -49,6 +56,7 @@ sources = files(
   'config.rs',
   'error.rs',
   'main.rs',
+  'path.rs',
 )
 
 cargo_script = find_program(join_paths(meson.source_root(), 'build-aux/cargo.sh'))

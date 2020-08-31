@@ -2,8 +2,8 @@ use glib::Sender;
 use gtk::prelude::*;
 
 use crate::app::Action;
-use crate::ui::utils;
 use crate::backend::Package;
+use crate::ui::utils;
 
 pub struct AppTile {
     pub widget: gtk::Button,

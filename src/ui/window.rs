@@ -173,7 +173,7 @@ impl FfApplicationWindow {
         // remove details page when necessary
         if is_details_page {
             // we need a small timeout here, otherwise the animation wouldn't be visible
-            glib::timeout_add_local(200, move||{
+            glib::timeout_add_local(200, move || {
                 window_deck.remove(&widget);
                 glib::Continue(false)
             });
@@ -183,7 +183,7 @@ impl FfApplicationWindow {
         self.sync_ui_state();
     }
 
-    pub fn add_package_details_page (&self, page: PackageDetailsPage){
+    pub fn add_package_details_page(&self, page: PackageDetailsPage) {
         let self_ = FfApplicationWindowPrivate::from_instance(self);
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
         window_deck.add(&page.widget);

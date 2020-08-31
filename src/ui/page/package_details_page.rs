@@ -7,7 +7,7 @@ use std::rc::Rc;
 use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
-use crate::ui::{utils, AppButtonsBox, ProjectUrlsBox, ReleasesBox, ScreenshotsBox, AppTile};
+use crate::ui::{utils, AppButtonsBox, AppTile, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
@@ -55,7 +55,7 @@ impl PackageDetailsPage {
         package_details_page
     }
 
-    fn add_tile(&self, app_id: String){
+    fn add_tile(&self, app_id: String) {
         get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
         let package = self.flatpak_backend.clone().get_package("app".to_string(), app_id, "x86_64".to_string(), "stable".to_string()).unwrap();
         let tile = AppTile::new(self.sender.clone(), package);
@@ -77,9 +77,7 @@ impl PackageDetailsPage {
         project_urls_box.add(&self.project_urls_box.borrow().widget);
     }
 
-    fn setup_signals(&self) {
-
-    }
+    fn setup_signals(&self) {}
 
     fn display_values(&self) {
         let c = self.package.component.clone();

@@ -1,5 +1,5 @@
-use appstream::types::{License, TranslatableString};
 use appstream::enums::Icon;
+use appstream::types::{License, TranslatableString};
 use chrono::{DateTime, Utc};
 use flatpak::prelude::*;
 use gio::prelude::*;
@@ -42,7 +42,7 @@ pub fn set_icon(remote: &flatpak::Remote, image: &gtk::Image, icon: &Icon, size:
     path.push(format!("icons/{}x{}/", size, size));
 
     match icon {
-        Icon::Cached {path: name, width: _, height: _} => {
+        Icon::Cached { path: name, width: _, height: _ } => {
             path.push(name);
             image.set_from_file(&path);
         }

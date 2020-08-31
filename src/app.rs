@@ -11,9 +11,9 @@ use std::cell::RefCell;
 use std::env;
 use std::rc::Rc;
 
-use crate::config;
-use crate::backend::Package;
 use crate::backend::FlatpakBackend;
+use crate::backend::Package;
+use crate::config;
 use crate::ui::page::{ExplorePage, InstalledPage, PackageDetailsPage};
 use crate::ui::{FfApplicationWindow, View};
 

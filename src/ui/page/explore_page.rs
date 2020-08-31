@@ -27,7 +27,7 @@ impl ExplorePage {
             sender,
         });
 
-        explore_page.clone().setup_widgets();
+        //explore_page.clone().setup_widgets();
         explore_page.clone().setup_signals();
         explore_page
     }
@@ -40,7 +40,7 @@ impl ExplorePage {
         self.clone().add_tile("org.gnome.design.Contrast".to_string());
     }
 
-    fn add_tile(self: Rc<Self>, app_id: String){
+    fn add_tile(self: Rc<Self>, app_id: String) {
         get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
         let package = self.flatpak_backend.clone().get_package("app".to_string(), app_id, "x86_64".to_string(), "stable".to_string()).unwrap();
         let tile = AppTile::new(self.sender.clone(), package);

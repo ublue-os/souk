@@ -1,3 +1,4 @@
+use appstream::types::Release;
 use appstream::Component;
 use flatpak::{Remote, RemoteExt};
 
@@ -17,12 +18,12 @@ pub struct Package {
     pub component: Component,
 }
 
-impl Package{
+impl Package {
     pub fn new(component: Component, flatpak_remote: Remote) -> Self {
         let flatpak_ref = utils::get_flatpak_ref(&component);
         let values: Vec<&str> = flatpak_ref.split("/").collect();
 
-        let is_app = match values[0]{
+        let is_app = match values[0] {
             "app" => true,
             "runtime" => false,
             _ => panic!("Invalid flatpak package type"),
@@ -42,23 +43,34 @@ impl Package{
         }
     }
 
-    pub fn get_ref_name (&self) -> String {
-        let flatpak_type = if self.is_app {
-            "app".to_string()
-        }else{
-            "runtime".to_string()
-        };
+    pub fn get_ref_name(&self) -> String {
+        let flatpak_type = if self.is_app { "app".to_string() } else { "runtime".to_string() };
 
         format!("{}/{}/{}/{}", &flatpak_type, &self.app_id, &self.arch, &self.branch)
+    }
+
+    pub fn get_newest_release(&self) -> Option<Release> {
+        let mut newest = None;
+        let mut newest_date = None;
+
+        for release in &self.component.releases {
+            if newest.is_none() {
+                newest = Some(release.clone());
+                newest_date = Some(release.date.clone());
+            } else {
+                if release.date > *newest_date.as_ref().unwrap() {
+                    newest = Some(release.clone());
+                    newest_date = Some(release.date.clone());
+                }
+            }
+        }
+
+        newest
     }
 }
 
 impl fmt::Debug for Package {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Package")
-         .field("ref", &self.get_ref_name())
-         .field("remote", &self.remote)
-         .finish()
+        f.debug_struct("Package").field("ref", &self.get_ref_name()).field("remote", &self.remote).finish()
     }
 }
-
