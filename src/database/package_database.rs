@@ -100,8 +100,8 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
                 for component in collection.components {
                     let bundle = &component.bundles[0];
                     match bundle {
-                        Bundle::Flatpak { runtime: _, sdk: _, id: _ } => {
-                            let package = Package::new(component.clone(), remote.clone());
+                        Bundle::Flatpak { runtime: _, sdk: _, reference: _ } => {
+                            let package = Package::new(component.clone(), remote.clone().get_name().unwrap().to_string());
                             let db_package = DbPackage::from_package(&package);
                             match queries::insert_db_package(db_package) {
                                 Ok(_) => (),
@@ -112,7 +112,7 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
                     }
                 }
             }
-            Err(_) => warn!("No appstream data available for remote: {:?}", &remote.get_name().unwrap().to_string()),
+            Err(err) => warn!("Unable to parse appstream for remote {:?}: {}", &remote.get_name().unwrap().to_string(), err.to_string()),
         }
     }
 

@@ -6,6 +6,7 @@ use std::rc::Rc;
 use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::ui::AppTile;
+use crate::database::queries;
 
 pub struct ExplorePage {
     pub widget: gtk::Box,
@@ -27,25 +28,22 @@ impl ExplorePage {
             sender,
         });
 
-        //explore_page.clone().setup_widgets();
+        explore_page.clone().setup_widgets();
         explore_page.clone().setup_signals();
         explore_page
     }
 
     fn setup_widgets(self: Rc<Self>) {
-        self.clone().add_tile("de.haeckerfelix.Shortwave".to_string());
-        self.clone().add_tile("de.haeckerfelix.Fragments".to_string());
-        self.clone().add_tile("org.gnome.Podcasts".to_string());
-        self.clone().add_tile("org.gnome.design.IconLibrary".to_string());
-        self.clone().add_tile("org.gnome.design.Contrast".to_string());
+        self.clone().add_tile("de.haeckerfelix.Shortwave.Devel".to_string());
     }
 
     fn add_tile(self: Rc<Self>, app_id: String) {
-        get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
-        let package = self.flatpak_backend.clone().get_package("app".to_string(), app_id, "x86_64".to_string(), "stable".to_string()).unwrap();
+        dbg!(&app_id);
+        get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
+        let package = queries::get_package(app_id, "master".to_string(), "rust_nightly".to_string()).unwrap().unwrap();
         let tile = AppTile::new(self.sender.clone(), package);
-        editors_picks_flowbox.add(&tile.widget);
-        editors_picks_flowbox.show_all();
+        recently_updated_flowbox.add(&tile.widget);
+        recently_updated_flowbox.show_all();
     }
 
     fn setup_signals(self: Rc<Self>) {}

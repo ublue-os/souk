@@ -19,7 +19,7 @@ pub struct Package {
 }
 
 impl Package {
-    pub fn new(component: Component, flatpak_remote: Remote) -> Self {
+    pub fn new(component: Component, remote: String) -> Self {
         let flatpak_ref = utils::get_flatpak_ref(&component);
         let values: Vec<&str> = flatpak_ref.split("/").collect();
 
@@ -31,7 +31,6 @@ impl Package {
         let app_id = values[1].to_string();
         let arch = values[2].to_string();
         let branch = values[3].to_string();
-        let remote = flatpak_remote.get_name().unwrap().to_string();
 
         Self {
             is_app,

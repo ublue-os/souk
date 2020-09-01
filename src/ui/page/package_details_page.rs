@@ -8,6 +8,7 @@ use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
 use crate::ui::{utils, AppButtonsBox, AppTile, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
+use crate::database::queries;
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
@@ -57,7 +58,7 @@ impl PackageDetailsPage {
 
     fn add_tile(&self, app_id: String) {
         get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
-        let package = self.flatpak_backend.clone().get_package("app".to_string(), app_id, "x86_64".to_string(), "stable".to_string()).unwrap();
+        let package = queries::get_package(app_id, "stable".to_string(), "flathub".to_string()).unwrap().unwrap();
         let tile = AppTile::new(self.sender.clone(), package);
         other_apps_flowbox.add(&tile.widget);
         other_apps_flowbox.show_all();

@@ -15,7 +15,7 @@ glib = { version = "0.10", features = ["v2_50"] }
 gio = { version = "0.9", features = ["v2_46"] }
 gettext-rs= { version = "0.4", features = ["gettext-system"] }
 flatpak = { git="https://gitlab.gnome.org/haecker-felix/flatpak-rs" }
-appstream = { git = "https://github.com/bilelmoussaoui/appstream/" }
+appstream = { git = "https://github.com/bilelmoussaoui/appstream/", branch="wip" }
 url = "2.1.1"
 async-std = "1.4.0"
 isahc = {version = "0.9", features = ["json"]}

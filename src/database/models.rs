@@ -1,4 +1,5 @@
 use appstream::types::TranslatableString;
+use appstream::Component;
 use chrono::NaiveDate;
 
 use super::schema::*;
@@ -67,6 +68,11 @@ impl DbPackage {
             Some(value) => value.get_default().unwrap_or(&"".to_string()).to_string(),
             None => return "".to_string(),
         }
+    }
+
+    pub fn to_package(&self) -> Package{
+        let component: Component = serde_json::from_str(&self.component).expect("Unable to parse component JSON.");
+        Package::new(component, self.remote.clone())
     }
 }
 

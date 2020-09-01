@@ -36,7 +36,7 @@
                     <property name="margin_bottom">22</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkBox" id="editors_picks_box">
+                      <object class="GtkBox" id="recently_updated_box">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="orientation">vertical</property>
@@ -44,7 +44,7 @@
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Editor's Picks</property>
+                            <property name="label" translatable="yes">Recently updated</property>
                             <property name="xalign">0</property>
                             <style>
                               <class name="title-2"/>
@@ -57,7 +57,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkFlowBox" id="editors_picks_flowbox">
+                          <object class="GtkFlowBox" id="recently_updated_flowbox">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="homogeneous">True</property>

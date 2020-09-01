@@ -8,6 +8,7 @@ use std::rc::Rc;
 
 use crate::backend::Package;
 use crate::database::package_database;
+use crate::database::queries;
 
 pub enum BackendMessage {
     Installed,
@@ -72,24 +73,15 @@ impl FlatpakBackend {
                 _ => "unknown".to_string(),
             };
             let name = ref_.get_name().unwrap().to_string();
-            let arch = ref_.get_arch().unwrap().to_string();
             let branch = ref_.get_branch().unwrap().to_string();
 
-            match self.clone().get_package(kind, name.clone(), arch, branch) {
+            match queries::get_package(name, branch, "flathub".to_string()).unwrap() {
                 Some(package) => installed_packages.insert(0, package.clone()),
                 None => (), //warn!("Unable to get package for flatpak ref {} ({})", name, origin),
             }
         }
 
         installed_packages
-    }
-
-    pub fn get_package(self: Rc<Self>, kind: String, name: String, arch: String, branch: String) -> Option<Package> {
-        let id = format!("{}/{}/{}/{}", kind, name, arch, branch);
-        match self.packages.borrow().get(&id) {
-            Some(package) => Some(package.to_owned()),
-            None => None,
-        }
     }
 
     pub fn is_package_installed(self: Rc<Self>, package: &Package) -> bool {
@@ -107,3 +99,4 @@ impl FlatpakBackend {
 
     pub fn install_package(self: Rc<Self>, _package: Package) {}
 }
+

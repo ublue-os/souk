@@ -1,5 +1,5 @@
 mod connection;
-mod queries;
+pub mod queries;
 mod schema;
 
 pub mod package_database;
