@@ -85,7 +85,7 @@ impl PackageDetailsPage {
         //get_widget!(self.builder, gtk::Label, project_group_label);
         //get_widget!(self.builder, gtk::Label, license_label);
 
-        //utils::set_icon(remote.as_ref().unwrap(), &icon_image, &c.icons[0], 128);
+        utils::set_icon(&self.package, &icon_image, 128);
         utils::set_label_translatable_string(&title_label, Some(c.name.clone()));
         utils::set_label_translatable_string(&summary_label, c.summary.clone());
         //utils::set_label(&version_label, Some(c.releases[0].version.clone()));

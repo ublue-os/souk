@@ -7,6 +7,8 @@ use gtk::prelude::*;
 
 use std::path::PathBuf;
 
+use crate::backend::Package;
+
 pub fn set_label(label: &gtk::Label, text: Option<String>) {
     match text {
         Some(text) => label.set_text(&text),
@@ -35,11 +37,18 @@ pub fn set_date_label(label: &gtk::Label, date: Option<DateTime<Utc>>) {
     };
 }
 
-pub fn set_icon(remote: &flatpak::Remote, image: &gtk::Image, icon: &Icon, size: i32) {
-    let appstream_dir = remote.get_appstream_dir(Some("x86_64")).unwrap();
+pub fn set_icon(package: &Package, image: &gtk::Image, size: i32) {
+    // TODO: Don't hardcode system installation
     let mut path = PathBuf::new();
-    path.push(appstream_dir.get_path().unwrap().to_str().unwrap());
-    path.push(format!("icons/{}x{}/", size, size));
+    path.push(format!("/var/lib/flatpak/appstream/{}/x86_64/active/icons/{}x{}/", package.remote, size, size));
+
+    let icon = match package.clone().component.icons.pop(){
+        Some(icon) => icon,
+        None => {
+            debug!("Unable to find icon for package {}", package.app_id);
+            return;
+        }
+    };
 
     match icon {
         Icon::Cached {

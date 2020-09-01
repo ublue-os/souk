@@ -39,7 +39,7 @@ impl AppTile {
         );
 
         get_widget!(app_tile.builder, gtk::Image, icon_image);
-        //utils::set_icon(&app_tile.package.get_origin(), &icon_image, &app_tile.package.component.icons[0], 64);
+        utils::set_icon(&app_tile.package, &icon_image, 64);
 
         app_tile.setup_signals();
         app_tile
