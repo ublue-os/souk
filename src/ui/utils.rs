@@ -1,9 +1,10 @@
 use appstream::enums::Icon;
-use appstream::types::{License, TranslatableString};
+use appstream::types::{License, TranslatableString, MarkupTranslatableString};
 use chrono::{DateTime, Utc};
 use flatpak::prelude::*;
 use gio::prelude::*;
 use gtk::prelude::*;
+use html2pango::*;
 
 use std::path::PathBuf;
 
@@ -19,6 +20,18 @@ pub fn set_label(label: &gtk::Label, text: Option<String>) {
 pub fn set_label_translatable_string(label: &gtk::Label, text: Option<TranslatableString>) {
     match text {
         Some(text) => label.set_text(&text.get_default().unwrap_or(&"???".to_string())),
+        None => label.set_text("–"),
+    };
+}
+
+pub fn set_label_markup_translatable_string(label: &gtk::Label, text: Option<MarkupTranslatableString>) {
+    match text {
+        Some(t) => {
+            let text = &t.get_default().unwrap_or(&"???".to_string()).to_string();
+            let markup = markup(&text);
+            label.set_use_markup(true);
+            label.set_markup(&markup);
+        },
         None => label.set_text("–"),
     };
 }

@@ -81,9 +81,7 @@
                     <property name="margin_end">12</property>
                     <property name="margin_top">12</property>
                     <property name="margin_bottom">12</property>
-                    <property name="label" translatable="yes">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. 
-
-At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,</property>
+                    <property name="label" translatable="yes">description</property>
                     <property name="wrap">True</property>
                     <property name="xalign">0</property>
                   </object>
