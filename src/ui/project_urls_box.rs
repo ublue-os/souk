@@ -9,10 +9,14 @@ pub struct ProjectUrlsBox {
 
 impl ProjectUrlsBox {
     pub fn new() -> Self {
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/project_urls_box.ui");
+        let builder =
+            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/project_urls_box.ui");
         get_widget!(builder, gtk::Box, project_urls_box);
 
-        let project_urls_box = Self { widget: project_urls_box, builder };
+        let project_urls_box = Self {
+            widget: project_urls_box,
+            builder,
+        };
 
         project_urls_box
     }

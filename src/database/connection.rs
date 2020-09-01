@@ -35,7 +35,10 @@ pub fn get_connection() -> Pool {
 // If there's no database, it get's created automatically.
 fn init_connection_pool(db_path: &str) -> Pool {
     let manager = ConnectionManager::<SqliteConnection>::new(db_path);
-    let pool = r2d2::Pool::builder().max_size(1).build(manager).expect("Failed to create pool.");
+    let pool = r2d2::Pool::builder()
+        .max_size(1)
+        .build(manager)
+        .expect("Failed to create pool.");
 
     let db = pool.get().expect("Failed to initialize pool.");
     run_migrations(&*db).expect("Failed to run migrations during init.");
@@ -44,7 +47,9 @@ fn init_connection_pool(db_path: &str) -> Pool {
     pool
 }
 
-fn run_migrations(connection: &SqliteConnection) -> Result<(), diesel::migration::RunMigrationsError> {
+fn run_migrations(
+    connection: &SqliteConnection,
+) -> Result<(), diesel::migration::RunMigrationsError> {
     info!("Running DB Migrations...");
     embedded_migrations::run_with_output(connection, &mut io::stdout()).map_err(From::from)
 }

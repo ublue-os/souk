@@ -7,8 +7,8 @@ use std::rc::Rc;
 use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
-use crate::ui::{utils, AppButtonsBox, AppTile, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
 use crate::database::queries;
+use crate::ui::{utils, AppButtonsBox, AppTile, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
@@ -25,8 +25,14 @@ pub struct PackageDetailsPage {
 }
 
 impl PackageDetailsPage {
-    pub fn new(package: Package, sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Self {
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/package_details_page.ui");
+    pub fn new(
+        package: Package,
+        sender: Sender<Action>,
+        flatpak_backend: Rc<FlatpakBackend>,
+    ) -> Self {
+        let builder = gtk::Builder::from_resource(
+            "/de/haeckerfelix/FlatpakFrontend/gtk/package_details_page.ui",
+        );
         get_widget!(builder, gtk::Box, package_details_page);
 
         let app_buttons_box = RefCell::new(AppButtonsBox::new(flatpak_backend.clone()));
@@ -58,7 +64,9 @@ impl PackageDetailsPage {
 
     fn add_tile(&self, app_id: String) {
         get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
-        let package = queries::get_package(app_id, "stable".to_string(), "flathub".to_string()).unwrap().unwrap();
+        let package = queries::get_package(app_id, "stable".to_string(), "flathub".to_string())
+            .unwrap()
+            .unwrap();
         let tile = AppTile::new(self.sender.clone(), package);
         other_apps_flowbox.add(&tile.widget);
         other_apps_flowbox.show_all();
@@ -99,9 +107,17 @@ impl PackageDetailsPage {
         //utils::set_label(&project_group_label, c.project_group.clone());
         //utils::set_license_label(&license_label, c.project_license.clone());
 
-        self.app_buttons_box.borrow_mut().set_package(self.package.clone());
-        self.screenshots_box.borrow_mut().set_screenshots(c.screenshots.clone());
-        self.releases_box.borrow_mut().set_releases(c.releases.clone());
-        self.project_urls_box.borrow_mut().set_project_urls(c.urls.clone());
+        self.app_buttons_box
+            .borrow_mut()
+            .set_package(self.package.clone());
+        self.screenshots_box
+            .borrow_mut()
+            .set_screenshots(c.screenshots.clone());
+        self.releases_box
+            .borrow_mut()
+            .set_releases(c.releases.clone());
+        self.project_urls_box
+            .borrow_mut()
+            .set_project_urls(c.urls.clone());
     }
 }

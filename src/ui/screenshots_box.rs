@@ -16,7 +16,8 @@ pub struct ScreenshotsBox {
 
 impl ScreenshotsBox {
     pub fn new() -> Self {
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/screenshots_box.ui");
+        let builder =
+            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/screenshots_box.ui");
         get_widget!(builder, gtk::Box, screenshots_box);
 
         let screenshots = Vec::new();
@@ -63,7 +64,12 @@ impl ScreenshotsBox {
     }
 
     async fn download_image(url: url::Url, size: i32) -> Result<Pixbuf, Error> {
-        let mut response = Request::get(url.to_string()).redirect_policy(RedirectPolicy::Follow).body(()).unwrap().send_async().await?;
+        let mut response = Request::get(url.to_string())
+            .redirect_policy(RedirectPolicy::Follow)
+            .body(())
+            .unwrap()
+            .send_async()
+            .await?;
         let mut body = response.body_mut();
         let mut bytes = vec![];
         async_std::io::copy(&mut body, &mut bytes).await.unwrap();

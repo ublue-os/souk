@@ -16,7 +16,8 @@ pub struct AppButtonsBox {
 
 impl AppButtonsBox {
     pub fn new(flatpak_backend: Rc<FlatpakBackend>) -> Self {
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_buttons_box.ui");
+        let builder =
+            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_buttons_box.ui");
         get_widget!(builder, gtk::Box, app_buttons_box);
 
         let package = Rc::new(RefCell::new(None));

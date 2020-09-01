@@ -56,7 +56,11 @@ impl DbPackage {
             summary: Self::get_string(&package.component.summary),
             categories,
             developer_name: Self::get_string(&package.component.developer_name),
-            project_group: package.component.project_group.clone().unwrap_or("".to_string()),
+            project_group: package
+                .component
+                .project_group
+                .clone()
+                .unwrap_or("".to_string()),
             release_date,
 
             component: serde_json::to_string(&package.component).unwrap(),
@@ -70,8 +74,9 @@ impl DbPackage {
         }
     }
 
-    pub fn to_package(&self) -> Package{
-        let component: Component = serde_json::from_str(&self.component).expect("Unable to parse component JSON.");
+    pub fn to_package(&self) -> Package {
+        let component: Component =
+            serde_json::from_str(&self.component).expect("Unable to parse component JSON.");
         Package::new(component, self.remote.clone())
     }
 }

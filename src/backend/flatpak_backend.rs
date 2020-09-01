@@ -26,13 +26,19 @@ pub struct FlatpakBackend {
 
 impl FlatpakBackend {
     pub fn new() -> Rc<Self> {
-        let system_installation = flatpak::Installation::new_system(Some(&gio::Cancellable::new())).unwrap();
+        let system_installation =
+            flatpak::Installation::new_system(Some(&gio::Cancellable::new())).unwrap();
 
         let mut user_path = glib::get_home_dir().unwrap();
         user_path.push(".local");
         user_path.push("share");
         user_path.push("flatpak");
-        let user_installation = flatpak::Installation::new_for_path(&gio::File::new_for_path(user_path), true, Some(&gio::Cancellable::new())).unwrap();
+        let user_installation = flatpak::Installation::new_for_path(
+            &gio::File::new_for_path(user_path),
+            true,
+            Some(&gio::Cancellable::new()),
+        )
+        .unwrap();
 
         let message_bus = RefCell::new(Bus::new(10));
 
@@ -59,8 +65,14 @@ impl FlatpakBackend {
     pub fn get_installed_packages(self: Rc<Self>) -> Vec<Package> {
         let mut installed_packages = Vec::new();
 
-        let mut system_refs = self.system_installation.list_installed_refs(Some(&gio::Cancellable::new())).unwrap();
-        let mut user_refs = self.user_installation.list_installed_refs(Some(&gio::Cancellable::new())).unwrap();
+        let mut system_refs = self
+            .system_installation
+            .list_installed_refs(Some(&gio::Cancellable::new()))
+            .unwrap();
+        let mut user_refs = self
+            .user_installation
+            .list_installed_refs(Some(&gio::Cancellable::new()))
+            .unwrap();
 
         let mut installed_refs = Vec::new();
         installed_refs.append(&mut system_refs);
@@ -99,4 +111,3 @@ impl FlatpakBackend {
 
     pub fn install_package(self: Rc<Self>, _package: Package) {}
 }
-

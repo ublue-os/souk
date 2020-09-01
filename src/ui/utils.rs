@@ -42,7 +42,11 @@ pub fn set_icon(remote: &flatpak::Remote, image: &gtk::Image, icon: &Icon, size:
     path.push(format!("icons/{}x{}/", size, size));
 
     match icon {
-        Icon::Cached { path: name, width: _, height: _ } => {
+        Icon::Cached {
+            path: name,
+            width: _,
+            height: _,
+        } => {
             path.push(name);
             image.set_from_file(&path);
         }

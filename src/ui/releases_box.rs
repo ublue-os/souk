@@ -12,7 +12,8 @@ pub struct ReleasesBox {
 
 impl ReleasesBox {
     pub fn new() -> Self {
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/releases_box.ui");
+        let builder =
+            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/releases_box.ui");
         get_widget!(builder, gtk::Box, releases_box);
 
         let releases_box = Self {

@@ -88,7 +88,9 @@ impl ApplicationImpl for FfApplicationPrivate {
         }
 
         // No window available -> we have to create one
-        let app = ObjectSubclass::get_instance(self).downcast::<FfApplication>().unwrap();
+        let app = ObjectSubclass::get_instance(self)
+            .downcast::<FfApplication>()
+            .unwrap();
         let window = app.create_window();
         window.present();
         self.window.replace(Some(window));
@@ -116,14 +118,25 @@ glib_wrapper! {
 // FfApplication implementation itself
 impl FfApplication {
     pub fn run() {
-        info!("{} ({}) ({})", config::NAME, config::APP_ID, config::VCS_TAG);
+        info!(
+            "{} ({}) ({})",
+            config::NAME,
+            config::APP_ID,
+            config::VCS_TAG
+        );
         info!("Version: {} ({})", config::VERSION, config::PROFILE);
 
         // Create new GObject and downcast it into FfApplication
-        let app = glib::Object::new(FfApplication::static_type(), &[("application-id", &Some(config::APP_ID)), ("flags", &ApplicationFlags::empty())])
-            .unwrap()
-            .downcast::<FfApplication>()
-            .unwrap();
+        let app = glib::Object::new(
+            FfApplication::static_type(),
+            &[
+                ("application-id", &Some(config::APP_ID)),
+                ("flags", &ApplicationFlags::empty()),
+            ],
+        )
+        .unwrap()
+        .downcast::<FfApplication>()
+        .unwrap();
 
         // Start running gtk::Application
         let args: Vec<String> = env::args().collect();
@@ -151,8 +164,17 @@ impl FfApplication {
         match action {
             Action::ViewSet(view) => self_.window.borrow().as_ref().unwrap().set_view(view),
             Action::ViewShowAppDetails(package) => {
-                let page = PackageDetailsPage::new(package, self_.sender.clone(), self_.flatpak_backend.clone());
-                self_.window.borrow().as_ref().unwrap().add_package_details_page(page);
+                let page = PackageDetailsPage::new(
+                    package,
+                    self_.sender.clone(),
+                    self_.flatpak_backend.clone(),
+                );
+                self_
+                    .window
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .add_package_details_page(page);
             }
             Action::ViewGoBack => self_.window.borrow().as_ref().unwrap().go_back(),
         }

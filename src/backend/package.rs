@@ -43,9 +43,16 @@ impl Package {
     }
 
     pub fn get_ref_name(&self) -> String {
-        let flatpak_type = if self.is_app { "app".to_string() } else { "runtime".to_string() };
+        let flatpak_type = if self.is_app {
+            "app".to_string()
+        } else {
+            "runtime".to_string()
+        };
 
-        format!("{}/{}/{}/{}", &flatpak_type, &self.app_id, &self.arch, &self.branch)
+        format!(
+            "{}/{}/{}/{}",
+            &flatpak_type, &self.app_id, &self.arch, &self.branch
+        )
     }
 
     pub fn get_newest_release(&self) -> Option<Release> {
@@ -70,6 +77,9 @@ impl Package {
 
 impl fmt::Debug for Package {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Package").field("ref", &self.get_ref_name()).field("remote", &self.remote).finish()
+        f.debug_struct("Package")
+            .field("ref", &self.get_ref_name())
+            .field("remote", &self.remote)
+            .finish()
     }
 }

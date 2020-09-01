@@ -47,7 +47,11 @@ pub fn needs_rebuilt() -> bool {
 
     // Check database version
     if db_info.db_version != DB_VERSION.to_string() {
-        debug!("Database version mismatch: {} != {}", db_info.db_version, DB_VERSION.to_string());
+        debug!(
+            "Database version mismatch: {} != {}",
+            db_info.db_version,
+            DB_VERSION.to_string()
+        );
         return true;
     }
 
@@ -71,8 +75,14 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
     queries::reset().unwrap();
 
     // Get all remotes (user/system)
-    let mut system_remotes = flatpak_backend.system_installation.list_remotes(Some(&gio::Cancellable::new())).unwrap();
-    let mut user_remotes = flatpak_backend.user_installation.list_remotes(Some(&gio::Cancellable::new())).unwrap();
+    let mut system_remotes = flatpak_backend
+        .system_installation
+        .list_remotes(Some(&gio::Cancellable::new()))
+        .unwrap();
+    let mut user_remotes = flatpak_backend
+        .user_installation
+        .list_remotes(Some(&gio::Cancellable::new()))
+        .unwrap();
 
     // TODO: Avoid parsing the same remote 2 times, when it
     // exists in `system` and `user` flatpak installation
@@ -100,26 +110,43 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
                 for component in collection.components {
                     let bundle = &component.bundles[0];
                     match bundle {
-                        Bundle::Flatpak { runtime: _, sdk: _, reference: _ } => {
-                            let package = Package::new(component.clone(), remote.clone().get_name().unwrap().to_string());
+                        Bundle::Flatpak {
+                            runtime: _,
+                            sdk: _,
+                            reference: _,
+                        } => {
+                            let package = Package::new(
+                                component.clone(),
+                                remote.clone().get_name().unwrap().to_string(),
+                            );
                             let db_package = DbPackage::from_package(&package);
                             match queries::insert_db_package(db_package) {
                                 Ok(_) => (),
-                                Err(err) => debug!("Unable to insert db package: {}", err.to_string()),
+                                Err(err) => {
+                                    debug!("Unable to insert db package: {}", err.to_string())
+                                }
                             };
                         }
                         _ => debug!("Ignore non Flatpak component: {}", component.id.0),
                     }
                 }
             }
-            Err(err) => warn!("Unable to parse appstream for remote {:?}: {}", &remote.get_name().unwrap().to_string(), err.to_string()),
+            Err(err) => warn!(
+                "Unable to parse appstream for remote {:?}: {}",
+                &remote.get_name().unwrap().to_string(),
+                err.to_string()
+            ),
         }
     }
 
     // Set database info
     let mut db_info = DbInfo::default();
     db_info.db_version = DB_VERSION.to_string();
-    db_info.db_timestamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs().to_string();
+    db_info.db_timestamp = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        .to_string();
     queries::insert_db_info(db_info).unwrap();
 
     debug!("Finished rebuilding database.")

@@ -5,8 +5,8 @@ use std::rc::Rc;
 
 use crate::app::Action;
 use crate::backend::FlatpakBackend;
-use crate::ui::AppTile;
 use crate::database::queries;
+use crate::ui::AppTile;
 
 pub struct ExplorePage {
     pub widget: gtk::Box,
@@ -18,7 +18,8 @@ pub struct ExplorePage {
 
 impl ExplorePage {
     pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/explore_page.ui");
+        let builder =
+            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/explore_page.ui");
         get_widget!(builder, gtk::Box, explore_page);
 
         let explore_page = Rc::new(Self {
@@ -34,13 +35,17 @@ impl ExplorePage {
     }
 
     fn setup_widgets(self: Rc<Self>) {
-        self.clone().add_tile("de.haeckerfelix.Shortwave.Devel".to_string());
+        self.clone()
+            .add_tile("de.haeckerfelix.Shortwave.Devel".to_string());
     }
 
     fn add_tile(self: Rc<Self>, app_id: String) {
         dbg!(&app_id);
         get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
-        let package = queries::get_package(app_id, "master".to_string(), "rust_nightly".to_string()).unwrap().unwrap();
+        let package =
+            queries::get_package(app_id, "master".to_string(), "rust_nightly".to_string())
+                .unwrap()
+                .unwrap();
         let tile = AppTile::new(self.sender.clone(), package);
         recently_updated_flowbox.add(&tile.widget);
         recently_updated_flowbox.show_all();
