@@ -86,8 +86,9 @@ impl FlatpakBackend {
             };
             let name = ref_.get_name().unwrap().to_string();
             let branch = ref_.get_branch().unwrap().to_string();
+            let origin = ref_.get_origin().unwrap().to_string();
 
-            match queries::get_package(name, branch, "flathub".to_string()).unwrap() {
+            match queries::get_package(name, branch, origin).unwrap() {
                 Some(package) => installed_packages.insert(0, package.clone()),
                 None => (), //warn!("Unable to get package for flatpak ref {} ({})", name, origin),
             }

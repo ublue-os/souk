@@ -113,14 +113,6 @@ impl FfApplicationWindow {
     fn setup_signals(&self, sender: Sender<Action>) {
         let self_ = FfApplicationWindowPrivate::from_instance(self);
 
-        // deck
-        get_widget!(self_.window_builder, libhandy::Deck, window_deck);
-        window_deck.connect_property_visible_child_notify(
-            clone!(@strong self as this => move |_| {
-                this.sync_ui_state();
-            }),
-        );
-
         // main stack
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
         main_stack.connect_property_visible_child_notify(clone!(@strong self as this => move |_| {
@@ -169,6 +161,8 @@ impl FfApplicationWindow {
     }
 
     pub fn go_back(&self) {
+        // TODO: This is not a implementation. This is a hack.
+
         debug!("Go back to previous view");
         let self_ = FfApplicationWindowPrivate::from_instance(self);
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);

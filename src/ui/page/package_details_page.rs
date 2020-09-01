@@ -52,24 +52,10 @@ impl PackageDetailsPage {
             sender,
         };
 
-        // TODO: Make this dynamic
-        package_details_page.add_tile("de.haeckerfelix.Fragments".to_string());
-        package_details_page.add_tile("de.haeckerfelix.Remotely".to_string());
-
         package_details_page.setup_widgets();
         package_details_page.setup_signals();
         package_details_page.display_values();
         package_details_page
-    }
-
-    fn add_tile(&self, app_id: String) {
-        get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
-        let package = queries::get_package(app_id, "stable".to_string(), "flathub".to_string())
-            .unwrap()
-            .unwrap();
-        let tile = AppTile::new(self.sender.clone(), package);
-        other_apps_flowbox.add(&tile.widget);
-        other_apps_flowbox.show_all();
     }
 
     fn setup_widgets(&self) {
@@ -110,14 +96,36 @@ impl PackageDetailsPage {
         self.app_buttons_box
             .borrow_mut()
             .set_package(self.package.clone());
+
         self.screenshots_box
             .borrow_mut()
             .set_screenshots(c.screenshots.clone());
+
         self.releases_box
             .borrow_mut()
             .set_releases(c.releases.clone());
+
         self.project_urls_box
             .borrow_mut()
             .set_project_urls(c.urls.clone());
+
+        match c.developer_name {
+            Some(n) => {
+                get_widget!(self.builder, gtk::Box, other_apps);
+                get_widget!(self.builder, gtk::Label, other_apps_label);
+                get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
+
+                let name = n.get_default().unwrap().to_string();
+                other_apps_label.set_text(&format!("Other Apps by {}", name));
+                other_apps.set_visible(true);
+
+                for package in queries::get_packages_by_developer_name(name, 10).unwrap() {
+                    let tile = AppTile::new(self.sender.clone(), package);
+                    other_apps_flowbox.add(&tile.widget);
+                    other_apps_flowbox.show_all();
+                }
+            }
+            None => (),
+        }
     }
 }

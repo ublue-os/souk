@@ -35,20 +35,12 @@ impl ExplorePage {
     }
 
     fn setup_widgets(self: Rc<Self>) {
-        self.clone()
-            .add_tile("de.haeckerfelix.Shortwave.Devel".to_string());
-    }
-
-    fn add_tile(self: Rc<Self>, app_id: String) {
-        dbg!(&app_id);
         get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
-        let package =
-            queries::get_package(app_id, "master".to_string(), "rust_nightly".to_string())
-                .unwrap()
-                .unwrap();
-        let tile = AppTile::new(self.sender.clone(), package);
-        recently_updated_flowbox.add(&tile.widget);
-        recently_updated_flowbox.show_all();
+        for package in queries::get_recently_updated_packages(10).unwrap() {
+            let tile = AppTile::new(self.sender.clone(), package);
+            recently_updated_flowbox.add(&tile.widget);
+            recently_updated_flowbox.show_all();
+        }
     }
 
     fn setup_signals(self: Rc<Self>) {}

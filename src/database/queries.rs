@@ -26,6 +26,45 @@ pub fn get_package(
     Ok(packages.pop().map(|p| p.to_package()))
 }
 
+pub fn get_recently_updated_packages(limit: i64) -> Result<Vec<Package>, diesel::result::Error> {
+    use crate::database::schema::appstream_packages::dsl::*;
+    let con = connect_db!();
+
+    let db_packages = appstream_packages
+        .order(release_date.desc())
+        .limit(limit)
+        .load::<DbPackage>(&con)?;
+
+    let mut packages = Vec::new();
+    for db_package in db_packages {
+        let package = db_package.to_package();
+        packages.push(package);
+    }
+
+    Ok(packages)
+}
+
+pub fn get_packages_by_developer_name(
+    pkg_developer_name: String,
+    limit: i64,
+) -> Result<Vec<Package>, diesel::result::Error> {
+    use crate::database::schema::appstream_packages::dsl::*;
+    let con = connect_db!();
+
+    let db_packages = appstream_packages
+        .filter(developer_name.eq(pkg_developer_name))
+        .limit(limit)
+        .load::<DbPackage>(&con)?;
+
+    let mut packages = Vec::new();
+    for db_package in db_packages {
+        let package = db_package.to_package();
+        packages.push(package);
+    }
+
+    Ok(packages)
+}
+
 pub fn get_db_info() -> Result<Vec<DbInfo>, diesel::result::Error> {
     use crate::database::schema::info::dsl::*;
     let con = connect_db!();
