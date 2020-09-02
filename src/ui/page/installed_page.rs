@@ -4,7 +4,7 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::FlatpakBackend;
+use crate::backend::{BackendMessage, TransactionState, PackageTransaction, FlatpakBackend};
 use crate::ui::AppTile;
 
 pub struct InstalledPage {
@@ -46,5 +46,17 @@ impl InstalledPage {
         installed_flowbox.show_all();
     }
 
-    fn setup_signals(self: Rc<Self>) {}
+    fn setup_signals(self: Rc<Self>) {
+        spawn!(self.message_loop());
+    }
+
+    async fn message_loop(self: Rc<Self>){
+        let mut channel = self.flatpak_backend.clone().get_channel();
+        get_widget!(self.builder, gtk::Label, transaction_label);
+
+        while let Some(message) = channel.recv().await {
+            debug!("message: {:?}", &message);
+            transaction_label.set_text(&format!("{:#?}", &message));
+        }
+    }
 }

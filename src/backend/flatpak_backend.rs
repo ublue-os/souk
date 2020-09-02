@@ -1,25 +1,21 @@
-use bus::{Bus, BusReader};
 use flatpak::prelude::*;
 use flatpak::{Installation, InstallationExt, RefKind};
+use broadcaster::BroadcastChannel;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::backend::Package;
+use crate::backend::{PackageTransaction, PackageAction, BackendMessage, Package};
 use crate::database::package_database;
 use crate::database::queries;
 
-pub enum BackendMessage {
-    Installed,
-    Removed,
-}
 
 pub struct FlatpakBackend {
     pub system_installation: Installation,
     pub user_installation: Installation,
 
-    message_bus: RefCell<Bus<BackendMessage>>,
+    broadcast: BroadcastChannel<BackendMessage>,
 
     packages: RefCell<HashMap<String, Package>>,
 }
@@ -40,14 +36,14 @@ impl FlatpakBackend {
         )
         .unwrap();
 
-        let message_bus = RefCell::new(Bus::new(10));
+        let broadcast = BroadcastChannel::new();
 
         let packages = RefCell::new(HashMap::new());
 
         let backend = Rc::new(Self {
             system_installation,
             user_installation,
-            message_bus,
+            broadcast,
             packages,
         });
 
@@ -58,8 +54,12 @@ impl FlatpakBackend {
 
     /// Returns receiver which can be used to subscribe to backend messages.
     /// Receives message when something happens on Flatpak side (e.g. install/uninstall/update/...)
-    pub fn get_message_receiver(self: Rc<Self>) -> BusReader<BackendMessage> {
-        self.message_bus.borrow_mut().add_rx()
+    //pub fn get_message_receiver(self: Rc<Self>) -> BusReader<BackendMessage> {
+        //self.message_bus.borrow_mut().add_rx()
+    //}
+
+    pub fn get_channel(self: Rc<Self>) -> BroadcastChannel<BackendMessage>{
+        self.broadcast.clone()
     }
 
     pub fn get_installed_packages(self: Rc<Self>) -> Vec<Package> {
@@ -110,5 +110,15 @@ impl FlatpakBackend {
         result
     }
 
-    pub fn install_package(self: Rc<Self>, _package: Package) {}
+    pub fn install_package(self: Rc<Self>, package: Package) {
+        let transaction = PackageTransaction::new(package, PackageAction::Install);
+        self.clone().send_message(BackendMessage::NewPackageTransaction(transaction));
+    }
+
+    fn send_message(self: Rc<Self>, message: BackendMessage) {
+        let future = async move {
+            self.broadcast.send(&message).await.unwrap();
+        };
+        spawn!(future);
+    }
 }
