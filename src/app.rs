@@ -138,6 +138,8 @@ impl FfApplication {
         .downcast::<FfApplication>()
         .unwrap();
 
+        app.set_resource_base_path(Some("/de/haeckerfelix/FlatpakFrontend"));
+
         // Start running gtk::Application
         let args: Vec<String> = env::args().collect();
         ApplicationExtManual::run(&app, &args);
