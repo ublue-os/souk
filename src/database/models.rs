@@ -1,5 +1,5 @@
-use appstream::types::TranslatableString;
 use appstream::Component;
+use appstream::TranslatableString;
 use chrono::NaiveDate;
 
 use super::schema::*;

@@ -89,7 +89,10 @@ impl PackageDetailsPage {
         utils::set_icon(&self.package, &icon_image, 128);
         utils::set_label_translatable_string(&title_label, Some(c.name.clone()));
         utils::set_label_translatable_string(&summary_label, c.summary.clone());
-        utils::set_label_markup_translatable_string(&description_label, self.package.component.description.clone());
+        utils::set_label_markup_translatable_string(
+            &description_label,
+            self.package.component.description.clone(),
+        );
         //utils::set_label(&version_label, Some(c.releases[0].version.clone()));
         utils::set_label_translatable_string(&developer_label, c.developer_name.clone());
         //utils::set_label(&project_group_label, c.project_group.clone());

@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct TransactionState{
-    message: String,
-    percentage: f32,
-    is_finished: bool,
+pub struct TransactionState {
+    pub message: String,
+    pub percentage: f32,
+    pub is_finished: bool,
 }

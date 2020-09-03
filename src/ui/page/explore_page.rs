@@ -35,11 +35,15 @@ impl ExplorePage {
     }
 
     fn setup_widgets(self: Rc<Self>) {
-        self.clone().add_tile("de.haeckerfelix.Shortwave".to_string());
-        self.clone().add_tile("de.haeckerfelix.Fragments".to_string());
+        self.clone()
+            .add_tile("de.haeckerfelix.Shortwave".to_string());
+        self.clone()
+            .add_tile("de.haeckerfelix.Fragments".to_string());
         self.clone().add_tile("org.gnome.Podcasts".to_string());
-        self.clone().add_tile("org.gnome.design.IconLibrary".to_string());
-        self.clone().add_tile("org.gnome.design.Contrast".to_string());
+        self.clone()
+            .add_tile("org.gnome.design.IconLibrary".to_string());
+        self.clone()
+            .add_tile("org.gnome.design.Contrast".to_string());
 
         get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
         for package in queries::get_recently_updated_packages(10).unwrap() {
@@ -51,13 +55,13 @@ impl ExplorePage {
 
     fn add_tile(self: Rc<Self>, app_id: String) {
         get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
-        let package = queries::get_package(app_id, "stable".to_string(), "flathub".to_string()).unwrap().unwrap();
+        let package = queries::get_package(app_id, "stable".to_string(), "flathub".to_string())
+            .unwrap()
+            .unwrap();
         let tile = AppTile::new(self.sender.clone(), package);
         editors_picks_flowbox.add(&tile.widget);
         editors_picks_flowbox.show_all();
     }
-
-
 
     fn setup_signals(self: Rc<Self>) {}
 }

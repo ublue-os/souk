@@ -1,5 +1,5 @@
 use appstream::enums::Icon;
-use appstream::types::{License, TranslatableString, MarkupTranslatableString};
+use appstream::{License, MarkupTranslatableString, TranslatableString};
 use chrono::{DateTime, Utc};
 use flatpak::prelude::*;
 use gio::prelude::*;
@@ -24,14 +24,17 @@ pub fn set_label_translatable_string(label: &gtk::Label, text: Option<Translatab
     };
 }
 
-pub fn set_label_markup_translatable_string(label: &gtk::Label, text: Option<MarkupTranslatableString>) {
+pub fn set_label_markup_translatable_string(
+    label: &gtk::Label,
+    text: Option<MarkupTranslatableString>,
+) {
     match text {
         Some(t) => {
             let text = &t.get_default().unwrap_or(&"???".to_string()).to_string();
             let markup = markup(&text);
             label.set_use_markup(true);
             label.set_markup(&markup);
-        },
+        }
         None => label.set_text("–"),
     };
 }
@@ -53,9 +56,12 @@ pub fn set_date_label(label: &gtk::Label, date: Option<DateTime<Utc>>) {
 pub fn set_icon(package: &Package, image: &gtk::Image, size: i32) {
     // TODO: Don't hardcode system installation
     let mut path = PathBuf::new();
-    path.push(format!("/var/lib/flatpak/appstream/{}/x86_64/active/icons/{}x{}/", package.remote, size, size));
+    path.push(format!(
+        "/var/lib/flatpak/appstream/{}/x86_64/active/icons/{}x{}/",
+        package.remote, size, size
+    ));
 
-    let icon = match package.clone().component.icons.pop(){
+    let icon = match package.clone().component.icons.pop() {
         Some(icon) => icon,
         None => {
             debug!("Unable to find icon for package {}", package.app_id);

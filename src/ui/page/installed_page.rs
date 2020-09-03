@@ -4,7 +4,7 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::{BackendMessage, TransactionState, PackageTransaction, FlatpakBackend};
+use crate::backend::{BackendMessage, FlatpakBackend, PackageTransaction, TransactionState};
 use crate::ui::AppTile;
 
 pub struct InstalledPage {
@@ -50,7 +50,7 @@ impl InstalledPage {
         spawn!(self.message_loop());
     }
 
-    async fn message_loop(self: Rc<Self>){
+    async fn message_loop(self: Rc<Self>) {
         let mut channel = self.flatpak_backend.clone().get_channel();
         get_widget!(self.builder, gtk::Label, transaction_label);
 

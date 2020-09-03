@@ -1,4 +1,4 @@
-use appstream::types::Release;
+use appstream::Release;
 use gtk::prelude::*;
 
 use crate::ui::utils;
@@ -39,7 +39,10 @@ impl ReleasesBox {
 
             utils::set_date_label(&date_label, release.date.clone());
             header_label.set_text(&format!("New in Version {}", &release.version));
-            utils::set_label_markup_translatable_string(&description_label, release.description.clone());
+            utils::set_label_markup_translatable_string(
+                &description_label,
+                release.description.clone(),
+            );
         } else {
             self.widget.set_visible(false);
         }
