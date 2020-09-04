@@ -100,7 +100,7 @@
                   <packing>
                     <property name="name">explore</property>
                     <property name="title" translatable="yes">Explore</property>
-                    <property name="icon_name">view-app-grid-symbolic</property>
+                    <property name="icon_name">star-outline-thick-symbolic</property>
                   </packing>
                 </child>
                 <child>
@@ -115,7 +115,7 @@
                   <packing>
                     <property name="name">installed</property>
                     <property name="title" translatable="yes">Installed</property>
-                    <property name="icon_name">system-software-install-symbolic</property>
+                    <property name="icon_name">view-list-symbolic</property>
                     <property name="position">1</property>
                   </packing>
                 </child>
@@ -140,7 +140,7 @@
                   <packing>
                     <property name="name">updates</property>
                     <property name="title" translatable="yes">Updates</property>
-                    <property name="icon_name">software-update-available-symbolic</property>
+                    <property name="icon_name">emblem-synchronizing-symbolic</property>
                     <property name="position">2</property>
                   </packing>
                 </child>
