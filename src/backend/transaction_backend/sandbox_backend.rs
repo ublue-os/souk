@@ -6,7 +6,7 @@ use futures_util::StreamExt;
 use regex::Regex;
 
 use crate::backend::transaction_backend::TransactionBackend;
-use crate::backend::{PackageTransaction, TransactionState};
+use crate::backend::{PackageAction, PackageTransaction, TransactionState};
 
 pub struct SandboxBackend {}
 
@@ -23,24 +23,39 @@ impl TransactionBackend for SandboxBackend {
 
 impl SandboxBackend {
     async fn execute_package_transacton(transaction: PackageTransaction) {
-        let mut child = Command::new("flatpak-spawn")
-            .arg("--host")
-            .arg("flatpak")
-            .arg("install")
-            .arg("--system")
-            .arg("flathub")
-            .arg("de.haeckerfelix.Shortwave")
-            .arg("-y")
-            .stdout(Stdio::piped())
-            .spawn()
-            .unwrap();
-
+        let args = Self::get_flatpak_args(&transaction);
+        let mut child = Command::new("flatpak-spawn").args(&args).stdout(Stdio::piped()).spawn().unwrap();
         let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
 
         while let Some(line) = lines.next().await {
             let state = Self::parse_line(line.unwrap());
             debug!("Transaction state: {:?}", state);
         }
+    }
+
+    fn get_flatpak_args(transaction: &PackageTransaction) -> Vec<String> {
+        let mut args: Vec<String> = Vec::new();
+        args.push("--host".into());
+        args.push("flatpak".into());
+
+        match transaction.action {
+            PackageAction::Install => {
+                args.push("install".into());
+                args.push("--system".into());
+                args.push(transaction.package.remote.clone());
+                args.push(transaction.package.app_id.clone());
+                args.push("-y".into());
+            }
+            PackageAction::Uninstall => {
+                args.push("uninstall".into());
+                args.push("--system".into());
+                args.push(transaction.package.app_id.clone());
+                args.push("-y".into());
+            }
+            _ => (),
+        };
+
+        args
     }
 
     fn parse_line(line: String) -> TransactionState {

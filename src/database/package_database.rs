@@ -99,10 +99,10 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
         let mut appstream_file = PathBuf::new();
         let appstream_dir = remote.get_appstream_dir(Some(default_arch)).unwrap();
         appstream_file.push(appstream_dir.get_path().unwrap().to_str().unwrap());
-        appstream_file.push("appstream.xml.gz");
+        appstream_file.push("appstream.xml");
 
         // Parse appstream xml to collection
-        match Collection::from_gzipped(appstream_file.clone()) {
+        match Collection::from_path(appstream_file.clone()) {
             Ok(collection) => {
                 debug!("Parsed appstream data: {:?}", &appstream_file);
                 // Iterate appstream components, and look for components which we need

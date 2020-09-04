@@ -65,8 +65,8 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="remove_button">
-                <property name="label" translatable="yes">Remove</property>
+              <object class="GtkButton" id="uninstall_button">
+                <property name="label" translatable="yes">Uninstall</property>
                 <property name="width_request">125</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>

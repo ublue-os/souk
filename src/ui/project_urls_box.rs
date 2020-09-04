@@ -61,7 +61,11 @@ impl ProjectUrlsBox {
         row.set_subtitle(Some(&url.to_string()));
 
         row.connect_activated(move |_| {
-            if let Err(e) = gtk::show_uri_on_window::<gtk::Window>(None, &url.to_string(), gtk::get_current_event_time()) {
+            if let Err(e) = gtk::show_uri_on_window::<gtk::Window>(
+                None,
+                &url.to_string(),
+                gtk::get_current_event_time(),
+            ) {
                 error!("Failed to show url: {:?}", e);
             }
         });

@@ -34,9 +34,16 @@ impl AppButtonsBox {
     }
 
     fn setup_signals(&self) {
+        // install
         get_widget!(self.builder, gtk::Button, install_button);
         install_button.connect_clicked(clone!(@strong self.flatpak_backend as flatpak_backend, @strong self.package as package => move |_|{
             flatpak_backend.clone().install_package(package.borrow().as_ref().unwrap().clone());
+        }));
+
+        // uninstall
+        get_widget!(self.builder, gtk::Button, uninstall_button);
+        uninstall_button.connect_clicked(clone!(@strong self.flatpak_backend as flatpak_backend, @strong self.package as package => move |_|{
+            flatpak_backend.clone().uninstall_package(package.borrow().as_ref().unwrap().clone());
         }));
     }
 

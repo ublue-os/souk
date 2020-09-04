@@ -3,5 +3,4 @@ pub enum PackageAction {
     Install,
     Uninstall,
     Update,
-    Remove,
 }

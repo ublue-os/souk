@@ -117,6 +117,17 @@ impl FlatpakBackend {
         let transaction = PackageTransaction::new(package, PackageAction::Install);
         self.clone()
             .send_message(BackendMessage::NewPackageTransaction(transaction.clone()));
+
+        self.clone()
+            .transaction_backend
+            .add_package_transaction(transaction);
+    }
+
+    pub fn uninstall_package(self: Rc<Self>, package: Package) {
+        let transaction = PackageTransaction::new(package, PackageAction::Uninstall);
+        self.clone()
+            .send_message(BackendMessage::NewPackageTransaction(transaction.clone()));
+
         self.clone()
             .transaction_backend
             .add_package_transaction(transaction);

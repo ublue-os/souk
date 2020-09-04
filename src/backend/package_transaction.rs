@@ -2,8 +2,8 @@ use crate::backend::{Package, PackageAction, TransactionState};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PackageTransaction {
-    package: Package,
-    action: PackageAction,
+    pub package: Package,
+    pub action: PackageAction,
     current_state: TransactionState,
     //bc_sender<TransactionState>,
 }
