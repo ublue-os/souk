@@ -32,8 +32,9 @@ checksum = "6b602bfe940d21c130f3895acd65221e8a61270debe89d628b9cb4e3ccb8569b"
 
 [[package]]
 name = "appstream"
-version = "0.1.2"
-source = "git+https://github.com/bilelmoussaoui/appstream/#6a54a01231b4961f7404d66602171eace721f84e"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "962d8bcbcc1fef59c4e7e21ebdf04afe816bb51e8574de41b8dddb908afc5932"
 dependencies = [
  "chrono",
  "serde",

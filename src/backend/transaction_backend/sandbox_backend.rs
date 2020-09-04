@@ -22,15 +22,18 @@ impl TransactionBackend for SandboxBackend {
 }
 
 impl SandboxBackend {
-    async fn execute_package_transacton(transaction: PackageTransaction) {
+    async fn execute_package_transacton(mut transaction: PackageTransaction) {
         let args = Self::get_flatpak_args(&transaction);
         let mut child = Command::new("flatpak-spawn").args(&args).stdout(Stdio::piped()).spawn().unwrap();
         let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
 
         while let Some(line) = lines.next().await {
+            println!("{}", line.as_ref().unwrap());
             let state = Self::parse_line(line.unwrap());
-            debug!("Transaction state: {:?}", state);
+            transaction.set_state(state);
         }
+
+        debug!("Finished package transaction.");
     }
 
     fn get_flatpak_args(transaction: &PackageTransaction) -> Vec<String> {
@@ -60,6 +63,7 @@ impl SandboxBackend {
 
     fn parse_line(line: String) -> TransactionState {
         let mut state = TransactionState::default();
+        state.message = line.clone();
 
         // Regex to get percentage value
         let regex = Regex::new(r"(\d{1,3})%").unwrap();
@@ -67,7 +71,8 @@ impl SandboxBackend {
         match regex.captures(&line) {
             Some(percentage) => {
                 let value = percentage.get(1).unwrap().as_str();
-                state.percentage = value.parse().unwrap();
+                let percentage: f32 = value.parse().unwrap();
+                state.percentage = percentage / 100.0;
             }
             None => (),
         }

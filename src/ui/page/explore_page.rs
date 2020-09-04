@@ -44,6 +44,11 @@ impl ExplorePage {
             .add_tile("org.gnome.design.IconLibrary".to_string());
         self.clone()
             .add_tile("org.gnome.design.Contrast".to_string());
+        self.clone()
+            .add_tile("com.google.AndroidStudio".to_string());
+        self.clone()
+            .add_tile("com.jetbrains.IntelliJ-IDEA-Community".to_string());
+
 
         get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
         for package in queries::get_recently_updated_packages(10).unwrap() {
