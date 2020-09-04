@@ -57,6 +57,13 @@ impl ProjectUrlsBox {
 
     fn set_row(row: &libhandy::ActionRow, url: url::Url) {
         row.set_visible(true);
+        row.set_activatable(true);
         row.set_subtitle(Some(&url.to_string()));
+
+        row.connect_activated(move |_| {
+            if let Err(e) = gtk::show_uri_on_window::<gtk::Window>(None, &url.to_string(), gtk::get_current_event_time()) {
+                error!("Failed to show url: {:?}", e);
+            }
+        });
     }
 }
