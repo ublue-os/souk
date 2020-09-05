@@ -20,7 +20,7 @@
             <property name="orientation">vertical</property>
             <child>
               <object class="GtkToggleButton" id="log_togglebutton">
-                <property name="label" translatable="yes">Show install log</property>
+                <property name="label" translatable="yes">Show log</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
