@@ -15,7 +15,7 @@ pub struct PackageDetailsPage {
     flatpak_backend: Rc<FlatpakBackend>,
     package: Package,
 
-    action_button: RefCell<PackageActionButton>,
+    action_button: Rc<PackageActionButton>,
     transaction_progressbar: TransactionProgressBar,
     screenshots_box: RefCell<ScreenshotsBox>,
     releases_box: RefCell<ReleasesBox>,
@@ -36,7 +36,7 @@ impl PackageDetailsPage {
         );
         get_widget!(builder, gtk::Box, package_details_page);
 
-        let action_button = RefCell::new(PackageActionButton::new(flatpak_backend.clone()));
+        let action_button = PackageActionButton::new(flatpak_backend.clone(), package.clone());
         let transaction_progressbar = TransactionProgressBar::new(flatpak_backend.clone(), package.clone());
         let screenshots_box = RefCell::new(ScreenshotsBox::new());
         let releases_box = RefCell::new(ReleasesBox::new());
@@ -63,7 +63,7 @@ impl PackageDetailsPage {
 
     fn setup_widgets(&self) {
         get_widget!(self.builder, gtk::Box, package_action_button_box);
-        package_action_button_box.add(&self.action_button.borrow().widget);
+        package_action_button_box.add(&self.action_button.widget);
 
         get_widget!(self.builder, gtk::Box, transaction_progressbar_box);
         transaction_progressbar_box.add(&self.transaction_progressbar.widget);
@@ -103,10 +103,6 @@ impl PackageDetailsPage {
         utils::set_label_translatable_string(&developer_label, c.developer_name.clone());
         //utils::set_label(&project_group_label, c.project_group.clone());
         //utils::set_license_label(&license_label, c.project_license.clone());
-
-        self.action_button
-            .borrow_mut()
-            .set_package(self.package.clone());
 
         self.screenshots_box
             .borrow_mut()
