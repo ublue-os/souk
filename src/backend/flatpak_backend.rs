@@ -1,6 +1,7 @@
 use broadcaster::BroadcastChannel;
 use flatpak::prelude::*;
 use flatpak::{Installation, InstallationExt, RefKind};
+use gio::prelude::*;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -133,6 +134,10 @@ impl FlatpakBackend {
             .add_package_transaction(transaction);
     }
 
+    pub fn launch_package(self: Rc<Self>, package: Package) {
+        std::process::Command::new("flatpak-spawn").arg("--host").arg("flatpak").arg("run").arg(package.get_ref_name()).spawn().unwrap();
+    }
+
     fn send_message(self: Rc<Self>, message: BackendMessage) {
         let future = async move {
             self.broadcast.send(&message).await.unwrap();
@@ -140,7 +145,7 @@ impl FlatpakBackend {
         spawn!(future);
     }
 
-    pub fn is_sandboxed() -> bool {
+    fn is_sandboxed() -> bool {
         std::path::Path::new("/.flatpak-info").exists()
     }
 }

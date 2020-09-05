@@ -48,8 +48,8 @@
             <property name="can_focus">False</property>
             <property name="spacing">6</property>
             <child>
-              <object class="GtkButton" id="start_button">
-                <property name="label" translatable="yes">Start</property>
+              <object class="GtkButton" id="open_button">
+                <property name="label" translatable="yes">Open</property>
                 <property name="width_request">125</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>

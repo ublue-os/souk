@@ -44,6 +44,12 @@ impl PackageActionButton {
             flatpak_backend.clone().uninstall_package(package.clone());
         }));
 
+        // open
+        get_widget!(self.builder, gtk::Button, open_button);
+        open_button.connect_clicked(clone!(@strong self.flatpak_backend as flatpak_backend, @strong self.package as package => move |_|{
+            flatpak_backend.clone().launch_package(package.clone());
+        }));
+
         spawn!(self.clone().backend_message_receiver());
     }
 
