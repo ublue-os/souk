@@ -31,7 +31,7 @@ impl TransactionProgressBar {
     }
 
     fn setup_signals(self: Rc<Self>) {
-        spawn!(self.clone().receive_backend_messages());
+        spawn!(self.receive_backend_messages());
     }
 
     async fn receive_backend_messages(self: Rc<Self>) {

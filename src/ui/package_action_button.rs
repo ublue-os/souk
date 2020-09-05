@@ -50,7 +50,7 @@ impl PackageActionButton {
             flatpak_backend.clone().launch_package(package.clone());
         }));
 
-        spawn!(self.clone().receive_backend_messages());
+        spawn!(self.receive_backend_messages());
     }
 
     async fn receive_backend_messages(self: Rc<Self>) {

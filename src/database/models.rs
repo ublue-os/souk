@@ -70,7 +70,7 @@ impl DbPackage {
     fn get_string(string: &Option<TranslatableString>) -> String {
         match string {
             Some(value) => value.get_default().unwrap_or(&"".to_string()).to_string(),
-            None => return "".to_string(),
+            None => "".to_string(),
         }
     }
 

@@ -24,7 +24,7 @@ lazy_static! {
 pub fn init(flatpak_backend: Rc<FlatpakBackend>) {
     if needs_rebuilt() {
         debug!("Database needs rebuilt.");
-        rebuild(flatpak_backend.clone());
+        rebuild(flatpak_backend);
     } else {
         debug!("Database it up-to-date, don't rebuild it.");
         //send!(DatabaseIsReady)
@@ -39,7 +39,7 @@ pub fn needs_rebuilt() -> bool {
                 debug!("Database is empty.");
                 return true;
             } else {
-                dbi.clone()[0].clone()
+                dbi[0].clone()
             }
         }
         Err(_) => return true,
@@ -64,7 +64,7 @@ pub fn needs_rebuilt() -> bool {
         return true;
     }
 
-    return false;
+    false
 }
 
 // TODO: Make this asynchronous, and report parsing progress to UI

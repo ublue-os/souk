@@ -84,9 +84,8 @@ impl FlatpakBackend {
             let branch = ref_.get_branch().unwrap().to_string();
             let origin = ref_.get_origin().unwrap().to_string();
 
-            match queries::get_package(name, branch, origin).unwrap() {
-                Some(package) => installed_packages.insert(0, package.clone()),
-                None => (), //warn!("Unable to get package for flatpak ref {} ({})", name, origin),
+            if let Some(package) = queries::get_package(name, branch, origin).unwrap() {
+                installed_packages.insert(0, package.clone())
             }
         }
 
@@ -96,7 +95,7 @@ impl FlatpakBackend {
     pub fn is_package_installed(self: Rc<Self>, package: &Package) -> bool {
         let mut result = false;
 
-        let installed_packages = self.clone().get_installed_packages();
+        let installed_packages = self.get_installed_packages();
         let mut iter = installed_packages.into_iter();
         iter.find(|p| package == p).map(|_| {
             result = true;
@@ -111,8 +110,7 @@ impl FlatpakBackend {
         self.clone()
             .send_message(BackendMessage::PackageTransaction(transaction.clone()));
 
-        self.clone()
-            .transaction_backend
+        self.transaction_backend
             .add_package_transaction(transaction);
     }
 
@@ -121,8 +119,7 @@ impl FlatpakBackend {
         self.clone()
             .send_message(BackendMessage::PackageTransaction(transaction.clone()));
 
-        self.clone()
-            .transaction_backend
+        self.transaction_backend
             .add_package_transaction(transaction);
     }
 

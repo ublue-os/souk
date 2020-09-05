@@ -83,13 +83,10 @@ impl SandboxBackend {
         // Regex to get percentage value
         let regex = Regex::new(r"(\d{1,3})%").unwrap();
 
-        match regex.captures(&line) {
-            Some(percentage) => {
-                let value = percentage.get(1).unwrap().as_str();
-                let percentage: f32 = value.parse().unwrap();
-                state.percentage = percentage / 100.0;
-            }
-            None => (),
+        if let Some(percentage) = regex.captures(&line) {
+            let value = percentage.get(1).unwrap().as_str();
+            let percentage: f32 = value.parse().unwrap();
+            state.percentage = percentage / 100.0;
         }
 
         state

@@ -68,17 +68,15 @@ pub fn set_icon(package: &Package, image: &gtk::Image, size: i32) {
         }
     };
 
-    match icon {
-        Icon::Cached {
-            path: name,
-            width: _,
-            height: _,
-        } => {
-            path.push(name);
-            image.set_from_file(&path);
-        }
-        _ => (),
-    };
+    if let Icon::Cached {
+        path: name,
+        width: _,
+        height: _,
+    } = icon
+    {
+        path.push(name);
+        image.set_from_file(&path);
+    }
 }
 
 // Removes all child items

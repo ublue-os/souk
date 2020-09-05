@@ -83,7 +83,7 @@ impl FfApplicationWindow {
             .downcast::<FfApplicationWindow>()
             .unwrap();
 
-        app.add_window(&window.clone());
+        app.add_window(&window);
         window.setup_widgets();
         window.setup_signals(sender.clone());
         window.setup_gactions(sender);

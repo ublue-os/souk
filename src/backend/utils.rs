@@ -7,9 +7,7 @@ pub fn get_flatpak_ref(component: &Component) -> String {
             reference,
             runtime: _,
             sdk: _,
-        } => {
-            return reference.clone();
-        }
-        _ => return "".to_string(),
-    };
+        } => reference.clone(),
+        _ => "".to_string(),
+    }
 }

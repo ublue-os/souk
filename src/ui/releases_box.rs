@@ -38,12 +38,9 @@ impl ReleasesBox {
             get_widget!(self.builder, gtk::Label, header_label);
             get_widget!(self.builder, gtk::Label, description_label);
 
-            utils::set_date_label(&date_label, release.date.clone());
+            utils::set_date_label(&date_label, release.date);
             header_label.set_text(&format!("New in Version {}", &release.version));
-            utils::set_label_markup_translatable_string(
-                &description_label,
-                release.description.clone(),
-            );
+            utils::set_label_markup_translatable_string(&description_label, release.description);
         } else {
             self.widget.set_visible(false);
         }

@@ -20,7 +20,7 @@ pub struct Package {
 impl Package {
     pub fn new(component: Component, remote: String) -> Self {
         let flatpak_ref = utils::get_flatpak_ref(&component);
-        let values: Vec<&str> = flatpak_ref.split("/").collect();
+        let values: Vec<&str> = flatpak_ref.split('/').collect();
 
         let is_app = match values[0] {
             "app" => true,
@@ -61,12 +61,10 @@ impl Package {
         for release in &self.component.releases {
             if newest.is_none() {
                 newest = Some(release.clone());
-                newest_date = Some(release.date.clone());
-            } else {
-                if release.date > *newest_date.as_ref().unwrap() {
-                    newest = Some(release.clone());
-                    newest_date = Some(release.date.clone());
-                }
+                newest_date = Some(release.date);
+            } else if release.date > *newest_date.as_ref().unwrap() {
+                newest = Some(release.clone());
+                newest_date = Some(release.date);
             }
         }
 
