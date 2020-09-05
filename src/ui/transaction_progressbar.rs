@@ -4,7 +4,7 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::{FlatpakBackend, BackendMessage, Package, PackageTransaction};
+use crate::backend::{BackendMessage, FlatpakBackend, Package, PackageTransaction};
 use crate::ui::utils;
 
 pub struct TransactionProgressBar {
@@ -17,8 +17,9 @@ pub struct TransactionProgressBar {
 
 impl TransactionProgressBar {
     pub fn new(flatpak_backend: Rc<FlatpakBackend>, package: Package) -> Self {
-        let builder =
-            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/transaction_progressbar.ui");
+        let builder = gtk::Builder::from_resource(
+            "/de/haeckerfelix/FlatpakFrontend/gtk/transaction_progressbar.ui",
+        );
         get_widget!(builder, gtk::Box, transaction_progressbar);
 
         let transaction_progressbar = Self {
@@ -33,10 +34,18 @@ impl TransactionProgressBar {
     }
 
     fn setup_signals(&self) {
-        spawn!(Self::backend_message_receiver(self.builder.clone(), self.package.clone(), self.flatpak_backend.clone()));
+        spawn!(Self::backend_message_receiver(
+            self.builder.clone(),
+            self.package.clone(),
+            self.flatpak_backend.clone()
+        ));
     }
 
-    async fn backend_message_receiver(builder: gtk::Builder, package: Package, flatpak_backend: Rc<FlatpakBackend>) {
+    async fn backend_message_receiver(
+        builder: gtk::Builder,
+        package: Package,
+        flatpak_backend: Rc<FlatpakBackend>,
+    ) {
         get_widget!(builder, gtk::ProgressBar, progressbar);
         get_widget!(builder, gtk::Revealer, progressbar_revealer);
         get_widget!(builder, gtk::Label, log_label);
@@ -45,7 +54,7 @@ impl TransactionProgressBar {
         let mut backend_channel = flatpak_backend.clone().get_channel();
 
         while let Some(backend_message) = backend_channel.recv().await {
-            match backend_message{
+            match backend_message {
                 BackendMessage::NewPackageTransaction(transaction) => {
                     // We only care about this package
                     if transaction.package == package {
@@ -61,7 +70,7 @@ impl TransactionProgressBar {
                             log_label.set_text(&text);
 
                             // scroll down
-                            match log_scrolled_window.get_vadjustment(){
+                            match log_scrolled_window.get_vadjustment() {
                                 Some(adj) => adj.set_value(adj.get_upper() - adj.get_page_size()),
                                 None => (),
                             };
@@ -71,7 +80,7 @@ impl TransactionProgressBar {
                             }
                         }
                     }
-                },
+                }
                 _ => (),
             }
         }

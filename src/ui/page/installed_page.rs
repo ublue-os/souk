@@ -54,21 +54,21 @@ impl InstalledPage {
         let mut channel = self.flatpak_backend.clone().get_channel();
 
         while let Some(message) = channel.recv().await {
-            match message{
+            match message {
                 BackendMessage::NewPackageTransaction(transaction) => {
                     spawn!(self.clone().package_transaction_receiver(transaction));
-                },
+                }
                 _ => (),
             }
         }
     }
 
-    async fn package_transaction_receiver(self: Rc<Self>, transaction: PackageTransaction){
+    async fn package_transaction_receiver(self: Rc<Self>, transaction: PackageTransaction) {
         let mut channel = transaction.clone().get_channel();
 
         while let Some(state) = channel.recv().await {
             // TODO: implement UI
-            if state.is_finished{
+            if state.is_finished {
                 break;
             }
         }

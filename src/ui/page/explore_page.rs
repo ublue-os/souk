@@ -49,7 +49,6 @@ impl ExplorePage {
         self.clone()
             .add_tile("com.jetbrains.IntelliJ-IDEA-Community".to_string());
 
-
         get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
         for package in queries::get_recently_updated_packages(10).unwrap() {
             let tile = PackageTile::new(self.sender.clone(), package);

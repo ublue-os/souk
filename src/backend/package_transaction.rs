@@ -30,7 +30,7 @@ impl PackageTransaction {
         self.broadcast.clone()
     }
 
-    pub fn set_state(&mut self, state: TransactionState){
+    pub fn set_state(&mut self, state: TransactionState) {
         self.state = state.clone();
         self.send_message(state);
     }

@@ -29,7 +29,11 @@ impl SandboxBackend {
         transaction.set_state(state);
 
         let args = Self::get_flatpak_args(&transaction);
-        let mut child = Command::new("flatpak-spawn").args(&args).stdout(Stdio::piped()).spawn().unwrap();
+        let mut child = Command::new("flatpak-spawn")
+            .args(&args)
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
         let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
 
         while let Some(line) = lines.next().await {

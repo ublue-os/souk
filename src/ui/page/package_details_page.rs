@@ -8,7 +8,10 @@ use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
 use crate::database::queries;
-use crate::ui::{utils, PackageActionButton, PackageTile, ProjectUrlsBox, ReleasesBox, TransactionProgressBar, ScreenshotsBox};
+use crate::ui::{
+    utils, PackageActionButton, PackageTile, ProjectUrlsBox, ReleasesBox, ScreenshotsBox,
+    TransactionProgressBar,
+};
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
@@ -37,7 +40,8 @@ impl PackageDetailsPage {
         get_widget!(builder, gtk::Box, package_details_page);
 
         let action_button = PackageActionButton::new(flatpak_backend.clone(), package.clone());
-        let transaction_progressbar = TransactionProgressBar::new(flatpak_backend.clone(), package.clone());
+        let transaction_progressbar =
+            TransactionProgressBar::new(flatpak_backend.clone(), package.clone());
         let screenshots_box = RefCell::new(ScreenshotsBox::new());
         let releases_box = RefCell::new(ReleasesBox::new());
         let project_urls_box = RefCell::new(ProjectUrlsBox::new());

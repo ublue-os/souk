@@ -135,9 +135,19 @@ impl FlatpakBackend {
     }
 
     pub fn launch_package(self: Rc<Self>, package: Package) {
-        match std::process::Command::new("flatpak-spawn").arg("--host").arg("flatpak").arg("run").arg(package.get_ref_name()).spawn(){
+        match std::process::Command::new("flatpak-spawn")
+            .arg("--host")
+            .arg("flatpak")
+            .arg("run")
+            .arg(package.get_ref_name())
+            .spawn()
+        {
             Ok(_) => (),
-            Err(err) => warn!("Unable to launch {}: {}", package.get_ref_name(), err.to_string()),
+            Err(err) => warn!(
+                "Unable to launch {}: {}",
+                package.get_ref_name(),
+                err.to_string()
+            ),
         };
     }
 

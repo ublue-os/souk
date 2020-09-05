@@ -3,7 +3,7 @@ use gtk::prelude::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::backend::{FlatpakBackend, BackendMessage, Package, PackageTransaction};
+use crate::backend::{BackendMessage, FlatpakBackend, Package, PackageTransaction};
 
 pub struct PackageActionButton {
     pub widget: gtk::Box,
@@ -15,8 +15,9 @@ pub struct PackageActionButton {
 
 impl PackageActionButton {
     pub fn new(flatpak_backend: Rc<FlatpakBackend>, package: Package) -> Rc<Self> {
-        let builder =
-            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/package_action_button.ui");
+        let builder = gtk::Builder::from_resource(
+            "/de/haeckerfelix/FlatpakFrontend/gtk/package_action_button.ui",
+        );
         get_widget!(builder, gtk::Box, package_action_button);
 
         let package_action_button = Rc::new(Self {
@@ -59,7 +60,7 @@ impl PackageActionButton {
         let mut backend_channel = self.flatpak_backend.clone().get_channel();
 
         while let Some(backend_message) = backend_channel.recv().await {
-            match backend_message{
+            match backend_message {
                 BackendMessage::NewPackageTransaction(transaction) => {
                     // We only care about this package
                     if transaction.package == self.package {
@@ -70,13 +71,13 @@ impl PackageActionButton {
 
                         // Listen to transaction state changes
                         while let Some(state) = transaction_channel.recv().await {
-                            if state.is_finished{
+                            if state.is_finished {
                                 self.clone().update_stack();
                                 break;
                             }
                         }
                     }
-                },
+                }
                 _ => (),
             }
         }
@@ -85,7 +86,11 @@ impl PackageActionButton {
     fn update_stack(self: Rc<Self>) {
         get_widget!(self.builder, gtk::Stack, button_stack);
 
-        match self.flatpak_backend.clone().is_package_installed(&self.package) {
+        match self
+            .flatpak_backend
+            .clone()
+            .is_package_installed(&self.package)
+        {
             true => {
                 button_stack.set_visible_child_name("installed");
             }
