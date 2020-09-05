@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use crate::app::Action;
 use crate::backend::{BackendMessage, FlatpakBackend, PackageTransaction, TransactionState};
-use crate::ui::AppTile;
+use crate::ui::PackageTile;
 
 pub struct InstalledPage {
     pub widget: gtk::Box,
@@ -39,7 +39,7 @@ impl InstalledPage {
         let packages = self.flatpak_backend.clone().get_installed_packages();
         for package in packages {
             debug!("Installed package: {:?}", &package);
-            let tile = AppTile::new(self.sender.clone(), package);
+            let tile = PackageTile::new(self.sender.clone(), package);
             installed_flowbox.add(&tile.widget);
         }
 

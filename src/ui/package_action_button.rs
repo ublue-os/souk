@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
 
-pub struct AppButtonsBox {
+pub struct PackageActionButton {
     pub widget: gtk::Box,
     flatpak_backend: Rc<FlatpakBackend>,
     package: Rc<RefCell<Option<Package>>>,
@@ -14,23 +14,23 @@ pub struct AppButtonsBox {
     builder: gtk::Builder,
 }
 
-impl AppButtonsBox {
+impl PackageActionButton {
     pub fn new(flatpak_backend: Rc<FlatpakBackend>) -> Self {
         let builder =
-            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/app_buttons_box.ui");
-        get_widget!(builder, gtk::Box, app_buttons_box);
+            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/package_action_button.ui");
+        get_widget!(builder, gtk::Box, package_action_button);
 
         let package = Rc::new(RefCell::new(None));
 
-        let app_buttons_box = Self {
-            widget: app_buttons_box,
+        let package_action_button = Self {
+            widget: package_action_button,
             flatpak_backend,
             package,
             builder,
         };
 
-        app_buttons_box.setup_signals();
-        app_buttons_box
+        package_action_button.setup_signals();
+        package_action_button
     }
 
     fn setup_signals(&self) {

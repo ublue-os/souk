@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::database::queries;
-use crate::ui::AppTile;
+use crate::ui::PackageTile;
 
 pub struct ExplorePage {
     pub widget: gtk::Box,
@@ -52,7 +52,7 @@ impl ExplorePage {
 
         get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
         for package in queries::get_recently_updated_packages(10).unwrap() {
-            let tile = AppTile::new(self.sender.clone(), package);
+            let tile = PackageTile::new(self.sender.clone(), package);
             recently_updated_flowbox.add(&tile.widget);
             recently_updated_flowbox.show_all();
         }
@@ -63,7 +63,7 @@ impl ExplorePage {
         let package = queries::get_package(app_id, "stable".to_string(), "flathub".to_string())
             .unwrap()
             .unwrap();
-        let tile = AppTile::new(self.sender.clone(), package);
+        let tile = PackageTile::new(self.sender.clone(), package);
         editors_picks_flowbox.add(&tile.widget);
         editors_picks_flowbox.show_all();
     }

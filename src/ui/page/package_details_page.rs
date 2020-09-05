@@ -8,14 +8,14 @@ use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
 use crate::database::queries;
-use crate::ui::{utils, AppButtonsBox, AppTile, ProjectUrlsBox, ReleasesBox, TransactionProgressBar, ScreenshotsBox};
+use crate::ui::{utils, PackageActionButton, PackageTile, ProjectUrlsBox, ReleasesBox, TransactionProgressBar, ScreenshotsBox};
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
     flatpak_backend: Rc<FlatpakBackend>,
     package: Package,
 
-    app_buttons_box: RefCell<AppButtonsBox>,
+    action_button: RefCell<PackageActionButton>,
     transaction_progressbar: TransactionProgressBar,
     screenshots_box: RefCell<ScreenshotsBox>,
     releases_box: RefCell<ReleasesBox>,
@@ -36,7 +36,7 @@ impl PackageDetailsPage {
         );
         get_widget!(builder, gtk::Box, package_details_page);
 
-        let app_buttons_box = RefCell::new(AppButtonsBox::new(flatpak_backend.clone()));
+        let action_button = RefCell::new(PackageActionButton::new(flatpak_backend.clone()));
         let transaction_progressbar = TransactionProgressBar::new(flatpak_backend.clone(), package.clone());
         let screenshots_box = RefCell::new(ScreenshotsBox::new());
         let releases_box = RefCell::new(ReleasesBox::new());
@@ -46,7 +46,7 @@ impl PackageDetailsPage {
             widget: package_details_page,
             flatpak_backend,
             package,
-            app_buttons_box,
+            action_button,
             transaction_progressbar,
             screenshots_box,
             releases_box,
@@ -62,8 +62,8 @@ impl PackageDetailsPage {
     }
 
     fn setup_widgets(&self) {
-        get_widget!(self.builder, gtk::Box, app_buttons_box);
-        app_buttons_box.add(&self.app_buttons_box.borrow().widget);
+        get_widget!(self.builder, gtk::Box, package_action_button_box);
+        package_action_button_box.add(&self.action_button.borrow().widget);
 
         get_widget!(self.builder, gtk::Box, transaction_progressbar_box);
         transaction_progressbar_box.add(&self.transaction_progressbar.widget);
@@ -104,7 +104,7 @@ impl PackageDetailsPage {
         //utils::set_label(&project_group_label, c.project_group.clone());
         //utils::set_license_label(&license_label, c.project_license.clone());
 
-        self.app_buttons_box
+        self.action_button
             .borrow_mut()
             .set_package(self.package.clone());
 
@@ -131,7 +131,7 @@ impl PackageDetailsPage {
                 other_apps.set_visible(true);
 
                 for package in queries::get_packages_by_developer_name(name, 10).unwrap() {
-                    let tile = AppTile::new(self.sender.clone(), package);
+                    let tile = PackageTile::new(self.sender.clone(), package);
                     other_apps_flowbox.add(&tile.widget);
                     other_apps_flowbox.show_all();
                 }

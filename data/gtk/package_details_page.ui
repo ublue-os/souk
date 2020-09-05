@@ -111,7 +111,7 @@
                                         <property name="can_focus">False</property>
                                         <property name="valign">center</property>
                                         <child>
-                                          <object class="GtkBox" id="app_buttons_box">
+                                          <object class="GtkBox" id="package_action_button_box">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
                                             <property name="valign">center</property>

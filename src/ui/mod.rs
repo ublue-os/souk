@@ -1,11 +1,11 @@
 pub mod page;
 mod utils;
 
-mod app_buttons_box;
-pub use app_buttons_box::AppButtonsBox;
+mod package_tile;
+pub use package_tile::PackageTile;
 
-mod app_tile;
-pub use app_tile::AppTile;
+mod package_action_button;
+pub use package_action_button::PackageActionButton;
 
 mod project_urls_box;
 pub use project_urls_box::ProjectUrlsBox;

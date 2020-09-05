@@ -47,7 +47,7 @@ impl TransactionProgressBar {
         while let Some(backend_message) = backend_channel.recv().await {
             match backend_message{
                 BackendMessage::NewPackageTransaction(transaction) => {
-                    // We only care about our package
+                    // We only care about this package
                     if transaction.package == package {
                         let mut transaction_channel = transaction.clone().get_channel();
 
