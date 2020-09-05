@@ -8,7 +8,7 @@ use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
 use crate::database::queries;
-use crate::ui::{utils, AppButtonsBox, AppTile, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
+use crate::ui::{utils, AppButtonsBox, AppTile, ProjectUrlsBox, ReleasesBox, TransactionProgressBar, ScreenshotsBox};
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
@@ -16,6 +16,7 @@ pub struct PackageDetailsPage {
     package: Package,
 
     app_buttons_box: RefCell<AppButtonsBox>,
+    transaction_progressbar: TransactionProgressBar,
     screenshots_box: RefCell<ScreenshotsBox>,
     releases_box: RefCell<ReleasesBox>,
     project_urls_box: RefCell<ProjectUrlsBox>,
@@ -36,6 +37,7 @@ impl PackageDetailsPage {
         get_widget!(builder, gtk::Box, package_details_page);
 
         let app_buttons_box = RefCell::new(AppButtonsBox::new(flatpak_backend.clone()));
+        let transaction_progressbar = TransactionProgressBar::new(flatpak_backend.clone(), package.clone());
         let screenshots_box = RefCell::new(ScreenshotsBox::new());
         let releases_box = RefCell::new(ReleasesBox::new());
         let project_urls_box = RefCell::new(ProjectUrlsBox::new());
@@ -45,6 +47,7 @@ impl PackageDetailsPage {
             flatpak_backend,
             package,
             app_buttons_box,
+            transaction_progressbar,
             screenshots_box,
             releases_box,
             project_urls_box,
@@ -61,6 +64,9 @@ impl PackageDetailsPage {
     fn setup_widgets(&self) {
         get_widget!(self.builder, gtk::Box, app_buttons_box);
         app_buttons_box.add(&self.app_buttons_box.borrow().widget);
+
+        get_widget!(self.builder, gtk::Box, transaction_progressbar_box);
+        transaction_progressbar_box.add(&self.transaction_progressbar.widget);
 
         get_widget!(self.builder, gtk::Box, screenshots_box);
         screenshots_box.add(&self.screenshots_box.borrow().widget);

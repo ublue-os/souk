@@ -20,3 +20,18 @@
   border-top: 1px solid @borders;
   border-bottom: 1px solid @borders;
 }
+
+.transaction-log{
+  background-color: #252e32;
+  color: white;
+  font-size: smaller;
+  font-family: monospace;
+  padding: 12px;
+}
+
+.smaller-button{
+  padding: 0;
+  padding-left: 3px;
+  padding-right: 3px;
+  font-size: x-small;
+}
