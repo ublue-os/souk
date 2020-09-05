@@ -99,6 +99,9 @@ impl FfApplicationWindow {
             .unwrap();
         let app_private = FfApplicationPrivate::from_instance(&app);
 
+        // set default size
+        self.set_default_size(900, 700);
+
         // wire everything up
         get_widget!(self_.window_builder, gtk::Box, explore_box);
         explore_box.add(&app_private.explore_page.widget);
