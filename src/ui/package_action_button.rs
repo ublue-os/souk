@@ -60,11 +60,14 @@ impl PackageActionButton {
                         let mut transaction_channel = transaction.clone().get_channel();
 
                         // We have a transaction which affects this package, so display progressbar
-                        button_stack.set_visible_child_name("installing");
+                        button_stack.set_visible_child_name("processing");
 
                         // Listen to transaction state changes
                         while let Some(state) = transaction_channel.recv().await {
-
+                            if state.is_finished{
+                                self.clone().update_stack();
+                                break;
+                            }
                         }
                     }
                 },

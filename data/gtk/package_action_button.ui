@@ -29,8 +29,8 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="installing_button">
-            <property name="label" translatable="yes">Installing...</property>
+          <object class="GtkButton" id="Processing_button">
+            <property name="label" translatable="yes">Processing...</property>
             <property name="width_request">125</property>
             <property name="visible">True</property>
             <property name="sensitive">False</property>
@@ -38,7 +38,7 @@
             <property name="receives_default">True</property>
           </object>
           <packing>
-            <property name="name">installing</property>
+            <property name="name">processing</property>
             <property name="position">1</property>
           </packing>
         </child>

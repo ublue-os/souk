@@ -23,6 +23,11 @@ impl TransactionBackend for SandboxBackend {
 
 impl SandboxBackend {
     async fn execute_package_transacton(mut transaction: PackageTransaction) {
+        // Set initial transaction state
+        let mut state = TransactionState::default();
+        state.percentage = 0.0;
+        transaction.set_state(state);
+
         let args = Self::get_flatpak_args(&transaction);
         let mut child = Command::new("flatpak-spawn").args(&args).stdout(Stdio::piped()).spawn().unwrap();
         let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
@@ -32,6 +37,12 @@ impl SandboxBackend {
             let state = Self::parse_line(line.unwrap());
             transaction.set_state(state);
         }
+
+        // Finish transaction
+        let mut state = TransactionState::default();
+        state.percentage = 1.0;
+        state.is_finished = true;
+        transaction.set_state(state);
 
         debug!("Finished package transaction.");
     }

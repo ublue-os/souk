@@ -65,6 +65,10 @@ impl TransactionProgressBar {
                                 Some(adj) => adj.set_value(adj.get_upper() - adj.get_page_size()),
                                 None => (),
                             };
+
+                            if state.is_finished {
+                                break;
+                            }
                         }
                     }
                 },
