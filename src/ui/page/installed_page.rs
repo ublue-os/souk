@@ -52,7 +52,6 @@ impl InstalledPage {
 
     async fn backend_message_receiver(self: Rc<Self>) {
         let mut channel = self.flatpak_backend.clone().get_channel();
-        get_widget!(self.builder, gtk::Label, transaction_label);
 
         while let Some(message) = channel.recv().await {
             match message{
@@ -66,13 +65,12 @@ impl InstalledPage {
 
     async fn package_transaction_receiver(self: Rc<Self>, transaction: PackageTransaction){
         let mut channel = transaction.clone().get_channel();
-        get_widget!(self.builder, gtk::Label, transaction_label);
-        get_widget!(self.builder, gtk::ProgressBar, transaction_progressbar);
 
         while let Some(state) = channel.recv().await {
-            transaction_progressbar.set_fraction(state.percentage.into());
-            transaction_progressbar.set_text(Some(&state.message));
-            transaction_label.set_text(&format!("{:#?}", &state));
+            // TODO: implement UI
+            if state.is_finished{
+                break;
+            }
         }
     }
 }
