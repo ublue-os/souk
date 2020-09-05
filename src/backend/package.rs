@@ -1,6 +1,5 @@
 use appstream::Component;
 use appstream::Release;
-use flatpak::{Remote, RemoteExt};
 
 use std::fmt;
 

@@ -1,7 +1,6 @@
 use glib::Sender;
 use gtk::prelude::*;
 
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::app::Action;
@@ -19,10 +18,11 @@ pub struct PackageDetailsPage {
     package: Package,
 
     action_button: Rc<PackageActionButton>,
-    transaction_progressbar: TransactionProgressBar,
-    screenshots_box: RefCell<ScreenshotsBox>,
-    releases_box: RefCell<ReleasesBox>,
-    project_urls_box: RefCell<ProjectUrlsBox>,
+    progressbar: Rc<TransactionProgressBar>,
+
+    screenshots_box: ScreenshotsBox,
+    releases_box: ReleasesBox,
+    project_urls_box: ProjectUrlsBox,
 
     builder: gtk::Builder,
     sender: Sender<Action>,
@@ -40,18 +40,17 @@ impl PackageDetailsPage {
         get_widget!(builder, gtk::Box, package_details_page);
 
         let action_button = PackageActionButton::new(flatpak_backend.clone(), package.clone());
-        let transaction_progressbar =
-            TransactionProgressBar::new(flatpak_backend.clone(), package.clone());
-        let screenshots_box = RefCell::new(ScreenshotsBox::new());
-        let releases_box = RefCell::new(ReleasesBox::new());
-        let project_urls_box = RefCell::new(ProjectUrlsBox::new());
+        let progressbar = TransactionProgressBar::new(flatpak_backend.clone(), package.clone());
+        let screenshots_box = ScreenshotsBox::new(package.clone());
+        let releases_box = ReleasesBox::new(package.clone());
+        let project_urls_box = ProjectUrlsBox::new(package.clone());
 
         let package_details_page = Self {
             widget: package_details_page,
             flatpak_backend,
             package,
             action_button,
-            transaction_progressbar,
+            progressbar,
             screenshots_box,
             releases_box,
             project_urls_box,
@@ -70,16 +69,16 @@ impl PackageDetailsPage {
         package_action_button_box.add(&self.action_button.widget);
 
         get_widget!(self.builder, gtk::Box, transaction_progressbar_box);
-        transaction_progressbar_box.add(&self.transaction_progressbar.widget);
+        transaction_progressbar_box.add(&self.progressbar.widget);
 
         get_widget!(self.builder, gtk::Box, screenshots_box);
-        screenshots_box.add(&self.screenshots_box.borrow().widget);
+        screenshots_box.add(&self.screenshots_box.widget);
 
         get_widget!(self.builder, gtk::Box, releases_box);
-        releases_box.add(&self.releases_box.borrow().widget);
+        releases_box.add(&self.releases_box.widget);
 
         get_widget!(self.builder, gtk::Box, project_urls_box);
-        project_urls_box.add(&self.project_urls_box.borrow().widget);
+        project_urls_box.add(&self.project_urls_box.widget);
     }
 
     fn setup_signals(&self) {}
@@ -107,18 +106,6 @@ impl PackageDetailsPage {
         utils::set_label_translatable_string(&developer_label, c.developer_name.clone());
         //utils::set_label(&project_group_label, c.project_group.clone());
         //utils::set_license_label(&license_label, c.project_license.clone());
-
-        self.screenshots_box
-            .borrow_mut()
-            .set_screenshots(c.screenshots.clone());
-
-        self.releases_box
-            .borrow_mut()
-            .set_releases(c.releases.clone());
-
-        self.project_urls_box
-            .borrow_mut()
-            .set_project_urls(c.urls.clone());
 
         match c.developer_name {
             Some(n) => {

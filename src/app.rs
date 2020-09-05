@@ -50,7 +50,7 @@ impl ObjectSubclass for FfApplicationPrivate {
 
         let flatpak_backend = FlatpakBackend::new();
 
-        let explore_page = ExplorePage::new(sender.clone(), flatpak_backend.clone());
+        let explore_page = ExplorePage::new(sender.clone());
         let installed_page = InstalledPage::new(sender.clone(), flatpak_backend.clone());
 
         let window = RefCell::new(None);

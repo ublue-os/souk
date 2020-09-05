@@ -1,9 +1,8 @@
 use gtk::prelude::*;
 
-use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::backend::{BackendMessage, FlatpakBackend, Package, PackageTransaction};
+use crate::backend::{BackendMessage, FlatpakBackend, Package};
 
 pub struct PackageActionButton {
     pub widget: gtk::Box,
@@ -51,22 +50,19 @@ impl PackageActionButton {
             flatpak_backend.clone().launch_package(package.clone());
         }));
 
-        spawn!(self.clone().backend_message_receiver());
+        spawn!(self.clone().receive_backend_messages());
     }
 
-    async fn backend_message_receiver(self: Rc<Self>) {
+    async fn receive_backend_messages(self: Rc<Self>) {
         get_widget!(self.builder, gtk::Stack, button_stack);
 
         let mut backend_channel = self.flatpak_backend.clone().get_channel();
 
         while let Some(backend_message) = backend_channel.recv().await {
             match backend_message {
-                BackendMessage::NewPackageTransaction(transaction) => {
-                    // We only care about this package
+                BackendMessage::PackageTransaction(transaction) => {
                     if transaction.package == self.package {
                         let mut transaction_channel = transaction.clone().get_channel();
-
-                        // We have a transaction which affects this package, so display progressbar
                         button_stack.set_visible_child_name("processing");
 
                         // Listen to transaction state changes
@@ -78,7 +74,6 @@ impl PackageActionButton {
                         }
                     }
                 }
-                _ => (),
             }
         }
     }

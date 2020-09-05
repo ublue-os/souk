@@ -1,10 +1,7 @@
 use broadcaster::BroadcastChannel;
 use flatpak::prelude::*;
-use flatpak::{Installation, InstallationExt, RefKind};
-use gio::prelude::*;
+use flatpak::{Installation, InstallationExt};
 
-use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
@@ -83,11 +80,6 @@ impl FlatpakBackend {
         installed_refs.append(&mut user_refs);
 
         for ref_ in installed_refs {
-            let kind = match ref_.get_kind() {
-                RefKind::App => "app".to_string(),
-                RefKind::Runtime => "runtime".to_string(),
-                _ => "unknown".to_string(),
-            };
             let name = ref_.get_name().unwrap().to_string();
             let branch = ref_.get_branch().unwrap().to_string();
             let origin = ref_.get_origin().unwrap().to_string();
@@ -117,7 +109,7 @@ impl FlatpakBackend {
     pub fn install_package(self: Rc<Self>, package: Package) {
         let transaction = PackageTransaction::new(package, PackageAction::Install);
         self.clone()
-            .send_message(BackendMessage::NewPackageTransaction(transaction.clone()));
+            .send_message(BackendMessage::PackageTransaction(transaction.clone()));
 
         self.clone()
             .transaction_backend
@@ -127,7 +119,7 @@ impl FlatpakBackend {
     pub fn uninstall_package(self: Rc<Self>, package: Package) {
         let transaction = PackageTransaction::new(package, PackageAction::Uninstall);
         self.clone()
-            .send_message(BackendMessage::NewPackageTransaction(transaction.clone()));
+            .send_message(BackendMessage::PackageTransaction(transaction.clone()));
 
         self.clone()
             .transaction_backend

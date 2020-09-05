@@ -4,7 +4,7 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::{BackendMessage, FlatpakBackend, PackageTransaction, TransactionState};
+use crate::backend::{BackendMessage, FlatpakBackend, PackageTransaction};
 use crate::ui::PackageTile;
 
 pub struct InstalledPage {
@@ -55,10 +55,9 @@ impl InstalledPage {
 
         while let Some(message) = channel.recv().await {
             match message {
-                BackendMessage::NewPackageTransaction(transaction) => {
+                BackendMessage::PackageTransaction(transaction) => {
                     spawn!(self.clone().package_transaction_receiver(transaction));
                 }
-                _ => (),
             }
         }
     }

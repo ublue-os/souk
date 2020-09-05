@@ -1,7 +1,5 @@
 use broadcaster::BroadcastChannel;
 
-use std::rc::Rc;
-
 use crate::backend::{Package, PackageAction, TransactionState};
 
 #[derive(Debug, Clone)]

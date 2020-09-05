@@ -1,7 +1,6 @@
 use appstream::enums::Icon;
 use appstream::{License, MarkupTranslatableString, TranslatableString};
 use chrono::{DateTime, Utc};
-use flatpak::prelude::*;
 use gio::prelude::*;
 use gtk::prelude::*;
 use html2pango::*;

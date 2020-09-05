@@ -4,27 +4,24 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::FlatpakBackend;
 use crate::database::queries;
 use crate::ui::PackageTile;
 
 pub struct ExplorePage {
     pub widget: gtk::Box,
-    flatpak_backend: Rc<FlatpakBackend>,
 
     builder: gtk::Builder,
     sender: Sender<Action>,
 }
 
 impl ExplorePage {
-    pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
+    pub fn new(sender: Sender<Action>) -> Rc<Self> {
         let builder =
             gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/explore_page.ui");
         get_widget!(builder, gtk::Box, explore_page);
 
         let explore_page = Rc::new(Self {
             widget: explore_page,
-            flatpak_backend,
             builder,
             sender,
         });

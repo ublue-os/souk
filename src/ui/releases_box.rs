@@ -1,34 +1,35 @@
-use appstream::Release;
 use gtk::prelude::*;
 
+use crate::backend::Package;
 use crate::ui::utils;
 
 pub struct ReleasesBox {
     pub widget: gtk::Box,
-    releases: Option<Vec<Release>>,
-
+    package: Package,
     builder: gtk::Builder,
 }
 
 impl ReleasesBox {
-    pub fn new() -> Self {
+    pub fn new(package: Package) -> Self {
         let builder =
             gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/releases_box.ui");
         get_widget!(builder, gtk::Box, releases_box);
 
         let releases_box = Self {
             widget: releases_box,
-            releases: None,
+            package,
             builder,
         };
 
         releases_box.setup_signals();
+        releases_box.setup_widgets();
         releases_box
     }
 
     fn setup_signals(&self) {}
 
-    pub fn set_releases(&mut self, releases: Vec<Release>) {
+    fn setup_widgets(&self) {
+        let releases = self.package.component.releases.clone();
         if !releases.is_empty() {
             self.widget.set_visible(true);
             let release = releases[0].clone();
@@ -46,7 +47,5 @@ impl ReleasesBox {
         } else {
             self.widget.set_visible(false);
         }
-
-        self.releases = Some(releases);
     }
 }
