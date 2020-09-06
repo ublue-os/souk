@@ -10,7 +10,6 @@
     <file>gtk/releases_box.ui</file>
     <file>gtk/screenshots_box.ui</file>
     <file>gtk/project_urls_box.ui</file>
-    <file>gtk/transaction_progressbar.ui</file>
     <file>gtk/style.css</file>
     <file preprocess="xml-stripblanks">icons/star-outline-thick-symbolic.svg</file>
   </gresource>

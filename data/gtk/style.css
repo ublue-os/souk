@@ -21,17 +21,35 @@
   border-bottom: 1px solid @borders;
 }
 
-.transaction-log{
-  background-color: #252e32;
-  color: white;
-  font-size: smaller;
-  font-family: monospace;
-  padding: 12px;
+.action-button button{
+	border-radius: 5px;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
 }
 
-.smaller-button{
-  padding: 0;
-  padding-left: 3px;
-  padding-right: 3px;
-  font-size: x-small;
+.action-button-progress progress{
+	min-height: 3px;
+	border-radius: 0px;
+	border-bottom-left-radius: 5px;
+}
+
+.action-button-progress trough.empty progress  {
+	min-height: 3px;
+	border-radius: 0px;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+}
+
+.action-button-progress trough.full progress  {
+	min-height: 5px;
+	border-radius: 0px;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+}
+
+.action-button-progress trough{
+	min-height: 3px;
+	border-radius: 5px;
+	border-top-left-radius: 0px;
+	border-top-right-radius: 0px;
 }

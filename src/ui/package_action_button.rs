@@ -55,6 +55,8 @@ impl PackageActionButton {
 
     async fn receive_backend_messages(self: Rc<Self>) {
         get_widget!(self.builder, gtk::Stack, button_stack);
+        get_widget!(self.builder, gtk::ProgressBar, progressbar);
+        get_widget!(self.builder, gtk::Label, status_label);
 
         let mut backend_channel = self.flatpak_backend.clone().get_channel();
 
@@ -67,7 +69,11 @@ impl PackageActionButton {
 
                         // Listen to transaction state changes
                         while let Some(state) = transaction_channel.recv().await {
+                            progressbar.set_fraction(state.percentage.into());
+                            status_label.set_text(&state.message);
+
                             if state.is_finished {
+                                status_label.set_text("");
                                 self.clone().update_stack();
                                 break;
                             }

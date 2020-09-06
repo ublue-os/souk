@@ -5,41 +5,26 @@
   <object class="GtkBox" id="package_action_button">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="spacing">6</property>
+    <property name="orientation">vertical</property>
+    <property name="spacing">2</property>
     <child>
       <object class="GtkStack" id="button_stack">
-        <property name="width_request">125</property>
+        <property name="width_request">150</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="hhomogeneous">False</property>
-        <property name="vhomogeneous">False</property>
         <child>
           <object class="GtkButton" id="install_button">
             <property name="label" translatable="yes">Install</property>
-            <property name="width_request">125</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
             <style>
               <class name="suggested-action"/>
+              <class name="action-button"/>
             </style>
           </object>
           <packing>
             <property name="name">install</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="Processing_button">
-            <property name="label" translatable="yes">Processing...</property>
-            <property name="width_request">125</property>
-            <property name="visible">True</property>
-            <property name="sensitive">False</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
-          </object>
-          <packing>
-            <property name="name">processing</property>
-            <property name="position">1</property>
           </packing>
         </child>
         <child>
@@ -50,7 +35,6 @@
             <child>
               <object class="GtkButton" id="open_button">
                 <property name="label" translatable="yes">Open</property>
-                <property name="width_request">125</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -59,14 +43,47 @@
                 </style>
               </object>
               <packing>
-                <property name="expand">False</property>
+                <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
               </packing>
             </child>
             <child>
               <object class="GtkButton" id="uninstall_button">
-                <property name="label" translatable="yes">Uninstall</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="icon_name">user-trash-symbolic</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <style>
+              <class name="action-butotn"/>
+            </style>
+          </object>
+          <packing>
+            <property name="name">installed</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="cancel_box">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkButton" id="cancel_button">
+                <property name="label" translatable="yes">Cancel</property>
                 <property name="width_request">125</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -78,9 +95,24 @@
                 <property name="position">1</property>
               </packing>
             </child>
+            <child>
+              <object class="GtkProgressBar" id="progressbar">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <style>
+              <class name="linked"/>
+              <class name="action-button-progress"/>
+            </style>
           </object>
           <packing>
-            <property name="name">installed</property>
+            <property name="name">processing</property>
             <property name="position">2</property>
           </packing>
         </child>
@@ -92,12 +124,20 @@
       </packing>
     </child>
     <child>
-      <object class="GtkButton" id="update_button">
-        <property name="label" translatable="yes">Update</property>
-        <property name="width_request">125</property>
-        <property name="can_focus">True</property>
-        <property name="receives_default">True</property>
-        <property name="no_show_all">True</property>
+      <object class="GtkLabel" id="status_label">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">center</property>
+        <property name="ellipsize">end</property>
+        <property name="single_line_mode">True</property>
+        <property name="max_width_chars">15</property>
+        <property name="xalign">0</property>
+        <attributes>
+          <attribute name="scale" value="0.80000000000000004"/>
+        </attributes>
+        <style>
+          <class name="dim-label"/>
+        </style>
       </object>
       <packing>
         <property name="expand">False</property>

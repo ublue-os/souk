@@ -56,7 +56,6 @@ sources = files(
   'ui/project_urls_box.rs',
   'ui/releases_box.rs',
   'ui/screenshots_box.rs',
-  'ui/transaction_progressbar.rs',
   'ui/utils.rs',
   'ui/window.rs',
 

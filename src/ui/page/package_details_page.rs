@@ -9,7 +9,6 @@ use crate::backend::Package;
 use crate::database::queries;
 use crate::ui::{
     utils, PackageActionButton, PackageTile, ProjectUrlsBox, ReleasesBox, ScreenshotsBox,
-    TransactionProgressBar,
 };
 
 pub struct PackageDetailsPage {
@@ -18,7 +17,6 @@ pub struct PackageDetailsPage {
     package: Package,
 
     action_button: Rc<PackageActionButton>,
-    progressbar: Rc<TransactionProgressBar>,
 
     screenshots_box: ScreenshotsBox,
     releases_box: ReleasesBox,
@@ -40,7 +38,6 @@ impl PackageDetailsPage {
         get_widget!(builder, gtk::Box, package_details_page);
 
         let action_button = PackageActionButton::new(flatpak_backend.clone(), package.clone());
-        let progressbar = TransactionProgressBar::new(flatpak_backend.clone(), package.clone());
         let screenshots_box = ScreenshotsBox::new(package.clone());
         let releases_box = ReleasesBox::new(package.clone());
         let project_urls_box = ProjectUrlsBox::new(package.clone());
@@ -50,7 +47,6 @@ impl PackageDetailsPage {
             flatpak_backend,
             package,
             action_button,
-            progressbar,
             screenshots_box,
             releases_box,
             project_urls_box,
@@ -67,9 +63,6 @@ impl PackageDetailsPage {
     fn setup_widgets(&self) {
         get_widget!(self.builder, gtk::Box, package_action_button_box);
         package_action_button_box.add(&self.action_button.widget);
-
-        get_widget!(self.builder, gtk::Box, transaction_progressbar_box);
-        transaction_progressbar_box.add(&self.progressbar.widget);
 
         get_widget!(self.builder, gtk::Box, screenshots_box);
         screenshots_box.add(&self.screenshots_box.widget);

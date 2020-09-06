@@ -16,9 +16,6 @@ pub use releases_box::ReleasesBox;
 mod screenshots_box;
 pub use screenshots_box::ScreenshotsBox;
 
-mod transaction_progressbar;
-pub use transaction_progressbar::TransactionProgressBar;
-
 mod window;
 pub use window::FfApplicationWindow;
 pub use window::View;
