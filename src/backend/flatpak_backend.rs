@@ -141,8 +141,9 @@ impl FlatpakBackend {
         };
     }
 
-    pub fn cancel_package_transaction(self: Rc<Self>, transaction: Arc<PackageTransaction>){
-        self.transaction_backend.cancel_package_transaction(transaction);
+    pub fn cancel_package_transaction(self: Rc<Self>, transaction: Arc<PackageTransaction>) {
+        self.transaction_backend
+            .cancel_package_transaction(transaction);
     }
 
     fn send_message(self: Rc<Self>, message: BackendMessage) {

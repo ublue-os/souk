@@ -1,10 +1,12 @@
 use gtk::prelude::*;
 
-use std::sync::Arc;
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::Arc;
 
-use crate::backend::{BackendMessage, FlatpakBackend, TransactionMode, Package, PackageTransaction};
+use crate::backend::{
+    BackendMessage, FlatpakBackend, Package, PackageTransaction, TransactionMode,
+};
 
 pub struct PackageActionButton {
     pub widget: gtk::Box,
@@ -89,7 +91,9 @@ impl PackageActionButton {
                             progressbar.set_fraction(state.percentage.into());
                             status_label.set_text(&state.message);
 
-                            if state.mode == TransactionMode::Finished || state.mode == TransactionMode::Cancelled {
+                            if state.mode == TransactionMode::Finished
+                                || state.mode == TransactionMode::Cancelled
+                            {
                                 status_label.set_text("");
                                 self.clone().update_stack();
                                 break;

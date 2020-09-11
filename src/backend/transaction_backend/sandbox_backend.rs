@@ -1,18 +1,20 @@
+use async_process::Child;
 use async_process::Command;
 use async_process::Stdio;
 use futures_util::io::BufReader;
 use futures_util::AsyncBufReadExt;
 use futures_util::StreamExt;
 use regex::Regex;
-use async_process::Child;
 
-use std::sync::Arc;
-use std::rc::Rc;
-use std::collections::HashMap;
 use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::backend::transaction_backend::TransactionBackend;
-use crate::backend::{Package, PackageAction, PackageTransaction, TransactionMode, TransactionState};
+use crate::backend::{
+    Package, PackageAction, PackageTransaction, TransactionMode, TransactionState,
+};
 
 type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
 
@@ -23,19 +25,34 @@ pub struct SandboxBackend {
 impl TransactionBackend for SandboxBackend {
     fn new() -> Self {
         let transactions = Rc::new(RefCell::new(HashMap::new()));
-        Self {transactions}
+        Self { transactions }
     }
 
     fn add_package_transaction(&self, transaction: Arc<PackageTransaction>) {
-        debug!("New transaction: {:?} -> {}", transaction.action, transaction.package.get_ref_name());
-        spawn!(Self::execute_package_transacton(transaction, self.transactions.clone()));
+        debug!(
+            "New transaction: {:?} -> {}",
+            transaction.action,
+            transaction.package.get_ref_name()
+        );
+        spawn!(Self::execute_package_transacton(
+            transaction,
+            self.transactions.clone()
+        ));
     }
 
-    fn cancel_package_transaction(&self, transaction: Arc<PackageTransaction>){
-        debug!("Calcel transaction: {:?} -> {}", transaction.action, transaction.package.get_ref_name());
-        let mut tupl = self.transactions.borrow_mut().remove(&transaction.package.get_ref_name()).unwrap();
+    fn cancel_package_transaction(&self, transaction: Arc<PackageTransaction>) {
+        debug!(
+            "Calcel transaction: {:?} -> {}",
+            transaction.action,
+            transaction.package.get_ref_name()
+        );
+        let mut tupl = self
+            .transactions
+            .borrow_mut()
+            .remove(&transaction.package.get_ref_name())
+            .unwrap();
 
-        match tupl.1.kill(){
+        match tupl.1.kill() {
             Ok(()) => {
                 let mut state = TransactionState::default();
                 state.mode = TransactionMode::Cancelled;
@@ -43,13 +60,16 @@ impl TransactionBackend for SandboxBackend {
                 transaction.set_state(state);
                 debug!("Sucessfully cancelled transaction");
             }
-            Err(err) => warn!("Unable to cancel transaction: {}", err.to_string())
+            Err(err) => warn!("Unable to cancel transaction: {}", err.to_string()),
         }
     }
 }
 
 impl SandboxBackend {
-    async fn execute_package_transacton(transaction: Arc<PackageTransaction>, transactions: Transactions) {
+    async fn execute_package_transacton(
+        transaction: Arc<PackageTransaction>,
+        transactions: Transactions,
+    ) {
         // Set initial transaction state
         let mut state = TransactionState::default();
         state.percentage = 0.0;
@@ -63,7 +83,10 @@ impl SandboxBackend {
             .unwrap();
 
         let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
-        transactions.borrow_mut().insert(transaction.package.get_ref_name(), (transaction.clone(), child));
+        transactions.borrow_mut().insert(
+            transaction.package.get_ref_name(),
+            (transaction.clone(), child),
+        );
 
         while let Some(line) = lines.next().await {
             println!("{}", line.as_ref().unwrap());
@@ -71,15 +94,24 @@ impl SandboxBackend {
             transaction.set_state(state);
         }
 
-        match transactions.borrow_mut().remove(&transaction.package.get_ref_name()){
-            Some(_) => {
+        match transactions
+            .borrow_mut()
+            .remove(&transaction.package.get_ref_name())
+        {
+            Some((_, mut child)) => {
                 // Finish transaction
                 let mut state = TransactionState::default();
                 state.percentage = 1.0;
-                state.mode = TransactionMode::Finished;
+
+                if child.status().await.unwrap().success() {
+                    state.mode = TransactionMode::Finished;
+                    debug!("Package transaction ended successfully.");
+                } else {
+                    state.mode = TransactionMode::Error("Unknown error".into());
+                    debug!("Package transaction did not end successfully.");
+                }
                 transaction.set_state(state);
-                debug!("Package transaction ended successfully.");
-            },
+            }
             None => debug!("Unable to end package transaction. Probably got cancelled before."),
         };
     }

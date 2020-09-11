@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::Action;
-use crate::backend::{BackendMessage, FlatpakBackend, TransactionMode, PackageTransaction};
+use crate::backend::{BackendMessage, FlatpakBackend, PackageTransaction, TransactionMode};
 use crate::ui::PackageTile;
 
 pub struct InstalledPage {

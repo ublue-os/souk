@@ -16,7 +16,7 @@ mod package_transaction;
 pub use package_transaction::PackageTransaction;
 
 mod transaction_state;
-pub use transaction_state::TransactionState;
 pub use transaction_state::TransactionMode;
+pub use transaction_state::TransactionState;
 
 mod utils;

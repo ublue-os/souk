@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, PartialEq)]
-pub enum TransactionMode{
+pub enum TransactionMode {
     Waiting,
     Running,
     Finished,
@@ -8,7 +8,9 @@ pub enum TransactionMode{
 }
 
 impl Default for TransactionMode {
-    fn default() -> Self { TransactionMode::Waiting }
+    fn default() -> Self {
+        TransactionMode::Waiting
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]

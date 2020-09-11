@@ -1,8 +1,8 @@
 use broadcaster::BroadcastChannel;
 
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::hash::{Hash, Hasher};
 
 use crate::backend::{Package, PackageAction, TransactionState};
 
