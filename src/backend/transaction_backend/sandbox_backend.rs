@@ -19,6 +19,7 @@ use crate::backend::{
 type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
 
 pub struct SandboxBackend {
+    // HashMap < app_id , < PackageTransaction, Child > >
     transactions: Transactions,
 }
 
@@ -42,7 +43,7 @@ impl TransactionBackend for SandboxBackend {
 
     fn cancel_package_transaction(&self, transaction: Arc<PackageTransaction>) {
         debug!(
-            "Calcel transaction: {:?} -> {}",
+            "Cancel transaction: {:?} -> {}",
             transaction.action,
             transaction.package.get_ref_name()
         );
@@ -75,6 +76,7 @@ impl SandboxBackend {
         state.percentage = 0.0;
         transaction.set_state(state);
 
+        // Setup flatpak child / procress and spawn it
         let args = Self::get_flatpak_args(&transaction);
         let mut child = Command::new("flatpak-spawn")
             .args(&args)
@@ -82,27 +84,36 @@ impl SandboxBackend {
             .spawn()
             .unwrap();
 
+        // We're going to parse the lines to get status information
         let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
+
+        // Insert running child into transaction HashMap, we need to access it later...
+        // 1) when we want to cancel the transaction
+        // 2) when we want to know the current state of a running transaction
         transactions.borrow_mut().insert(
             transaction.package.get_ref_name(),
             (transaction.clone(), child),
         );
 
+        // Parse lines till nothing is left anymore / the process stopped
         while let Some(line) = lines.next().await {
             println!("{}", line.as_ref().unwrap());
             let state = Self::parse_line(line.unwrap());
             transaction.set_state(state);
         }
 
+        // Process stopped and isn't running anymore, so remove the transaction
+        // from the HashMap again, and process the result / return code of it.
         match transactions
             .borrow_mut()
             .remove(&transaction.package.get_ref_name())
         {
             Some((_, mut child)) => {
-                // Finish transaction
                 let mut state = TransactionState::default();
+                // Transaction finished, so let set it to 100%
                 state.percentage = 1.0;
 
+                // Check if it ended successfully (return code == 0)
                 if child.status().await.unwrap().success() {
                     state.mode = TransactionMode::Finished;
                     debug!("Package transaction ended successfully.");
@@ -110,18 +121,27 @@ impl SandboxBackend {
                     state.mode = TransactionMode::Error("Unknown error".into());
                     debug!("Package transaction did not end successfully.");
                 }
+
+                // Set last transaction state.
                 transaction.set_state(state);
             }
+            // When we cancel the transaction before, it isn't available in the HashMap anymore.
             None => debug!("Unable to end package transaction. Probably got cancelled before."),
         };
     }
 
     fn get_flatpak_args(transaction: &PackageTransaction) -> Vec<String> {
         let mut args: Vec<String> = Vec::new();
+        // If we kill flatpak-spawn, we also want to kill the child process too.
         args.push("--watch-bus".into());
+        // We cannot do stuff inside the Flatpak Sandbox,
+        // so we have to spawn it on the host side.
         args.push("--host".into());
         args.push("flatpak".into());
 
+        // Generate the Flatpak command
+        // Note: The command cannot ask any further questions,
+        // everything must run automatically, so we set "-y" everywhere.
         match transaction.action {
             PackageAction::Install => {
                 args.push("install".into());
