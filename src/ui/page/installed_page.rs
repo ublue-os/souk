@@ -2,9 +2,10 @@ use glib::Sender;
 use gtk::prelude::*;
 
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::app::Action;
-use crate::backend::{BackendMessage, FlatpakBackend, PackageTransaction};
+use crate::backend::{BackendMessage, FlatpakBackend, TransactionMode, PackageTransaction};
 use crate::ui::PackageTile;
 
 pub struct InstalledPage {
@@ -62,12 +63,12 @@ impl InstalledPage {
         }
     }
 
-    async fn package_transaction_receiver(self: Rc<Self>, transaction: PackageTransaction) {
+    async fn package_transaction_receiver(self: Rc<Self>, transaction: Arc<PackageTransaction>) {
         let mut channel = transaction.clone().get_channel();
 
         while let Some(state) = channel.recv().await {
             // TODO: implement UI
-            if state.is_finished {
+            if state.mode == TransactionMode::Finished || state.mode == TransactionMode::Cancelled {
                 break;
             }
         }

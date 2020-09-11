@@ -1,12 +1,14 @@
 use gtk::prelude::*;
 
 use std::rc::Rc;
+use std::cell::RefCell;
 
-use crate::backend::{BackendMessage, FlatpakBackend, Package};
+use crate::backend::{BackendMessage, FlatpakBackend, TransactionMode, Package};
 
 pub struct PackageActionButton {
     pub widget: gtk::Box,
     package: Package,
+    cancel_transaction: RefCell<bool>,
 
     flatpak_backend: Rc<FlatpakBackend>,
     builder: gtk::Builder,
@@ -18,10 +20,12 @@ impl PackageActionButton {
             "/de/haeckerfelix/FlatpakFrontend/gtk/package_action_button.ui",
         );
         get_widget!(builder, gtk::Box, package_action_button);
+        let cancel_transaction = RefCell::new(false);
 
         let package_action_button = Rc::new(Self {
             widget: package_action_button,
             package,
+            cancel_transaction,
             flatpak_backend,
             builder,
         });
@@ -34,20 +38,27 @@ impl PackageActionButton {
     fn setup_signals(self: Rc<Self>) {
         // install
         get_widget!(self.builder, gtk::Button, install_button);
-        install_button.connect_clicked(clone!(@strong self.flatpak_backend as flatpak_backend, @strong self.package as package => move |_|{
-            flatpak_backend.clone().install_package(package.clone());
+        install_button.connect_clicked(clone!(@weak self as this => move |_|{
+            this.flatpak_backend.clone().install_package(this.package.clone());
         }));
 
         // uninstall
         get_widget!(self.builder, gtk::Button, uninstall_button);
-        uninstall_button.connect_clicked(clone!(@strong self.flatpak_backend as flatpak_backend, @strong self.package as package => move |_|{
-            flatpak_backend.clone().uninstall_package(package.clone());
+        uninstall_button.connect_clicked(clone!(@weak self as this => move |_|{
+            debug!("Uninstall");
+            this.flatpak_backend.clone().uninstall_package(this.package.clone());
         }));
 
         // open
         get_widget!(self.builder, gtk::Button, open_button);
-        open_button.connect_clicked(clone!(@strong self.flatpak_backend as flatpak_backend, @strong self.package as package => move |_|{
-            flatpak_backend.clone().launch_package(package.clone());
+        open_button.connect_clicked(clone!(@weak self as this => move |_|{
+            this.flatpak_backend.clone().launch_package(this.package.clone());
+        }));
+
+        // cancel
+        get_widget!(self.builder, gtk::Button, cancel_button);
+        cancel_button.connect_clicked(clone!(@weak self as this => move |_|{
+            *this.cancel_transaction.borrow_mut() = true;
         }));
 
         spawn!(self.receive_backend_messages());
@@ -72,7 +83,12 @@ impl PackageActionButton {
                             progressbar.set_fraction(state.percentage.into());
                             status_label.set_text(&state.message);
 
-                            if state.is_finished {
+                            if *self.cancel_transaction.borrow() {
+                                transaction.cancel();
+                                *self.cancel_transaction.borrow_mut() = false;
+                            }
+
+                            if state.mode == TransactionMode::Finished || state.mode == TransactionMode::Cancelled {
                                 status_label.set_text("");
                                 self.clone().update_stack();
                                 break;

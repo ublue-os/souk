@@ -5,8 +5,10 @@ use futures_util::AsyncBufReadExt;
 use futures_util::StreamExt;
 use regex::Regex;
 
+use std::sync::Arc;
+
 use crate::backend::transaction_backend::TransactionBackend;
-use crate::backend::{PackageAction, PackageTransaction, TransactionState};
+use crate::backend::{PackageAction, PackageTransaction, TransactionMode, TransactionState};
 
 pub struct SandboxBackend {}
 
@@ -15,14 +17,14 @@ impl TransactionBackend for SandboxBackend {
         Self {}
     }
 
-    fn add_package_transaction(&self, transaction: PackageTransaction) {
+    fn add_package_transaction(&self, transaction: Arc<PackageTransaction>) {
         debug!("New transaction: {:#?}", transaction);
         spawn!(Self::execute_package_transacton(transaction));
     }
 }
 
 impl SandboxBackend {
-    async fn execute_package_transacton(mut transaction: PackageTransaction) {
+    async fn execute_package_transacton(transaction: Arc<PackageTransaction>) {
         // Set initial transaction state
         let mut state = TransactionState::default();
         state.percentage = 0.0;
@@ -37,6 +39,19 @@ impl SandboxBackend {
         let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
 
         while let Some(line) = lines.next().await {
+            // Check if transaction got cancelled
+            if transaction.is_cancelled(){
+                match child.kill(){
+                    Ok(_) => debug!("Cancelled transaction successfully."),
+                    Err(err) => warn!("Unable to cancel transaction: {}", err),
+                };
+
+                let mut state = TransactionState::default();
+                state.mode = TransactionMode::Cancelled;
+
+                break;
+            }
+
             println!("{}", line.as_ref().unwrap());
             let state = Self::parse_line(line.unwrap());
             transaction.set_state(state);
@@ -45,7 +60,7 @@ impl SandboxBackend {
         // Finish transaction
         let mut state = TransactionState::default();
         state.percentage = 1.0;
-        state.is_finished = true;
+        state.mode = TransactionMode::Finished;
         transaction.set_state(state);
 
         debug!("Finished package transaction.");
@@ -78,6 +93,7 @@ impl SandboxBackend {
 
     fn parse_line(line: String) -> TransactionState {
         let mut state = TransactionState::default();
+        state.mode = TransactionMode::Running;
         state.message = line.clone();
 
         // Regex to get percentage value
