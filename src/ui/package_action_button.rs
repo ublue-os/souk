@@ -1,14 +1,15 @@
 use gtk::prelude::*;
 
+use std::sync::Arc;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::backend::{BackendMessage, FlatpakBackend, TransactionMode, Package};
+use crate::backend::{BackendMessage, FlatpakBackend, TransactionMode, Package, PackageTransaction};
 
 pub struct PackageActionButton {
     pub widget: gtk::Box,
     package: Package,
-    cancel_transaction: RefCell<bool>,
+    transaction: RefCell<Option<Arc<PackageTransaction>>>,
 
     flatpak_backend: Rc<FlatpakBackend>,
     builder: gtk::Builder,
@@ -20,12 +21,12 @@ impl PackageActionButton {
             "/de/haeckerfelix/FlatpakFrontend/gtk/package_action_button.ui",
         );
         get_widget!(builder, gtk::Box, package_action_button);
-        let cancel_transaction = RefCell::new(false);
+        let transaction = RefCell::new(None);
 
         let package_action_button = Rc::new(Self {
             widget: package_action_button,
             package,
-            cancel_transaction,
+            transaction,
             flatpak_backend,
             builder,
         });
@@ -58,7 +59,10 @@ impl PackageActionButton {
         // cancel
         get_widget!(self.builder, gtk::Button, cancel_button);
         cancel_button.connect_clicked(clone!(@weak self as this => move |_|{
-            *this.cancel_transaction.borrow_mut() = true;
+            match this.transaction.borrow().clone(){
+                Some(t) => this.flatpak_backend.clone().cancel_package_transaction(t.clone()),
+                None => warn!("No transaction available to cancel"),
+            };
         }));
 
         spawn!(self.receive_backend_messages());
@@ -75,6 +79,8 @@ impl PackageActionButton {
             match backend_message {
                 BackendMessage::PackageTransaction(transaction) => {
                     if transaction.package == self.package {
+                        *self.transaction.borrow_mut() = Some(transaction.clone());
+
                         let mut transaction_channel = transaction.clone().get_channel();
                         button_stack.set_visible_child_name("processing");
 
@@ -83,17 +89,14 @@ impl PackageActionButton {
                             progressbar.set_fraction(state.percentage.into());
                             status_label.set_text(&state.message);
 
-                            if *self.cancel_transaction.borrow() {
-                                transaction.cancel();
-                                *self.cancel_transaction.borrow_mut() = false;
-                            }
-
                             if state.mode == TransactionMode::Finished || state.mode == TransactionMode::Cancelled {
                                 status_label.set_text("");
                                 self.clone().update_stack();
                                 break;
                             }
                         }
+
+                        *self.transaction.borrow_mut() = None;
                     }
                 }
             }

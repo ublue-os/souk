@@ -9,5 +9,8 @@ pub trait TransactionBackend {
     fn new() -> Self
     where
         Self: Sized;
+
     fn add_package_transaction(&self, transaction: std::sync::Arc<PackageTransaction>);
+
+    fn cancel_package_transaction(&self, transaction: std::sync::Arc<PackageTransaction>);
 }

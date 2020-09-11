@@ -4,27 +4,52 @@ use futures_util::io::BufReader;
 use futures_util::AsyncBufReadExt;
 use futures_util::StreamExt;
 use regex::Regex;
+use async_process::Child;
 
 use std::sync::Arc;
+use std::rc::Rc;
+use std::collections::HashMap;
+use std::cell::RefCell;
 
 use crate::backend::transaction_backend::TransactionBackend;
-use crate::backend::{PackageAction, PackageTransaction, TransactionMode, TransactionState};
+use crate::backend::{Package, PackageAction, PackageTransaction, TransactionMode, TransactionState};
 
-pub struct SandboxBackend {}
+type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
+
+pub struct SandboxBackend {
+    transactions: Transactions,
+}
 
 impl TransactionBackend for SandboxBackend {
     fn new() -> Self {
-        Self {}
+        let transactions = Rc::new(RefCell::new(HashMap::new()));
+        Self {transactions}
     }
 
     fn add_package_transaction(&self, transaction: Arc<PackageTransaction>) {
-        debug!("New transaction: {:#?}", transaction);
-        spawn!(Self::execute_package_transacton(transaction));
+        debug!("New transaction: {:?} -> {}", transaction.action, transaction.package.get_ref_name());
+        spawn!(Self::execute_package_transacton(transaction, self.transactions.clone()));
+    }
+
+    fn cancel_package_transaction(&self, transaction: Arc<PackageTransaction>){
+        debug!("Calcel transaction: {:?} -> {}", transaction.action, transaction.package.get_ref_name());
+        let mut tupl = self.transactions.borrow_mut().remove(&transaction.package.get_ref_name()).unwrap();
+
+        match tupl.1.kill(){
+            Ok(()) => {
+                let mut state = TransactionState::default();
+                state.mode = TransactionMode::Cancelled;
+                state.percentage = 1.0;
+                transaction.set_state(state);
+                debug!("Sucessfully cancelled transaction");
+            }
+            Err(err) => warn!("Unable to cancel transaction: {}", err.to_string())
+        }
     }
 }
 
 impl SandboxBackend {
-    async fn execute_package_transacton(transaction: Arc<PackageTransaction>) {
+    async fn execute_package_transacton(transaction: Arc<PackageTransaction>, transactions: Transactions) {
         // Set initial transaction state
         let mut state = TransactionState::default();
         state.percentage = 0.0;
@@ -36,38 +61,32 @@ impl SandboxBackend {
             .stdout(Stdio::piped())
             .spawn()
             .unwrap();
+
         let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
+        transactions.borrow_mut().insert(transaction.package.get_ref_name(), (transaction.clone(), child));
 
         while let Some(line) = lines.next().await {
-            // Check if transaction got cancelled
-            if transaction.is_cancelled(){
-                match child.kill(){
-                    Ok(_) => debug!("Cancelled transaction successfully."),
-                    Err(err) => warn!("Unable to cancel transaction: {}", err),
-                };
-
-                let mut state = TransactionState::default();
-                state.mode = TransactionMode::Cancelled;
-
-                break;
-            }
-
             println!("{}", line.as_ref().unwrap());
             let state = Self::parse_line(line.unwrap());
             transaction.set_state(state);
         }
 
-        // Finish transaction
-        let mut state = TransactionState::default();
-        state.percentage = 1.0;
-        state.mode = TransactionMode::Finished;
-        transaction.set_state(state);
-
-        debug!("Finished package transaction.");
+        match transactions.borrow_mut().remove(&transaction.package.get_ref_name()){
+            Some(_) => {
+                // Finish transaction
+                let mut state = TransactionState::default();
+                state.percentage = 1.0;
+                state.mode = TransactionMode::Finished;
+                transaction.set_state(state);
+                debug!("Package transaction ended successfully.");
+            },
+            None => debug!("Unable to end package transaction. Probably got cancelled before."),
+        };
     }
 
     fn get_flatpak_args(transaction: &PackageTransaction) -> Vec<String> {
         let mut args: Vec<String> = Vec::new();
+        args.push("--watch-bus".into());
         args.push("--host".into());
         args.push("flatpak".into());
 

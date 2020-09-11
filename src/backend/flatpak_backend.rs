@@ -3,6 +3,7 @@ use flatpak::prelude::*;
 use flatpak::{Installation, InstallationExt};
 
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
 use crate::backend::{BackendMessage, Package, PackageAction, PackageTransaction};
@@ -138,6 +139,10 @@ impl FlatpakBackend {
                 err.to_string()
             ),
         };
+    }
+
+    pub fn cancel_package_transaction(self: Rc<Self>, transaction: Arc<PackageTransaction>){
+        self.transaction_backend.cancel_package_transaction(transaction);
     }
 
     fn send_message(self: Rc<Self>, message: BackendMessage) {
