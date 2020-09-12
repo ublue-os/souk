@@ -81,11 +81,13 @@ impl SandboxBackend {
         let mut child = Command::new("flatpak-spawn")
             .args(&args)
             .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .spawn()
             .unwrap();
 
         // We're going to parse the lines to get status information
-        let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
+        let mut stdout_lines = BufReader::new(child.stdout.take().unwrap()).lines();
+        let mut stderr_lines = BufReader::new(child.stderr.take().unwrap()).lines();
 
         // Insert running child into transaction HashMap, we need to access it later...
         // 1) when we want to cancel the transaction
@@ -95,9 +97,8 @@ impl SandboxBackend {
             (transaction.clone(), child),
         );
 
-        // Parse lines till nothing is left anymore / the process stopped
-        while let Some(line) = lines.next().await {
-            println!("{}", line.as_ref().unwrap());
+        // Parse stdout lines till nothing is left anymore / the process stopped
+        while let Some(line) = stdout_lines.next().await {
             let state = Self::parse_line(line.unwrap());
             transaction.set_state(state);
         }
@@ -118,7 +119,13 @@ impl SandboxBackend {
                     state.mode = TransactionMode::Finished;
                     debug!("Package transaction ended successfully.");
                 } else {
-                    state.mode = TransactionMode::Error("Unknown error".into());
+                    // Get stderr information
+                    let mut err_lines = String::new();
+                    while let Some(line) = stderr_lines.next().await {
+                        err_lines = format!("{}\n{}", err_lines, line.unwrap());
+                    }
+
+                    state.mode = TransactionMode::Error(err_lines);
                     debug!("Package transaction did not end successfully.");
                 }
 

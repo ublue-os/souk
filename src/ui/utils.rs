@@ -9,13 +9,6 @@ use std::path::PathBuf;
 
 use crate::backend::Package;
 
-pub fn set_label(label: &gtk::Label, text: Option<String>) {
-    match text {
-        Some(text) => label.set_text(&text),
-        None => label.set_text("–"),
-    };
-}
-
 pub fn set_label_translatable_string(label: &gtk::Label, text: Option<TranslatableString>) {
     match text {
         Some(text) => label.set_text(&text.get_default().unwrap_or(&"???".to_string())),
@@ -34,13 +27,6 @@ pub fn set_label_markup_translatable_string(
             label.set_use_markup(true);
             label.set_markup(&markup);
         }
-        None => label.set_text("–"),
-    };
-}
-
-pub fn set_license_label(label: &gtk::Label, license: Option<License>) {
-    match license {
-        Some(license) => label.set_text(&license.0),
         None => label.set_text("–"),
     };
 }
@@ -77,6 +63,28 @@ pub fn set_icon(package: &Package, image: &gtk::Image, size: i32) {
         path.push(name);
         image.set_from_file(&path);
     }
+}
+
+pub fn show_error_dialog(builder: gtk::Builder, message: &str) {
+    let app = builder.get_application().unwrap();
+    let window = app.get_active_window().unwrap();
+
+    let dialog = gtk::MessageDialog::new(
+        Some(&window),
+        gtk::DialogFlags::MODAL,
+        gtk::MessageType::Error,
+        gtk::ButtonsType::Close,
+        &format!("<span font_family=\"monospace\">{}</span>", message),
+    );
+
+    dialog.set_title("Something went wrong");
+    dialog.set_property_use_markup(true);
+
+    glib::idle_add_local(move || {
+        dialog.run();
+        dialog.hide();
+        glib::Continue(false)
+    });
 }
 
 // Removes all child items
