@@ -15,7 +15,7 @@ use crate::backend::FlatpakBackend;
 use crate::backend::Package;
 use crate::config;
 use crate::ui::page::{ExplorePage, InstalledPage, PackageDetailsPage};
-use crate::ui::{FfApplicationWindow, View};
+use crate::ui::{GsApplicationWindow, View};
 
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -24,7 +24,7 @@ pub enum Action {
     ViewGoBack,
 }
 
-pub struct FfApplicationPrivate {
+pub struct GsApplicationPrivate {
     sender: Sender<Action>,
     receiver: RefCell<Option<Receiver<Action>>>,
 
@@ -33,11 +33,11 @@ pub struct FfApplicationPrivate {
     pub explore_page: Rc<ExplorePage>,
     pub installed_page: Rc<InstalledPage>,
 
-    window: RefCell<Option<FfApplicationWindow>>,
+    window: RefCell<Option<GsApplicationWindow>>,
 }
 
-impl ObjectSubclass for FfApplicationPrivate {
-    const NAME: &'static str = "FfApplication";
+impl ObjectSubclass for GsApplicationPrivate {
+    const NAME: &'static str = "GsApplication";
     type ParentType = gtk::Application;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -66,16 +66,16 @@ impl ObjectSubclass for FfApplicationPrivate {
     }
 }
 
-// Implement GLib.OBject for FfApplication
-impl ObjectImpl for FfApplicationPrivate {
+// Implement GLib.OBject for GsApplication
+impl ObjectImpl for GsApplicationPrivate {
     glib_object_impl!();
 }
 
-// Implement Gtk.Application for FfApplication
-impl GtkApplicationImpl for FfApplicationPrivate {}
+// Implement Gtk.Application for GsApplication
+impl GtkApplicationImpl for GsApplicationPrivate {}
 
-// Implement Gio.Application for FfApplication
-impl ApplicationImpl for FfApplicationPrivate {
+// Implement Gio.Application for GsApplication
+impl ApplicationImpl for GsApplicationPrivate {
     fn activate(&self, _app: &gio::Application) {
         debug!("gio::Application -> activate()");
 
@@ -89,7 +89,7 @@ impl ApplicationImpl for FfApplicationPrivate {
 
         // No window available -> we have to create one
         let app = ObjectSubclass::get_instance(self)
-            .downcast::<FfApplication>()
+            .downcast::<GsApplication>()
             .unwrap();
         let window = app.create_window();
         window.present();
@@ -102,21 +102,21 @@ impl ApplicationImpl for FfApplicationPrivate {
     }
 }
 
-// Wrap FfApplicationPrivate into a usable gtk-rs object
+// Wrap GsApplicationPrivate into a usable gtk-rs object
 glib_wrapper! {
-    pub struct FfApplication(
-        Object<subclass::simple::InstanceStruct<FfApplicationPrivate>,
-        subclass::simple::ClassStruct<FfApplicationPrivate>,
-        FfApplicationClass>)
+    pub struct GsApplication(
+        Object<subclass::simple::InstanceStruct<GsApplicationPrivate>,
+        subclass::simple::ClassStruct<GsApplicationPrivate>,
+        GsApplicationClass>)
         @extends gio::Application, gtk::Application;
 
     match fn {
-        get_type => || FfApplicationPrivate::get_type().to_glib(),
+        get_type => || GsApplicationPrivate::get_type().to_glib(),
     }
 }
 
-// FfApplication implementation itself
-impl FfApplication {
+// GsApplication implementation itself
+impl GsApplication {
     pub fn run() {
         info!(
             "{} ({}) ({})",
@@ -126,32 +126,32 @@ impl FfApplication {
         );
         info!("Version: {} ({})", config::VERSION, config::PROFILE);
 
-        // Create new GObject and downcast it into FfApplication
+        // Create new GObject and downcast it into GsApplication
         let app = glib::Object::new(
-            FfApplication::static_type(),
+            GsApplication::static_type(),
             &[
                 ("application-id", &Some(config::APP_ID)),
                 ("flags", &ApplicationFlags::empty()),
             ],
         )
         .unwrap()
-        .downcast::<FfApplication>()
+        .downcast::<GsApplication>()
         .unwrap();
 
-        app.set_resource_base_path(Some("/de/haeckerfelix/FlatpakFrontend"));
+        app.set_resource_base_path(Some("/org/gnome/Store"));
 
         // Start running gtk::Application
         let args: Vec<String> = env::args().collect();
         ApplicationExtManual::run(&app, &args);
     }
 
-    fn create_window(&self) -> FfApplicationWindow {
-        let self_ = FfApplicationPrivate::from_instance(self);
-        let window = FfApplicationWindow::new(self_.sender.clone(), self.clone());
+    fn create_window(&self) -> GsApplicationWindow {
+        let self_ = GsApplicationPrivate::from_instance(self);
+        let window = GsApplicationWindow::new(self_.sender.clone(), self.clone());
 
         // Load custom styling
         let p = gtk::CssProvider::new();
-        gtk::CssProvider::load_from_resource(&p, "/de/haeckerfelix/FlatpakFrontend/gtk/style.css");
+        gtk::CssProvider::load_from_resource(&p, "/org/gnome/Store/gtk/style.css");
         gtk::StyleContext::add_provider_for_screen(&gdk::Screen::get_default().unwrap(), &p, 500);
 
         // Set initial view
@@ -161,7 +161,7 @@ impl FfApplication {
     }
 
     fn process_action(&self, action: Action) -> glib::Continue {
-        let self_ = FfApplicationPrivate::from_instance(self);
+        let self_ = GsApplicationPrivate::from_instance(self);
 
         match action {
             Action::ViewSet(view) => self_.window.borrow().as_ref().unwrap().set_view(view),

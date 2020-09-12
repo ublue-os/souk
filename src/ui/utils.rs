@@ -1,5 +1,5 @@
 use appstream::enums::Icon;
-use appstream::{License, MarkupTranslatableString, TranslatableString};
+use appstream::{MarkupTranslatableString, TranslatableString};
 use chrono::{DateTime, Utc};
 use gio::prelude::*;
 use gtk::prelude::*;

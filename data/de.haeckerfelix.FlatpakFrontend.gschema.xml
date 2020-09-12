@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<schemalist gettext-domain="flatpak-frontend">
-	<schema id="de.haeckerfelix.FlatpakFrontend" path="/de/haeckerfelix/FlatpakFrontend/">
-	</schema>
-</schemalist>

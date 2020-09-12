@@ -1,7 +1,0 @@
-[Desktop Entry]
-Name=flatpak-frontend
-Exec=flatpak-frontend
-Terminal=false
-Type=Application
-Categories=GTK;
-StartupNotify=true

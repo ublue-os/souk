@@ -15,8 +15,7 @@ pub struct PackageTile {
 
 impl PackageTile {
     pub fn new(sender: Sender<Action>, package: Package) -> Self {
-        let builder =
-            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/package_tile.ui");
+        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/package_tile.ui");
         get_widget!(builder, gtk::Button, package_tile);
 
         let package_tile = Self {

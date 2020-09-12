@@ -22,7 +22,7 @@ mod error;
 mod path;
 mod ui;
 
-use crate::app::FfApplication;
+use crate::app::GsApplication;
 
 fn main() {
     // Initialize logger
@@ -39,15 +39,17 @@ fn main() {
 
     // Setup language / translations
     setlocale(LocaleCategory::LcAll, "");
-    bindtextdomain("flatpak-frontend", config::LOCALEDIR);
-    textdomain("flatpak-frontend");
+    bindtextdomain(config::PKGNAME, config::LOCALEDIR);
+    textdomain(config::PKGNAME);
 
     // Load gresources
-    let res = gio::Resource::load(config::PKGDATADIR.to_owned() + "/flatpak-frontend.gresource")
-        .expect("Could not load resources");
+    let res = gio::Resource::load(
+        config::PKGDATADIR.to_owned() + &format!("/{}.gresource", config::APP_ID),
+    )
+    .expect("Could not load resources");
     gio::resources_register(&res);
 
     // Start application itself
     // Run app itself
-    FfApplication::run();
+    GsApplication::run();
 }

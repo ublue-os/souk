@@ -18,8 +18,7 @@ pub struct InstalledPage {
 
 impl InstalledPage {
     pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
-        let builder =
-            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/installed_page.ui");
+        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/installed_page.ui");
         get_widget!(builder, gtk::Box, installed_page);
 
         let installed_page = Rc::new(Self {

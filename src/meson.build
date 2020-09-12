@@ -1,13 +1,10 @@
-vcs_tag    = run_command('git', 'rev-parse', '--short', 'HEAD').stdout().strip()
-localedir  = join_paths(get_option('prefix'), get_option('localedir'))
-
 # Configuration file
 conf = configuration_data()
-conf.set_quoted('NAME', 'FlatpakFrontend')
+conf.set_quoted('NAME', name)
 conf.set_quoted('PKGNAME', meson.project_name())
-conf.set_quoted('APP_ID', 'de.haeckerfelix.FlatpakFrontend')
+conf.set_quoted('APP_ID', app_id)
 conf.set_quoted('VERSION', meson.project_version())
-conf.set_quoted('PROFILE', 'devel')
+conf.set_quoted('PROFILE', profile)
 conf.set_quoted('VCS_TAG', vcs_tag)
 conf.set_quoted('LOCALEDIR', localedir)
 conf.set_quoted('PKGDATADIR', pkgdatadir)
@@ -18,7 +15,6 @@ configure_file(
     configuration: conf
 )
 
-# Copy the config.rs output to the source directory.
 run_command(
   'cp',
   join_paths(meson.build_root(), 'src', 'config.rs'),
@@ -26,6 +22,8 @@ run_command(
   check: true
 )
 
+
+# Source code itself
 sources = files(
   'backend/transaction_backend/host_backend.rs',
   'backend/transaction_backend/mod.rs',
@@ -80,7 +78,8 @@ cargo_release = custom_target(
     meson.build_root(),
     meson.source_root(),
     '@OUTPUT@',
-    get_option('buildtype'),
-    meson.project_name(),
+    localedir,
+    profile
   ]
 )
+

@@ -32,9 +32,7 @@ impl PackageDetailsPage {
         sender: Sender<Action>,
         flatpak_backend: Rc<FlatpakBackend>,
     ) -> Self {
-        let builder = gtk::Builder::from_resource(
-            "/de/haeckerfelix/FlatpakFrontend/gtk/package_details_page.ui",
-        );
+        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/package_details_page.ui");
         get_widget!(builder, gtk::Box, package_details_page);
 
         let action_button = PackageActionButton::new(flatpak_backend.clone(), package.clone());

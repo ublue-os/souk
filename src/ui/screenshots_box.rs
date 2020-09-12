@@ -16,8 +16,7 @@ pub struct ScreenshotsBox {
 
 impl ScreenshotsBox {
     pub fn new(package: Package) -> Self {
-        let builder =
-            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/screenshots_box.ui");
+        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/screenshots_box.ui");
         get_widget!(builder, gtk::Box, screenshots_box);
 
         let screenshots_box = Self {

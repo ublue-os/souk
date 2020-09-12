@@ -7,7 +7,7 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::{BinImpl, ContainerImpl, WidgetImpl, WindowImpl};
 use libhandy::prelude::*;
 
-use crate::app::{Action, FfApplication, FfApplicationPrivate};
+use crate::app::{Action, GsApplication, GsApplicationPrivate};
 use crate::ui::page::PackageDetailsPage;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -18,12 +18,12 @@ pub enum View {
     AppDetails,
 }
 
-pub struct FfApplicationWindowPrivate {
+pub struct GsApplicationWindowPrivate {
     window_builder: gtk::Builder,
 }
 
-impl ObjectSubclass for FfApplicationWindowPrivate {
-    const NAME: &'static str = "FfApplicationWindow";
+impl ObjectSubclass for GsApplicationWindowPrivate {
+    const NAME: &'static str = "GsApplicationWindow";
     type ParentType = libhandy::ApplicationWindow;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -31,56 +31,55 @@ impl ObjectSubclass for FfApplicationWindowPrivate {
     glib_object_subclass!();
 
     fn new() -> Self {
-        let window_builder =
-            gtk::Builder::from_resource("/de/haeckerfelix/FlatpakFrontend/gtk/window.ui");
+        let window_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/window.ui");
 
         Self { window_builder }
     }
 }
 
-// Implement GLib.OBject for FfApplicationWindow
-impl ObjectImpl for FfApplicationWindowPrivate {
+// Implement GLib.OBject for GsApplicationWindow
+impl ObjectImpl for GsApplicationWindowPrivate {
     glib_object_impl!();
 }
 
-// Implement Gtk.Widget for FfApplicationWindow
-impl WidgetImpl for FfApplicationWindowPrivate {}
+// Implement Gtk.Widget for GsApplicationWindow
+impl WidgetImpl for GsApplicationWindowPrivate {}
 
-// Implement Gtk.Container for FfApplicationWindow
-impl ContainerImpl for FfApplicationWindowPrivate {}
+// Implement Gtk.Container for GsApplicationWindow
+impl ContainerImpl for GsApplicationWindowPrivate {}
 
-// Implement Gtk.Bin for FfApplicationWindow
-impl BinImpl for FfApplicationWindowPrivate {}
+// Implement Gtk.Bin for GsApplicationWindow
+impl BinImpl for GsApplicationWindowPrivate {}
 
-// Implement Gtk.Window for FfApplicationWindow
-impl WindowImpl for FfApplicationWindowPrivate {}
+// Implement Gtk.Window for GsApplicationWindow
+impl WindowImpl for GsApplicationWindowPrivate {}
 
-// Implement Gtk.ApplicationWindow for FfApplicationWindow
-impl gtk::subclass::prelude::ApplicationWindowImpl for FfApplicationWindowPrivate {}
+// Implement Gtk.ApplicationWindow for GsApplicationWindow
+impl gtk::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
 
-// Implement Hdy.ApplicationWindow for FfApplicationWindow
-impl libhandy::subclass::prelude::ApplicationWindowImpl for FfApplicationWindowPrivate {}
+// Implement Hdy.ApplicationWindow for GsApplicationWindow
+impl libhandy::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
 
-// Wrap FfApplicationWindowPrivate into a usable gtk-rs object
+// Wrap GsApplicationWindowPrivate into a usable gtk-rs object
 glib_wrapper! {
-    pub struct FfApplicationWindow(
-        Object<subclass::simple::InstanceStruct<FfApplicationWindowPrivate>,
-        subclass::simple::ClassStruct<FfApplicationWindowPrivate>,
-        FfApplicationWindowClass>)
+    pub struct GsApplicationWindow(
+        Object<subclass::simple::InstanceStruct<GsApplicationWindowPrivate>,
+        subclass::simple::ClassStruct<GsApplicationWindowPrivate>,
+        GsApplicationWindowClass>)
         @extends gtk::Widget, gtk::Container, gtk::Bin, gtk::Window, gtk::ApplicationWindow, libhandy::ApplicationWindow;
 
     match fn {
-        get_type => || FfApplicationWindowPrivate::get_type().to_glib(),
+        get_type => || GsApplicationWindowPrivate::get_type().to_glib(),
     }
 }
 
-// FfApplicationWindow implementation itself
-impl FfApplicationWindow {
-    pub fn new(sender: Sender<Action>, app: FfApplication) -> Self {
-        // Create new GObject and downcast it into FfApplicationWindow
-        let window = glib::Object::new(FfApplicationWindow::static_type(), &[])
+// GsApplicationWindow implementation itself
+impl GsApplicationWindow {
+    pub fn new(sender: Sender<Action>, app: GsApplication) -> Self {
+        // Create new GObject and downcast it into GsApplicationWindow
+        let window = glib::Object::new(GsApplicationWindow::static_type(), &[])
             .unwrap()
-            .downcast::<FfApplicationWindow>()
+            .downcast::<GsApplicationWindow>()
             .unwrap();
 
         app.add_window(&window);
@@ -91,13 +90,13 @@ impl FfApplicationWindow {
     }
 
     pub fn setup_widgets(&self) {
-        let self_ = FfApplicationWindowPrivate::from_instance(self);
-        let app: FfApplication = self
+        let self_ = GsApplicationWindowPrivate::from_instance(self);
+        let app: GsApplication = self
             .get_application()
             .unwrap()
-            .downcast::<FfApplication>()
+            .downcast::<GsApplication>()
             .unwrap();
-        let app_private = FfApplicationPrivate::from_instance(&app);
+        let app_private = GsApplicationPrivate::from_instance(&app);
 
         // set default size
         self.set_default_size(900, 700);
@@ -114,7 +113,7 @@ impl FfApplicationWindow {
     }
 
     fn setup_signals(&self, sender: Sender<Action>) {
-        let self_ = FfApplicationWindowPrivate::from_instance(self);
+        let self_ = GsApplicationWindowPrivate::from_instance(self);
 
         // main stack
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
@@ -132,7 +131,7 @@ impl FfApplicationWindow {
     }
 
     fn setup_gactions(&self, sender: Sender<Action>) {
-        // We need to upcast from FfApplicationWindow to libhandy::ApplicationWindow, because FfApplicationWindow
+        // We need to upcast from GsApplicationWindow to libhandy::ApplicationWindow, because GsApplicationWindow
         // currently doesn't implement GLib.ActionMap, since it's not supported in gtk-rs for subclassing (13-01-2020)
         let window = self.clone().upcast::<gtk::ApplicationWindow>();
         let app = window.get_application().unwrap();
@@ -167,7 +166,7 @@ impl FfApplicationWindow {
         // TODO: This is not a implementation. This is a hack.
 
         debug!("Go back to previous view");
-        let self_ = FfApplicationWindowPrivate::from_instance(self);
+        let self_ = GsApplicationWindowPrivate::from_instance(self);
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
 
         // the package details pages don't have a name set
@@ -191,14 +190,14 @@ impl FfApplicationWindow {
     }
 
     pub fn add_package_details_page(&self, page: PackageDetailsPage) {
-        let self_ = FfApplicationWindowPrivate::from_instance(self);
+        let self_ = GsApplicationWindowPrivate::from_instance(self);
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
         window_deck.add(&page.widget);
         window_deck.set_visible_child(&page.widget);
     }
 
     fn sync_ui_state(&self) {
-        let self_ = FfApplicationWindowPrivate::from_instance(self);
+        let self_ = GsApplicationWindowPrivate::from_instance(self);
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
 
@@ -220,7 +219,7 @@ impl FfApplicationWindow {
     fn update_view(&self, view: View) {
         debug!("Set view to {:?}", &view);
 
-        let self_ = FfApplicationWindowPrivate::from_instance(self);
+        let self_ = GsApplicationWindowPrivate::from_instance(self);
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
 
