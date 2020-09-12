@@ -17,5 +17,5 @@ mod screenshots_box;
 pub use screenshots_box::ScreenshotsBox;
 
 mod window;
-pub use window::FfApplicationWindow;
+pub use window::GsApplicationWindow;
 pub use window::View;

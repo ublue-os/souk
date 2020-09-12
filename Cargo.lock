@@ -517,38 +517,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "flatpak-frontend"
-version = "0.1.0"
-dependencies = [
- "appstream",
- "async-process",
- "async-std",
- "broadcaster",
- "chrono",
- "diesel",
- "diesel_migrations",
- "flatpak",
- "futures-util",
- "gdk",
- "gdk-pixbuf",
- "gettext-rs",
- "gio",
- "glib",
- "gtk",
- "gtk-macros",
- "html2pango",
- "isahc",
- "lazy_static",
- "libhandy",
- "log",
- "pretty_env_logger",
- "regex",
- "serde_json",
- "thiserror",
- "url",
-]
-
-[[package]]
 name = "flatpak-sys"
 version = "0.1.0"
 source = "git+https://gitlab.gnome.org/haecker-felix/flatpak-rs#4eb9995cde074a481609fc315039d6b8c285b83d"
@@ -879,6 +847,38 @@ checksum = "b6cda4af5c2f4507b7a3535b798dca2135293f4bc3a17f399ce244ef15841c4c"
 dependencies = [
  "libc",
  "system-deps",
+]
+
+[[package]]
+name = "gnome-store"
+version = "0.1.0"
+dependencies = [
+ "appstream",
+ "async-process",
+ "async-std",
+ "broadcaster",
+ "chrono",
+ "diesel",
+ "diesel_migrations",
+ "flatpak",
+ "futures-util",
+ "gdk",
+ "gdk-pixbuf",
+ "gettext-rs",
+ "gio",
+ "glib",
+ "gtk",
+ "gtk-macros",
+ "html2pango",
+ "isahc",
+ "lazy_static",
+ "libhandy",
+ "log",
+ "pretty_env_logger",
+ "regex",
+ "serde_json",
+ "thiserror",
+ "url",
 ]
 
 [[package]]

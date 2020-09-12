@@ -12,9 +12,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::backend::transaction_backend::TransactionBackend;
-use crate::backend::{
-    Package, PackageAction, PackageTransaction, TransactionMode, TransactionState,
-};
+use crate::backend::{PackageAction, PackageTransaction, TransactionMode, TransactionState};
 
 type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
 

@@ -1,4 +1,3 @@
-data/de.haeckerfelix.FlatpakFrontend.desktop.in
-data/de.haeckerfelix.FlatpakFrontend.appdata.xml.in
-data/de.haeckerfelix.FlatpakFrontend.gschema.xml
-src/window.ui
+data/org.gnome.Store.desktop.in.in
+data/org.gnome.Store.metainfo.xml.in
+data/org.gnome.Store.gschema.xml.in

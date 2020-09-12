@@ -1,5 +1,5 @@
 [package]
-name = "flatpak-frontend"
+name = "gnome-store"
 version = "0.1.0"
 edition = "2018"
 

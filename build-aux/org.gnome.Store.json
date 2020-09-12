@@ -1,12 +1,12 @@
 {
-    "app-id": "de.haeckerfelix.FlatpakFrontend",
+    "app-id": "org.gnome.Store.Devel",
     "runtime": "org.gnome.Platform",
     "runtime-version": "3.36",
     "sdk": "org.gnome.Sdk",
     "sdk-extensions" : [
         "org.freedesktop.Sdk.Extension.rust-stable"
     ],
-    "command": "flatpak-frontend",
+    "command": "gnome-store",
     "finish-args": [
         "--share=network",
         "--share=ipc",
@@ -24,9 +24,9 @@
         ],
         "env" : {
             "RUSTFLAGS" : "--remap-path-prefix =../",
-            "CARGO_HOME" : "/run/build/flatpak-frontend/cargo",
+            "CARGO_HOME" : "/run/build/gnome-store/cargo",
             "RUST_BACKTRACE" : "1",
-            "RUST_LOG" : "flatpak_frontend=debug",
+            "RUST_LOG" : "gnome_store=debug",
             "MOUNT_FUSE_PATH" : "../tmp/",
             "G_MESSAGES_DEBUG" : "none"
         }
@@ -195,13 +195,16 @@
         },
 
         {
-            "name": "flatpak-frontend",
+            "name": "gnome-store",
             "builddir": true,
             "buildsystem": "meson",
+            "config-opts" : [
+                "-Dprofile=development"
+            ],
             "sources": [
                 {
                     "type": "git",
-                    "url": "https://gitlab.gnome.org/haecker-felix/flatpak-frontend"
+                    "url": "https://gitlab.gnome.org/haecker-felix/gnome-store"
                 }
             ]
         }
