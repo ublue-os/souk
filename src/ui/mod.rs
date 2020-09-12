@@ -1,6 +1,8 @@
 pub mod page;
 mod utils;
 
+mod about_dialog;
+
 mod package_tile;
 pub use package_tile::PackageTile;
 

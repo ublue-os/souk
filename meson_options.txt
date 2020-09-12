@@ -3,7 +3,6 @@ option (
   type: 'combo',
   choices: [
     'default',
-    'beta',
     'development'
   ],
   value: 'default'

@@ -8,6 +8,7 @@ use gtk::subclass::prelude::{BinImpl, ContainerImpl, WidgetImpl, WindowImpl};
 use libhandy::prelude::*;
 
 use crate::app::{Action, GsApplication, GsApplicationPrivate};
+use crate::ui::about_dialog;
 use crate::ui::page::PackageDetailsPage;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -20,6 +21,7 @@ pub enum View {
 
 pub struct GsApplicationWindowPrivate {
     window_builder: gtk::Builder,
+    menu_builder: gtk::Builder,
 }
 
 impl ObjectSubclass for GsApplicationWindowPrivate {
@@ -32,8 +34,12 @@ impl ObjectSubclass for GsApplicationWindowPrivate {
 
     fn new() -> Self {
         let window_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/window.ui");
+        let menu_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/menu.ui");
 
-        Self { window_builder }
+        Self {
+            window_builder,
+            menu_builder,
+        }
     }
 }
 
@@ -101,6 +107,11 @@ impl GsApplicationWindow {
         // set default size
         self.set_default_size(900, 700);
 
+        // Set hamburger menu
+        get_widget!(self_.menu_builder, gtk::PopoverMenu, popover_menu);
+        get_widget!(self_.window_builder, gtk::MenuButton, appmenu_button);
+        appmenu_button.set_popover(Some(&popover_menu));
+
         // wire everything up
         get_widget!(self_.window_builder, gtk::Box, explore_box);
         explore_box.add(&app_private.explore_page.widget);
@@ -145,6 +156,15 @@ impl GsApplicationWindow {
             })
         );
         app.set_accels_for_action("win.quit", &["<primary>q"]);
+
+        // win.about
+        action!(
+            window,
+            "about",
+            clone!(@weak window => move |_, _| {
+                about_dialog::show_about_dialog(window);
+            })
+        );
 
         // win.go-back
         action!(
