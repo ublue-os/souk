@@ -25,12 +25,13 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="show_close_button">True</property>
+                <property name="centering_policy">strict</property>
                 <child type="title">
                   <object class="HdyViewSwitcherTitle" id="view_switcher_title">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="stack">main_stack</property>
-                    <property name="title">Software</property>
+                    <property name="title">Store</property>
                   </object>
                 </child>
                 <child>
