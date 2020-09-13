@@ -16,7 +16,7 @@ if test "$APP_PROFILE" != "default"
 then
     echo "** DEBUG MODE **"
     cargo build --manifest-path \
-        "$MESON_SOURCE_ROOT"/Cargo.toml --message-format=short && \
+        "$MESON_SOURCE_ROOT"/Cargo.toml --message-format=human && \
         cp "$CARGO_TARGET_DIR"/debug/gnome-store $APP_OUTPUT
 else
     echo "** RELEASE MODE **"
