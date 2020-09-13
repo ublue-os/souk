@@ -60,7 +60,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="valign">center</property>
-                    <property name="action_name">win.show-discover</property>
+                    <property name="action_name">win.show-search</property>
                     <child>
                       <object class="GtkImage">
                         <property name="visible">True</property>
@@ -142,6 +142,20 @@
                     <property name="title" translatable="yes">Updates</property>
                     <property name="icon_name">emblem-synchronizing-symbolic</property>
                     <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkBox" id="search_box">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="name">search</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
               </object>

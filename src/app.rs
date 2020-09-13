@@ -14,7 +14,7 @@ use std::rc::Rc;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
 use crate::config;
-use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage};
+use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage, SearchPage};
 use crate::ui::{GsApplicationWindow, View};
 
 #[derive(Debug, Clone)]
@@ -31,6 +31,7 @@ pub struct GsApplicationPrivate {
 
     pub explore_page: Rc<ExplorePage>,
     pub installed_page: Rc<InstalledPage>,
+    pub search_page: Rc<SearchPage>,
     pub package_details_page: Rc<PackageDetailsPage>,
 
     window: RefCell<Option<GsApplicationWindow>>,
@@ -51,6 +52,7 @@ impl ObjectSubclass for GsApplicationPrivate {
         let flatpak_backend = FlatpakBackend::new();
 
         let explore_page = ExplorePage::new(sender.clone());
+        let search_page = SearchPage::new(sender.clone());
         let installed_page = InstalledPage::new(sender.clone(), flatpak_backend.clone());
         let package_details_page = PackageDetailsPage::new(sender.clone(), flatpak_backend.clone());
 
@@ -62,6 +64,7 @@ impl ObjectSubclass for GsApplicationPrivate {
             flatpak_backend,
             explore_page,
             installed_page,
+            search_page,
             package_details_page,
             window,
         }

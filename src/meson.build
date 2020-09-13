@@ -48,10 +48,13 @@ sources = files(
   'ui/package_widgets/mod.rs',
   'ui/package_widgets/project_urls_box.rs',
   'ui/package_widgets/screenshots_box.rs',
+
   'ui/pages/explore_page.rs',
   'ui/pages/installed_page.rs',
   'ui/pages/mod.rs',
   'ui/pages/package_details_page.rs',
+  'ui/pages/search_page.rs',
+
   'ui/about_dialog.rs',
   'ui/mod.rs',
   'ui/package_action_button.rs',

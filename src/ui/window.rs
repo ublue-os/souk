@@ -18,6 +18,7 @@ pub enum View {
     Explore,
     Installed,
     Updates,
+    Search,
     PackageDetails(Box<Package>),
 }
 
@@ -126,6 +127,9 @@ impl GsApplicationWindow {
         get_widget!(self_.window_builder, gtk::Box, installed_box);
         installed_box.add(&app_private.installed_page.widget);
 
+        get_widget!(self_.window_builder, gtk::Box, search_box);
+        search_box.add(&app_private.search_page.widget);
+
         get_widget!(self_.window_builder, gtk::Box, package_details_box);
         package_details_box.add(&app_private.package_details_page.widget);
 
@@ -145,6 +149,7 @@ impl GsApplicationWindow {
                     "explore" => View::Explore,
                     "installed" => View::Installed,
                     "updates" => View::Updates,
+                    "search" => View::Search,
                     _ => View::Explore,
                 };
                 this.set_view(view, false);
@@ -185,6 +190,16 @@ impl GsApplicationWindow {
             })
         );
 
+        // win.show-search
+        action!(
+            window,
+            "show-search",
+            clone!(@weak window, @strong sender => move |_, _| {
+                send!(sender, Action::ViewSet(View::Search));
+            })
+        );
+        app.set_accels_for_action("win.show-search", &["<primary>f"]);
+
         // win.go-back
         action!(
             window,
@@ -204,7 +219,12 @@ impl GsApplicationWindow {
         let _ = self_.pages_stack.borrow_mut().pop();
 
         // Get previous page and set it as current view
-        let view = self_.pages_stack.borrow().last().unwrap().clone();
+        let view = self_
+            .pages_stack
+            .borrow()
+            .last()
+            .unwrap_or(&View::Explore)
+            .clone();
         self.set_view(view, true);
     }
 
@@ -236,6 +256,10 @@ impl GsApplicationWindow {
                 main_stack.set_visible_child_name("updates");
                 window_deck.set_visible_child_name("main");
             }
+            View::Search => {
+                main_stack.set_visible_child_name("search");
+                window_deck.set_visible_child_name("main");
+            }
             View::PackageDetails(package) => {
                 window_deck.set_visible_child_name("package-details");
                 app_private.package_details_page.reset();
@@ -245,7 +269,12 @@ impl GsApplicationWindow {
             }
         }
 
-        if !go_back {
+        if !go_back
+            && view != View::Explore
+            && view != View::Installed
+            && view != View::Updates
+            && view != View::Search
+        {
             self_.pages_stack.borrow_mut().push(view.clone());
         }
         dbg!(self_.pages_stack.borrow());
