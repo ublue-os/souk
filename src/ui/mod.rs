@@ -1,4 +1,6 @@
-pub mod page;
+pub mod package_widgets;
+pub mod pages;
+
 mod utils;
 
 mod about_dialog;
@@ -8,15 +10,6 @@ pub use package_tile::PackageTile;
 
 mod package_action_button;
 pub use package_action_button::PackageActionButton;
-
-mod project_urls_box;
-pub use project_urls_box::ProjectUrlsBox;
-
-mod releases_box;
-pub use releases_box::ReleasesBox;
-
-mod screenshots_box;
-pub use screenshots_box::ScreenshotsBox;
 
 mod window;
 pub use window::GsApplicationWindow;

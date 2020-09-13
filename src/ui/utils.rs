@@ -62,6 +62,11 @@ pub fn set_icon(package: &Package, image: &gtk::Image, size: i32) {
     {
         path.push(name);
         image.set_from_file(&path);
+    } else {
+        image.set_from_icon_name(
+            Some("application-x-executable-symbolic"),
+            gtk::IconSize::__Unknown(128),
+        );
     }
 }
 

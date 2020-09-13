@@ -4,6 +4,7 @@ use gtk::prelude::*;
 use crate::app::Action;
 use crate::backend::Package;
 use crate::ui::utils;
+use crate::ui::View;
 
 pub struct PackageTile {
     pub widget: gtk::Button,
@@ -48,7 +49,7 @@ impl PackageTile {
         get_widget!(self.builder, gtk::Button, package_tile);
         package_tile.connect_clicked(
             clone!(@strong self.sender as sender, @strong self.package as package => move |_|{
-                send!(sender, Action::ViewShowAppDetails(package.clone()));
+                send!(sender, Action::ViewSet(View::PackageDetails(Box::new(package.clone()))));
             }),
         );
     }

@@ -7,21 +7,25 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::{BinImpl, ContainerImpl, WidgetImpl, WindowImpl};
 use libhandy::prelude::*;
 
+use std::cell::RefCell;
+
 use crate::app::{Action, GsApplication, GsApplicationPrivate};
+use crate::backend::Package;
 use crate::ui::about_dialog;
-use crate::ui::page::PackageDetailsPage;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum View {
     Explore,
     Installed,
     Updates,
-    AppDetails,
+    PackageDetails(Box<Package>),
 }
 
 pub struct GsApplicationWindowPrivate {
     window_builder: gtk::Builder,
     menu_builder: gtk::Builder,
+
+    pages_stack: RefCell<Vec<View>>,
 }
 
 impl ObjectSubclass for GsApplicationWindowPrivate {
@@ -36,9 +40,12 @@ impl ObjectSubclass for GsApplicationWindowPrivate {
         let window_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/window.ui");
         let menu_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/menu.ui");
 
+        let pages_stack = RefCell::new(Vec::new());
+
         Self {
             window_builder,
             menu_builder,
+            pages_stack,
         }
     }
 }
@@ -115,8 +122,12 @@ impl GsApplicationWindow {
         // wire everything up
         get_widget!(self_.window_builder, gtk::Box, explore_box);
         explore_box.add(&app_private.explore_page.widget);
+
         get_widget!(self_.window_builder, gtk::Box, installed_box);
         installed_box.add(&app_private.installed_page.widget);
+
+        get_widget!(self_.window_builder, gtk::Box, package_details_box);
+        package_details_box.add(&app_private.package_details_page.widget);
 
         // Add headerbar/content to the window itself
         get_widget!(self_.window_builder, gtk::Box, window);
@@ -128,9 +139,17 @@ impl GsApplicationWindow {
 
         // main stack
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
-        main_stack.connect_property_visible_child_notify(clone!(@strong self as this => move |_| {
-            this.sync_ui_state();
-        }));
+        main_stack.connect_property_visible_child_notify(
+            clone!(@strong self as this => move |main_stack| {
+                let view = match main_stack.get_visible_child_name().unwrap().as_str(){
+                    "explore" => View::Explore,
+                    "installed" => View::Installed,
+                    "updates" => View::Updates,
+                    _ => View::Explore,
+                };
+                this.set_view(view, false);
+            }),
+        );
 
         // back button (mouse)
         self.connect_button_press_event(clone!(@strong sender => move |_, event|{
@@ -177,74 +196,34 @@ impl GsApplicationWindow {
         app.set_accels_for_action("win.go-back", &["Escape"]);
     }
 
-    pub fn set_view(&self, view: View) {
-        self.update_view(view);
-        self.sync_ui_state();
-    }
-
     pub fn go_back(&self) {
-        // TODO: This is not a implementation. This is a hack.
-
         debug!("Go back to previous view");
         let self_ = GsApplicationWindowPrivate::from_instance(self);
-        get_widget!(self_.window_builder, libhandy::Deck, window_deck);
 
-        // the package details pages don't have a name set
-        let is_details_page = window_deck.get_visible_child_name().is_none();
-        let widget = window_deck.get_visible_child().unwrap();
+        // Remove current page
+        let _ = self_.pages_stack.borrow_mut().pop();
 
-        // navigate back
-        window_deck.navigate(libhandy::NavigationDirection::Back);
-
-        // remove details page when necessary
-        if is_details_page {
-            // we need a small timeout here, otherwise the animation wouldn't be visible
-            glib::timeout_add_local(200, move || {
-                window_deck.remove(&widget);
-                glib::Continue(false)
-            });
-        }
-
-        // Make sure that the rest of the UI is correctly synced
-        self.sync_ui_state();
+        // Get previous page and set it as current view
+        let view = self_.pages_stack.borrow().last().unwrap().clone();
+        self.set_view(view, true);
     }
 
-    pub fn add_package_details_page(&self, page: PackageDetailsPage) {
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
-        get_widget!(self_.window_builder, libhandy::Deck, window_deck);
-        window_deck.add(&page.widget);
-        window_deck.set_visible_child(&page.widget);
-    }
-
-    fn sync_ui_state(&self) {
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
-        get_widget!(self_.window_builder, libhandy::Deck, window_deck);
-        get_widget!(self_.window_builder, gtk::Stack, main_stack);
-
-        let current_view = if window_deck.get_visible_child_name().is_none() {
-            View::AppDetails
-        } else {
-            match main_stack.get_visible_child_name().unwrap().as_str() {
-                "explore" => View::Explore,
-                "installed" => View::Installed,
-                "updates" => View::Updates,
-                _ => View::Explore,
-            }
-        };
-
-        debug!("Setting current view as {:?}", &current_view);
-        self.update_view(current_view);
-    }
-
-    fn update_view(&self, view: View) {
+    pub fn set_view(&self, view: View, go_back: bool) {
         debug!("Set view to {:?}", &view);
 
         let self_ = GsApplicationWindowPrivate::from_instance(self);
+        let app: GsApplication = self
+            .get_application()
+            .unwrap()
+            .downcast::<GsApplication>()
+            .unwrap();
+        let app_private = GsApplicationPrivate::from_instance(&app);
+
         get_widget!(self_.window_builder, libhandy::Deck, window_deck);
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
 
         // Show requested view / page
-        match view {
+        match view.clone() {
             View::Explore => {
                 main_stack.set_visible_child_name("explore");
                 window_deck.set_visible_child_name("main");
@@ -257,9 +236,18 @@ impl GsApplicationWindow {
                 main_stack.set_visible_child_name("updates");
                 window_deck.set_visible_child_name("main");
             }
-            View::AppDetails => {
-                window_deck.set_visible_child_name("app-details");
+            View::PackageDetails(package) => {
+                window_deck.set_visible_child_name("package-details");
+                app_private.package_details_page.reset();
+                app_private
+                    .package_details_page
+                    .set_package(*package.clone());
             }
         }
+
+        if !go_back {
+            self_.pages_stack.borrow_mut().push(view.clone());
+        }
+        dbg!(self_.pages_stack.borrow());
     }
 }

@@ -14,13 +14,12 @@ use std::rc::Rc;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
 use crate::config;
-use crate::ui::page::{ExplorePage, InstalledPage, PackageDetailsPage};
+use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage};
 use crate::ui::{GsApplicationWindow, View};
 
 #[derive(Debug, Clone)]
 pub enum Action {
     ViewSet(View),
-    ViewShowAppDetails(Package),
     ViewGoBack,
 }
 
@@ -32,6 +31,7 @@ pub struct GsApplicationPrivate {
 
     pub explore_page: Rc<ExplorePage>,
     pub installed_page: Rc<InstalledPage>,
+    pub package_details_page: Rc<PackageDetailsPage>,
 
     window: RefCell<Option<GsApplicationWindow>>,
 }
@@ -52,6 +52,7 @@ impl ObjectSubclass for GsApplicationPrivate {
 
         let explore_page = ExplorePage::new(sender.clone());
         let installed_page = InstalledPage::new(sender.clone(), flatpak_backend.clone());
+        let package_details_page = PackageDetailsPage::new(sender.clone(), flatpak_backend.clone());
 
         let window = RefCell::new(None);
 
@@ -61,6 +62,7 @@ impl ObjectSubclass for GsApplicationPrivate {
             flatpak_backend,
             explore_page,
             installed_page,
+            package_details_page,
             window,
         }
     }
@@ -155,7 +157,7 @@ impl GsApplication {
         gtk::StyleContext::add_provider_for_screen(&gdk::Screen::get_default().unwrap(), &p, 500);
 
         // Set initial view
-        window.set_view(View::Explore);
+        window.set_view(View::Explore, false);
 
         window
     }
@@ -164,20 +166,12 @@ impl GsApplication {
         let self_ = GsApplicationPrivate::from_instance(self);
 
         match action {
-            Action::ViewSet(view) => self_.window.borrow().as_ref().unwrap().set_view(view),
-            Action::ViewShowAppDetails(package) => {
-                let page = PackageDetailsPage::new(
-                    package,
-                    self_.sender.clone(),
-                    self_.flatpak_backend.clone(),
-                );
-                self_
-                    .window
-                    .borrow()
-                    .as_ref()
-                    .unwrap()
-                    .add_package_details_page(page);
-            }
+            Action::ViewSet(view) => self_
+                .window
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .set_view(view, false),
             Action::ViewGoBack => self_.window.borrow().as_ref().unwrap().go_back(),
         }
         glib::Continue(true)
