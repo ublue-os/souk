@@ -26,6 +26,27 @@ pub fn get_package(
     Ok(packages.pop().map(|p| p.to_package()))
 }
 
+pub fn get_packages_by_name(
+    pkg_name: String,
+    limit: i64,
+) -> Result<Vec<Package>, diesel::result::Error> {
+    use crate::database::schema::appstream_packages::dsl::*;
+    let con = connect_db!();
+
+    let db_packages = appstream_packages
+        .filter(name.like(format!("%{}%", &pkg_name)))
+        .limit(limit)
+        .load::<DbPackage>(&con)?;
+
+    let mut packages = Vec::new();
+    for db_package in db_packages {
+        let package = db_package.to_package();
+        packages.push(package);
+    }
+
+    Ok(packages)
+}
+
 pub fn get_recently_updated_packages(limit: i64) -> Result<Vec<Package>, diesel::result::Error> {
     use crate::database::schema::appstream_packages::dsl::*;
     let con = connect_db!();
