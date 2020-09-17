@@ -24,7 +24,7 @@ impl PackageActionButton {
         get_widget!(builder, gtk::Box, package_action_button);
         let transaction = RefCell::new(None);
 
-        let package_action_button = Rc::new(Self {
+        let pab = Rc::new(Self {
             widget: package_action_button,
             package,
             transaction,
@@ -32,9 +32,22 @@ impl PackageActionButton {
             builder,
         });
 
-        package_action_button.clone().update_stack();
-        package_action_button.clone().setup_signals();
-        package_action_button
+        match pab
+            .flatpak_backend
+            .clone()
+            .get_active_transaction(&pab.package)
+        {
+            Some(t) => {
+                debug!("Found already running transaction - display state for it.");
+                *pab.transaction.borrow_mut() = Some(t);
+                spawn!(pab.clone().receive_transaction_messages());
+            }
+            None => (),
+        }
+
+        pab.clone().update_stack();
+        pab.clone().setup_signals();
+        pab
     }
 
     fn setup_signals(self: Rc<Self>) {
@@ -70,10 +83,6 @@ impl PackageActionButton {
     }
 
     async fn receive_backend_messages(self: Rc<Self>) {
-        get_widget!(self.builder, gtk::Stack, button_stack);
-        get_widget!(self.builder, gtk::ProgressBar, progressbar);
-        get_widget!(self.builder, gtk::Label, status_label);
-
         let mut backend_channel = self.flatpak_backend.clone().get_channel();
 
         while let Some(backend_message) = backend_channel.recv().await {
@@ -81,36 +90,43 @@ impl PackageActionButton {
                 BackendMessage::PackageTransaction(transaction) => {
                     if transaction.package == self.package {
                         *self.transaction.borrow_mut() = Some(transaction.clone());
-
-                        let mut transaction_channel = transaction.clone().get_channel();
-                        button_stack.set_visible_child_name("processing");
-
-                        // Listen to transaction state changes
-                        while let Some(state) = transaction_channel.recv().await {
-                            progressbar.set_fraction(state.percentage.into());
-                            status_label.set_text(&state.message);
-
-                            match state.mode {
-                                TransactionMode::Finished | TransactionMode::Cancelled => {
-                                    status_label.set_text("");
-                                    self.clone().update_stack();
-                                    break;
-                                }
-                                TransactionMode::Error(err) => {
-                                    status_label.set_text("");
-                                    self.clone().update_stack();
-                                    utils::show_error_dialog(self.builder.clone(), &err);
-                                    break;
-                                }
-                                _ => (),
-                            };
-                        }
-
-                        *self.transaction.borrow_mut() = None;
+                        self.clone().receive_transaction_messages().await;
                     }
                 }
             }
         }
+    }
+
+    async fn receive_transaction_messages(self: Rc<Self>) {
+        get_widget!(self.builder, gtk::Stack, button_stack);
+        get_widget!(self.builder, gtk::ProgressBar, progressbar);
+        get_widget!(self.builder, gtk::Label, status_label);
+
+        let mut transaction_channel = self.transaction.borrow().as_ref().unwrap().get_channel();
+        button_stack.set_visible_child_name("processing");
+
+        // Listen to transaction state changes
+        while let Some(state) = transaction_channel.recv().await {
+            progressbar.set_fraction(state.percentage.into());
+            status_label.set_text(&state.message);
+
+            match state.mode {
+                TransactionMode::Finished | TransactionMode::Cancelled => {
+                    status_label.set_text("");
+                    self.clone().update_stack();
+                    break;
+                }
+                TransactionMode::Error(err) => {
+                    status_label.set_text("");
+                    self.clone().update_stack();
+                    utils::show_error_dialog(self.builder.clone(), &err);
+                    break;
+                }
+                _ => (),
+            };
+        }
+
+        *self.transaction.borrow_mut() = None;
     }
 
     fn update_stack(self: Rc<Self>) {

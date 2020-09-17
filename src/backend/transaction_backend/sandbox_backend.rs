@@ -12,12 +12,14 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::backend::transaction_backend::TransactionBackend;
-use crate::backend::{PackageAction, PackageTransaction, TransactionMode, TransactionState};
+use crate::backend::{
+    Package, PackageAction, PackageTransaction, TransactionMode, TransactionState,
+};
 
 type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
 
 pub struct SandboxBackend {
-    // HashMap < app_id , < PackageTransaction, Child > >
+    // HashMap < app_id , ( PackageTransaction, Child ) >
     transactions: Transactions,
 }
 
@@ -61,6 +63,17 @@ impl TransactionBackend for SandboxBackend {
             }
             Err(err) => warn!("Unable to cancel transaction: {}", err.to_string()),
         }
+    }
+
+    fn get_active_transaction(
+        &self,
+        package: &Package,
+    ) -> Option<std::sync::Arc<PackageTransaction>> {
+        let res = match self.transactions.borrow().get(&package.get_ref_name()) {
+            Some((t, _)) => Some(t.clone()),
+            None => None,
+        };
+        res
     }
 }
 

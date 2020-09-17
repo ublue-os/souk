@@ -12,7 +12,6 @@ use std::env;
 use std::rc::Rc;
 
 use crate::backend::FlatpakBackend;
-use crate::backend::Package;
 use crate::config;
 use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage, SearchPage};
 use crate::ui::{GsApplicationWindow, View};

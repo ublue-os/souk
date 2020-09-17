@@ -54,12 +54,6 @@ impl FlatpakBackend {
         backend
     }
 
-    /// Returns receiver which can be used to subscribe to backend messages.
-    /// Receives message when something happens on Flatpak side (e.g. install/uninstall/update/...)
-    //pub fn get_message_receiver(self: Rc<Self>) -> BusReader<BackendMessage> {
-    //self.message_bus.borrow_mut().add_rx()
-    //}
-
     pub fn get_channel(self: Rc<Self>) -> BroadcastChannel<BackendMessage> {
         self.broadcast.clone()
     }
@@ -144,6 +138,13 @@ impl FlatpakBackend {
     pub fn cancel_package_transaction(self: Rc<Self>, transaction: Arc<PackageTransaction>) {
         self.transaction_backend
             .cancel_package_transaction(transaction);
+    }
+
+    pub fn get_active_transaction(
+        self: Rc<Self>,
+        package: &Package,
+    ) -> Option<Arc<PackageTransaction>> {
+        self.transaction_backend.get_active_transaction(&package)
     }
 
     fn send_message(self: Rc<Self>, message: BackendMessage) {
