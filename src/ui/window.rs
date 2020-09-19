@@ -257,8 +257,7 @@ impl GsApplicationWindow {
                 window_deck.set_visible_child_name("main");
             }
             View::Search => {
-                main_stack.set_visible_child_name("search");
-                window_deck.set_visible_child_name("main");
+                window_deck.set_visible_child_name("search");
             }
             View::PackageDetails(package) => {
                 window_deck.set_visible_child_name("package-details");
@@ -267,14 +266,8 @@ impl GsApplicationWindow {
             }
         }
 
-        if !go_back
-            && view != View::Explore
-            && view != View::Installed
-            && view != View::Updates
-            && view != View::Search
-        {
+        if !go_back && view != View::Explore && view != View::Installed && view != View::Updates {
             self_.pages_stack.borrow_mut().push(view);
         }
-        dbg!(self_.pages_stack.borrow());
     }
 }
