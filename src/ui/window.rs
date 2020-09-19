@@ -266,7 +266,15 @@ impl GsApplicationWindow {
             }
         }
 
-        if !go_back && view != View::Explore && view != View::Installed && view != View::Updates {
+        // Don't add page to pages stack, when we're going back
+        if !go_back {
+            self_.pages_stack.borrow_mut().push(view.clone());
+        }
+
+        // It doesn't make sense to track changes between Explore / Installed / Updates,
+        // since they're at main "root" view where it isn't possible to go back.
+        if view == View::Explore || view == View::Installed || view == View::Updates {
+            self_.pages_stack.borrow_mut().clear();
             self_.pages_stack.borrow_mut().push(view);
         }
     }
