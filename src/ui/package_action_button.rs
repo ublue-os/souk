@@ -32,6 +32,7 @@ impl PackageActionButton {
             builder,
         });
 
+        // Check if a transcation is already running
         match pab
             .flatpak_backend
             .clone()

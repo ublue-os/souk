@@ -1,6 +1,7 @@
 use broadcaster::BroadcastChannel;
 use flatpak::prelude::*;
 use flatpak::{Installation, InstallationExt};
+use gio::prelude::*;
 
 use std::rc::Rc;
 use std::sync::Arc;
@@ -13,6 +14,9 @@ use crate::database::queries;
 pub struct FlatpakBackend {
     pub system_installation: Installation,
     pub user_installation: Installation,
+
+    system_monitor: gio::FileMonitor,
+    user_monitor: gio::FileMonitor,
 
     transaction_backend: Box<dyn TransactionBackend>,
     broadcast: BroadcastChannel<BackendMessage>,
@@ -42,16 +46,36 @@ impl FlatpakBackend {
             unimplemented!("Host backend not implemented yet");
         };
 
+        let system_monitor = system_installation
+            .create_monitor(Some(&gio::Cancellable::new()))
+            .unwrap();
+        let user_monitor = user_installation
+            .create_monitor(Some(&gio::Cancellable::new()))
+            .unwrap();
+
         let backend = Rc::new(Self {
             system_installation,
             user_installation,
+            system_monitor,
+            user_monitor,
             transaction_backend,
             broadcast,
         });
 
         package_database::init(backend.clone());
 
+        backend.clone().setup_signals();
         backend
+    }
+
+    fn setup_signals(self: Rc<Self>) {
+        self.system_monitor.connect_changed(|_, _, _, _| {
+            debug!("Detected change on system installation.");
+        });
+
+        self.user_monitor.connect_changed(|_, _, _, _| {
+            debug!("Detected change on user installation.");
+        });
     }
 
     pub fn get_channel(self: Rc<Self>) -> BroadcastChannel<BackendMessage> {
