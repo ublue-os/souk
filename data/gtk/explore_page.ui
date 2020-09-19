@@ -35,6 +35,7 @@
                     <property name="margin_top">22</property>
                     <property name="margin_bottom">22</property>
                     <property name="orientation">vertical</property>
+                    <property name="spacing">22</property>
                     <child>
                       <object class="GtkBox" id="editors_picks_box">
                         <property name="visible">True</property>
