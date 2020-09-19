@@ -72,10 +72,9 @@ impl PackageDetailsPage {
         get_widget!(self.builder, gtk::ScrolledWindow, scrolled_window);
 
         // scroll up when a new package gets set
-        match scrolled_window.get_vadjustment() {
-            Some(adj) => adj.set_value(0.0),
-            None => (),
-        };
+        if let Some(adj) = scrolled_window.get_vadjustment() {
+            adj.set_value(0.0)
+        }
 
         // Set general information
         utils::set_icon(&package, &icon_image, 128);

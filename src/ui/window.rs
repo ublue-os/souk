@@ -263,9 +263,7 @@ impl GsApplicationWindow {
             View::PackageDetails(package) => {
                 window_deck.set_visible_child_name("package-details");
                 app_private.package_details_page.reset();
-                app_private
-                    .package_details_page
-                    .set_package(*package.clone());
+                app_private.package_details_page.set_package(*package);
             }
         }
 
@@ -275,7 +273,7 @@ impl GsApplicationWindow {
             && view != View::Updates
             && view != View::Search
         {
-            self_.pages_stack.borrow_mut().push(view.clone());
+            self_.pages_stack.borrow_mut().push(view);
         }
         dbg!(self_.pages_stack.borrow());
     }

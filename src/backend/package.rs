@@ -59,10 +59,7 @@ impl Package {
         let mut newest_date = None;
 
         for release in &self.component.releases {
-            if newest.is_none() {
-                newest = Some(release.clone());
-                newest_date = Some(release.date);
-            } else if release.date > *newest_date.as_ref().unwrap() {
+            if release.date > *newest_date.as_ref().unwrap() || newest.is_none() {
                 newest = Some(release.clone());
                 newest_date = Some(release.date);
             }

@@ -75,7 +75,7 @@ impl PackageActionButton {
         get_widget!(self.builder, gtk::Button, cancel_button);
         cancel_button.connect_clicked(clone!(@weak self as this => move |_|{
             match this.transaction.borrow().clone(){
-                Some(t) => this.flatpak_backend.clone().cancel_package_transaction(t.clone()),
+                Some(t) => this.flatpak_backend.clone().cancel_package_transaction(t),
                 None => warn!("No transaction available to cancel"),
             };
         }));

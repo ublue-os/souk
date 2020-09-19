@@ -69,11 +69,10 @@ impl TransactionBackend for SandboxBackend {
         &self,
         package: &Package,
     ) -> Option<std::sync::Arc<PackageTransaction>> {
-        let res = match self.transactions.borrow().get(&package.get_ref_name()) {
+        match self.transactions.borrow().get(&package.get_ref_name()) {
             Some((t, _)) => Some(t.clone()),
             None => None,
-        };
-        res
+        }
     }
 }
 
