@@ -5,13 +5,14 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::backend::{
-    BackendMessage, FlatpakBackend, Package, PackageTransaction, TransactionMode,
+    BackendMessage, BasePackage, FlatpakBackend, Package, PackageKind, PackageTransaction,
+    TransactionMode,
 };
 use crate::ui::utils;
 
 pub struct PackageActionButton {
     pub widget: gtk::Box,
-    package: Package,
+    package: BasePackage,
     transaction: RefCell<Option<Arc<PackageTransaction>>>,
 
     flatpak_backend: Rc<FlatpakBackend>,
@@ -19,14 +20,14 @@ pub struct PackageActionButton {
 }
 
 impl PackageActionButton {
-    pub fn new(flatpak_backend: Rc<FlatpakBackend>, package: Package) -> Rc<Self> {
+    pub fn new(flatpak_backend: Rc<FlatpakBackend>, package: &dyn Package) -> Rc<Self> {
         let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/package_action_button.ui");
         get_widget!(builder, gtk::Box, package_action_button);
         let transaction = RefCell::new(None);
 
         let pab = Rc::new(Self {
             widget: package_action_button,
-            package,
+            package: package.base_package().clone(),
             transaction,
             flatpak_backend,
             builder,
@@ -46,6 +47,12 @@ impl PackageActionButton {
             None => (),
         }
 
+        // Hide open button for runtimes and extensions
+        if package.kind() != PackageKind::App {
+            get_widget!(pab.builder, gtk::Button, open_button);
+            open_button.set_visible(false);
+        }
+
         pab.clone().update_stack();
         pab.clone().setup_signals();
         pab
@@ -55,20 +62,20 @@ impl PackageActionButton {
         // install
         get_widget!(self.builder, gtk::Button, install_button);
         install_button.connect_clicked(clone!(@weak self as this => move |_|{
-            this.flatpak_backend.clone().install_package(this.package.clone());
+            this.flatpak_backend.clone().install_package(&this.package);
         }));
 
         // uninstall
         get_widget!(self.builder, gtk::Button, uninstall_button);
         uninstall_button.connect_clicked(clone!(@weak self as this => move |_|{
             debug!("Uninstall");
-            this.flatpak_backend.clone().uninstall_package(this.package.clone());
+            this.flatpak_backend.clone().uninstall_package(&this.package);
         }));
 
         // open
         get_widget!(self.builder, gtk::Button, open_button);
         open_button.connect_clicked(clone!(@weak self as this => move |_|{
-            this.flatpak_backend.clone().launch_package(this.package.clone());
+            this.flatpak_backend.clone().launch_package(&this.package);
         }));
 
         // cancel

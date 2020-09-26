@@ -43,13 +43,15 @@ impl PackageWidget for ScreenshotsBox {
         }
     }
 
-    fn set_package(&self, package: Package) {
+    fn set_package(&self, package: &dyn Package) {
+        let screenshots = package.appdata().expect("No appdata available").screenshots;
+
         get_widget!(self.builder, gtk::Box, screenshots_box);
         get_widget!(self.builder, libhandy::Carousel, carousel);
         utils::remove_all_items(&carousel);
         screenshots_box.set_visible(false);
 
-        for screenshot in &package.component.screenshots {
+        for screenshot in &screenshots {
             for image in &screenshot.images {
                 if image.kind == ImageKind::Thumbnail {
                     continue;

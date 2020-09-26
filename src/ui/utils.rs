@@ -1,4 +1,3 @@
-use appstream::enums::Icon;
 use appstream::{MarkupTranslatableString, TranslatableString};
 use chrono::{DateTime, Utc};
 use gio::prelude::*;
@@ -7,7 +6,7 @@ use html2pango::*;
 
 use std::path::PathBuf;
 
-use crate::backend::Package;
+use crate::backend::{Package, PackageKind};
 
 pub fn set_label_translatable_string(label: &gtk::Label, text: Option<TranslatableString>) {
     match text {
@@ -38,35 +37,28 @@ pub fn set_date_label(label: &gtk::Label, date: Option<DateTime<Utc>>) {
     };
 }
 
-pub fn set_icon(package: &Package, image: &gtk::Image, size: i32) {
-    // TODO: Don't hardcode system installation
+pub fn set_icon(package: &dyn Package, image: &gtk::Image, size: i32) {
     let mut path = PathBuf::new();
     path.push(format!(
-        "/var/lib/flatpak/appstream/{}/x86_64/active/icons/{}x{}/",
-        package.remote, size, size
+        "/var/lib/flatpak/appstream/{}/{}/active/icons/{}x{}/{}.png",
+        package.remote(),
+        std::env::consts::ARCH,
+        size,
+        size,
+        package.name()
     ));
 
-    let icon = match package.clone().component.icons.pop() {
-        Some(icon) => icon,
-        None => {
-            debug!("Unable to find icon for package {}", package.app_id);
-            return;
-        }
-    };
-
-    if let Icon::Cached {
-        path: name,
-        width: _,
-        height: _,
-    } = icon
-    {
-        path.push(name);
+    if path.exists() {
         image.set_from_file(&path);
     } else {
-        image.set_from_icon_name(
-            Some("application-x-executable-symbolic"),
-            gtk::IconSize::__Unknown(128),
-        );
+        match package.kind() {
+            PackageKind::App => image.set_from_icon_name(
+                Some("dialog-question-symbolic"),
+                gtk::IconSize::__Unknown(size),
+            ),
+            PackageKind::Runtime | PackageKind::Extension => image
+                .set_from_icon_name(Some("system-run-symbolic"), gtk::IconSize::__Unknown(size)),
+        };
     }
 }
 

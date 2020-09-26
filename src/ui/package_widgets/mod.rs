@@ -13,6 +13,8 @@ pub trait PackageWidget {
     fn new() -> Self
     where
         Self: Sized;
-    fn set_package(&self, package: Package);
+
+    fn set_package(&self, package: &dyn Package);
+
     fn reset(&self);
 }

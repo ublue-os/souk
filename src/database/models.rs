@@ -1,20 +1,25 @@
-use appstream::Component;
 use appstream::TranslatableString;
 use chrono::NaiveDate;
 
 use super::schema::*;
-use crate::backend::Package;
+use crate::backend::{Package, RemotePackage};
 
 #[derive(Queryable, Insertable, Debug, Clone)]
 #[table_name = "appstream_packages"]
 pub struct DbPackage {
     pub id: Option<i32>,
 
-    pub app_id: String,
+    pub kind: String,
+    pub name: String,
+    pub arch: String,
     pub branch: String,
+    pub commit: String,
     pub remote: String,
 
-    pub name: String,
+    pub download_size: i64,
+    pub installed_size: i64,
+
+    pub display_name: String,
     pub version: String,
     pub summary: String,
     pub categories: String,
@@ -22,68 +27,81 @@ pub struct DbPackage {
     pub project_group: String,
     pub release_date: Option<NaiveDate>,
 
-    pub component: String,
+    pub appdata: String,
 }
 
 impl DbPackage {
-    pub fn from_package(package: &Package) -> Self {
-        let version = match package.get_newest_release() {
-            Some(release) => release.version,
-            None => "".to_string(),
-        };
-
-        let mut categories = "".to_string();
-        for category in &package.component.categories {
-            categories = categories + &format!("{};", category.to_string());
-        }
-
-        let release_date: Option<NaiveDate> = match package.get_newest_release() {
-            Some(release) => match release.date {
-                Some(date) => Some(date.naive_utc().date()),
-                None => None,
-            },
-            None => None,
-        };
-
-        DbPackage {
-            id: None,
-            app_id: package.app_id.clone(),
-            branch: package.branch.clone(),
-            remote: package.remote.clone(),
-
-            name: Self::get_string(&Some(package.component.name.clone())),
-            version,
-            summary: Self::get_string(&package.component.summary),
-            categories,
-            developer_name: Self::get_string(&package.component.developer_name),
-            project_group: package
-                .component
-                .project_group
-                .clone()
-                .unwrap_or("".to_string()),
-            release_date,
-
-            component: serde_json::to_string(&package.component).unwrap(),
-        }
-    }
-
     fn get_string(string: &Option<TranslatableString>) -> String {
         match string {
             Some(value) => value.get_default().unwrap_or(&"".to_string()).to_string(),
             None => "".to_string(),
         }
     }
+}
 
-    pub fn to_package(&self) -> Package {
-        let component: Component =
-            serde_json::from_str(&self.component).expect("Unable to parse component JSON.");
-        Package::new(component, self.remote.clone())
+impl From<RemotePackage> for DbPackage {
+    fn from(package: RemotePackage) -> Self {
+        let mut display_name = "".to_string();
+        let mut version = "".to_string();
+        let mut summary = "".to_string();
+        let mut categories = "".to_string();
+        let mut developer_name = "".to_string();
+        let mut project_group = "".to_string();
+        let mut release_date = None;
+        let mut appdata = "".to_string();
+
+        if let Some(ad) = package.appdata() {
+            display_name = Self::get_string(&Some(ad.name.clone()));
+            summary = Self::get_string(&ad.summary);
+            developer_name = Self::get_string(&ad.developer_name);
+            project_group = ad.project_group.clone().unwrap_or("".to_string());
+
+            if let Some(release) = ad.releases.clone().pop() {
+                version = release.version;
+            }
+
+            if let Some(release) = ad.releases.clone().pop() {
+                if let Some(date) = release.date {
+                    release_date = Some(date.naive_utc().date());
+                }
+            }
+
+            for category in &ad.categories {
+                categories = categories + &format!("{};", category.to_string());
+            }
+
+            appdata = serde_json::to_string(&ad).unwrap().to_string();
+        }
+
+        DbPackage {
+            id: None,
+
+            kind: package.kind().clone().to_string(),
+            name: package.name().clone(),
+            arch: package.arch().clone(),
+            branch: package.branch().clone(),
+            commit: package.commit().clone(),
+            remote: package.remote().clone(),
+
+            download_size: package.download_size().clone(),
+            installed_size: package.installed_size().clone(),
+
+            display_name,
+            version,
+            summary,
+            categories,
+            developer_name,
+            project_group,
+            release_date,
+
+            appdata,
+        }
     }
 }
 
 impl PartialEq for DbPackage {
     fn eq(&self, other: &Self) -> bool {
-        self.component == other.component
+        self.appdata == other.appdata && self.commit == other.commit
     }
 }
 

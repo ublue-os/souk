@@ -10,11 +10,17 @@ CREATE TABLE info (
 CREATE TABLE appstream_packages (
 	id 		integer NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
 
-	app_id		text NOT NULL,
+	kind		text NOT NULL,
+	name		text NOT NULL,
+	arch		text NOT NULL,
 	branch		text NOT NULL,
+	'commit'	text NOT NULL,
 	remote		text NOT NULL,
 
-	name		text NOT NULL,
+	download_size	bigint NOT NULL,
+	installed_size	bigint NOT NULL,
+
+	display_name	text NOT NULL,
 	version		text NOT NULL,
 	summary		text NOT NULL,
 	categories	text NOT NULL,
@@ -22,7 +28,7 @@ CREATE TABLE appstream_packages (
 	project_group	text NOT NULL,
 	release_date	date,
 
-	component	text NOT NULL,
+	appdata		text NOT NULL,
 
-	unique (app_id, branch, remote)
+	unique (name, branch, remote, `commit`)
 );

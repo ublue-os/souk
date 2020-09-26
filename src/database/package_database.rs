@@ -1,21 +1,22 @@
 use appstream::enums::Bundle;
-use appstream::Collection;
+use appstream::{AppId, Collection, Component};
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use flatpak::prelude::*;
-use flatpak::InstallationExt;
+use flatpak::{InstallationExt, Remote};
 use gio::prelude::*;
 
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::SystemTime;
 
 use crate::backend::FlatpakBackend;
-use crate::backend::Package;
+use crate::backend::RemotePackage;
 use crate::database::queries;
-use crate::database::{DbInfo, DbPackage};
+use crate::database::DbInfo;
 
 lazy_static! {
-    pub static ref DB_VERSION: String = "1.0".to_string();
+    pub static ref DB_VERSION: String = "1.1".to_string();
 
     // Database lifetime in hours, before it gets rebuilt
     pub static ref DB_LIFETIME: i64 = 3;
@@ -74,69 +75,106 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
     // Delete previous data
     queries::reset().unwrap();
 
-    // Get all remotes (user/system)
-    let mut system_remotes = flatpak_backend
+    let mut remotes: HashMap<String, Remote> = HashMap::new();
+
+    // Get system remotes
+    let system_remotes = flatpak_backend
         .system_installation
         .list_remotes(Some(&gio::Cancellable::new()))
         .unwrap();
-    let mut user_remotes = flatpak_backend
+    for remote in system_remotes {
+        remotes.insert(remote.get_name().unwrap().to_string(), remote);
+    }
+
+    // Get user remotes
+    let user_remotes = flatpak_backend
         .user_installation
         .list_remotes(Some(&gio::Cancellable::new()))
         .unwrap();
-
-    // TODO: Avoid parsing the same remote 2 times, when it
-    // exists in `system` and `user` flatpak installation
-    let mut remotes = Vec::new();
-    remotes.append(&mut system_remotes);
-    remotes.append(&mut user_remotes);
-
-    debug!("Query {} remotes for packages...", remotes.len());
+    for remote in user_remotes {
+        remotes.insert(remote.get_name().unwrap().to_string(), remote);
+    }
 
     for remote in remotes {
-        let default_arch = "x86_64"; // TODO: use flatpak::get_default_arch();
+        let remote_name = remote.1.get_name().unwrap().to_string();
+        debug!("Load remote \"{}\"", remote_name);
+
+        // Get all refs from remote
+        let refs = flatpak_backend
+            .system_installation
+            .list_remote_refs_sync(&remote_name, Some(&gio::Cancellable::new()));
+
+        if let Err(err) = refs {
+            warn!(
+                "Unable to retrieve refs from remote \"{}\": {}",
+                remote.1.get_name().unwrap().to_string(),
+                err.to_string()
+            );
+            continue;
+        }
+        let refs = refs.unwrap();
 
         // Get path of appstream data
         let mut appstream_file = PathBuf::new();
-        let appstream_dir = remote.get_appstream_dir(Some(default_arch)).unwrap();
+        let appstream_dir = remote
+            .1
+            .get_appstream_dir(Some(std::env::consts::ARCH))
+            .unwrap();
         appstream_file.push(appstream_dir.get_path().unwrap().to_str().unwrap());
         appstream_file.push("appstream.xml");
 
-        // Parse appstream xml to collection
-        match Collection::from_path(appstream_file.clone()) {
-            Ok(collection) => {
-                debug!("Parsed appstream data: {:?}", &appstream_file);
-                // Iterate appstream components, and look for components which we need
-                // We're only interested in Flatpak stuff
-                for component in collection.components {
-                    let bundle = &component.bundles[0];
-                    match bundle {
-                        Bundle::Flatpak {
-                            runtime: _,
-                            sdk: _,
-                            reference: _,
-                        } => {
-                            let package = Package::new(
-                                component.clone(),
-                                remote.clone().get_name().unwrap().to_string(),
-                            );
-                            let db_package = DbPackage::from_package(&package);
-                            match queries::insert_db_package(db_package) {
-                                Ok(_) => (),
-                                Err(err) => {
-                                    debug!("Unable to insert db package: {}", err.to_string())
-                                }
-                            };
-                        }
-                        _ => debug!("Ignore non Flatpak component: {}", component.id.0),
-                    }
-                }
-            }
-            Err(err) => warn!(
-                "Unable to parse appstream for remote {:?}: {}",
-                &remote.get_name().unwrap().to_string(),
-                err.to_string()
-            ),
+        // Parse appstream data
+        let appdata_collection = Collection::from_path(appstream_file.clone()).ok();
+        if appdata_collection.is_none() {
+            warn!(
+                "Unable to parse appstream for remote {:?}",
+                &remote.1.get_name().unwrap().to_string()
+            );
         }
+
+        let mut db_packages = Vec::new();
+        let count = refs.len();
+        let mut pos = 0.0;
+
+        for remote_ref in refs {
+            let ref_name = remote_ref.format_ref().unwrap().to_string();
+            debug!(
+                "[{}%] Load package {}",
+                (pos / count as f32) * 100.0,
+                ref_name
+            );
+
+            // We only care about our arch
+            if remote_ref.get_arch().unwrap().to_string() != std::env::consts::ARCH {
+                pos = pos + 1.0;
+                continue;
+            }
+
+            // Try to retrieve appstream component
+            let component: Option<Component> = match &appdata_collection {
+                Some(collection) => {
+                    let app_id = AppId(remote_ref.get_name().unwrap().to_string());
+                    let components = collection.find_by_id(app_id);
+
+                    components
+                        .into_iter()
+                        .find(|c| get_ref_name(c) == ref_name)
+                        .cloned()
+                }
+                None => None,
+            };
+
+            // Create new remote package and push it into the databse
+            let remote_package = RemotePackage::from((remote_ref, component));
+            db_packages.push(remote_package.into());
+
+            pos = pos + 1.0;
+        }
+
+        match queries::insert_db_packages(db_packages) {
+            Ok(_) => (),
+            Err(err) => debug!("Unable to insert db packages: {}", err.to_string()),
+        };
     }
 
     // Set database info
@@ -150,4 +188,18 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
     queries::insert_db_info(db_info).unwrap();
 
     debug!("Finished rebuilding database.")
+}
+
+fn get_ref_name(component: &Component) -> String {
+    for bundle in &component.bundles {
+        match bundle {
+            Bundle::Flatpak {
+                runtime: _,
+                sdk: _,
+                reference,
+            } => return reference.clone(),
+            _ => (),
+        }
+    }
+    String::new()
 }

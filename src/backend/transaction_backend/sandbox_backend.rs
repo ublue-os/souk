@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use crate::backend::transaction_backend::TransactionBackend;
 use crate::backend::{
-    Package, PackageAction, PackageTransaction, TransactionMode, TransactionState,
+    BasePackage, Package, PackageAction, PackageTransaction, TransactionMode, TransactionState,
 };
 
 type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
@@ -33,7 +33,7 @@ impl TransactionBackend for SandboxBackend {
         debug!(
             "New transaction: {:?} -> {}",
             transaction.action,
-            transaction.package.get_ref_name()
+            transaction.package.ref_name()
         );
         spawn!(Self::execute_package_transacton(
             transaction,
@@ -45,12 +45,12 @@ impl TransactionBackend for SandboxBackend {
         debug!(
             "Cancel transaction: {:?} -> {}",
             transaction.action,
-            transaction.package.get_ref_name()
+            transaction.package.ref_name()
         );
         let mut tupl = self
             .transactions
             .borrow_mut()
-            .remove(&transaction.package.get_ref_name())
+            .remove(&transaction.package.ref_name())
             .unwrap();
 
         match tupl.1.kill() {
@@ -67,9 +67,9 @@ impl TransactionBackend for SandboxBackend {
 
     fn get_active_transaction(
         &self,
-        package: &Package,
+        package: &BasePackage,
     ) -> Option<std::sync::Arc<PackageTransaction>> {
-        match self.transactions.borrow().get(&package.get_ref_name()) {
+        match self.transactions.borrow().get(&package.ref_name()) {
             Some((t, _)) => Some(t.clone()),
             None => None,
         }
@@ -102,10 +102,9 @@ impl SandboxBackend {
         // Insert running child into transaction HashMap, we need to access it later...
         // 1) when we want to cancel the transaction
         // 2) when we want to know the current state of a running transaction
-        transactions.borrow_mut().insert(
-            transaction.package.get_ref_name(),
-            (transaction.clone(), child),
-        );
+        transactions
+            .borrow_mut()
+            .insert(transaction.package.ref_name(), (transaction.clone(), child));
 
         // Parse stdout lines till nothing is left anymore / the process stopped
         while let Some(line) = stdout_lines.next().await {
@@ -117,7 +116,7 @@ impl SandboxBackend {
         // from the HashMap again, and process the result / return code of it.
         match transactions
             .borrow_mut()
-            .remove(&transaction.package.get_ref_name())
+            .remove(&transaction.package.ref_name())
         {
             Some((_, mut child)) => {
                 let mut state = TransactionState::default();
@@ -163,14 +162,14 @@ impl SandboxBackend {
             PackageAction::Install => {
                 args.push("install".into());
                 args.push("--system".into());
-                args.push(transaction.package.remote.clone());
-                args.push(transaction.package.app_id.clone());
+                args.push(transaction.package.remote().clone());
+                args.push(transaction.package.name().clone());
                 args.push("-y".into());
             }
             PackageAction::Uninstall => {
                 args.push("uninstall".into());
                 args.push("--system".into());
-                args.push(transaction.package.app_id.clone());
+                args.push(transaction.package.name().clone());
                 args.push("-y".into());
             }
             _ => (),

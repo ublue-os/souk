@@ -3,7 +3,7 @@ mod host_backend;
 mod sandbox_backend;
 pub use sandbox_backend::SandboxBackend;
 
-use crate::backend::{Package, PackageTransaction};
+use crate::backend::{BasePackage, PackageTransaction};
 
 pub trait TransactionBackend {
     fn new() -> Self
@@ -16,6 +16,6 @@ pub trait TransactionBackend {
 
     fn get_active_transaction(
         &self,
-        package: &Package,
+        package: &BasePackage,
     ) -> Option<std::sync::Arc<PackageTransaction>>;
 }

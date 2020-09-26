@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use crate::app::Action;
 use crate::backend::Package;
-use crate::database::queries;
+use crate::database::{queries, DisplayLevel};
 use crate::ui::utils;
 use crate::ui::PackageTile;
 
@@ -39,7 +39,7 @@ impl SearchPage {
             utils::remove_all_items(&results_flowbox);
 
             let text = entry.get_text().to_string();
-            let packages = queries::get_packages_by_name(text, 100).unwrap();
+            let packages = queries::get_packages_by_name(text, 100, DisplayLevel::Apps).unwrap();
 
             for package in packages{
                 this.clone().add_tile(&package)
@@ -47,9 +47,9 @@ impl SearchPage {
         }));
     }
 
-    fn add_tile(self: Rc<Self>, package: &Package) {
+    fn add_tile(self: Rc<Self>, package: &dyn Package) {
         get_widget!(self.builder, gtk::FlowBox, results_flowbox);
-        let tile = PackageTile::new(self.sender.clone(), package.clone());
+        let tile = PackageTile::new(self.sender.clone(), package);
         results_flowbox.add(&tile.widget);
         results_flowbox.show_all();
     }
