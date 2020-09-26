@@ -20,8 +20,8 @@ impl PackageWidget for ReleasesBox {
         }
     }
 
-    fn set_package(&self, package: Package) {
-        let releases = package.component.releases;
+    fn set_package(&self, package: &dyn Package) {
+        let releases = package.appdata().expect("No appdata available").releases;
         if !releases.is_empty() {
             self.widget.set_visible(true);
             let release = releases[0].clone();

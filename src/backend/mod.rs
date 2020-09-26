@@ -7,7 +7,11 @@ mod flatpak_backend;
 pub use flatpak_backend::FlatpakBackend;
 
 mod package;
+pub use package::BasePackage;
+pub use package::InstalledPackage;
 pub use package::Package;
+pub use package::PackageKind;
+pub use package::RemotePackage;
 
 mod package_action;
 pub use package_action::PackageAction;

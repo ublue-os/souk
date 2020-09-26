@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::app::Action;
 use crate::backend::FlatpakBackend;
 use crate::backend::Package;
-use crate::database::queries;
+use crate::database::{queries, DisplayLevel};
 use crate::ui::package_widgets::{PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
 use crate::ui::{utils, PackageActionButton, PackageTile};
 
@@ -49,8 +49,6 @@ impl PackageDetailsPage {
             widget: package_details_page,
             flatpak_backend,
             package_widgets,
-            /*action_button,
-            releases_box,*/
             builder,
             sender,
         });
@@ -61,9 +59,7 @@ impl PackageDetailsPage {
 
     fn setup_signals(&self) {}
 
-    pub fn set_package(&self, package: Package) {
-        let c = package.component.clone();
-
+    pub fn set_package(&self, package: &dyn Package) {
         get_widget!(self.builder, gtk::Image, icon_image);
         get_widget!(self.builder, gtk::Label, title_label);
         get_widget!(self.builder, gtk::Label, developer_label);
@@ -76,23 +72,44 @@ impl PackageDetailsPage {
             adj.set_value(0.0)
         }
 
-        // Set general information
-        utils::set_icon(&package, &icon_image, 128);
-        utils::set_label_translatable_string(&title_label, Some(c.name.clone()));
-        utils::set_label_translatable_string(&developer_label, c.developer_name.clone());
-        utils::set_label_translatable_string(&summary_label, c.summary.clone());
-        utils::set_label_markup_translatable_string(
-            &description_label,
-            package.component.description.clone(),
-        );
-
         // Setup package action button
         get_widget!(self.builder, gtk::Box, package_action_button_box);
-        let action_button = PackageActionButton::new(self.flatpak_backend.clone(), package.clone());
+        let action_button = PackageActionButton::new(self.flatpak_backend.clone(), package);
         package_action_button_box.add(&action_button.widget);
 
+        // Set icon
+        utils::set_icon(package, &icon_image, 128);
+
+        let appdata = match package.appdata() {
+            Some(appdata) => appdata,
+            None => {
+                warn!("No appdata available for package {}", package.name());
+
+                // Fallback to basic information
+                title_label.set_text(&package.name());
+                developer_label.set_text(&format!("Source: {}", package.remote()));
+                summary_label.set_text(&format!("System {} component", package.kind().to_string()));
+                description_label.set_text(&format!(
+                    "Branch: {}\nCommit: {}",
+                    package.branch(),
+                    package.commit()
+                ));
+
+                return;
+            }
+        };
+
+        // Set general information
+        utils::set_label_translatable_string(&title_label, Some(appdata.name.clone()));
+        utils::set_label_translatable_string(&developer_label, appdata.developer_name.clone());
+        utils::set_label_translatable_string(&summary_label, appdata.summary.clone());
+        utils::set_label_markup_translatable_string(
+            &description_label,
+            appdata.description.clone(),
+        );
+
         // Populate "Other Apps by X" flowbox
-        if let Some(n) = c.developer_name {
+        if let Some(n) = appdata.developer_name {
             get_widget!(self.builder, gtk::Box, other_apps);
             get_widget!(self.builder, gtk::Label, other_apps_label);
             get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
@@ -101,8 +118,10 @@ impl PackageDetailsPage {
             other_apps_label.set_text(&format!("Other Apps by {}", name));
             other_apps.set_visible(true);
 
-            for package in queries::get_packages_by_developer_name(name, 10).unwrap() {
-                let tile = PackageTile::new(self.sender.clone(), package);
+            for package in
+                queries::get_packages_by_developer_name(name, 10, DisplayLevel::Apps).unwrap()
+            {
+                let tile = PackageTile::new(self.sender.clone(), &package);
                 other_apps_flowbox.add(&tile.widget);
                 other_apps_flowbox.show_all();
             }
@@ -110,7 +129,7 @@ impl PackageDetailsPage {
 
         // Set package for all package widgets
         for package_widget in &self.package_widgets {
-            package_widget.set_package(package.clone());
+            package_widget.set_package(package);
         }
     }
 

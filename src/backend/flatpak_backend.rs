@@ -1,5 +1,4 @@
 use broadcaster::BroadcastChannel;
-use flatpak::prelude::*;
 use flatpak::{Installation, InstallationExt};
 use gio::prelude::*;
 
@@ -7,9 +6,10 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
-use crate::backend::{BackendMessage, Package, PackageAction, PackageTransaction};
-use crate::database::package_database;
-use crate::database::queries;
+use crate::backend::{
+    BackendMessage, InstalledPackage, Package, PackageAction, PackageKind, PackageTransaction,
+};
+use crate::database::{package_database, DisplayLevel};
 
 pub struct FlatpakBackend {
     pub system_installation: Installation,
@@ -82,7 +82,7 @@ impl FlatpakBackend {
         self.broadcast.clone()
     }
 
-    pub fn get_installed_packages(self: Rc<Self>) -> Vec<Package> {
+    pub fn get_installed_packages(self: Rc<Self>, level: DisplayLevel) -> Vec<InstalledPackage> {
         let mut installed_packages = Vec::new();
 
         let mut system_refs = self
@@ -98,25 +98,32 @@ impl FlatpakBackend {
         installed_refs.append(&mut system_refs);
         installed_refs.append(&mut user_refs);
 
-        for ref_ in installed_refs {
-            let name = ref_.get_name().unwrap().to_string();
-            let branch = ref_.get_branch().unwrap().to_string();
-            let origin = ref_.get_origin().unwrap().to_string();
+        for installed_ref in installed_refs {
+            let package: InstalledPackage = installed_ref.into();
 
-            if let Some(package) = queries::get_package(name, branch, origin).unwrap() {
-                installed_packages.insert(0, package.clone())
+            let insert = match level {
+                DisplayLevel::Apps => package.kind() == PackageKind::App,
+                DisplayLevel::Runtimes => {
+                    package.kind() == PackageKind::Runtime || package.kind() == PackageKind::App
+                }
+                DisplayLevel::Extensions => true,
+            };
+
+            if insert {
+                installed_packages.insert(0, package.clone());
             }
         }
 
         installed_packages
     }
 
-    pub fn is_package_installed(self: Rc<Self>, package: &Package) -> bool {
+    // TODO: This currently needs a *looong* time to check.
+    pub fn is_package_installed(self: Rc<Self>, package: &dyn Package) -> bool {
         let mut result = false;
 
-        let installed_packages = self.get_installed_packages();
+        let installed_packages = self.get_installed_packages(DisplayLevel::Extensions);
         let mut iter = installed_packages.into_iter();
-        iter.find(|p| package == p).map(|_| {
+        iter.find(|p| package.commit() == p.commit()).map(|_| {
             result = true;
             result
         });
@@ -124,8 +131,9 @@ impl FlatpakBackend {
         result
     }
 
-    pub fn install_package(self: Rc<Self>, package: Package) {
-        let transaction = PackageTransaction::new(package, PackageAction::Install);
+    pub fn install_package(self: Rc<Self>, package: &dyn Package) {
+        let transaction =
+            PackageTransaction::new(package.base_package().clone(), PackageAction::Install);
         self.clone()
             .send_message(BackendMessage::PackageTransaction(transaction.clone()));
 
@@ -133,8 +141,9 @@ impl FlatpakBackend {
             .add_package_transaction(transaction);
     }
 
-    pub fn uninstall_package(self: Rc<Self>, package: Package) {
-        let transaction = PackageTransaction::new(package, PackageAction::Uninstall);
+    pub fn uninstall_package(self: Rc<Self>, package: &dyn Package) {
+        let transaction =
+            PackageTransaction::new(package.base_package().clone(), PackageAction::Uninstall);
         self.clone()
             .send_message(BackendMessage::PackageTransaction(transaction.clone()));
 
@@ -142,18 +151,18 @@ impl FlatpakBackend {
             .add_package_transaction(transaction);
     }
 
-    pub fn launch_package(self: Rc<Self>, package: Package) {
+    pub fn launch_package(self: Rc<Self>, package: &dyn Package) {
         match std::process::Command::new("flatpak-spawn")
             .arg("--host")
             .arg("flatpak")
             .arg("run")
-            .arg(package.get_ref_name())
+            .arg(package.ref_name())
             .spawn()
         {
             Ok(_) => (),
             Err(err) => warn!(
                 "Unable to launch {}: {}",
-                package.get_ref_name(),
+                package.ref_name(),
                 err.to_string()
             ),
         };
@@ -166,9 +175,10 @@ impl FlatpakBackend {
 
     pub fn get_active_transaction(
         self: Rc<Self>,
-        package: &Package,
+        package: &dyn Package,
     ) -> Option<Arc<PackageTransaction>> {
-        self.transaction_backend.get_active_transaction(&package)
+        self.transaction_backend
+            .get_active_transaction(&package.base_package())
     }
 
     fn send_message(self: Rc<Self>, message: BackendMessage) {

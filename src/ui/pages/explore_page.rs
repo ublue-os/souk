@@ -4,7 +4,7 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::database::queries;
+use crate::database::{queries, DisplayLevel};
 use crate::ui::PackageTile;
 
 pub struct ExplorePage {
@@ -46,8 +46,8 @@ impl ExplorePage {
             .add_tile("com.jetbrains.IntelliJ-IDEA-Community".to_string());
 
         get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
-        for package in queries::get_recently_updated_packages(10).unwrap() {
-            let tile = PackageTile::new(self.sender.clone(), package);
+        for package in queries::get_recently_updated_packages(10, DisplayLevel::Apps).unwrap() {
+            let tile = PackageTile::new(self.sender.clone(), &package);
             recently_updated_flowbox.add(&tile.widget);
             recently_updated_flowbox.show_all();
         }
@@ -58,7 +58,7 @@ impl ExplorePage {
         let package = queries::get_package(app_id, "stable".to_string(), "flathub".to_string())
             .unwrap()
             .unwrap();
-        let tile = PackageTile::new(self.sender.clone(), package);
+        let tile = PackageTile::new(self.sender.clone(), &package);
         editors_picks_flowbox.add(&tile.widget);
         editors_picks_flowbox.show_all();
     }

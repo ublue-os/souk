@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::app::Action;
 use crate::backend::{BackendMessage, FlatpakBackend, PackageTransaction, TransactionMode};
+use crate::database::DisplayLevel;
 use crate::ui::PackageTile;
 
 pub struct InstalledPage {
@@ -36,10 +37,12 @@ impl InstalledPage {
     fn setup_widgets(self: Rc<Self>) {
         get_widget!(self.builder, gtk::FlowBox, installed_flowbox);
 
-        let packages = self.flatpak_backend.clone().get_installed_packages();
+        let packages = self
+            .flatpak_backend
+            .clone()
+            .get_installed_packages(DisplayLevel::Runtimes);
         for package in packages {
-            debug!("Installed package: {:?}", &package);
-            let tile = PackageTile::new(self.sender.clone(), package);
+            let tile = PackageTile::new(self.sender.clone(), &package);
             installed_flowbox.add(&tile.widget);
         }
 

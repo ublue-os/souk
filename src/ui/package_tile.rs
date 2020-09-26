@@ -8,49 +8,44 @@ use crate::ui::View;
 
 pub struct PackageTile {
     pub widget: gtk::Button,
-    package: Package,
-
-    builder: gtk::Builder,
-    sender: Sender<Action>,
 }
 
 impl PackageTile {
-    pub fn new(sender: Sender<Action>, package: Package) -> Self {
+    pub fn new(sender: Sender<Action>, package: &dyn Package) -> Self {
         let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/package_tile.ui");
         get_widget!(builder, gtk::Button, package_tile);
 
-        let package_tile = Self {
+        let tile = Self {
             widget: package_tile,
-            package,
-            builder,
-            sender,
         };
 
-        get_widget!(package_tile.builder, gtk::Label, title_label);
-        get_widget!(package_tile.builder, gtk::Label, summary_label);
+        get_widget!(builder, gtk::Label, title_label);
+        get_widget!(builder, gtk::Label, summary_label);
+        get_widget!(builder, gtk::Image, icon_image);
+        get_widget!(builder, gtk::Button, package_tile);
 
-        utils::set_label_translatable_string(
-            &title_label,
-            Some(package_tile.package.component.name.clone()),
-        );
-        utils::set_label_translatable_string(
-            &summary_label,
-            package_tile.package.component.summary.clone(),
-        );
+        // Icon
+        utils::set_icon(package, &icon_image, 64);
 
-        get_widget!(package_tile.builder, gtk::Image, icon_image);
-        utils::set_icon(&package_tile.package, &icon_image, 64);
+        match package.appdata() {
+            Some(appdata) => {
+                // Title
+                utils::set_label_translatable_string(&title_label, Some(appdata.name.clone()));
+                // Summary
+                utils::set_label_translatable_string(&summary_label, appdata.summary.clone());
+            }
+            None => {
+                // Fallback to basic information when no appdata available
+                title_label.set_text(&package.name());
+                summary_label.set_text(&format!("{} - {}", package.branch(), package.remote()));
+            }
+        };
 
-        package_tile.setup_signals();
-        package_tile
-    }
+        let base_package = package.base_package().clone();
+        package_tile.connect_clicked(clone!(@strong sender => move |_|{
+            send!(sender, Action::ViewSet(View::PackageDetails(Box::new(base_package.clone()))));
+        }));
 
-    fn setup_signals(&self) {
-        get_widget!(self.builder, gtk::Button, package_tile);
-        package_tile.connect_clicked(
-            clone!(@strong self.sender as sender, @strong self.package as package => move |_|{
-                send!(sender, Action::ViewSet(View::PackageDetails(Box::new(package.clone()))));
-            }),
-        );
+        tile
     }
 }

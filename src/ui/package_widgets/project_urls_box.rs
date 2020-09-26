@@ -42,7 +42,9 @@ impl PackageWidget for ProjectUrlsBox {
         project_urls_box
     }
 
-    fn set_package(&self, package: Package) {
+    fn set_package(&self, package: &dyn Package) {
+        let urls = package.appdata().expect("No appdata available").urls;
+
         get_widget!(self.builder, gtk::ListBox, listbox);
         get_widget!(self.builder, libhandy::ActionRow, donation_row);
         get_widget!(self.builder, libhandy::ActionRow, translate_row);
@@ -52,7 +54,7 @@ impl PackageWidget for ProjectUrlsBox {
         get_widget!(self.builder, libhandy::ActionRow, faq_row);
         get_widget!(self.builder, libhandy::ActionRow, contact_url);
 
-        for url in &package.component.urls {
+        for url in &urls {
             match url {
                 ProjectUrl::Donation(url) => Self::set_row(&donation_row, url.to_owned()),
                 ProjectUrl::Translate(url) => Self::set_row(&translate_row, url.to_owned()),

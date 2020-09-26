@@ -13,13 +13,13 @@ use crate::app::{Action, GsApplication, GsApplicationPrivate};
 use crate::backend::Package;
 use crate::ui::about_dialog;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum View {
     Explore,
     Installed,
     Updates,
     Search,
-    PackageDetails(Box<Package>),
+    PackageDetails(Box<dyn Package>),
 }
 
 pub struct GsApplicationWindowPrivate {
@@ -262,7 +262,7 @@ impl GsApplicationWindow {
             View::PackageDetails(package) => {
                 window_deck.set_visible_child_name("package-details");
                 app_private.package_details_page.reset();
-                app_private.package_details_page.set_package(*package);
+                app_private.package_details_page.set_package(&*package);
             }
         }
 
@@ -273,9 +273,12 @@ impl GsApplicationWindow {
 
         // It doesn't make sense to track changes between Explore / Installed / Updates,
         // since they're at main "root" view where it isn't possible to go back.
-        if view == View::Explore || view == View::Installed || view == View::Updates {
-            self_.pages_stack.borrow_mut().clear();
-            self_.pages_stack.borrow_mut().push(view);
+        match view {
+            View::Explore | View::Installed | View::Updates => {
+                self_.pages_stack.borrow_mut().clear();
+                self_.pages_stack.borrow_mut().push(view);
+            }
+            _ => (),
         }
     }
 }
