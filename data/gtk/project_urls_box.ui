@@ -18,13 +18,19 @@
             <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Donate</property>
-            <property name="icon_name">emblem-favorite-symbolic</property>
             <property name="subtitle" translatable="yes">subtitle</property>
+            <child type="prefix">
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">currency-symbolic</property>
+              </object>
+            </child>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="icon_name">go-next-symbolic</property>
+                <property name="icon_name">external-link-symbolic</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -38,13 +44,19 @@
             <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Contribute translations</property>
-            <property name="icon_name">chat-message-new-symbolic</property>
             <property name="subtitle" translatable="yes">subtitle</property>
+            <child type="prefix">
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">keyboard-layout-symbolic</property>
+              </object>
+            </child>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="icon_name">go-next-symbolic</property>
+                <property name="icon_name">external-link-symbolic</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -58,13 +70,19 @@
             <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Project Website</property>
-            <property name="icon_name">user-home-symbolic</property>
             <property name="subtitle" translatable="yes">subtitle</property>
+            <child type="prefix">
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">globe-symbolic</property>
+              </object>
+            </child>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="icon_name">go-next-symbolic</property>
+                <property name="icon_name">external-link-symbolic</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -78,13 +96,19 @@
             <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Report an issue</property>
-            <property name="icon_name">face-sad-symbolic</property>
             <property name="subtitle" translatable="yes">subtitle</property>
+            <child type="prefix">
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">computer-fail-symbolic</property>
+              </object>
+            </child>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="icon_name">go-next-symbolic</property>
+                <property name="icon_name">external-link-symbolic</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -98,13 +122,19 @@
             <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Help</property>
-            <property name="icon_name">help-browser-symbolic</property>
             <property name="subtitle" translatable="yes">subtitle</property>
+            <child type="prefix">
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">help-page-symbolic</property>
+              </object>
+            </child>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="icon_name">go-next-symbolic</property>
+                <property name="icon_name">external-link-symbolic</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -118,13 +148,19 @@
             <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Frequently Asked Questions</property>
-            <property name="icon_name">preferences-system-details-symbolic</property>
             <property name="subtitle" translatable="yes">subtitle</property>
+            <child type="prefix">
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">preferences-system-details-symbolic</property>
+              </object>
+            </child>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="icon_name">go-next-symbolic</property>
+                <property name="icon_name">external-link-symbolic</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -138,13 +174,19 @@
             <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Contact</property>
-            <property name="icon_name">mail-unread-symbolic</property>
             <property name="subtitle" translatable="yes">subtitle</property>
+            <child type="prefix">
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">mail-unread-symbolic</property>
+              </object>
+            </child>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="icon_name">go-next-symbolic</property>
+                <property name="icon_name">external-link-symbolic</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
