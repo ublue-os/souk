@@ -13,6 +13,11 @@
     <file>gtk/project_urls_box.ui</file>
     <file>gtk/search_page.ui</file>
     <file>gtk/style.css</file>
+    <file preprocess="xml-stripblanks">icons/currency-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/external-link-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/globe-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/help-page-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/keyboard-layout-symbolic.svg</file>
     <file preprocess="xml-stripblanks">icons/star-outline-thick-symbolic.svg</file>
   </gresource>
 </gresources>
