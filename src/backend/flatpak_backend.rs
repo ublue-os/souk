@@ -1,5 +1,5 @@
 use broadcaster::BroadcastChannel;
-use flatpak::{Installation, InstallationExt};
+use flatpak::{Installation, InstallationExt, InstalledRef, RefExt};
 use gio::prelude::*;
 
 use std::rc::Rc;
@@ -82,9 +82,7 @@ impl FlatpakBackend {
         self.broadcast.clone()
     }
 
-    pub fn get_installed_packages(self: Rc<Self>, level: DisplayLevel) -> Vec<InstalledPackage> {
-        let mut installed_packages = Vec::new();
-
+    pub fn get_installed_refs(self: Rc<Self>) -> Vec<InstalledRef> {
         let mut system_refs = self
             .system_installation
             .list_installed_refs(Some(&gio::Cancellable::new()))
@@ -98,7 +96,13 @@ impl FlatpakBackend {
         installed_refs.append(&mut system_refs);
         installed_refs.append(&mut user_refs);
 
-        for installed_ref in installed_refs {
+        installed_refs
+    }
+
+    pub fn get_installed_packages(self: Rc<Self>, level: DisplayLevel) -> Vec<InstalledPackage> {
+        let mut installed_packages = Vec::new();
+
+        for installed_ref in self.get_installed_refs() {
             let package: InstalledPackage = installed_ref.into();
 
             let insert = match level {
@@ -117,18 +121,12 @@ impl FlatpakBackend {
         installed_packages
     }
 
-    // TODO: This currently needs a *looong* time to check.
     pub fn is_package_installed(self: Rc<Self>, package: &dyn Package) -> bool {
-        let mut result = false;
-
-        let installed_packages = self.get_installed_packages(DisplayLevel::Extensions);
-        let mut iter = installed_packages.into_iter();
-        iter.find(|p| package.commit() == p.commit()).map(|_| {
-            result = true;
-            result
-        });
-
-        result
+        self.get_installed_refs()
+            .iter()
+            .map(|r| r.get_commit().unwrap().to_string())
+            .find(|commit| &package.commit() == commit)
+            .map_or(false, |_| true)
     }
 
     pub fn install_package(self: Rc<Self>, package: &dyn Package) {
