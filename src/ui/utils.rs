@@ -2,7 +2,8 @@ use appstream::{MarkupTranslatableString, TranslatableString};
 use chrono::{DateTime, Utc};
 use gio::prelude::*;
 use gtk::prelude::*;
-use html2pango::*;
+use html2pango::block::markup_html;
+use html2pango::block::HtmlBlock;
 
 use std::path::PathBuf;
 
@@ -22,12 +23,48 @@ pub fn set_label_markup_translatable_string(
     match text {
         Some(t) => {
             let text = &t.get_default().unwrap_or(&"???".to_string()).to_string();
-            let markup = markup(&text);
+            let markup = render_markup(text).unwrap_or("???".to_string());
             label.set_use_markup(true);
             label.set_markup(&markup);
         }
         None => label.set_text("–"),
     };
+}
+
+pub fn render_markup(text: &str) -> Option<String> {
+    let mut markup: Vec<String> = vec![];
+    if let Ok(blocks) = markup_html(text) {
+        for block in blocks {
+            let text = match block {
+                HtmlBlock::UList(elements) => elements
+                    .iter()
+                    .map(|li| format!("  • {}", li))
+                    .collect::<Vec<String>>()
+                    .join("\n"),
+                HtmlBlock::OList(elements) => elements
+                    .iter()
+                    .enumerate()
+                    .map(|(i, li)| format!("  {}. {}", i + 1, li))
+                    .collect::<Vec<String>>()
+                    .join("\n"),
+                HtmlBlock::Text(t) => t,
+                _ => String::new(),
+            };
+            markup.push(text + "\n");
+        }
+        Some(
+            markup
+                .into_iter()
+                .filter(|x| !x.is_empty())
+                .collect::<Vec<String>>()
+                .join("\n")
+                .trim_end()
+                .to_string(),
+        )
+    } else {
+        debug!("Could not parse: {}", text);
+        None
+    }
 }
 
 pub fn set_date_label(label: &gtk::Label, date: Option<DateTime<Utc>>) {
