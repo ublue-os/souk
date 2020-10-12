@@ -199,6 +199,11 @@ impl SandboxBackend {
                     speed[1].to_string(),
                     speed[2].to_string()
                 );
+            } else {
+                let re = Regex::new(r"^Looking for matches…$").unwrap();
+                if re.is_match(&line) {
+                    state.message = "Preparing…".to_string();
+                }
             }
         } else {
             // NOTE: When a package has to install extra packages,
