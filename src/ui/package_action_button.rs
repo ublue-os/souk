@@ -115,20 +115,8 @@ impl PackageActionButton {
 
         // Listen to transaction state changes
         while let Some(state) = transaction_channel.recv().await {
-            let percentage = state.percentage;
-            progressbar.set_fraction(percentage.into());
-
-            if percentage < 0.99 {
-                if let Some(status) = state.get_download_speed() {
-                    let download_speed = format!("Downloading {}", status);
-                    status_label.set_text(&download_speed);
-                }
-            } else {
-                // TODO: Sometimes this text will appear at the start of the
-                // installation. The percentage is getting a wrong value at the start.
-
-                status_label.set_text("Installing...");
-            }
+            progressbar.set_fraction(state.percentage.into());
+            status_label.set_text(&state.message);
 
             match state.mode {
                 TransactionMode::Finished | TransactionMode::Cancelled => {

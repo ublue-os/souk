@@ -181,7 +181,6 @@ impl SandboxBackend {
     fn parse_line(line: String) -> TransactionState {
         let mut state = TransactionState::default();
         state.mode = TransactionMode::Running;
-        state.message = line.clone();
 
         // Regex to get percentage value
         let regex = Regex::new(r"(\d{1,3})%").unwrap();
@@ -190,6 +189,29 @@ impl SandboxBackend {
             let value = percentage.get(1).unwrap().as_str();
             let percentage: f32 = value.parse().unwrap();
             state.percentage = percentage / 100.0;
+        }
+
+        if state.percentage < 0.99 {
+            let re = Regex::new(r"(\d+.\d+)\u{a0}(\w+)/s").unwrap();
+            if let Some(speed) = re.captures(&line) {
+                state.message = format!(
+                    "Downloading {} {}/s",
+                    speed[1].to_string(),
+                    speed[2].to_string()
+                );
+            }
+        } else {
+            // NOTE: When a package has to install extra packages,
+            // a locale for example, `percentage` might get to `1.0` really
+            // quick, making "Installing…" appear before it should. There
+            // is no way of getting this info from the current line, unless
+            // the number which corresponds to the package is stored,
+            // e.g. 2 in this case
+            // Installing 2/2… █▌                     8%  1.6\u{a0}MB/s
+            // This can be considered a feature as some packages might
+            // install heavy runtimes.
+
+            state.message = "Installing…".to_string();
         }
 
         state
