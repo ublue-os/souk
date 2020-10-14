@@ -90,6 +90,7 @@ impl SandboxBackend {
         let args = Self::get_flatpak_args(&transaction);
         let mut child = Command::new("flatpak-spawn")
             .args(&args)
+            .env("LANG", "C")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
