@@ -199,6 +199,8 @@ impl SandboxBackend {
                 big_n = package_number[2].parse().unwrap();
                 let global_percentage = (n - 1.0 + percentage) / big_n;
                 state.percentage = global_percentage;
+            } else {
+                state.percentage = percentage;
             }
         }
 

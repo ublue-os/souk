@@ -116,7 +116,9 @@ impl PackageActionButton {
         // Listen to transaction state changes
         while let Some(state) = transaction_channel.recv().await {
             progressbar.set_fraction(state.percentage.into());
-            status_label.set_text(&state.message);
+            if &state.message != "" {
+                status_label.set_text(&state.message);
+            }
 
             match state.mode {
                 TransactionMode::Finished | TransactionMode::Cancelled => {
