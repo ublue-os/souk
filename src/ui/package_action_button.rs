@@ -113,6 +113,9 @@ impl PackageActionButton {
         let mut transaction_channel = self.transaction.borrow().as_ref().unwrap().get_channel();
         button_stack.set_visible_child_name("processing");
 
+        // TODO: Don't show this message when installing packages.
+        // It is currently being displayed for ~20ms.
+        status_label.set_text("Working…");
         // Listen to transaction state changes
         while let Some(state) = transaction_channel.recv().await {
             progressbar.set_fraction(state.percentage.into());
