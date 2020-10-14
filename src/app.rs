@@ -4,8 +4,8 @@ use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
 use glib::{Receiver, Sender};
-use gtk::prelude::*;
-use gtk::subclass::application::GtkApplicationImpl;
+use gtk4::prelude::*;
+use gtk4::subclass::application::GtkApplicationImpl;
 
 use std::cell::RefCell;
 use std::env;
@@ -14,7 +14,7 @@ use std::rc::Rc;
 use crate::backend::FlatpakBackend;
 use crate::config;
 use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage, SearchPage};
-use crate::ui::{GsApplicationWindow, View};
+use crate::ui::{ApplicationWindow, View};
 
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -33,12 +33,12 @@ pub struct GsApplicationPrivate {
     pub search_page: Rc<SearchPage>,
     pub package_details_page: Rc<PackageDetailsPage>,
 
-    window: RefCell<Option<GsApplicationWindow>>,
+    window: RefCell<Option<ApplicationWindow>>,
 }
 
 impl ObjectSubclass for GsApplicationPrivate {
     const NAME: &'static str = "GsApplication";
-    type ParentType = gtk::Application;
+    type ParentType = gtk4::Application;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
@@ -71,9 +71,7 @@ impl ObjectSubclass for GsApplicationPrivate {
 }
 
 // Implement GLib.OBject for GsApplication
-impl ObjectImpl for GsApplicationPrivate {
-    glib_object_impl!();
-}
+impl ObjectImpl for GsApplicationPrivate {}
 
 // Implement Gtk.Application for GsApplication
 impl GtkApplicationImpl for GsApplicationPrivate {}
@@ -86,7 +84,7 @@ impl ApplicationImpl for GsApplicationPrivate {
         // If the window already exists,
         // present it instead creating a new one again.
         if let Some(ref window) = *self.window.borrow() {
-            window.present();
+            window.widget.present();
             info!("Application window presented.");
             return;
         }
@@ -96,7 +94,7 @@ impl ApplicationImpl for GsApplicationPrivate {
             .downcast::<GsApplication>()
             .unwrap();
         let window = app.create_window();
-        window.present();
+        window.widget.present();
         self.window.replace(Some(window));
         info!("Created application window.");
 
@@ -112,7 +110,7 @@ glib_wrapper! {
         Object<subclass::simple::InstanceStruct<GsApplicationPrivate>,
         subclass::simple::ClassStruct<GsApplicationPrivate>,
         GsApplicationClass>)
-        @extends gio::Application, gtk::Application;
+        @extends gio::Application, gtk4::Application;
 
     match fn {
         get_type => || GsApplicationPrivate::get_type().to_glib(),
@@ -144,19 +142,23 @@ impl GsApplication {
 
         app.set_resource_base_path(Some("/org/gnome/Store"));
 
-        // Start running gtk::Application
+        // Start running gtk4::Application
         let args: Vec<String> = env::args().collect();
         ApplicationExtManual::run(&app, &args);
     }
 
-    fn create_window(&self) -> GsApplicationWindow {
+    fn create_window(&self) -> ApplicationWindow {
         let self_ = GsApplicationPrivate::from_instance(self);
-        let window = GsApplicationWindow::new(self_.sender.clone(), self.clone());
+        let window = ApplicationWindow::new(self_.sender.clone(), self.clone());
 
         // Load custom styling
-        let p = gtk::CssProvider::new();
-        gtk::CssProvider::load_from_resource(&p, "/org/gnome/Store/gtk/style.css");
-        gtk::StyleContext::add_provider_for_screen(&gdk::Screen::get_default().unwrap(), &p, 500);
+        let p = gtk4::CssProvider::new();
+        gtk4::CssProvider::load_from_resource(&p, "/org/gnome/Store/gtk/style.css");
+        gtk4::StyleContext::add_provider_for_display(
+            &gdk4::Display::get_default().unwrap(),
+            &p,
+            500,
+        );
 
         // Set initial view
         window.set_view(View::Explore, false);

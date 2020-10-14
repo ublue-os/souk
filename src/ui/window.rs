@@ -1,11 +1,9 @@
 use gio::prelude::*;
-use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
 use glib::Sender;
-use gtk::prelude::*;
-use gtk::subclass::prelude::{BinImpl, ContainerImpl, WidgetImpl, WindowImpl};
-use libhandy::prelude::*;
+use gtk4::prelude::*;
+use libhandy4::auto::traits::*;
 
 use std::cell::RefCell;
 
@@ -22,90 +20,41 @@ pub enum View {
     PackageDetails(Box<dyn Package>),
 }
 
-pub struct GsApplicationWindowPrivate {
-    window_builder: gtk::Builder,
-    menu_builder: gtk::Builder,
+pub struct ApplicationWindow {
+    pub widget: libhandy4::ApplicationWindow,
+
+    window_builder: gtk4::Builder,
+    menu_builder: gtk4::Builder,
 
     pages_stack: RefCell<Vec<View>>,
 }
 
-impl ObjectSubclass for GsApplicationWindowPrivate {
-    const NAME: &'static str = "GsApplicationWindow";
-    type ParentType = libhandy::ApplicationWindow;
-    type Instance = subclass::simple::InstanceStruct<Self>;
-    type Class = subclass::simple::ClassStruct<Self>;
+impl ApplicationWindow {
+    pub fn new(sender: Sender<Action>, app: GsApplication) -> Self {
+        let window_builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/window.ui");
+        let menu_builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/menu.ui");
 
-    glib_object_subclass!();
-
-    fn new() -> Self {
-        let window_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/window.ui");
-        let menu_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/menu.ui");
-
+        get_widget!(window_builder, libhandy4::ApplicationWindow, window);
         let pages_stack = RefCell::new(Vec::new());
 
-        Self {
+        app.add_window(&window);
+
+        let application_window = Self {
+            widget: window,
             window_builder,
             menu_builder,
             pages_stack,
-        }
-    }
-}
+        };
 
-// Implement GLib.OBject for GsApplicationWindow
-impl ObjectImpl for GsApplicationWindowPrivate {
-    glib_object_impl!();
-}
-
-// Implement Gtk.Widget for GsApplicationWindow
-impl WidgetImpl for GsApplicationWindowPrivate {}
-
-// Implement Gtk.Container for GsApplicationWindow
-impl ContainerImpl for GsApplicationWindowPrivate {}
-
-// Implement Gtk.Bin for GsApplicationWindow
-impl BinImpl for GsApplicationWindowPrivate {}
-
-// Implement Gtk.Window for GsApplicationWindow
-impl WindowImpl for GsApplicationWindowPrivate {}
-
-// Implement Gtk.ApplicationWindow for GsApplicationWindow
-impl gtk::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
-
-// Implement Hdy.ApplicationWindow for GsApplicationWindow
-impl libhandy::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
-
-// Wrap GsApplicationWindowPrivate into a usable gtk-rs object
-glib_wrapper! {
-    pub struct GsApplicationWindow(
-        Object<subclass::simple::InstanceStruct<GsApplicationWindowPrivate>,
-        subclass::simple::ClassStruct<GsApplicationWindowPrivate>,
-        GsApplicationWindowClass>)
-        @extends gtk::Widget, gtk::Container, gtk::Bin, gtk::Window, gtk::ApplicationWindow, libhandy::ApplicationWindow;
-
-    match fn {
-        get_type => || GsApplicationWindowPrivate::get_type().to_glib(),
-    }
-}
-
-// GsApplicationWindow implementation itself
-impl GsApplicationWindow {
-    pub fn new(sender: Sender<Action>, app: GsApplication) -> Self {
-        // Create new GObject and downcast it into GsApplicationWindow
-        let window = glib::Object::new(GsApplicationWindow::static_type(), &[])
-            .unwrap()
-            .downcast::<GsApplicationWindow>()
-            .unwrap();
-
-        app.add_window(&window);
-        window.setup_widgets();
-        window.setup_signals(sender.clone());
-        window.setup_gactions(sender);
-        window
+        application_window.setup_widgets();
+        application_window.setup_signals(sender.clone());
+        application_window.setup_gactions(sender);
+        application_window
     }
 
     pub fn setup_widgets(&self) {
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
         let app: GsApplication = self
+            .widget
             .get_application()
             .unwrap()
             .downcast::<GsApplication>()
@@ -113,36 +62,36 @@ impl GsApplicationWindow {
         let app_private = GsApplicationPrivate::from_instance(&app);
 
         // set default size
-        self.set_default_size(900, 700);
+        self.widget.set_default_size(900, 700);
 
         // Set hamburger menu
-        get_widget!(self_.menu_builder, gtk::PopoverMenu, popover_menu);
-        get_widget!(self_.window_builder, gtk::MenuButton, appmenu_button);
+        get_widget!(self.menu_builder, gtk4::PopoverMenu, popover_menu);
+        get_widget!(self.window_builder, gtk4::MenuButton, appmenu_button);
         appmenu_button.set_popover(Some(&popover_menu));
 
         // wire everything up
-        get_widget!(self_.window_builder, gtk::Box, explore_box);
-        explore_box.add(&app_private.explore_page.widget);
+        get_widget!(self.window_builder, gtk4::Box, explore_box);
+        explore_box.append(&app_private.explore_page.widget);
 
-        get_widget!(self_.window_builder, gtk::Box, installed_box);
-        installed_box.add(&app_private.installed_page.widget);
+        get_widget!(self.window_builder, gtk4::Box, installed_box);
+        installed_box.append(&app_private.installed_page.widget);
 
-        get_widget!(self_.window_builder, gtk::Box, search_box);
-        search_box.add(&app_private.search_page.widget);
+        get_widget!(self.window_builder, gtk4::Box, search_box);
+        search_box.append(&app_private.search_page.widget);
 
-        get_widget!(self_.window_builder, gtk::Box, package_details_box);
-        package_details_box.add(&app_private.package_details_page.widget);
+        get_widget!(self.window_builder, gtk4::Box, package_details_box);
+        package_details_box.append(&app_private.package_details_page.widget);
 
         // Add headerbar/content to the window itself
-        get_widget!(self_.window_builder, gtk::Box, window);
-        self.add(&window);
+        get_widget!(self.window_builder, libhandy4::ApplicationWindow, window);
+        self.widget.set_child(Some(&window));
     }
 
     fn setup_signals(&self, sender: Sender<Action>) {
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
-
         // main stack
-        get_widget!(self_.window_builder, gtk::Stack, main_stack);
+        // TODO: fixme...
+        /*
+        get_widget!(self.window_builder, gtk4::Stack, main_stack);
         main_stack.connect_property_visible_child_notify(
             clone!(@strong self as this => move |main_stack| {
                 let view = match main_stack.get_visible_child_name().unwrap().as_str(){
@@ -154,21 +103,22 @@ impl GsApplicationWindow {
                 };
                 this.set_view(view, false);
             }),
-        );
+        );*/
 
         // back button (mouse)
-        self.connect_button_press_event(clone!(@strong sender => move |_, event|{
+        // TODO: Fixme!
+        /*self.widget.connect_button_press_event(clone!(@strong sender => move |_, event|{
             if event.get_button() == 8 {
                 send!(sender, Action::ViewGoBack);
             }
-            Inhibit(false)
-        }));
+            glib::signal::Inhibit(false)
+        }));*/
     }
 
     fn setup_gactions(&self, sender: Sender<Action>) {
-        // We need to upcast from GsApplicationWindow to libhandy::ApplicationWindow, because GsApplicationWindow
+        // We need to upcast from GsApplicationWindow to libhandy4::ApplicationWindow, because GsApplicationWindow
         // currently doesn't implement GLib.ActionMap, since it's not supported in gtk-rs for subclassing (13-01-2020)
-        let window = self.clone().upcast::<gtk::ApplicationWindow>();
+        let window = self.widget.clone().upcast::<gtk4::ApplicationWindow>();
         let app = window.get_application().unwrap();
 
         // win.quit
@@ -213,13 +163,12 @@ impl GsApplicationWindow {
 
     pub fn go_back(&self) {
         debug!("Go back to previous view");
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
 
         // Remove current page
-        let _ = self_.pages_stack.borrow_mut().pop();
+        let _ = self.pages_stack.borrow_mut().pop();
 
         // Get previous page and set it as current view
-        let view = self_
+        let view = self
             .pages_stack
             .borrow()
             .last()
@@ -231,36 +180,36 @@ impl GsApplicationWindow {
     pub fn set_view(&self, view: View, go_back: bool) {
         debug!("Set view to {:?}", &view);
 
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
         let app: GsApplication = self
+            .widget
             .get_application()
             .unwrap()
             .downcast::<GsApplication>()
             .unwrap();
         let app_private = GsApplicationPrivate::from_instance(&app);
 
-        get_widget!(self_.window_builder, libhandy::Deck, window_deck);
-        get_widget!(self_.window_builder, gtk::Stack, main_stack);
+        get_widget!(self.window_builder, libhandy4::Leaflet, window_leaflet);
+        get_widget!(self.window_builder, gtk4::Stack, main_stack);
 
         // Show requested view / page
         match view.clone() {
             View::Explore => {
                 main_stack.set_visible_child_name("explore");
-                window_deck.set_visible_child_name("main");
+                window_leaflet.set_visible_child_name("main");
             }
             View::Installed => {
                 main_stack.set_visible_child_name("installed");
-                window_deck.set_visible_child_name("main");
+                window_leaflet.set_visible_child_name("main");
             }
             View::Updates => {
                 main_stack.set_visible_child_name("updates");
-                window_deck.set_visible_child_name("main");
+                window_leaflet.set_visible_child_name("main");
             }
             View::Search => {
-                window_deck.set_visible_child_name("search");
+                window_leaflet.set_visible_child_name("search");
             }
             View::PackageDetails(package) => {
-                window_deck.set_visible_child_name("package-details");
+                window_leaflet.set_visible_child_name("package-details");
                 app_private.package_details_page.reset();
                 app_private.package_details_page.set_package(&*package);
             }
@@ -268,15 +217,15 @@ impl GsApplicationWindow {
 
         // Don't add page to pages stack, when we're going back
         if !go_back {
-            self_.pages_stack.borrow_mut().push(view.clone());
+            self.pages_stack.borrow_mut().push(view.clone());
         }
 
         // It doesn't make sense to track changes between Explore / Installed / Updates,
         // since they're at main "root" view where it isn't possible to go back.
         match view {
             View::Explore | View::Installed | View::Updates => {
-                self_.pages_stack.borrow_mut().clear();
-                self_.pages_stack.borrow_mut().push(view);
+                self.pages_stack.borrow_mut().clear();
+                self.pages_stack.borrow_mut().push(view);
             }
             _ => (),
         }

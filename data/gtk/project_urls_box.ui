@@ -15,7 +15,6 @@
         <child>
           <object class="HdyActionRow" id="donation_row">
             <property name="can_focus">True</property>
-            <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Donate</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -41,7 +40,6 @@
         <child>
           <object class="HdyActionRow" id="translate_row">
             <property name="can_focus">True</property>
-            <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Contribute translations</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -67,7 +65,6 @@
         <child>
           <object class="HdyActionRow" id="homepage_row">
             <property name="can_focus">True</property>
-            <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Project Website</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -93,7 +90,6 @@
         <child>
           <object class="HdyActionRow" id="bugtracker_row">
             <property name="can_focus">True</property>
-            <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Report an issue</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -119,7 +115,6 @@
         <child>
           <object class="HdyActionRow" id="help_row">
             <property name="can_focus">True</property>
-            <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Help</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -145,7 +140,6 @@
         <child>
           <object class="HdyActionRow" id="faq_row">
             <property name="can_focus">True</property>
-            <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Frequently Asked Questions</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -171,7 +165,6 @@
         <child>
           <object class="HdyActionRow" id="contact_url">
             <property name="can_focus">True</property>
-            <property name="no_show_all">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Contact</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -198,11 +191,6 @@
           <class name="content"/>
         </style>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="fill">True</property>
-        <property name="position">3</property>
-      </packing>
     </child>
   </object>
 </interface>

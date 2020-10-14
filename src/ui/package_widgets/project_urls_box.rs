@@ -1,37 +1,38 @@
 use appstream::enums::ProjectUrl;
-use gtk::prelude::*;
-use libhandy::prelude::*;
+use gtk4::prelude::*;
+use libhandy4::auto::traits::*;
 
 use crate::backend::Package;
 use crate::ui::package_widgets::PackageWidget;
 
 pub struct ProjectUrlsBox {
-    pub widget: gtk::Box,
-    builder: gtk::Builder,
+    pub widget: gtk4::Box,
+    builder: gtk4::Builder,
 }
 
 impl ProjectUrlsBox {
-    fn set_row(row: &libhandy::ActionRow, url: url::Url) {
+    fn set_row(row: &libhandy4::ActionRow, url: url::Url) {
         row.set_visible(true);
         row.set_activatable(true);
         row.set_subtitle(Some(&url.to_string()));
 
-        row.connect_activated(move |_| {
-            if let Err(e) = gtk::show_uri_on_window::<gtk::Window>(
+        //TODO: Port this to GTK4
+        /*row.connect_activated(move |_| {
+            if let Err(e) = gtk4::show_uri::<gtk4::Window>(
                 None,
                 &url.to_string(),
-                gtk::get_current_event_time(),
+                glib::get_current_time(),
             ) {
                 error!("Failed to show url: {:?}", e);
             }
-        });
+        });*/
     }
 }
 
 impl PackageWidget for ProjectUrlsBox {
     fn new() -> Self {
-        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/project_urls_box.ui");
-        get_widget!(builder, gtk::Box, project_urls_box);
+        let builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/project_urls_box.ui");
+        get_widget!(builder, gtk4::Box, project_urls_box);
 
         let project_urls_box = Self {
             widget: project_urls_box,
@@ -45,14 +46,14 @@ impl PackageWidget for ProjectUrlsBox {
     fn set_package(&self, package: &dyn Package) {
         let urls = package.appdata().expect("No appdata available").urls;
 
-        get_widget!(self.builder, gtk::ListBox, listbox);
-        get_widget!(self.builder, libhandy::ActionRow, donation_row);
-        get_widget!(self.builder, libhandy::ActionRow, translate_row);
-        get_widget!(self.builder, libhandy::ActionRow, homepage_row);
-        get_widget!(self.builder, libhandy::ActionRow, bugtracker_row);
-        get_widget!(self.builder, libhandy::ActionRow, help_row);
-        get_widget!(self.builder, libhandy::ActionRow, faq_row);
-        get_widget!(self.builder, libhandy::ActionRow, contact_url);
+        get_widget!(self.builder, gtk4::ListBox, listbox);
+        get_widget!(self.builder, libhandy4::ActionRow, donation_row);
+        get_widget!(self.builder, libhandy4::ActionRow, translate_row);
+        get_widget!(self.builder, libhandy4::ActionRow, homepage_row);
+        get_widget!(self.builder, libhandy4::ActionRow, bugtracker_row);
+        get_widget!(self.builder, libhandy4::ActionRow, help_row);
+        get_widget!(self.builder, libhandy4::ActionRow, faq_row);
+        get_widget!(self.builder, libhandy4::ActionRow, contact_url);
 
         for url in &urls {
             match url {
@@ -69,14 +70,14 @@ impl PackageWidget for ProjectUrlsBox {
     }
 
     fn reset(&self) {
-        get_widget!(self.builder, gtk::ListBox, listbox);
-        get_widget!(self.builder, libhandy::ActionRow, donation_row);
-        get_widget!(self.builder, libhandy::ActionRow, translate_row);
-        get_widget!(self.builder, libhandy::ActionRow, homepage_row);
-        get_widget!(self.builder, libhandy::ActionRow, bugtracker_row);
-        get_widget!(self.builder, libhandy::ActionRow, help_row);
-        get_widget!(self.builder, libhandy::ActionRow, faq_row);
-        get_widget!(self.builder, libhandy::ActionRow, contact_url);
+        get_widget!(self.builder, gtk4::ListBox, listbox);
+        get_widget!(self.builder, libhandy4::ActionRow, donation_row);
+        get_widget!(self.builder, libhandy4::ActionRow, translate_row);
+        get_widget!(self.builder, libhandy4::ActionRow, homepage_row);
+        get_widget!(self.builder, libhandy4::ActionRow, bugtracker_row);
+        get_widget!(self.builder, libhandy4::ActionRow, help_row);
+        get_widget!(self.builder, libhandy4::ActionRow, faq_row);
+        get_widget!(self.builder, libhandy4::ActionRow, contact_url);
 
         donation_row.set_visible(false);
         translate_row.set_visible(false);

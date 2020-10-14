@@ -1,7 +1,7 @@
 use appstream::{MarkupTranslatableString, TranslatableString};
 use chrono::{DateTime, Utc};
 use gio::prelude::*;
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use html2pango::block::markup_html;
 use html2pango::block::HtmlBlock;
 
@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 use crate::backend::{Package, PackageKind};
 
-pub fn set_label_translatable_string(label: &gtk::Label, text: Option<TranslatableString>) {
+pub fn set_label_translatable_string(label: &gtk4::Label, text: Option<TranslatableString>) {
     match text {
         Some(text) => label.set_text(&text.get_default().unwrap_or(&"???".to_string())),
         None => label.set_text("–"),
@@ -17,7 +17,7 @@ pub fn set_label_translatable_string(label: &gtk::Label, text: Option<Translatab
 }
 
 pub fn set_label_markup_translatable_string(
-    label: &gtk::Label,
+    label: &gtk4::Label,
     text: Option<MarkupTranslatableString>,
 ) {
     match text {
@@ -67,14 +67,14 @@ pub fn render_markup(text: &str) -> Option<String> {
     }
 }
 
-pub fn set_date_label(label: &gtk::Label, date: Option<DateTime<Utc>>) {
+pub fn set_date_label(label: &gtk4::Label, date: Option<DateTime<Utc>>) {
     match date {
         Some(date) => label.set_text(&date.format("%Y-%m-%d").to_string()),
         None => label.set_text("–"),
     };
 }
 
-pub fn set_icon(package: &dyn Package, image: &gtk::Image, size: i32) {
+pub fn set_icon(package: &dyn Package, image: &gtk4::Image, size: i32) {
     let mut path = PathBuf::new();
     path.push(format!(
         "/var/lib/flatpak/appstream/{}/{}/active/icons/{}x{}/{}.png",
@@ -89,25 +89,24 @@ pub fn set_icon(package: &dyn Package, image: &gtk::Image, size: i32) {
         image.set_from_file(&path);
     } else {
         match package.kind() {
-            PackageKind::App => image.set_from_icon_name(
-                Some("dialog-question-symbolic"),
-                gtk::IconSize::__Unknown(size),
-            ),
-            PackageKind::Runtime | PackageKind::Extension => image
-                .set_from_icon_name(Some("system-run-symbolic"), gtk::IconSize::__Unknown(size)),
+            PackageKind::App => image.set_from_icon_name(Some("dialog-question-symbolic")),
+            PackageKind::Runtime | PackageKind::Extension => {
+                image.set_from_icon_name(Some("system-run-symbolic"))
+            }
         };
     }
 }
 
-pub fn show_error_dialog(builder: gtk::Builder, message: &str) {
-    let app = builder.get_application().unwrap();
+pub fn show_error_dialog(builder: gtk4::Builder, message: &str) {
+    // TODO: port this....
+    /*let app = builder.get_application().unwrap();
     let window = app.get_active_window().unwrap();
 
-    let dialog = gtk::MessageDialog::new(
+    let dialog = gtk4::MessageDialog::new(
         Some(&window),
-        gtk::DialogFlags::MODAL,
-        gtk::MessageType::Error,
-        gtk::ButtonsType::Close,
+        gtk4::DialogFlags::MODAL,
+        gtk4::MessageType::Error,
+        gtk4::ButtonsType::Close,
         &format!("<span font_family=\"monospace\">{}</span>", message),
     );
 
@@ -115,19 +114,22 @@ pub fn show_error_dialog(builder: gtk::Builder, message: &str) {
     dialog.set_property_use_markup(true);
 
     glib::idle_add_local(move || {
-        dialog.run();
+        dialog.show();
         dialog.hide();
         glib::Continue(false)
     });
+    */
 }
 
 // Removes all child items
 pub fn remove_all_items<T>(container: &T)
 where
-    T: IsA<gtk::Container> + gtk::ContainerExt,
+    T: IsA<gtk4::Widget> + gtk4::WidgetExt,
 {
+    // TODO: Port this too!
+    /*
     let children = container.get_children();
     for widget in children {
         container.remove(&widget);
-    }
+    }*/
 }

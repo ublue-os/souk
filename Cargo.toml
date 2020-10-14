@@ -6,15 +6,8 @@ edition = "2018"
 [dependencies]
 log = "0.4.8"
 pretty_env_logger = "0.4"
-gtk = { version = "0.9", features = ["v3_22"] }
 gtk-macros = "0.2.0"
-gdk = "0.13.0"
-gdk-pixbuf = "0.9.0"
-libhandy = { git="https://gitlab.gnome.org/World/Rust/libhandy-rs" }
-glib = { version = "0.10", features = ["v2_50"] }
-gio = { version = "0.9", features = ["v2_46"] }
 gettext-rs= { version = "0.4", features = ["gettext-system"] }
-flatpak = { git="https://gitlab.gnome.org/haecker-felix/flatpak-rs" }
 appstream = { git = "https://github.com/bilelmoussaoui/appstream/", features = ["gzip"] }
 url = "2.1.1"
 async-std = "1.4.0"
@@ -31,3 +24,33 @@ html2pango = "0.3.3"
 async-process = "0.1.3"
 regex = "1.3.9"
 dyn-clone = "1.0.2"
+
+[dependencies.gtk4]
+git = "https://github.com/bilelmoussaoui/gtk4"
+branch = "bilelmoussaoui/update"
+
+[dependencies.gdk4]
+git = "https://github.com/bilelmoussaoui/gdk4"
+branch = "bilelmoussaoui/update"
+
+[dependencies.gdk-pixbuf]
+git = "https://github.com/gtk-rs/gdk-pixbuf"
+
+[dependencies.gio]
+git = "https://github.com/gtk-rs/gio"
+features = ["v2_60"]
+
+[dependencies.glib]
+git = "https://github.com/gtk-rs/glib"
+features = ["v2_60"]
+
+[dependencies.pango]
+git = "https://github.com/gtk-rs/pango"
+features = ["v1_44"]
+
+[dependencies.libhandy4]
+git = "https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs"
+
+[dependencies.flatpak]
+git = "https://gitlab.gnome.org/haecker-felix/flatpak-rs"
+branch = "wip/haecker-felix/update"
