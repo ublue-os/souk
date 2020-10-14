@@ -219,7 +219,12 @@ impl SandboxBackend {
                 }
             }
         } else {
-            state.message = "Installing…".to_string();
+            let re = Regex::new(r"^Updating \d+/\d+…").unwrap();
+            if re.is_match(&line) {
+                state.message = "Updating…".to_string();
+            } else {
+                state.message = "Installing…".to_string();
+            }
         }
 
         state
