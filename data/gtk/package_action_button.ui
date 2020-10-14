@@ -133,7 +133,8 @@
         <property name="max_width_chars">15</property>
         <property name="xalign">0</property>
         <attributes>
-          <attribute name="scale" value="0.80000000000000004"/>
+          <attribute name="scale" value="0.8"/>
+          <attribute name="font-features" value="tnum=1"/>
         </attributes>
         <style>
           <class name="dim-label"/>
