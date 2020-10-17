@@ -5,7 +5,6 @@ use glib::translate::*;
 use glib::Sender;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{WidgetImpl, WindowImpl};
-use libhandy::prelude::*;
 
 use std::cell::RefCell;
 

@@ -4,7 +4,6 @@ use gio::prelude::*;
 use gtk::prelude::*;
 use html2pango::block::markup_html;
 use html2pango::block::HtmlBlock;
-use libhandy::prelude::*;
 
 use std::path::PathBuf;
 
@@ -98,7 +97,7 @@ pub fn set_icon(package: &dyn Package, image: &gtk::Image, size: i32) {
     }
 }
 
-pub fn show_error_dialog(builder: gtk::Builder, message: &str) {
+pub fn show_error_dialog(message: &str) {
     let dialog = gtk::MessageDialog::new::<gtk::MessageDialog>(
         None,
         gtk::DialogFlags::MODAL,

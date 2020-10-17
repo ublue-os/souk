@@ -1,7 +1,6 @@
 use appstream::enums::ImageKind;
 use futures_util::future::FutureExt;
 use gdk_pixbuf::Pixbuf;
-use gio::prelude::*;
 use gtk::prelude::*;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;

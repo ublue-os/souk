@@ -132,7 +132,7 @@ impl PackageActionButton {
                 TransactionMode::Error(err) => {
                     status_label.set_text("");
                     self.clone().update_stack();
-                    utils::show_error_dialog(self.builder.clone(), &err);
+                    utils::show_error_dialog(&err);
                     break;
                 }
                 _ => (),
