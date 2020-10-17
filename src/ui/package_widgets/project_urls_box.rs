@@ -16,16 +16,9 @@ impl ProjectUrlsBox {
         row.set_activatable(true);
         row.set_subtitle(Some(&url.to_string()));
 
-        //TODO: Port this to GTK4
-        /*row.connect_activated(move |_| {
-            if let Err(e) = gtk4::show_uri::<gtk4::Window>(
-                None,
-                &url.to_string(),
-                glib::get_current_time(),
-            ) {
-                error!("Failed to show url: {:?}", e);
-            }
-        });*/
+        row.connect_activated(move |_| {
+            gtk4::show_uri::<gtk4::Window>(None, &url.to_string(), 0);
+        });
     }
 }
 

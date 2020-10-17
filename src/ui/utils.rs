@@ -98,12 +98,8 @@ pub fn set_icon(package: &dyn Package, image: &gtk4::Image, size: i32) {
 }
 
 pub fn show_error_dialog(builder: gtk4::Builder, message: &str) {
-    // TODO: port this....
-    /*let app = builder.get_application().unwrap();
-    let window = app.get_active_window().unwrap();
-
-    let dialog = gtk4::MessageDialog::new(
-        Some(&window),
+    let dialog = gtk4::MessageDialog::new::<gtk4::MessageDialog>(
+        None,
         gtk4::DialogFlags::MODAL,
         gtk4::MessageType::Error,
         gtk4::ButtonsType::Close,
@@ -113,12 +109,8 @@ pub fn show_error_dialog(builder: gtk4::Builder, message: &str) {
     dialog.set_title("Something went wrong");
     dialog.set_property_use_markup(true);
 
-    glib::idle_add_local(move || {
-        dialog.show();
-        dialog.hide();
-        glib::Continue(false)
-    });
-    */
+    dialog.show();
+    dialog.connect_response(|d, _| d.hide());
 }
 
 // Removes all child items
