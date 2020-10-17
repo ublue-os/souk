@@ -43,7 +43,7 @@ impl InstalledPage {
             .get_installed_packages(DisplayLevel::Runtimes);
         for package in packages {
             let tile = PackageTile::new(self.sender.clone(), &package);
-            installed_flowbox.insert(&tile.widget, 0);
+            installed_flowbox.insert(&tile.widget, -1);
         }
     }
 

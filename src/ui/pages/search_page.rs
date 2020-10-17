@@ -50,7 +50,7 @@ impl SearchPage {
     fn add_tile(self: Rc<Self>, package: &dyn Package) {
         get_widget!(self.builder, gtk4::FlowBox, results_flowbox);
         let tile = PackageTile::new(self.sender.clone(), package);
-        results_flowbox.insert(&tile.widget, 0);
+        results_flowbox.insert(&tile.widget, -1);
     }
 
     fn setup_signals(self: Rc<Self>) {}

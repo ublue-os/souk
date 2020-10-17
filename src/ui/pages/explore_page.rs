@@ -48,7 +48,7 @@ impl ExplorePage {
         get_widget!(self.builder, gtk4::FlowBox, recently_updated_flowbox);
         for package in queries::get_recently_updated_packages(10, DisplayLevel::Apps).unwrap() {
             let tile = PackageTile::new(self.sender.clone(), &package);
-            recently_updated_flowbox.insert(&tile.widget, 0);
+            recently_updated_flowbox.insert(&tile.widget, -1);
         }
     }
 
@@ -58,7 +58,7 @@ impl ExplorePage {
             .unwrap()
             .unwrap();
         let tile = PackageTile::new(self.sender.clone(), &package);
-        editors_picks_flowbox.insert(&tile.widget, 0);
+        editors_picks_flowbox.insert(&tile.widget, -1);
     }
 
     fn setup_signals(self: Rc<Self>) {}
