@@ -81,10 +81,6 @@ impl ApplicationWindow {
 
         get_widget!(self.window_builder, gtk4::Box, package_details_box);
         package_details_box.append(&app_private.package_details_page.widget);
-
-        // Add headerbar/content to the window itself
-        get_widget!(self.window_builder, libhandy4::ApplicationWindow, window);
-        self.widget.set_child(Some(&window));
     }
 
     fn setup_signals(&self, sender: Sender<Action>) {
