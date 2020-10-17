@@ -29,7 +29,7 @@ fn main() {
     pretty_env_logger::init();
 
     // Initialize GTK
-    gtk4::init().unwrap_or_else(|_| panic!("Failed to initialize GTK."));
+    gtk4::init().expect("Failed to initialize GTK.");
 
     // Initialize libhandy
     libhandy4::init();
