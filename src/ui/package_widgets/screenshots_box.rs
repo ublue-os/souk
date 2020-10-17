@@ -5,6 +5,7 @@ use gtk4::prelude::*;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
 use libhandy4::CarouselExt;
+use gio::prelude::*;
 
 use crate::backend::Package;
 use crate::error::Error;
@@ -49,7 +50,9 @@ impl PackageWidget for ScreenshotsBox {
 
         get_widget!(self.builder, gtk4::Box, screenshots_box);
         get_widget!(self.builder, libhandy4::Carousel, carousel);
-        utils::remove_all_items(&carousel);
+        utils::remove_all_items(&carousel, |widget|{
+            carousel.remove(&widget);
+        });
         screenshots_box.set_visible(false);
 
         for screenshot in &screenshots {
@@ -80,6 +83,8 @@ impl PackageWidget for ScreenshotsBox {
         get_widget!(self.builder, libhandy4::Carousel, carousel);
 
         screenshots_box.set_visible(false);
-        utils::remove_all_items(&carousel);
+        utils::remove_all_items(&carousel, |widget|{
+            carousel.remove(&widget);
+        });
     }
 }

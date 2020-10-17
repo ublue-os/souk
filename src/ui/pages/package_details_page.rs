@@ -145,9 +145,13 @@ impl PackageDetailsPage {
         get_widget!(self.builder, gtk4::FlowBox, other_apps_flowbox);
         get_widget!(self.builder, gtk4::Box, package_action_button_box);
 
-        utils::remove_all_items(&package_action_button_box);
+        utils::remove_all_items(&package_action_button_box, |widget|{
+            package_action_button_box.remove(&widget);
+        });
+        utils::remove_all_items(&other_apps_flowbox, |widget|{
+            other_apps_flowbox.remove(&widget);
+        });
         other_apps.set_visible(false);
-        utils::remove_all_items(&other_apps_flowbox);
 
         for package_widget in &self.package_widgets {
             package_widget.reset();

@@ -114,14 +114,16 @@ pub fn show_error_dialog(builder: gtk4::Builder, message: &str) {
 }
 
 // Removes all child items
-pub fn remove_all_items<T>(container: &T)
+pub fn remove_all_items<T,F>(widget: &T, remove_func: F)
 where
     T: IsA<gtk4::Widget> + gtk4::WidgetExt,
+    F: Fn(gtk4::Widget),
 {
-    // TODO: Port this too!
-    /*
-    let children = container.get_children();
-    for widget in children {
-        container.remove(&widget);
-    }*/
+    let listmodel = widget.observe_children().unwrap();
+    let len = listmodel.get_n_items();
+    for _ in 0..len {
+        let o = listmodel.get_object(0).unwrap();
+        let widget = o.clone().downcast::<gtk4::Widget>().unwrap();
+        remove_func(widget);
+    }
 }
