@@ -10,6 +10,7 @@
     <property name="orientation">vertical</property>
     <child>
       <object class="GtkScrolledWindow">
+        <property name="vexpand">True</property>
         <property name="can_focus">True</property>
         <property name="hscrollbar_policy">never</property>
         <child>

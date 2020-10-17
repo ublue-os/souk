@@ -184,28 +184,28 @@ impl ApplicationWindow {
             .unwrap();
         let app_private = GsApplicationPrivate::from_instance(&app);
 
-        get_widget!(self.window_builder, libhandy4::Leaflet, window_leaflet);
+        get_widget!(self.window_builder, gtk4::Stack, window_stack);
         get_widget!(self.window_builder, gtk4::Stack, main_stack);
 
         // Show requested view / page
         match view.clone() {
             View::Explore => {
                 main_stack.set_visible_child_name("explore");
-                window_leaflet.set_visible_child_name("main");
+                window_stack.set_visible_child_name("main");
             }
             View::Installed => {
                 main_stack.set_visible_child_name("installed");
-                window_leaflet.set_visible_child_name("main");
+                window_stack.set_visible_child_name("main");
             }
             View::Updates => {
                 main_stack.set_visible_child_name("updates");
-                window_leaflet.set_visible_child_name("main");
+                window_stack.set_visible_child_name("main");
             }
             View::Search => {
-                window_leaflet.set_visible_child_name("search");
+                window_stack.set_visible_child_name("search");
             }
             View::PackageDetails(package) => {
-                window_leaflet.set_visible_child_name("package-details");
+                window_stack.set_visible_child_name("package-details");
                 app_private.package_details_page.reset();
                 app_private.package_details_page.set_package(&*package);
             }

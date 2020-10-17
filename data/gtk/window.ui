@@ -4,10 +4,9 @@
   <requires lib="libhandy" version="1.0"/>
   <object class="HdyApplicationWindow" id="window">
     <child>
-      <object class="HdyLeaflet" id="window_leaflet">
-        <property name="can_unfold">false</property>
+      <object class="GtkStack" id="window_stack">
         <child>
-          <object class="HdyLeafletPage">
+          <object class="GtkStackPage">
             <property name="name">main</property>
             <property name="child">
               <object class="GtkBox" id="main_box">
@@ -46,7 +45,9 @@
                   <object class="GtkStack" id="main_stack">
                     <child>
                       <object class="GtkStackPage">
+                        <property name="title">Explore</property>
                         <property name="name">explore</property>
+                        <property name="icon_name">star-outline-thick-symbolic</property>
                         <property name="child">
                           <object class="GtkBox" id="explore_box"/>
                         </property>
@@ -54,7 +55,9 @@
                     </child>
                     <child>
                       <object class="GtkStackPage">
+                        <property name="title">Installed</property>
                         <property name="name">installed</property>
+                        <property name="icon_name">view-list-symbolic</property>
                         <property name="child">
                           <object class="GtkBox" id="installed_box"/>
                         </property>
@@ -62,7 +65,9 @@
                     </child>
                     <child>
                       <object class="GtkStackPage">
+                        <property name="title">Updates</property>
                         <property name="name">updates</property>
+                        <property name="icon_name">emblem-synchronizing-symbolic</property>
                         <property name="child">
                           <object class="GtkBox" id="updates_box"/>
                         </property>
@@ -73,6 +78,7 @@
                 <child>
                   <object class="HdyViewSwitcherBar" id="view_switcher_bar">
                     <property name="stack">main_stack</property>
+                    <property name="reveal" bind-source="view_switcher_title" bind-property="title-visible" bind-flags="sync-create">False</property>
                   </object>
                 </child>
               </object>
@@ -80,7 +86,7 @@
           </object>
         </child>
         <child>
-          <object class="HdyLeafletPage">
+          <object class="GtkStackPage">
             <property name="name">package-details</property>
             <property name="child">
               <object class="GtkBox" id="package_details_box"/>
@@ -88,7 +94,7 @@
           </object>
         </child>
         <child>
-          <object class="HdyLeafletPage">
+          <object class="GtkStackPage">
             <property name="name">search</property>
             <property name="child">
               <object class="GtkBox" id="search_box"/>
