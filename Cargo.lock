@@ -1206,7 +1206,7 @@ checksum = "2448f6066e80e3bfc792e9c98bf705b4b0fc6e8ef5b43e5889aff0eaa9c58743"
 [[package]]
 name = "libhandy4"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/haecker-felix/libhandy4-rs#81a1851c47dcfbbac1be8772b584a11f986e96d4"
+source = "git+https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs#d483f0f7b166dc72504e1b75dd76d51ad05c57ce"
 dependencies = [
  "bitflags",
  "gdk-pixbuf",
@@ -1229,7 +1229,7 @@ dependencies = [
 [[package]]
 name = "libhandy4-sys"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/haecker-felix/libhandy4-rs#81a1851c47dcfbbac1be8772b584a11f986e96d4"
+source = "git+https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs#d483f0f7b166dc72504e1b75dd76d51ad05c57ce"
 dependencies = [
  "gdk-pixbuf-sys",
  "gdk4-sys",
