@@ -20,17 +20,9 @@
                         <property name="title">Store</property>
                       </object>
                     </child>
-                    <child>
+                    <child type="end">
                       <object class="GtkMenuButton" id="appmenu_button">
-                        <property name="valign">center</property>
-                        <child>
-                          <object class="GtkImage">
-                            <property name="icon_name">open-menu-symbolic</property>
-                          </object>
-                        </child>
-                        <style>
-                          <class name="image-button"/>
-                        </style>
+                        <property name="icon_name">open-menu-symbolic</property>
                       </object>
                     </child>
                     <child>
