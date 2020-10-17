@@ -5,11 +5,13 @@ use glib::translate::*;
 use glib::Sender;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{WidgetImpl, WindowImpl};
+use libhandy::prelude::*;
 
 use std::cell::RefCell;
 
 use crate::app::{Action, GsApplication, GsApplicationPrivate};
 use crate::backend::Package;
+use crate::config;
 use crate::ui::about_dialog;
 
 #[derive(Debug, Clone)]
@@ -105,6 +107,15 @@ impl GsApplicationWindow {
 
         // set default size
         self.set_default_size(900, 700);
+
+        // set title
+        get_widget!(
+            self_.window_builder,
+            libhandy::ViewSwitcherTitle,
+            view_switcher_title
+        );
+        view_switcher_title.set_title(Some(config::NAME));
+        self.set_title(config::NAME);
 
         // Set hamburger menu
         get_widget!(self_.window_builder, gtk::MenuButton, appmenu_button);

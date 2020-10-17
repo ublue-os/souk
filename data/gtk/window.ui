@@ -17,7 +17,6 @@
                     <child type="title">
                       <object class="HdyViewSwitcherTitle" id="view_switcher_title">
                         <property name="stack">main_stack</property>
-                        <property name="title">Store</property>
                       </object>
                     </child>
                     <child type="end">
