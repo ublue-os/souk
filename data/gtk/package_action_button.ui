@@ -44,7 +44,7 @@
               </object>
             </child>
             <style>
-              <class name="action-butotn"/>
+              <class name="action-button"/>
             </style>
           </object>
         </child>
