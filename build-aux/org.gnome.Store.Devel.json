@@ -15,7 +15,9 @@
         "--device=dri",
         "--filesystem=~/.local/share/flatpak:ro",
         "--filesystem=/var/lib/flatpak:ro",
-        "--talk-name=org.freedesktop.Flatpak"
+        "--talk-name=org.freedesktop.Flatpak",
+        "--env=RUST_LOG=gnome_store=debug",
+        "--env=G_MESSAGES_DEBUG=none"
     ],
     "build-options": {
         "append-path" : "/usr/lib/sdk/rust-stable/bin",
@@ -26,9 +28,7 @@
             "RUSTFLAGS" : "--remap-path-prefix =../",
             "CARGO_HOME" : "/run/build/gnome-store/cargo",
             "RUST_BACKTRACE" : "1",
-            "RUST_LOG" : "gnome_store=debug",
-            "MOUNT_FUSE_PATH" : "../tmp/",
-            "G_MESSAGES_DEBUG" : "none"
+            "MOUNT_FUSE_PATH" : "../tmp/"
         }
     },
     "cleanup": [
