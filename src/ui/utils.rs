@@ -4,6 +4,7 @@ use gio::prelude::*;
 use gtk::prelude::*;
 use html2pango::block::markup_html;
 use html2pango::block::HtmlBlock;
+use libhandy::prelude::*;
 
 use std::path::PathBuf;
 
@@ -130,9 +131,8 @@ pub fn clear_box(gbox: &gtk::Box) {
 }
 
 pub fn clear_carousel(carousel: &libhandy::Carousel) {
-    let listmodel = carousel.observe_children().unwrap();
-    while let Some(o) = listmodel.get_object(0) {
-        let widget = o.clone().downcast::<gtk::Widget>().unwrap();
-        libhandy::CarouselExt::remove(carousel, &widget);
+    for _ in 0..carousel.get_n_pages() {
+        let page = carousel.get_nth_page(0).unwrap();
+        carousel.remove(&page);
     }
 }
