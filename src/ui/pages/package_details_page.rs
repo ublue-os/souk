@@ -1,6 +1,7 @@
 use glib::Sender;
 use gtk::prelude::*;
 
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use crate::app::Action;
@@ -116,15 +117,22 @@ impl PackageDetailsPage {
 
             let name = n.get_default().unwrap().to_string();
             other_apps_label.set_text(&format!("Other Apps by {}", name));
-            other_apps.set_visible(true);
 
-            for package in
-                queries::get_packages_by_developer_name(name, 10, DisplayLevel::Apps).unwrap()
+            let mut names = HashSet::new();
+            for pkg in
+                queries::get_packages_by_developer_name(&name, 10, DisplayLevel::Apps).unwrap()
             {
-                let tile = PackageTile::new(self.sender.clone(), &package);
-                other_apps_flowbox.add(&tile.widget);
-                other_apps_flowbox.show_all();
+                let pkg_name = pkg.name();
+                if pkg_name != package.name() && !names.contains(&pkg_name) {
+                    debug!("Found package {} by {}", pkg_name, name);
+                    names.insert(pkg_name);
+                    let tile = PackageTile::new(self.sender.clone(), &pkg);
+                    other_apps_flowbox.add(&tile.widget);
+                    other_apps_flowbox.show_all();
+                }
             }
+
+            other_apps.set_visible(names.len() != 0);
         }
 
         // Set package for all package widgets

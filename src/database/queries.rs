@@ -92,7 +92,7 @@ pub fn get_recently_updated_packages(
 }
 
 pub fn get_packages_by_developer_name(
-    pkg_developer_name: String,
+    pkg_developer_name: &str,
     limit: i64,
     level: DisplayLevel,
 ) -> Result<Vec<RemotePackage>, diesel::result::Error> {
