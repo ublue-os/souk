@@ -65,9 +65,9 @@ impl ApplicationWindow {
         self.widget.set_default_size(900, 700);
 
         // Set hamburger menu
-        get_widget!(self.menu_builder, gtk4::PopoverMenu, popover_menu);
         get_widget!(self.window_builder, gtk4::MenuButton, appmenu_button);
-        appmenu_button.set_popover(Some(&popover_menu));
+        get_widget!(self.menu_builder, gio::MenuModel, primary_menu);
+        appmenu_button.set_menu_model(Some(&primary_menu));
 
         // wire everything up
         get_widget!(self.window_builder, gtk4::Box, explore_box);
