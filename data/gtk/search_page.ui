@@ -13,15 +13,8 @@
         <property name="centering_policy">strict</property>
         <child>
           <object class="GtkButton">
+            <property name="icon_name">go-previous-symbolic</property>
             <property name="action_name">win.go-back</property>
-            <child>
-              <object class="GtkImage">
-                <property name="icon_name">go-previous-symbolic</property>
-              </object>
-            </child>
-            <style>
-              <class name="image-button"/>
-            </style>
           </object>
         </child>
       </object>

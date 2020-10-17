@@ -36,11 +36,7 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="uninstall_button">
-                    <child>
-                      <object class="GtkImage">
-                        <property name="icon_name">user-trash-symbolic</property>
-                      </object>
-                    </child>
+                    <property name="icon_name">user-trash-symbolic</property>
                   </object>
                 </child>
               </object>
