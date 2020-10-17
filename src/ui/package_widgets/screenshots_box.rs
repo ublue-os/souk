@@ -50,9 +50,7 @@ impl PackageWidget for ScreenshotsBox {
 
         get_widget!(self.builder, gtk4::Box, screenshots_box);
         get_widget!(self.builder, libhandy4::Carousel, carousel);
-        utils::remove_all_items(&carousel, |widget| {
-            carousel.remove(&widget);
-        });
+        utils::clear_carousel(&carousel);
         screenshots_box.set_visible(false);
 
         for screenshot in &screenshots {
@@ -83,8 +81,6 @@ impl PackageWidget for ScreenshotsBox {
         get_widget!(self.builder, libhandy4::Carousel, carousel);
 
         screenshots_box.set_visible(false);
-        utils::remove_all_items(&carousel, |widget| {
-            carousel.remove(&widget);
-        });
+        utils::clear_carousel(&carousel);
     }
 }

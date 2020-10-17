@@ -4,6 +4,7 @@ use gio::prelude::*;
 use gtk4::prelude::*;
 use html2pango::block::markup_html;
 use html2pango::block::HtmlBlock;
+use libhandy4::prelude::*;
 
 use std::path::PathBuf;
 
@@ -113,17 +114,26 @@ pub fn show_error_dialog(builder: gtk4::Builder, message: &str) {
     dialog.connect_response(|d, _| d.hide());
 }
 
-// Removes all child items
-pub fn remove_all_items<T, F>(widget: &T, remove_func: F)
-where
-    T: IsA<gtk4::Widget> + gtk4::WidgetExt,
-    F: Fn(gtk4::Widget),
-{
-    let listmodel = widget.observe_children().unwrap();
-    let len = listmodel.get_n_items();
-    for _ in 0..len {
-        let o = listmodel.get_object(0).unwrap();
+pub fn clear_flowbox(flowbox: &gtk4::FlowBox) {
+    let listmodel = flowbox.observe_children().unwrap();
+    while let Some(o) = listmodel.get_object(0) {
         let widget = o.clone().downcast::<gtk4::Widget>().unwrap();
-        remove_func(widget);
+        flowbox.remove(&widget);
+    }
+}
+
+pub fn clear_box(gbox: &gtk4::Box) {
+    let listmodel = gbox.observe_children().unwrap();
+    while let Some(o) = listmodel.get_object(0) {
+        let widget = o.clone().downcast::<gtk4::Widget>().unwrap();
+        gbox.remove(&widget);
+    }
+}
+
+pub fn clear_carousel(carousel: &libhandy4::Carousel) {
+    let listmodel = carousel.observe_children().unwrap();
+    while let Some(o) = listmodel.get_object(0) {
+        let widget = o.clone().downcast::<gtk4::Widget>().unwrap();
+        libhandy4::CarouselExt::remove(carousel, &widget);
     }
 }

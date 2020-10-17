@@ -36,9 +36,7 @@ impl SearchPage {
         get_widget!(self.builder, gtk4::SearchEntry, search_entry);
         search_entry.connect_search_changed(clone!(@weak self as this => move|entry|{
             get_widget!(this.builder, gtk4::FlowBox, results_flowbox);
-            utils::remove_all_items(&results_flowbox, |widget|{
-                results_flowbox.remove(&widget);
-            });
+            utils::clear_flowbox(&results_flowbox);
 
             let text = entry.get_text().unwrap().to_string();
             let packages = queries::get_packages_by_name(text, 100, DisplayLevel::Apps).unwrap();
