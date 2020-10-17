@@ -1,11 +1,11 @@
 use appstream::enums::ImageKind;
 use futures_util::future::FutureExt;
 use gdk_pixbuf::Pixbuf;
+use gio::prelude::*;
 use gtk4::prelude::*;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
 use libhandy4::CarouselExt;
-use gio::prelude::*;
 
 use crate::backend::Package;
 use crate::error::Error;
@@ -50,7 +50,7 @@ impl PackageWidget for ScreenshotsBox {
 
         get_widget!(self.builder, gtk4::Box, screenshots_box);
         get_widget!(self.builder, libhandy4::Carousel, carousel);
-        utils::remove_all_items(&carousel, |widget|{
+        utils::remove_all_items(&carousel, |widget| {
             carousel.remove(&widget);
         });
         screenshots_box.set_visible(false);
@@ -66,10 +66,10 @@ impl PackageWidget for ScreenshotsBox {
                 let fut =
                     Self::download_image(image.url.clone(), 350).map(move |result| match result {
                         Ok(pixbuf) => {
-                            let image = gtk4::Image::from_pixbuf(Some(&pixbuf));
-                            image.set_visible(true);
-                            ssb.set_visible(true);
-                            c.append(&image);
+                            let picture = gtk4::Picture::new_for_pixbuf(Some(&pixbuf));
+                            picture.set_can_shrink(true);
+                            c.append(&picture);
+                            ssb.show();
                         }
                         Err(err) => warn!("Unable to download thumbnail: {}", err),
                     });
@@ -83,7 +83,7 @@ impl PackageWidget for ScreenshotsBox {
         get_widget!(self.builder, libhandy4::Carousel, carousel);
 
         screenshots_box.set_visible(false);
-        utils::remove_all_items(&carousel, |widget|{
+        utils::remove_all_items(&carousel, |widget| {
             carousel.remove(&widget);
         });
     }

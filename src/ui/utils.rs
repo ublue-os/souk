@@ -114,7 +114,7 @@ pub fn show_error_dialog(builder: gtk4::Builder, message: &str) {
 }
 
 // Removes all child items
-pub fn remove_all_items<T,F>(widget: &T, remove_func: F)
+pub fn remove_all_items<T, F>(widget: &T, remove_func: F)
 where
     T: IsA<gtk4::Widget> + gtk4::WidgetExt,
     F: Fn(gtk4::Widget),
