@@ -932,7 +932,7 @@ dependencies = [
 [[package]]
 name = "graphene-rs"
 version = "0.1.0"
-source = "git+https://github.com/gtk-rs/graphene#f3c9d7c5376b3aecb0c2306f83eace5e6610150d"
+source = "git+https://github.com/gtk-rs/graphene#8f55bd697b30687d319bce46fd1e3b23f9b66197"
 dependencies = [
  "glib",
  "glib-sys",
@@ -944,12 +944,13 @@ dependencies = [
 [[package]]
 name = "graphene-sys"
 version = "0.1.0"
-source = "git+https://github.com/gtk-rs/graphene#f3c9d7c5376b3aecb0c2306f83eace5e6610150d"
+source = "git+https://github.com/gtk-rs/graphene#8f55bd697b30687d319bce46fd1e3b23f9b66197"
 dependencies = [
  "glib-sys",
  "gobject-sys",
  "libc",
  "pkg-config",
+ "system-deps",
 ]
 
 [[package]]
@@ -1205,7 +1206,7 @@ checksum = "2448f6066e80e3bfc792e9c98bf705b4b0fc6e8ef5b43e5889aff0eaa9c58743"
 [[package]]
 name = "libhandy4"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs#dcb6189b65740150ea67f8d13d91cd683a54747e"
+source = "git+https://gitlab.gnome.org/haecker-felix/libhandy4-rs#81a1851c47dcfbbac1be8772b584a11f986e96d4"
 dependencies = [
  "bitflags",
  "gdk-pixbuf",
@@ -1228,7 +1229,7 @@ dependencies = [
 [[package]]
 name = "libhandy4-sys"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs#dcb6189b65740150ea67f8d13d91cd683a54747e"
+source = "git+https://gitlab.gnome.org/haecker-felix/libhandy4-rs#81a1851c47dcfbbac1be8772b584a11f986e96d4"
 dependencies = [
  "gdk-pixbuf-sys",
  "gdk4-sys",

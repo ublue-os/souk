@@ -49,7 +49,7 @@ git = "https://github.com/gtk-rs/pango"
 features = ["v1_44"]
 
 [dependencies.libhandy4]
-git = "https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs"
+git = "https://gitlab.gnome.org/haecker-felix/libhandy4-rs"
 
 [dependencies.flatpak]
 git = "https://gitlab.gnome.org/haecker-felix/flatpak-rs"

@@ -1,6 +1,6 @@
 use appstream::enums::ProjectUrl;
 use gtk4::prelude::*;
-use libhandy4::auto::traits::*;
+use libhandy4::prelude::*;
 
 use crate::backend::Package;
 use crate::ui::package_widgets::PackageWidget;

@@ -32,7 +32,7 @@ fn main() {
     gtk4::init().unwrap_or_else(|_| panic!("Failed to initialize GTK."));
 
     // Initialize libhandy
-    libhandy4::functions::init();
+    libhandy4::init();
 
     // Initialize paths
     path::init().expect("Unable to create paths.");

@@ -14,7 +14,7 @@ use std::rc::Rc;
 use crate::backend::FlatpakBackend;
 use crate::config;
 use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage, SearchPage};
-use crate::ui::{ApplicationWindow, View};
+use crate::ui::{GsApplicationWindow, View};
 
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -33,7 +33,7 @@ pub struct GsApplicationPrivate {
     pub search_page: Rc<SearchPage>,
     pub package_details_page: Rc<PackageDetailsPage>,
 
-    window: RefCell<Option<ApplicationWindow>>,
+    window: RefCell<Option<GsApplicationWindow>>,
 }
 
 impl ObjectSubclass for GsApplicationPrivate {
@@ -84,7 +84,7 @@ impl ApplicationImpl for GsApplicationPrivate {
         // If the window already exists,
         // present it instead creating a new one again.
         if let Some(ref window) = *self.window.borrow() {
-            window.widget.present();
+            window.present();
             info!("Application window presented.");
             return;
         }
@@ -94,7 +94,7 @@ impl ApplicationImpl for GsApplicationPrivate {
             .downcast::<GsApplication>()
             .unwrap();
         let window = app.create_window();
-        window.widget.present();
+        window.present();
         self.window.replace(Some(window));
         info!("Created application window.");
 
@@ -147,9 +147,9 @@ impl GsApplication {
         ApplicationExtManual::run(&app, &args);
     }
 
-    fn create_window(&self) -> ApplicationWindow {
+    fn create_window(&self) -> GsApplicationWindow {
         let self_ = GsApplicationPrivate::from_instance(self);
-        let window = ApplicationWindow::new(self_.sender.clone(), self.clone());
+        let window = GsApplicationWindow::new(self_.sender.clone(), self.clone());
 
         // Load custom styling
         let p = gtk4::CssProvider::new();
