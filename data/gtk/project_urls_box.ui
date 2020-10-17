@@ -9,7 +9,6 @@
         <property name="selection_mode">none</property>
         <child>
           <object class="HdyActionRow" id="donation_row">
-            <property name="can_focus">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Donate</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -72,7 +71,6 @@
         </child>
         <child>
           <object class="HdyActionRow" id="bugtracker_row">
-            <property name="can_focus">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Report an issue</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -93,7 +91,6 @@
         </child>
         <child>
           <object class="HdyActionRow" id="help_row">
-            <property name="can_focus">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Help</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -114,7 +111,6 @@
         </child>
         <child>
           <object class="HdyActionRow" id="faq_row">
-            <property name="can_focus">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Frequently Asked Questions</property>
             <property name="subtitle" translatable="yes">subtitle</property>
@@ -135,7 +131,6 @@
         </child>
         <child>
           <object class="HdyActionRow" id="contact_url">
-            <property name="can_focus">True</property>
             <property name="selectable">False</property>
             <property name="title" translatable="yes">Contact</property>
             <property name="subtitle" translatable="yes">subtitle</property>

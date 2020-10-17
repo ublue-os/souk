@@ -27,9 +27,7 @@
               <object class="HdyClamp">
                 <property name="maximum_size">900</property>
                 <child>
-                  <object class="GtkSearchEntry" id="search_entry">
-                    <property name="can_focus">True</property>
-                  </object>
+                  <object class="GtkSearchEntry" id="search_entry"/>
                 </child>
               </object>
             </child>
@@ -37,7 +35,6 @@
         </child>
         <child>
           <object class="GtkScrolledWindow">
-            <property name="can_focus">True</property>
             <property name="vexpand">true</property>
             <child>
               <object class="HdyClamp">
