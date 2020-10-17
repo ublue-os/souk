@@ -51,17 +51,13 @@
           <object class="GtkScrolledWindow">
             <property name="can_focus">True</property>
             <child>
-              <object class="GtkViewport">
+              <object class="HdyClamp">
+                <property name="maximum_size">900</property>
                 <child>
-                  <object class="HdyClamp">
-                    <property name="maximum_size">900</property>
-                    <child>
-                      <object class="GtkFlowBox" id="results_flowbox">
-                        <property name="valign">start</property>
-                        <property name="margin_top">12</property>
-                        <property name="margin_bottom">12</property>
-                      </object>
-                    </child>
+                  <object class="GtkFlowBox" id="results_flowbox">
+                    <property name="valign">start</property>
+                    <property name="margin_top">12</property>
+                    <property name="margin_bottom">12</property>
                   </object>
                 </child>
               </object>
