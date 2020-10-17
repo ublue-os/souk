@@ -23,8 +23,6 @@
                     </child>
                     <child>
                       <object class="GtkMenuButton" id="appmenu_button">
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
                         <property name="valign">center</property>
                         <child>
                           <object class="GtkImage">
@@ -38,8 +36,6 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="search_button">
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
                         <property name="valign">center</property>
                         <property name="action_name">win.show-search</property>
                         <child>

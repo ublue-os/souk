@@ -13,8 +13,6 @@
             <property name="child">
               <object class="GtkButton" id="install_button">
                 <property name="label" translatable="yes">Install</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
                 <style>
                   <class name="suggested-action"/>
                   <class name="action-button"/>
@@ -31,8 +29,6 @@
                 <child>
                   <object class="GtkButton" id="open_button">
                     <property name="label" translatable="yes">Open</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
                     <style>
                       <class name="suggested-action"/>
                     </style>
@@ -40,8 +36,6 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="uninstall_button">
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
                     <child>
                       <object class="GtkImage">
                         <property name="icon_name">user-trash-symbolic</property>
@@ -63,8 +57,6 @@
                   <object class="GtkButton" id="cancel_button">
                     <property name="label" translatable="yes">Cancel</property>
                     <property name="width_request">125</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
                   </object>
                 </child>
                 <child>

@@ -13,8 +13,6 @@
         <property name="centering_policy">strict</property>
         <child>
           <object class="GtkButton">
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
             <property name="action_name">win.go-back</property>
             <child>
               <object class="GtkImage">
