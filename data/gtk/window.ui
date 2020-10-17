@@ -4,41 +4,30 @@
   <requires lib="gtk+" version="3.20"/>
   <requires lib="libhandy" version="1.0"/>
   <object class="HdyApplicationWindow" id="window">
-    <property name="can_focus">False</property>
     <child>
       <object class="HdyLeaflet" id="window_leaflet">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
         <property name="hexpand">True</property>
         <property name="visible_child_name">main</property>
+        <property name="can_unfold">false</property>
         <child>
           <object class="GtkBox" id="main_box">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
             <property name="orientation">vertical</property>
             <child>
               <object class="HdyHeaderBar">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
                 <property name="centering_policy">strict</property>
                 <child type="title">
                   <object class="HdyViewSwitcherTitle" id="view_switcher_title">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
                     <property name="stack">main_stack</property>
                     <property name="title">Store</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkMenuButton" id="appmenu_button">
-                    <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="valign">center</property>
                     <child>
                       <object class="GtkImage">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
                         <property name="icon_name">open-menu-symbolic</property>
                       </object>
                     </child>
@@ -49,15 +38,12 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="search_button">
-                    <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="valign">center</property>
                     <property name="action_name">win.show-search</property>
                     <child>
                       <object class="GtkImage">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
                         <property name="icon_name">system-search-symbolic</property>
                       </object>
                     </child>
@@ -70,12 +56,8 @@
             </child>
             <child>
               <object class="GtkStack" id="main_stack">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
                 <child>
                   <object class="GtkBox" id="explore_box">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
                       <placeholder/>
@@ -84,8 +66,6 @@
                 </child>
                 <child>
                   <object class="GtkBox" id="installed_box">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
                       <placeholder/>
@@ -94,13 +74,9 @@
                 </child>
                 <child>
                   <object class="GtkBox" id="updates_box">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Updates page</property>
                       </object>
                     </child>
@@ -110,8 +86,6 @@
             </child>
             <child>
               <object class="HdyViewSwitcherBar" id="view_switcher_bar">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
                 <property name="stack">main_stack</property>
               </object>
             </child>
@@ -119,8 +93,6 @@
         </child>
         <child>
           <object class="GtkBox" id="package_details_box">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
             <property name="orientation">vertical</property>
             <child>
               <placeholder/>
@@ -129,8 +101,6 @@
         </child>
         <child>
           <object class="GtkBox" id="search_box">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
             <property name="orientation">vertical</property>
             <child>
               <placeholder/>
@@ -141,3 +111,4 @@
     </child>
   </object>
 </interface>
+

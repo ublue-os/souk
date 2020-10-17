@@ -3,19 +3,14 @@
 <interface>
   <requires lib="gtk+" version="3.22"/>
   <object class="GtkBox" id="package_action_button">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
     <property name="orientation">vertical</property>
     <property name="spacing">2</property>
     <child>
       <object class="GtkStack" id="button_stack">
         <property name="width_request">150</property>
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
         <child>
           <object class="GtkButton" id="install_button">
             <property name="label" translatable="yes">Install</property>
-            <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
             <style>
@@ -26,13 +21,10 @@
         </child>
         <child>
           <object class="GtkBox" id="installed_box">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
             <property name="spacing">6</property>
             <child>
               <object class="GtkButton" id="open_button">
                 <property name="label" translatable="yes">Open</property>
-                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <style>
@@ -42,13 +34,10 @@
             </child>
             <child>
               <object class="GtkButton" id="uninstall_button">
-                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <child>
                   <object class="GtkImage">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
                     <property name="icon_name">user-trash-symbolic</property>
                   </object>
                 </child>
@@ -61,22 +50,19 @@
         </child>
         <child>
           <object class="GtkBox" id="cancel_box">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
             <property name="orientation">vertical</property>
             <child>
               <object class="GtkButton" id="cancel_button">
                 <property name="label" translatable="yes">Cancel</property>
                 <property name="width_request">125</property>
-                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
               </object>
             </child>
             <child>
               <object class="GtkProgressBar" id="progressbar">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
+
+
               </object>
             </child>
             <style>
@@ -89,8 +75,6 @@
     </child>
     <child>
       <object class="GtkLabel" id="status_label">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
         <property name="halign">center</property>
         <property name="ellipsize">end</property>
         <property name="single_line_mode">True</property>
@@ -107,3 +91,4 @@
     </child>
   </object>
 </interface>
+

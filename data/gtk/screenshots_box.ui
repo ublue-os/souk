@@ -5,13 +5,9 @@
   <requires lib="libhandy" version="1.0"/>
   <object class="GtkBox" id="screenshots_box">
     <property name="height_request">350</property>
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
     <property name="orientation">vertical</property>
     <child>
       <object class="HdyCarousel" id="carousel">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
         <property name="margin_top">6</property>
         <property name="margin_bottom">6</property>
         <property name="spacing">22</property>
@@ -22,8 +18,6 @@
     </child>
     <child>
       <object class="HdyCarouselIndicatorDots">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
         <property name="margin_bottom">6</property>
         <property name="carousel">carousel</property>
       </object>
@@ -33,3 +27,4 @@
     </style>
   </object>
 </interface>
+

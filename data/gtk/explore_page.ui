@@ -6,45 +6,33 @@
   <object class="GtkBox" id="explore_page">
     <property name="width_request">350</property>
     <property name="height_request">500</property>
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
     <property name="hexpand">True</property>
     <property name="vexpand">True</property>
     <property name="orientation">vertical</property>
     <child>
       <object class="GtkScrolledWindow">
-        <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="hscrollbar_policy">never</property>
+        <property name="vexpand">true</property>
         <child>
           <object class="GtkViewport">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
             <child>
               <object class="HdyClamp">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
                 <property name="margin_start">12</property>
                 <property name="margin_end">12</property>
                 <property name="maximum_size">900</property>
                 <child>
                   <object class="GtkBox">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
                     <property name="margin_top">22</property>
                     <property name="margin_bottom">22</property>
                     <property name="orientation">vertical</property>
                     <property name="spacing">22</property>
                     <child>
                       <object class="GtkBox" id="editors_picks_box">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
                         <property name="orientation">vertical</property>
                         <property name="spacing">6</property>
                         <child>
                           <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
                             <property name="label" translatable="yes">Editor's Picks</property>
                             <property name="xalign">0</property>
                             <style>
@@ -54,8 +42,6 @@
                         </child>
                         <child>
                           <object class="GtkFlowBox" id="editors_picks_flowbox">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
                             <property name="homogeneous">True</property>
                             <property name="selection_mode">none</property>
                             <property name="activate_on_single_click">False</property>
@@ -65,14 +51,10 @@
                     </child>
                     <child>
                       <object class="GtkBox" id="recently_updated_box">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
                         <property name="orientation">vertical</property>
                         <property name="spacing">6</property>
                         <child>
                           <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
                             <property name="label" translatable="yes">Recently updated</property>
                             <property name="xalign">0</property>
                             <style>
@@ -82,8 +64,6 @@
                         </child>
                         <child>
                           <object class="GtkFlowBox" id="recently_updated_flowbox">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
                             <property name="homogeneous">True</property>
                             <property name="selection_mode">none</property>
                             <property name="activate_on_single_click">False</property>
@@ -101,3 +81,4 @@
     </child>
   </object>
 </interface>
+
