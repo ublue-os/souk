@@ -26,6 +26,7 @@
             <property name="name">installed</property>
             <property name="child">
               <object class="GtkBox">
+                <property name="spacing">6</property>
                 <child>
                   <object class="GtkButton" id="open_button">
                     <property name="label" translatable="yes">Open</property>
@@ -34,7 +35,7 @@
                     </style>
                   </object>
                 </child>
-                <child>
+                <child type="end">
                   <object class="GtkButton" id="uninstall_button">
                     <property name="icon_name">user-trash-symbolic</property>
                   </object>
