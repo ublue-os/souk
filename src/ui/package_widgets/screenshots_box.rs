@@ -2,10 +2,10 @@ use appstream::enums::ImageKind;
 use futures_util::future::FutureExt;
 use gdk_pixbuf::Pixbuf;
 use gio::prelude::*;
-use gtk4::prelude::*;
+use gtk::prelude::*;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
-use libhandy4::CarouselExt;
+use libhandy::CarouselExt;
 
 use crate::backend::Package;
 use crate::error::Error;
@@ -13,8 +13,8 @@ use crate::ui::package_widgets::PackageWidget;
 use crate::ui::utils;
 
 pub struct ScreenshotsBox {
-    pub widget: gtk4::Box,
-    builder: gtk4::Builder,
+    pub widget: gtk::Box,
+    builder: gtk::Builder,
 }
 
 impl ScreenshotsBox {
@@ -36,8 +36,8 @@ impl ScreenshotsBox {
 
 impl PackageWidget for ScreenshotsBox {
     fn new() -> Self {
-        let builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/screenshots_box.ui");
-        get_widget!(builder, gtk4::Box, screenshots_box);
+        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/screenshots_box.ui");
+        get_widget!(builder, gtk::Box, screenshots_box);
 
         Self {
             widget: screenshots_box,
@@ -48,8 +48,8 @@ impl PackageWidget for ScreenshotsBox {
     fn set_package(&self, package: &dyn Package) {
         let screenshots = package.appdata().expect("No appdata available").screenshots;
 
-        get_widget!(self.builder, gtk4::Box, screenshots_box);
-        get_widget!(self.builder, libhandy4::Carousel, carousel);
+        get_widget!(self.builder, gtk::Box, screenshots_box);
+        get_widget!(self.builder, libhandy::Carousel, carousel);
         utils::clear_carousel(&carousel);
         screenshots_box.set_visible(false);
 
@@ -64,7 +64,7 @@ impl PackageWidget for ScreenshotsBox {
                 let fut =
                     Self::download_image(image.url.clone(), 350).map(move |result| match result {
                         Ok(pixbuf) => {
-                            let picture = gtk4::Picture::new_for_pixbuf(Some(&pixbuf));
+                            let picture = gtk::Picture::new_for_pixbuf(Some(&pixbuf));
                             picture.set_can_shrink(true);
                             c.append(&picture);
                             ssb.show();
@@ -77,8 +77,8 @@ impl PackageWidget for ScreenshotsBox {
     }
 
     fn reset(&self) {
-        get_widget!(self.builder, gtk4::Box, screenshots_box);
-        get_widget!(self.builder, libhandy4::Carousel, carousel);
+        get_widget!(self.builder, gtk::Box, screenshots_box);
+        get_widget!(self.builder, libhandy::Carousel, carousel);
 
         screenshots_box.set_visible(false);
         utils::clear_carousel(&carousel);

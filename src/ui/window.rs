@@ -3,9 +3,9 @@ use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
 use glib::Sender;
-use gtk4::prelude::*;
-use gtk4::subclass::prelude::{WidgetImpl, WindowImpl};
-use libhandy4::prelude::*;
+use gtk::prelude::*;
+use gtk::subclass::prelude::{WidgetImpl, WindowImpl};
+use libhandy::prelude::*;
 
 use std::cell::RefCell;
 
@@ -23,23 +23,23 @@ pub enum View {
 }
 
 pub struct GsApplicationWindowPrivate {
-    window_builder: gtk4::Builder,
-    menu_builder: gtk4::Builder,
+    window_builder: gtk::Builder,
+    menu_builder: gtk::Builder,
 
     pages_stack: RefCell<Vec<View>>,
 }
 
 impl ObjectSubclass for GsApplicationWindowPrivate {
     const NAME: &'static str = "GsApplicationWindow";
-    type ParentType = libhandy4::ApplicationWindow;
+    type ParentType = libhandy::ApplicationWindow;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
     glib_object_subclass!();
 
     fn new() -> Self {
-        let window_builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/window.ui");
-        let menu_builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/menu.ui");
+        let window_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/window.ui");
+        let menu_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/menu.ui");
 
         let pages_stack = RefCell::new(Vec::new());
 
@@ -61,10 +61,10 @@ impl WidgetImpl for GsApplicationWindowPrivate {}
 impl WindowImpl for GsApplicationWindowPrivate {}
 
 // Implement Gtk.ApplicationWindow for GsApplicationWindow
-impl gtk4::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
+impl gtk::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
 
 // Implement Hdy.ApplicationWindow for GsApplicationWindow
-impl libhandy4::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
+impl libhandy::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
 
 // Wrap GsApplicationWindowPrivate into a usable gtk-rs object
 glib_wrapper! {
@@ -72,7 +72,7 @@ glib_wrapper! {
         Object<subclass::simple::InstanceStruct<GsApplicationWindowPrivate>,
         subclass::simple::ClassStruct<GsApplicationWindowPrivate>,
         GsApplicationWindowClass>)
-        @extends gtk4::Widget, gtk4::Window, gtk4::ApplicationWindow, libhandy4::ApplicationWindow;
+        @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, libhandy::ApplicationWindow;
 
     match fn {
         get_type => || GsApplicationWindowPrivate::get_type().to_glib(),
@@ -108,33 +108,33 @@ impl GsApplicationWindow {
         self.set_default_size(900, 700);
 
         // Set hamburger menu
-        get_widget!(self_.window_builder, gtk4::MenuButton, appmenu_button);
+        get_widget!(self_.window_builder, gtk::MenuButton, appmenu_button);
         get_widget!(self_.menu_builder, gio::MenuModel, primary_menu);
         appmenu_button.set_menu_model(Some(&primary_menu));
 
         // wire everything up
-        get_widget!(self_.window_builder, gtk4::Box, explore_box);
+        get_widget!(self_.window_builder, gtk::Box, explore_box);
         explore_box.append(&app_private.explore_page.widget);
 
-        get_widget!(self_.window_builder, gtk4::Box, installed_box);
+        get_widget!(self_.window_builder, gtk::Box, installed_box);
         installed_box.append(&app_private.installed_page.widget);
 
-        get_widget!(self_.window_builder, gtk4::Box, search_box);
+        get_widget!(self_.window_builder, gtk::Box, search_box);
         search_box.append(&app_private.search_page.widget);
 
-        get_widget!(self_.window_builder, gtk4::Box, package_details_box);
+        get_widget!(self_.window_builder, gtk::Box, package_details_box);
         package_details_box.append(&app_private.package_details_page.widget);
 
         // Add headerbar/content to the window itself
-        get_widget!(self_.window_builder, gtk4::Box, window);
-        libhandy4::ApplicationWindowExt::set_child(self, Some(&window));
+        get_widget!(self_.window_builder, gtk::Box, window);
+        libhandy::ApplicationWindowExt::set_child(self, Some(&window));
     }
 
     fn setup_signals(&self, sender: Sender<Action>) {
         let self_ = GsApplicationWindowPrivate::from_instance(self);
 
         // main stack
-        get_widget!(self_.window_builder, gtk4::Stack, main_stack);
+        get_widget!(self_.window_builder, gtk::Stack, main_stack);
         main_stack.connect_property_visible_child_notify(
             clone!(@strong self as this => move |main_stack| {
                 let view = match main_stack.get_visible_child_name().unwrap().as_str(){
@@ -158,9 +158,9 @@ impl GsApplicationWindow {
     }
 
     fn setup_gactions(&self, sender: Sender<Action>) {
-        // We need to upcast from GsApplicationWindow to libhandy4::ApplicationWindow, because GsApplicationWindow
+        // We need to upcast from GsApplicationWindow to libhandy::ApplicationWindow, because GsApplicationWindow
         // currently doesn't implement GLib.ActionMap, since it's not supported in gtk-rs for subclassing (13-01-2020)
-        let window = self.clone().upcast::<gtk4::ApplicationWindow>();
+        let window = self.clone().upcast::<gtk::ApplicationWindow>();
         let app = window.get_application().unwrap();
 
         // win.quit
@@ -231,8 +231,8 @@ impl GsApplicationWindow {
             .unwrap();
         let app_private = GsApplicationPrivate::from_instance(&app);
 
-        get_widget!(self_.window_builder, gtk4::Stack, window_stack);
-        get_widget!(self_.window_builder, gtk4::Stack, main_stack);
+        get_widget!(self_.window_builder, gtk::Stack, window_stack);
+        get_widget!(self_.window_builder, gtk::Stack, main_stack);
 
         // Show requested view / page
         match view.clone() {

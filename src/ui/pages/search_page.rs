@@ -1,5 +1,5 @@
 use glib::Sender;
-use gtk4::prelude::*;
+use gtk::prelude::*;
 
 use std::rc::Rc;
 
@@ -10,16 +10,16 @@ use crate::ui::utils;
 use crate::ui::PackageTile;
 
 pub struct SearchPage {
-    pub widget: gtk4::Box,
+    pub widget: gtk::Box,
 
-    builder: gtk4::Builder,
+    builder: gtk::Builder,
     sender: Sender<Action>,
 }
 
 impl SearchPage {
     pub fn new(sender: Sender<Action>) -> Rc<Self> {
-        let builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/search_page.ui");
-        get_widget!(builder, gtk4::Box, search_page);
+        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/search_page.ui");
+        get_widget!(builder, gtk::Box, search_page);
 
         let search_page = Rc::new(Self {
             widget: search_page,
@@ -33,9 +33,9 @@ impl SearchPage {
     }
 
     fn setup_widgets(self: Rc<Self>) {
-        get_widget!(self.builder, gtk4::SearchEntry, search_entry);
+        get_widget!(self.builder, gtk::SearchEntry, search_entry);
         search_entry.connect_search_changed(clone!(@weak self as this => move|entry|{
-            get_widget!(this.builder, gtk4::FlowBox, results_flowbox);
+            get_widget!(this.builder, gtk::FlowBox, results_flowbox);
             utils::clear_flowbox(&results_flowbox);
 
             let text = entry.get_text().unwrap().to_string();
@@ -48,7 +48,7 @@ impl SearchPage {
     }
 
     fn add_tile(self: Rc<Self>, package: &dyn Package) {
-        get_widget!(self.builder, gtk4::FlowBox, results_flowbox);
+        get_widget!(self.builder, gtk::FlowBox, results_flowbox);
         let tile = PackageTile::new(self.sender.clone(), package);
         results_flowbox.insert(&tile.widget, -1);
     }

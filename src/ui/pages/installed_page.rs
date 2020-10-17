@@ -1,5 +1,5 @@
 use glib::Sender;
-use gtk4::prelude::*;
+use gtk::prelude::*;
 
 use std::rc::Rc;
 use std::sync::Arc;
@@ -10,17 +10,17 @@ use crate::database::DisplayLevel;
 use crate::ui::PackageTile;
 
 pub struct InstalledPage {
-    pub widget: gtk4::Box,
+    pub widget: gtk::Box,
     flatpak_backend: Rc<FlatpakBackend>,
 
-    builder: gtk4::Builder,
+    builder: gtk::Builder,
     sender: Sender<Action>,
 }
 
 impl InstalledPage {
     pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
-        let builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/installed_page.ui");
-        get_widget!(builder, gtk4::Box, installed_page);
+        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/installed_page.ui");
+        get_widget!(builder, gtk::Box, installed_page);
 
         let installed_page = Rc::new(Self {
             widget: installed_page,
@@ -35,7 +35,7 @@ impl InstalledPage {
     }
 
     fn setup_widgets(self: Rc<Self>) {
-        get_widget!(self.builder, gtk4::FlowBox, installed_flowbox);
+        get_widget!(self.builder, gtk::FlowBox, installed_flowbox);
 
         let packages = self
             .flatpak_backend

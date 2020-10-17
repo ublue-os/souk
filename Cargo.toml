@@ -25,13 +25,15 @@ async-process = "0.1.3"
 regex = "1.3.9"
 dyn-clone = "1.0.2"
 
-[dependencies.gtk4]
+[dependencies.gtk]
 git = "https://github.com/bilelmoussaoui/gtk4"
 branch = "bilelmoussaoui/update"
+package = "gtk4"
 
-[dependencies.gdk4]
+[dependencies.gdk]
 git = "https://github.com/bilelmoussaoui/gdk4"
 branch = "bilelmoussaoui/update"
+package = "gdk4"
 
 [dependencies.gdk-pixbuf]
 git = "https://github.com/gtk-rs/gdk-pixbuf"
@@ -48,8 +50,9 @@ features = ["v2_60"]
 git = "https://github.com/gtk-rs/pango"
 features = ["v1_44"]
 
-[dependencies.libhandy4]
+[dependencies.libhandy]
 git = "https://gitlab.gnome.org/haecker-felix/libhandy4-rs"
+package = "libhandy4"
 
 [dependencies.flatpak]
 git = "https://gitlab.gnome.org/haecker-felix/flatpak-rs"

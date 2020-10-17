@@ -1,7 +1,7 @@
 use crate::config;
-use gtk4::prelude::*;
+use gtk::prelude::*;
 
-pub fn show_about_dialog(window: gtk4::ApplicationWindow) {
+pub fn show_about_dialog(window: gtk::ApplicationWindow) {
     let vcs_tag = config::VCS_TAG;
     let version: String = match config::PROFILE {
         "development" => format!("{} \n(Development Commit {})", config::VERSION, vcs_tag),
@@ -9,10 +9,10 @@ pub fn show_about_dialog(window: gtk4::ApplicationWindow) {
         _ => format!("{}-stable", config::VERSION),
     };
 
-    let dialog = gtk4::AboutDialog::new();
+    let dialog = gtk::AboutDialog::new();
     dialog.set_program_name(config::NAME);
     dialog.set_logo_icon_name(Some(config::APP_ID));
-    dialog.set_license_type(gtk4::License::Gpl30);
+    dialog.set_license_type(gtk::License::Gpl30);
     dialog.set_version(Some(version.as_str()));
     dialog.set_transient_for(Some(&window));
     dialog.set_modal(true);

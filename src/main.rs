@@ -29,10 +29,10 @@ fn main() {
     pretty_env_logger::init();
 
     // Initialize GTK
-    gtk4::init().expect("Failed to initialize GTK.");
+    gtk::init().expect("Failed to initialize GTK.");
 
     // Initialize libhandy
-    libhandy4::init();
+    libhandy::init();
 
     // Initialize paths
     path::init().expect("Unable to create paths.");

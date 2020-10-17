@@ -1,4 +1,4 @@
-use gtk4::prelude::*;
+use gtk::prelude::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -11,18 +11,18 @@ use crate::backend::{
 use crate::ui::utils;
 
 pub struct PackageActionButton {
-    pub widget: gtk4::Box,
+    pub widget: gtk::Box,
     package: BasePackage,
     transaction: RefCell<Option<Arc<PackageTransaction>>>,
 
     flatpak_backend: Rc<FlatpakBackend>,
-    builder: gtk4::Builder,
+    builder: gtk::Builder,
 }
 
 impl PackageActionButton {
     pub fn new(flatpak_backend: Rc<FlatpakBackend>, package: &dyn Package) -> Rc<Self> {
-        let builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/package_action_button.ui");
-        get_widget!(builder, gtk4::Box, package_action_button);
+        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/package_action_button.ui");
+        get_widget!(builder, gtk::Box, package_action_button);
         let transaction = RefCell::new(None);
 
         let pab = Rc::new(Self {
@@ -49,7 +49,7 @@ impl PackageActionButton {
 
         // Hide open button for runtimes and extensions
         if package.kind() != PackageKind::App {
-            get_widget!(pab.builder, gtk4::Button, open_button);
+            get_widget!(pab.builder, gtk::Button, open_button);
             open_button.set_visible(false);
         }
 
@@ -60,26 +60,26 @@ impl PackageActionButton {
 
     fn setup_signals(self: Rc<Self>) {
         // install
-        get_widget!(self.builder, gtk4::Button, install_button);
+        get_widget!(self.builder, gtk::Button, install_button);
         install_button.connect_clicked(clone!(@weak self as this => move |_|{
             this.flatpak_backend.clone().install_package(&this.package);
         }));
 
         // uninstall
-        get_widget!(self.builder, gtk4::Button, uninstall_button);
+        get_widget!(self.builder, gtk::Button, uninstall_button);
         uninstall_button.connect_clicked(clone!(@weak self as this => move |_|{
             debug!("Uninstall");
             this.flatpak_backend.clone().uninstall_package(&this.package);
         }));
 
         // open
-        get_widget!(self.builder, gtk4::Button, open_button);
+        get_widget!(self.builder, gtk::Button, open_button);
         open_button.connect_clicked(clone!(@weak self as this => move |_|{
             this.flatpak_backend.clone().launch_package(&this.package);
         }));
 
         // cancel
-        get_widget!(self.builder, gtk4::Button, cancel_button);
+        get_widget!(self.builder, gtk::Button, cancel_button);
         cancel_button.connect_clicked(clone!(@weak self as this => move |_|{
             match this.transaction.borrow().clone(){
                 Some(t) => this.flatpak_backend.clone().cancel_package_transaction(t),
@@ -106,9 +106,9 @@ impl PackageActionButton {
     }
 
     async fn receive_transaction_messages(self: Rc<Self>) {
-        get_widget!(self.builder, gtk4::Stack, button_stack);
-        get_widget!(self.builder, gtk4::ProgressBar, progressbar);
-        get_widget!(self.builder, gtk4::Label, status_label);
+        get_widget!(self.builder, gtk::Stack, button_stack);
+        get_widget!(self.builder, gtk::ProgressBar, progressbar);
+        get_widget!(self.builder, gtk::Label, status_label);
 
         let mut transaction_channel = self.transaction.borrow().as_ref().unwrap().get_channel();
         button_stack.set_visible_child_name("processing");
@@ -143,7 +143,7 @@ impl PackageActionButton {
     }
 
     fn update_stack(self: Rc<Self>) {
-        get_widget!(self.builder, gtk4::Stack, button_stack);
+        get_widget!(self.builder, gtk::Stack, button_stack);
 
         match self
             .flatpak_backend

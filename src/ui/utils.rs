@@ -1,16 +1,16 @@
 use appstream::{MarkupTranslatableString, TranslatableString};
 use chrono::{DateTime, Utc};
 use gio::prelude::*;
-use gtk4::prelude::*;
+use gtk::prelude::*;
 use html2pango::block::markup_html;
 use html2pango::block::HtmlBlock;
-use libhandy4::prelude::*;
+use libhandy::prelude::*;
 
 use std::path::PathBuf;
 
 use crate::backend::{Package, PackageKind};
 
-pub fn set_label_translatable_string(label: &gtk4::Label, text: Option<TranslatableString>) {
+pub fn set_label_translatable_string(label: &gtk::Label, text: Option<TranslatableString>) {
     match text {
         Some(text) => label.set_text(&text.get_default().unwrap_or(&"???".to_string())),
         None => label.set_text("–"),
@@ -18,7 +18,7 @@ pub fn set_label_translatable_string(label: &gtk4::Label, text: Option<Translata
 }
 
 pub fn set_label_markup_translatable_string(
-    label: &gtk4::Label,
+    label: &gtk::Label,
     text: Option<MarkupTranslatableString>,
 ) {
     match text {
@@ -68,14 +68,14 @@ pub fn render_markup(text: &str) -> Option<String> {
     }
 }
 
-pub fn set_date_label(label: &gtk4::Label, date: Option<DateTime<Utc>>) {
+pub fn set_date_label(label: &gtk::Label, date: Option<DateTime<Utc>>) {
     match date {
         Some(date) => label.set_text(&date.format("%Y-%m-%d").to_string()),
         None => label.set_text("–"),
     };
 }
 
-pub fn set_icon(package: &dyn Package, image: &gtk4::Image, size: i32) {
+pub fn set_icon(package: &dyn Package, image: &gtk::Image, size: i32) {
     let mut path = PathBuf::new();
     path.push(format!(
         "/var/lib/flatpak/appstream/{}/{}/active/icons/{}x{}/{}.png",
@@ -98,12 +98,12 @@ pub fn set_icon(package: &dyn Package, image: &gtk4::Image, size: i32) {
     }
 }
 
-pub fn show_error_dialog(builder: gtk4::Builder, message: &str) {
-    let dialog = gtk4::MessageDialog::new::<gtk4::MessageDialog>(
+pub fn show_error_dialog(builder: gtk::Builder, message: &str) {
+    let dialog = gtk::MessageDialog::new::<gtk::MessageDialog>(
         None,
-        gtk4::DialogFlags::MODAL,
-        gtk4::MessageType::Error,
-        gtk4::ButtonsType::Close,
+        gtk::DialogFlags::MODAL,
+        gtk::MessageType::Error,
+        gtk::ButtonsType::Close,
         &format!("<span font_family=\"monospace\">{}</span>", message),
     );
 
@@ -114,26 +114,26 @@ pub fn show_error_dialog(builder: gtk4::Builder, message: &str) {
     dialog.connect_response(|d, _| d.hide());
 }
 
-pub fn clear_flowbox(flowbox: &gtk4::FlowBox) {
+pub fn clear_flowbox(flowbox: &gtk::FlowBox) {
     let listmodel = flowbox.observe_children().unwrap();
     while let Some(o) = listmodel.get_object(0) {
-        let widget = o.clone().downcast::<gtk4::Widget>().unwrap();
+        let widget = o.clone().downcast::<gtk::Widget>().unwrap();
         flowbox.remove(&widget);
     }
 }
 
-pub fn clear_box(gbox: &gtk4::Box) {
+pub fn clear_box(gbox: &gtk::Box) {
     let listmodel = gbox.observe_children().unwrap();
     while let Some(o) = listmodel.get_object(0) {
-        let widget = o.clone().downcast::<gtk4::Widget>().unwrap();
+        let widget = o.clone().downcast::<gtk::Widget>().unwrap();
         gbox.remove(&widget);
     }
 }
 
-pub fn clear_carousel(carousel: &libhandy4::Carousel) {
+pub fn clear_carousel(carousel: &libhandy::Carousel) {
     let listmodel = carousel.observe_children().unwrap();
     while let Some(o) = listmodel.get_object(0) {
-        let widget = o.clone().downcast::<gtk4::Widget>().unwrap();
-        libhandy4::CarouselExt::remove(carousel, &widget);
+        let widget = o.clone().downcast::<gtk::Widget>().unwrap();
+        libhandy::CarouselExt::remove(carousel, &widget);
     }
 }

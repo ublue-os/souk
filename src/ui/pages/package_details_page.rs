@@ -1,5 +1,5 @@
 use glib::Sender;
-use gtk4::prelude::*;
+use gtk::prelude::*;
 
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -12,37 +12,37 @@ use crate::ui::package_widgets::{PackageWidget, ProjectUrlsBox, ReleasesBox, Scr
 use crate::ui::{utils, PackageActionButton, PackageTile};
 
 pub struct PackageDetailsPage {
-    pub widget: gtk4::Box,
+    pub widget: gtk::Box,
     flatpak_backend: Rc<FlatpakBackend>,
 
     package_widgets: Vec<Box<dyn PackageWidget>>,
 
-    builder: gtk4::Builder,
+    builder: gtk::Builder,
     sender: Sender<Action>,
 }
 
 impl PackageDetailsPage {
     pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
-        let builder = gtk4::Builder::from_resource("/org/gnome/Store/gtk/package_details_page.ui");
-        get_widget!(builder, gtk4::Box, package_details_page);
+        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/package_details_page.ui");
+        get_widget!(builder, gtk::Box, package_details_page);
 
         let mut package_widgets: Vec<Box<dyn PackageWidget>> = Vec::new();
 
         // Screenshots
         let pw_screenshots_box = ScreenshotsBox::new();
-        get_widget!(builder, gtk4::Box, screenshots_box);
+        get_widget!(builder, gtk::Box, screenshots_box);
         screenshots_box.append(&pw_screenshots_box.widget);
         package_widgets.push(Box::new(pw_screenshots_box));
 
         // Releases
         let pw_releases_box = ReleasesBox::new();
-        get_widget!(builder, gtk4::Box, releases_box);
+        get_widget!(builder, gtk::Box, releases_box);
         releases_box.append(&pw_releases_box.widget);
         package_widgets.push(Box::new(pw_releases_box));
 
         // Project Urls
         let pw_project_urls_box = ProjectUrlsBox::new();
-        get_widget!(builder, gtk4::Box, project_urls_box);
+        get_widget!(builder, gtk::Box, project_urls_box);
         project_urls_box.append(&pw_project_urls_box.widget);
         package_widgets.push(Box::new(pw_project_urls_box));
 
@@ -61,12 +61,12 @@ impl PackageDetailsPage {
     fn setup_signals(&self) {}
 
     pub fn set_package(&self, package: &dyn Package) {
-        get_widget!(self.builder, gtk4::Image, icon_image);
-        get_widget!(self.builder, gtk4::Label, title_label);
-        get_widget!(self.builder, gtk4::Label, developer_label);
-        get_widget!(self.builder, gtk4::Label, summary_label);
-        get_widget!(self.builder, gtk4::Label, description_label);
-        get_widget!(self.builder, gtk4::ScrolledWindow, scrolled_window);
+        get_widget!(self.builder, gtk::Image, icon_image);
+        get_widget!(self.builder, gtk::Label, title_label);
+        get_widget!(self.builder, gtk::Label, developer_label);
+        get_widget!(self.builder, gtk::Label, summary_label);
+        get_widget!(self.builder, gtk::Label, description_label);
+        get_widget!(self.builder, gtk::ScrolledWindow, scrolled_window);
 
         // scroll up when a new package gets set
         if let Some(adj) = scrolled_window.get_vadjustment() {
@@ -74,7 +74,7 @@ impl PackageDetailsPage {
         }
 
         // Setup package action button
-        get_widget!(self.builder, gtk4::Box, package_action_button_box);
+        get_widget!(self.builder, gtk::Box, package_action_button_box);
         let action_button = PackageActionButton::new(self.flatpak_backend.clone(), package);
         package_action_button_box.append(&action_button.widget);
 
@@ -111,9 +111,9 @@ impl PackageDetailsPage {
 
         // Populate "Other Apps by X" flowbox
         if let Some(n) = appdata.developer_name {
-            get_widget!(self.builder, gtk4::Box, other_apps);
-            get_widget!(self.builder, gtk4::Label, other_apps_label);
-            get_widget!(self.builder, gtk4::FlowBox, other_apps_flowbox);
+            get_widget!(self.builder, gtk::Box, other_apps);
+            get_widget!(self.builder, gtk::Label, other_apps_label);
+            get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
 
             let name = n.get_default().unwrap().to_string();
             other_apps_label.set_text(&format!("Other Apps by {}", name));
@@ -141,9 +141,9 @@ impl PackageDetailsPage {
     }
 
     pub fn reset(&self) {
-        get_widget!(self.builder, gtk4::Box, other_apps);
-        get_widget!(self.builder, gtk4::FlowBox, other_apps_flowbox);
-        get_widget!(self.builder, gtk4::Box, package_action_button_box);
+        get_widget!(self.builder, gtk::Box, other_apps);
+        get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
+        get_widget!(self.builder, gtk::Box, package_action_button_box);
 
         utils::clear_box(&package_action_button_box);
         utils::clear_flowbox(&other_apps_flowbox);

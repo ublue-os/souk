@@ -4,8 +4,8 @@ use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
 use glib::{Receiver, Sender};
-use gtk4::prelude::*;
-use gtk4::subclass::application::GtkApplicationImpl;
+use gtk::prelude::*;
+use gtk::subclass::application::GtkApplicationImpl;
 
 use std::cell::RefCell;
 use std::env;
@@ -38,7 +38,7 @@ pub struct GsApplicationPrivate {
 
 impl ObjectSubclass for GsApplicationPrivate {
     const NAME: &'static str = "GsApplication";
-    type ParentType = gtk4::Application;
+    type ParentType = gtk::Application;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
@@ -110,7 +110,7 @@ glib_wrapper! {
         Object<subclass::simple::InstanceStruct<GsApplicationPrivate>,
         subclass::simple::ClassStruct<GsApplicationPrivate>,
         GsApplicationClass>)
-        @extends gio::Application, gtk4::Application;
+        @extends gio::Application, gtk::Application;
 
     match fn {
         get_type => || GsApplicationPrivate::get_type().to_glib(),
@@ -142,7 +142,7 @@ impl GsApplication {
 
         app.set_resource_base_path(Some("/org/gnome/Store"));
 
-        // Start running gtk4::Application
+        // Start running gtk::Application
         let args: Vec<String> = env::args().collect();
         ApplicationExtManual::run(&app, &args);
     }
@@ -152,13 +152,9 @@ impl GsApplication {
         let window = GsApplicationWindow::new(self_.sender.clone(), self.clone());
 
         // Load custom styling
-        let p = gtk4::CssProvider::new();
-        gtk4::CssProvider::load_from_resource(&p, "/org/gnome/Store/gtk/style.css");
-        gtk4::StyleContext::add_provider_for_display(
-            &gdk4::Display::get_default().unwrap(),
-            &p,
-            500,
-        );
+        let p = gtk::CssProvider::new();
+        gtk::CssProvider::load_from_resource(&p, "/org/gnome/Store/gtk/style.css");
+        gtk::StyleContext::add_provider_for_display(&gdk::Display::get_default().unwrap(), &p, 500);
 
         // Set initial view
         window.set_view(View::Explore, false);
