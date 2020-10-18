@@ -1064,8 +1064,7 @@ dependencies = [
 [[package]]
 name = "html2pango"
 version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "469b284033c3c93e7df758d316cb2e0da4408e4138d5add903b8be356a841738"
+source = "git+https://gitlab.gnome.org/World/html2pango#af003550a7c4e877ca0b4c15c2db0a75b1ab0137"
 dependencies = [
  "ammonia",
  "anyhow",
