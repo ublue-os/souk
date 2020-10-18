@@ -59,7 +59,13 @@ impl ObjectImpl for GsApplicationWindowPrivate {}
 impl WidgetImpl for GsApplicationWindowPrivate {}
 
 // Implement Gtk.Window for GsApplicationWindow
-impl WindowImpl for GsApplicationWindowPrivate {}
+impl WindowImpl for GsApplicationWindowPrivate {
+    fn close_request(&self, window: &gtk::Window) -> glib::signal::Inhibit {
+        let app = window.get_application().unwrap();
+        app.quit();
+        glib::signal::Inhibit(true)
+    }
+}
 
 // Implement Gtk.ApplicationWindow for GsApplicationWindow
 impl gtk::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
@@ -84,10 +90,11 @@ glib_wrapper! {
 impl GsApplicationWindow {
     pub fn new(sender: Sender<Action>, app: GsApplication) -> Self {
         // Create new GObject and downcast it into GsApplicationWindow
-        let window = glib::Object::new(GsApplicationWindow::static_type(), &[])
-            .unwrap()
-            .downcast::<GsApplicationWindow>()
-            .unwrap();
+        let window =
+            glib::Object::new(GsApplicationWindow::static_type(), &[("application", &app)])
+                .unwrap()
+                .downcast::<GsApplicationWindow>()
+                .unwrap();
 
         app.add_window(&window);
         window.setup_widgets();
