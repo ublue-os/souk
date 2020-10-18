@@ -49,7 +49,12 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkBox">
+                          <object class="GtkFlowBox">
+                            <property name="selection_mode">none</property>
+                            <property name="activate_on_single_click">False</property>
+                            <property name="max_children_per_line">2</property>
+                            <property name="column_spacing">12</property>
+                            <property name="row_spacing">6</property>
                             <property name="valign">center</property>
                             <child>
                               <object class="GtkBox">
@@ -83,15 +88,10 @@
                             <child>
                               <object class="GtkBox" id="pab_box">
                                 <property name="valign">center</property>
+                                <property name="halign">end</property>
                                 <property name="orientation">vertical</property>
                               </object>
                             </child>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkFlowBox">
-                            <property name="selection_mode">none</property>
-                            <property name="activate_on_single_click">False</property>
                           </object>
                         </child>
                       </object>
@@ -139,8 +139,8 @@
                         </child>
                         <child>
                           <object class="GtkBox" id="details">
-                            <property name="spacing">22</property>
-                            <property name="homogeneous">True</property>
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">12</property>
                             <child>
                               <object class="GtkBox" id="releases_box">
                                 <property name="orientation">vertical</property>
