@@ -85,9 +85,9 @@ dependencies = [
 
 [[package]]
 name = "async-global-executor"
-version = "1.4.0"
+version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0659b83a146398616883aa5199cdd1b055ec088a83c9a338eab3534f33f0622e"
+checksum = "124ac8c265e407641c3362b8f4d39cdb4e243885b71eef087be27199790f5a3a"
 dependencies = [
  "async-executor",
  "async-io 1.1.6",
@@ -190,9 +190,9 @@ dependencies = [
 
 [[package]]
 name = "async-task"
-version = "4.0.2"
+version = "4.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ab27c1aa62945039e44edaeee1dc23c74cc0c303dd5fe0fb462a184f1c3a518"
+checksum = "e91831deabf0d6d7ec49552e489aed63b7456a7a3c46cff62adad428110b0af0"
 
 [[package]]
 name = "atk"
@@ -737,7 +737,7 @@ dependencies = [
 [[package]]
 name = "gdk4"
 version = "0.1.0"
-source = "git+https://github.com/bilelmoussaoui/gdk4?branch=bilelmoussaoui/update#f5ccc3e14aab8974ad3453196969b0d326676de3"
+source = "git+https://github.com/gtk-rs/gdk4#4eb7a6e7226eb7989b091bc2fcfe4da54f7da6d8"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -833,7 +833,7 @@ dependencies = [
 [[package]]
 name = "glib"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/glib#e515eb89429ccaf8e00eda2193092e8c9ae96606"
+source = "git+https://github.com/gtk-rs/glib#5e0222f066550e08b7933ce0d7b8b6e7e9580c00"
 dependencies = [
  "bitflags",
  "futures-channel",
@@ -851,7 +851,7 @@ dependencies = [
 [[package]]
 name = "glib-macros"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/glib#e515eb89429ccaf8e00eda2193092e8c9ae96606"
+source = "git+https://github.com/gtk-rs/glib#5e0222f066550e08b7933ce0d7b8b6e7e9580c00"
 dependencies = [
  "anyhow",
  "heck",
@@ -956,7 +956,7 @@ dependencies = [
 [[package]]
 name = "gsk4"
 version = "0.1.0"
-source = "git+https://github.com/bilelmoussaoui/gsk4?branch=bilelmoussaoui/update#1d2159e05f8dceadc126474ea6160fd819967b22"
+source = "git+https://github.com/bilelmoussaoui/gsk4?branch=bilelmoussaoui/update#0550fb0a1bba4c58f22777f0169485ed82cb8ac6"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -997,7 +997,7 @@ checksum = "1874c48e670519ce192093ac906c08a6dde7cb2d18b28722ef237726a39c3a63"
 [[package]]
 name = "gtk4"
 version = "0.1.0"
-source = "git+https://github.com/bilelmoussaoui/gtk4?branch=bilelmoussaoui/update#8cd3e69ec8cc54ece058c2091f79a231870b3dfb"
+source = "git+https://github.com/bilelmoussaoui/gtk4?branch=bilelmoussaoui/update#563e666795c70395425dfe2abf350b9ea9ea6ce6"
 dependencies = [
  "atk",
  "atk-sys",
@@ -1205,7 +1205,7 @@ checksum = "2448f6066e80e3bfc792e9c98bf705b4b0fc6e8ef5b43e5889aff0eaa9c58743"
 [[package]]
 name = "libhandy4"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs#d483f0f7b166dc72504e1b75dd76d51ad05c57ce"
+source = "git+https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs#e51e30e9a50d7b7e110d910e64d9150133a92f04"
 dependencies = [
  "bitflags",
  "gdk-pixbuf",
@@ -1228,7 +1228,7 @@ dependencies = [
 [[package]]
 name = "libhandy4-sys"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs#d483f0f7b166dc72504e1b75dd76d51ad05c57ce"
+source = "git+https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs#e51e30e9a50d7b7e110d910e64d9150133a92f04"
 dependencies = [
  "gdk-pixbuf-sys",
  "gdk4-sys",
@@ -1489,7 +1489,7 @@ dependencies = [
 [[package]]
 name = "pango"
 version = "0.9.0"
-source = "git+https://github.com/gtk-rs/pango#500460d5456888c7e1acbc52fb373a0c6b3ead90"
+source = "git+https://github.com/gtk-rs/pango#a9fdf5475104c984d9292f6c14edfbc34fc5cca8"
 dependencies = [
  "bitflags",
  "glib",
@@ -2039,9 +2039,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.44"
+version = "1.0.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e03e57e4fcbfe7749842d53e24ccb9aa12b7252dbe5e91d2acad31834c8b8fdd"
+checksum = "ea9c5432ff16d6152371f808fb5a871cd67368171b09bb21b43df8e4a47a3556"
 dependencies = [
  "proc-macro2",
  "quote",
