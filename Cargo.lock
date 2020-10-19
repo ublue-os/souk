@@ -956,7 +956,7 @@ dependencies = [
 [[package]]
 name = "gsk4"
 version = "0.1.0"
-source = "git+https://github.com/bilelmoussaoui/gsk4?branch=bilelmoussaoui/update#bc723b730a63bf40eff0d220b8d279a613199823"
+source = "git+https://github.com/bilelmoussaoui/gsk4?branch=bilelmoussaoui/update#d0ce92edb27bcb158b9499ccf79a702c0f378356"
 dependencies = [
  "bitflags",
  "cairo-rs",
