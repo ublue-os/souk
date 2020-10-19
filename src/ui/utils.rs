@@ -8,7 +8,7 @@ use libhandy::prelude::*;
 
 use std::path::PathBuf;
 
-use crate::backend::{Package, PackageKind};
+use crate::backend::{GsPackage, Package, PackageKind};
 
 pub fn set_label_translatable_string(label: &gtk::Label, text: Option<TranslatableString>) {
     match text {
@@ -96,6 +96,33 @@ pub fn set_icon(package: &dyn Package, image: &gtk::Image, size: i32) {
             }
         };
     }
+}
+
+pub fn set_gs_icon(package: &GsPackage, image: &gtk::Image, size: i32) {
+    let remote: String = package
+        .get_property("remote")
+        .unwrap()
+        .get()
+        .unwrap()
+        .unwrap();
+    let name: String = package
+        .get_property("name")
+        .unwrap()
+        .get()
+        .unwrap()
+        .unwrap();
+
+    let mut path = PathBuf::new();
+    path.push(format!(
+        "/var/lib/flatpak/appstream/{}/{}/active/icons/{}x{}/{}.png",
+        remote,
+        std::env::consts::ARCH,
+        size,
+        size,
+        name
+    ));
+
+    image.set_from_file(&path);
 }
 
 pub fn show_error_dialog(message: &str) {

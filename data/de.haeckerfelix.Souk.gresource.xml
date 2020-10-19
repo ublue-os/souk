@@ -6,6 +6,7 @@
     <file>gtk/package_action_button.ui</file>
     <file>gtk/package_details_page.ui</file>
     <file>gtk/package_tile.ui</file>
+    <file>gtk/package_row.ui</file>
     <file>gtk/explore_page.ui</file>
     <file>gtk/installed_page.ui</file>
     <file>gtk/releases_box.ui</file>

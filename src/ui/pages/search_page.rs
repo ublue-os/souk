@@ -9,7 +9,7 @@ use crate::backend::GsPackage;
 use crate::backend::Package;
 use crate::database::{queries, DisplayLevel};
 use crate::ui::utils;
-use crate::ui::PackageTile;
+use crate::ui::GsPackageRow;
 
 pub struct SearchPage {
     pub widget: gtk::Box,
@@ -43,27 +43,23 @@ impl SearchPage {
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_, item| {
-            let label = gtk::Label::new(None);
-            item.set_child(Some(&label));
+            let row = GsPackageRow::new();
+            item.set_child(Some(&row));
         });
         factory.connect_bind(|_, item| {
             let child = item.get_child().unwrap();
-            let label = child.clone().downcast::<gtk::Label>().unwrap();
+            let row = child.clone().downcast::<GsPackageRow>().unwrap();
 
             let item = item.get_item().unwrap();
             let package = item.clone().downcast::<GsPackage>().unwrap();
-
-            package
-                .bind_property("name", &label, "label")
-                .flags(glib::BindingFlags::DEFAULT | glib::BindingFlags::SYNC_CREATE)
-                .build();
+            row.set_package(&package);
         });
         listview.set_factory(Some(&factory));
 
         get_widget!(self.builder, gtk::SearchEntry, search_entry);
         search_entry.connect_search_changed(clone!(@weak self as this => move|entry|{
             let text = entry.get_text().unwrap().to_string();
-            let packages = queries::get_packages_by_name(text, 9000, DisplayLevel::Apps).unwrap();
+            let packages = queries::get_packages_by_name(text, 10000, DisplayLevel::Apps).unwrap();
             model.remove_all();
 
             for package in packages{
