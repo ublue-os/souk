@@ -801,7 +801,7 @@ dependencies = [
 [[package]]
 name = "gio"
 version = "0.9.0"
-source = "git+https://github.com/gtk-rs/gio#b96808b6c6229cbd06d505bb8a23068403732aa7"
+source = "git+https://github.com/gtk-rs/gio#70adbc2d127454abd4e3f096d4e5030ff74fc87b"
 dependencies = [
  "bitflags",
  "futures",
@@ -956,7 +956,7 @@ dependencies = [
 [[package]]
 name = "gsk4"
 version = "0.1.0"
-source = "git+https://github.com/bilelmoussaoui/gsk4?branch=bilelmoussaoui/update#0550fb0a1bba4c58f22777f0169485ed82cb8ac6"
+source = "git+https://github.com/bilelmoussaoui/gsk4?branch=bilelmoussaoui/update#bc723b730a63bf40eff0d220b8d279a613199823"
 dependencies = [
  "bitflags",
  "cairo-rs",
