@@ -30,6 +30,7 @@ sources = files(
   'backend/transaction_backend/sandbox_backend.rs',
   'backend/backend_message.rs',
   'backend/flatpak_backend.rs',
+  'backend/gpackage.rs',
   'backend/mod.rs',
   'backend/package.rs',
   'backend/package_action.rs',

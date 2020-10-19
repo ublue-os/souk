@@ -3,7 +3,7 @@ use crate::database::*;
 use crate::diesel::prelude::*;
 use diesel::dsl::sql;
 
-use crate::backend::{BasePackage, RemotePackage};
+use crate::backend::{BasePackage, GsPackage, RemotePackage};
 
 pub enum DisplayLevel {
     Apps,       /* Apps (de.haeckerfelix.Souk) */
@@ -50,7 +50,7 @@ pub fn get_packages_by_name(
     pkg_name: String,
     limit: i64,
     level: DisplayLevel,
-) -> Result<Vec<RemotePackage>, diesel::result::Error> {
+) -> Result<Vec<GsPackage>, diesel::result::Error> {
     use crate::database::schema::appstream_packages::dsl::*;
     let con = connect_db!();
 

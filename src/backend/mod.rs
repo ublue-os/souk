@@ -13,6 +13,9 @@ pub use package::Package;
 pub use package::PackageKind;
 pub use package::RemotePackage;
 
+mod gpackage;
+pub use gpackage::GsPackage;
+
 mod package_action;
 pub use package_action::PackageAction;
 
