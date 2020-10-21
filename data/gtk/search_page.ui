@@ -35,10 +35,12 @@
           </object>
         </child>
         <child>
-          <object class="GtkScrolledWindow">
+          <object class="HdyClamp">
+            <property name="vexpand">True</property>
+            <property name="maximum_size">900</property>
+            <property name="hexpand">True</property>
             <child>
-              <object class="HdyClamp">
-                <property name="vexpand">True</property>
+              <object class="GtkScrolledWindow">
                 <child>
                   <object class="GtkListView" id="listview">
                     <property name="show-separators">True</property>
@@ -47,6 +49,9 @@
                 </child>
               </object>
             </child>
+            <style>
+              <class name="package-list"/>
+            </style>
           </object>
         </child>
       </object>
