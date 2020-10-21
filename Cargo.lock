@@ -487,9 +487,9 @@ dependencies = [
 
 [[package]]
 name = "dyn-clone"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c53dc3a653e0f64081026e4bf048d48fec9fce90c66e8326ca7292df0ff2d82"
+checksum = "d55796afa1b20c2945ca8eabfc421839f2b766619209f1ede813cf2484f31804"
 
 [[package]]
 name = "either"
@@ -648,9 +648,9 @@ checksum = "5fc94b64bb39543b4e432f1790b6bf18e3ee3b74653c5449f63310e9a74b123c"
 
 [[package]]
 name = "futures-lite"
-version = "1.11.1"
+version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "381a7ad57b1bad34693f63f6f377e1abded7a9c85c9d3eb6771e11c60aaadab9"
+checksum = "5e6c079abfac3ab269e2927ec048dabc89d009ebfdda6b8ee86624f30c689658"
 dependencies = [
  "fastrand",
  "futures-core",
@@ -711,7 +711,7 @@ dependencies = [
 [[package]]
 name = "gdk-pixbuf"
 version = "0.9.0"
-source = "git+https://github.com/gtk-rs/gdk-pixbuf#6c670b2c699e4112f2b84b84d63f0961a78250e5"
+source = "git+https://github.com/gtk-rs/gdk-pixbuf#5ecc831fd5f4d28597fa060cb2f319ba4fad03e8"
 dependencies = [
  "gdk-pixbuf-sys",
  "gio",
@@ -801,7 +801,7 @@ dependencies = [
 [[package]]
 name = "gio"
 version = "0.9.0"
-source = "git+https://github.com/gtk-rs/gio#70adbc2d127454abd4e3f096d4e5030ff74fc87b"
+source = "git+https://github.com/gtk-rs/gio#6c15125b3542c591c3c148f0a4f9daab3d50fdb5"
 dependencies = [
  "bitflags",
  "futures",
@@ -833,7 +833,7 @@ dependencies = [
 [[package]]
 name = "glib"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/glib#5e0222f066550e08b7933ce0d7b8b6e7e9580c00"
+source = "git+https://github.com/gtk-rs/glib#0654a555aa8eb02e29c6f1c34a8bf9f4da9f2ed8"
 dependencies = [
  "bitflags",
  "futures-channel",
@@ -846,12 +846,13 @@ dependencies = [
  "gobject-sys",
  "libc",
  "once_cell",
+ "smallvec",
 ]
 
 [[package]]
 name = "glib-macros"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/glib#5e0222f066550e08b7933ce0d7b8b6e7e9580c00"
+source = "git+https://github.com/gtk-rs/glib#0654a555aa8eb02e29c6f1c34a8bf9f4da9f2ed8"
 dependencies = [
  "anyhow",
  "heck",
@@ -956,7 +957,7 @@ dependencies = [
 [[package]]
 name = "gsk4"
 version = "0.1.0"
-source = "git+https://github.com/bilelmoussaoui/gsk4?branch=bilelmoussaoui/update#d0ce92edb27bcb158b9499ccf79a702c0f378356"
+source = "git+https://github.com/gtk-rs/gsk4#ebdbdfc26d4082632e43b0982b709b9d2b170e04"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -997,7 +998,7 @@ checksum = "1874c48e670519ce192093ac906c08a6dde7cb2d18b28722ef237726a39c3a63"
 [[package]]
 name = "gtk4"
 version = "0.1.0"
-source = "git+https://github.com/bilelmoussaoui/gtk4?branch=bilelmoussaoui/update#563e666795c70395425dfe2abf350b9ea9ea6ce6"
+source = "git+https://github.com/bilelmoussaoui/gtk4?branch=bilelmoussaoui/update#15d018ad8d6cc2543a5b8de34eeb63bcd2c7052a"
 dependencies = [
  "atk",
  "atk-sys",
@@ -1633,9 +1634,9 @@ dependencies = [
 
 [[package]]
 name = "pin-project-lite"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e555d9e657502182ac97b539fb3dae8b79cda19e3e4f8ffb5e8de4f18df93c95"
+checksum = "c917123afa01924fc84bb20c4c03f004d9c38e5127e3c039bbf7f4b9c76a2f6b"
 
 [[package]]
 name = "pin-utils"
