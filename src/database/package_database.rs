@@ -101,7 +101,7 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
 
         if url.starts_with("oci+") {
             // TODO: Add support for OCI remotes
-            // https://gitlab.gnome.org/haecker-felix/gnome-store/-/issues/11#note_925791
+            // https://gitlab.gnome.org/haecker-felix/souk/-/issues/11#note_925791
             warn!(
                 "Unable to load remote \"{}\" ({}): OCI remotes aren't supported yet",
                 remote_name, url

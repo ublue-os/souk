@@ -24,7 +24,7 @@ impl ProjectUrlsBox {
 
 impl PackageWidget for ProjectUrlsBox {
     fn new() -> Self {
-        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/project_urls_box.ui");
+        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/project_urls_box.ui");
         get_widget!(builder, gtk::Box, project_urls_box);
 
         let project_urls_box = Self {

@@ -35,7 +35,7 @@ impl ScreenshotsBox {
 
 impl PackageWidget for ScreenshotsBox {
     fn new() -> Self {
-        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/screenshots_box.ui");
+        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/screenshots_box.ui");
         get_widget!(builder, gtk::Box, screenshots_box);
 
         Self {

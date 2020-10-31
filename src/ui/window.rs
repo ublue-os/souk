@@ -9,7 +9,7 @@ use libhandy::prelude::*;
 
 use std::cell::RefCell;
 
-use crate::app::{Action, GsApplication, GsApplicationPrivate};
+use crate::app::{Action, SoukApplication, SoukApplicationPrivate};
 use crate::backend::Package;
 use crate::config;
 use crate::ui::about_dialog;
@@ -23,15 +23,15 @@ pub enum View {
     PackageDetails(Box<dyn Package>),
 }
 
-pub struct GsApplicationWindowPrivate {
+pub struct SoukApplicationWindowPrivate {
     window_builder: gtk::Builder,
     menu_builder: gtk::Builder,
 
     pages_stack: RefCell<Vec<View>>,
 }
 
-impl ObjectSubclass for GsApplicationWindowPrivate {
-    const NAME: &'static str = "GsApplicationWindow";
+impl ObjectSubclass for SoukApplicationWindowPrivate {
+    const NAME: &'static str = "SoukApplicationWindow";
     type ParentType = libhandy::ApplicationWindow;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -39,8 +39,8 @@ impl ObjectSubclass for GsApplicationWindowPrivate {
     glib_object_subclass!();
 
     fn new() -> Self {
-        let window_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/window.ui");
-        let menu_builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/menu.ui");
+        let window_builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/window.ui");
+        let menu_builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/menu.ui");
 
         let pages_stack = RefCell::new(Vec::new());
 
@@ -52,14 +52,14 @@ impl ObjectSubclass for GsApplicationWindowPrivate {
     }
 }
 
-// Implement GLib.OBject for GsApplicationWindow
-impl ObjectImpl for GsApplicationWindowPrivate {}
+// Implement GLib.OBject for SoukApplicationWindow
+impl ObjectImpl for SoukApplicationWindowPrivate {}
 
-// Implement Gtk.Widget for GsApplicationWindow
-impl WidgetImpl for GsApplicationWindowPrivate {}
+// Implement Gtk.Widget for SoukApplicationWindow
+impl WidgetImpl for SoukApplicationWindowPrivate {}
 
-// Implement Gtk.Window for GsApplicationWindow
-impl WindowImpl for GsApplicationWindowPrivate {
+// Implement Gtk.Window for SoukApplicationWindow
+impl WindowImpl for SoukApplicationWindowPrivate {
     fn close_request(&self, window: &gtk::Window) -> glib::signal::Inhibit {
         let app = window.get_application().unwrap();
         app.quit();
@@ -67,34 +67,36 @@ impl WindowImpl for GsApplicationWindowPrivate {
     }
 }
 
-// Implement Gtk.ApplicationWindow for GsApplicationWindow
-impl gtk::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
+// Implement Gtk.ApplicationWindow for SoukApplicationWindow
+impl gtk::subclass::prelude::ApplicationWindowImpl for SoukApplicationWindowPrivate {}
 
-// Implement Hdy.ApplicationWindow for GsApplicationWindow
-impl libhandy::subclass::prelude::ApplicationWindowImpl for GsApplicationWindowPrivate {}
+// Implement Hdy.ApplicationWindow for SoukApplicationWindow
+impl libhandy::subclass::prelude::ApplicationWindowImpl for SoukApplicationWindowPrivate {}
 
-// Wrap GsApplicationWindowPrivate into a usable gtk-rs object
+// Wrap SoukApplicationWindowPrivate into a usable gtk-rs object
 glib_wrapper! {
-    pub struct GsApplicationWindow(
-        Object<subclass::simple::InstanceStruct<GsApplicationWindowPrivate>,
-        subclass::simple::ClassStruct<GsApplicationWindowPrivate>,
-        GsApplicationWindowClass>)
+    pub struct SoukApplicationWindow(
+        Object<subclass::simple::InstanceStruct<SoukApplicationWindowPrivate>,
+        subclass::simple::ClassStruct<SoukApplicationWindowPrivate>,
+        SoukApplicationWindowClass>)
         @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, libhandy::ApplicationWindow;
 
     match fn {
-        get_type => || GsApplicationWindowPrivate::get_type().to_glib(),
+        get_type => || SoukApplicationWindowPrivate::get_type().to_glib(),
     }
 }
 
-// GsApplicationWindow implementation itself
-impl GsApplicationWindow {
-    pub fn new(sender: Sender<Action>, app: GsApplication) -> Self {
-        // Create new GObject and downcast it into GsApplicationWindow
-        let window =
-            glib::Object::new(GsApplicationWindow::static_type(), &[("application", &app)])
-                .unwrap()
-                .downcast::<GsApplicationWindow>()
-                .unwrap();
+// SoukApplicationWindow implementation itself
+impl SoukApplicationWindow {
+    pub fn new(sender: Sender<Action>, app: SoukApplication) -> Self {
+        // Create new GObject and downcast it into SoukApplicationWindow
+        let window = glib::Object::new(
+            SoukApplicationWindow::static_type(),
+            &[("application", &app)],
+        )
+        .unwrap()
+        .downcast::<SoukApplicationWindow>()
+        .unwrap();
 
         app.add_window(&window);
         window.setup_widgets();
@@ -104,13 +106,13 @@ impl GsApplicationWindow {
     }
 
     pub fn setup_widgets(&self) {
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
-        let app: GsApplication = self
+        let self_ = SoukApplicationWindowPrivate::from_instance(self);
+        let app: SoukApplication = self
             .get_application()
             .unwrap()
-            .downcast::<GsApplication>()
+            .downcast::<SoukApplication>()
             .unwrap();
-        let app_private = GsApplicationPrivate::from_instance(&app);
+        let app_private = SoukApplicationPrivate::from_instance(&app);
 
         // set default size
         self.set_default_size(900, 700);
@@ -148,7 +150,7 @@ impl GsApplicationWindow {
     }
 
     fn setup_signals(&self, sender: Sender<Action>) {
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
+        let self_ = SoukApplicationWindowPrivate::from_instance(self);
 
         // main stack
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
@@ -175,7 +177,7 @@ impl GsApplicationWindow {
     }
 
     fn setup_gactions(&self, sender: Sender<Action>) {
-        // We need to upcast from GsApplicationWindow to libhandy::ApplicationWindow, because GsApplicationWindow
+        // We need to upcast from SoukApplicationWindow to libhandy::ApplicationWindow, because SoukApplicationWindow
         // currently doesn't implement GLib.ActionMap, since it's not supported in gtk-rs for subclassing (13-01-2020)
         let window = self.clone().upcast::<gtk::ApplicationWindow>();
         let app = window.get_application().unwrap();
@@ -222,7 +224,7 @@ impl GsApplicationWindow {
 
     pub fn go_back(&self) {
         debug!("Go back to previous view");
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
+        let self_ = SoukApplicationWindowPrivate::from_instance(self);
 
         // Remove current page
         let _ = self_.pages_stack.borrow_mut().pop();
@@ -240,13 +242,13 @@ impl GsApplicationWindow {
     pub fn set_view(&self, view: View, go_back: bool) {
         debug!("Set view to {:?}", &view);
 
-        let self_ = GsApplicationWindowPrivate::from_instance(self);
-        let app: GsApplication = self
+        let self_ = SoukApplicationWindowPrivate::from_instance(self);
+        let app: SoukApplication = self
             .get_application()
             .unwrap()
-            .downcast::<GsApplication>()
+            .downcast::<SoukApplication>()
             .unwrap();
-        let app_private = GsApplicationPrivate::from_instance(&app);
+        let app_private = SoukApplicationPrivate::from_instance(&app);
 
         get_widget!(self_.window_builder, gtk::Stack, window_stack);
         get_widget!(self_.window_builder, gtk::Stack, main_stack);

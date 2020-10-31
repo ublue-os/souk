@@ -2,9 +2,9 @@
 <!-- Copyright 2020 Felix Häcker -->
 <component type="desktop-application">
   <id>@appid@</id>
-  <name>Store</name>
+  <name>Souk</name>
   <summary>Add, remove or update software on this computer</summary>
-  <translation type="gettext">gnome-store</translation>
+  <translation type="gettext">souk</translation>
   <developer_name>Felix Häcker</developer_name>
   <update_contact>haeckerfelix@gnome.org</update_contact>
   <metadata_license>CC0-1.0</metadata_license>
@@ -14,12 +14,12 @@
 
   <description>
     <p>
-      Store allows you to find and install new applications and remove existing installed applications.
+      Souk allows you to find and install new applications and remove existing installed applications.
     </p>
   </description>
 
-  <url type="homepage">https://gitlab.gnome.org/haecker-felix/gnome-store</url>
-  <url type="bugtracker">https://gitlab.gnome.org/haecker-felix/gnome-store/issues</url>
+  <url type="homepage">https://gitlab.gnome.org/haecker-felix/souk</url>
+  <url type="bugtracker">https://gitlab.gnome.org/haecker-felix/souk/issues</url>
   <url type="donation">https://de.liberapay.com/haecker-felix</url>
 
   <kudos>

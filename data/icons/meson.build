@@ -8,7 +8,7 @@ install_data(
 symbolic_dir = join_paths('hicolor', 'symbolic', 'apps')
 
 install_data(
-  join_paths(symbolic_dir, 'org.gnome.Store-symbolic.svg'),
+  join_paths(symbolic_dir, 'de.haeckerfelix.Souk-symbolic.svg'),
   install_dir: join_paths(datadir, 'icons', symbolic_dir),
   rename: '@0@-symbolic.svg'.format(app_id)
 )

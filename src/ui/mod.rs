@@ -12,5 +12,5 @@ mod package_action_button;
 pub use package_action_button::PackageActionButton;
 
 mod window;
-pub use window::GsApplicationWindow;
+pub use window::SoukApplicationWindow;
 pub use window::View;

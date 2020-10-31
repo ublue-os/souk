@@ -22,7 +22,7 @@ mod error;
 mod path;
 mod ui;
 
-use crate::app::GsApplication;
+use crate::app::SoukApplication;
 
 fn main() {
     // Initialize logger
@@ -51,5 +51,5 @@ fn main() {
 
     // Start application itself
     // Run app itself
-    GsApplication::run();
+    SoukApplication::run();
 }

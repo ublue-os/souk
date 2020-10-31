@@ -18,7 +18,7 @@ pub struct SearchPage {
 
 impl SearchPage {
     pub fn new(sender: Sender<Action>) -> Rc<Self> {
-        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/search_page.ui");
+        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/search_page.ui");
         get_widget!(builder, gtk::Box, search_page);
 
         let search_page = Rc::new(Self {

@@ -4,19 +4,19 @@ stages:
   - review
 
 variables:
-    BUNDLE: "gnome-store-dev.flatpak"
+    BUNDLE: "souk-dev.flatpak"
     GIT_SUBMODULE_STRATEGY: recursive
 
 flatpak:
     image: "registry.gitlab.gnome.org/gnome/gnome-runtime-images/rust_bundle:master"
     stage: "test"
     variables:
-        MANIFEST_PATH: "build-aux/org.gnome.Store.Devel.json"
-        VENDOR_PATH: "gnome-store.tar.xz"
-        FLATPAK_MODULE: "gnome-store"
+        MANIFEST_PATH: "build-aux/de.haeckerfelix.Souk.Devel.json"
+        VENDOR_PATH: "souk.tar.xz"
+        FLATPAK_MODULE: "souk"
         CONFIGURE_ARGS: "-Dprofile=development"
         RUNTIME_REPO: "https://sdk.gnome.org/gnome-nightly.flatpakrepo"
-        APP_ID: "org.gnome.Store.Devel"
+        APP_ID: "de.haeckerfelix.Souk.Devel"
     tags:
         - flatpak
 
@@ -60,7 +60,7 @@ review:
         url: https://gitlab.gnome.org/$CI_PROJECT_PATH/-/jobs/$CI_JOB_ID/artifacts/raw/${BUNDLE}
         on_stop: stop_review
     except:
-        - master@World/gnome-store
+        - master@World/souk
         - tags
 
 stop_review:
@@ -72,7 +72,7 @@ stop_review:
         name: review/$CI_COMMIT_REF_NAME
         action: stop
     except:
-        - master@World/gnome-store
+        - master@World/souk
         - tags
 
 # Configure and run rustfmt

@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name=Store
+Name=Souk
 # Translators: Do NOT translate or transliterate this text (this is an icon file name)!
 Icon=@icon@
-Exec=gnome-store
+Exec=souk
 Terminal=false
 Type=Application
 StartupNotify=true

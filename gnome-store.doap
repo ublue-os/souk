@@ -4,13 +4,13 @@
          xmlns:gnome="http://api.gnome.org/doap-extensions#"
          xmlns="http://usefulinc.com/ns/doap#">
 
-  <name xml:lang="en">gnome-store</name>
+  <name xml:lang="en">souk</name>
   <category rdf:resource="http://api.gnome.org/doap-extensions#apps" />
   <programming-language>Rust</programming-language>
 
-  <homepage rdf:resource="https://gitlab.gnome.org/haecker-felix/gnome-store" />
-  <download-page rdf:resource="https://gitlab.gnome.org/haecker-felix/gnome-store/" />
-  <bug-database rdf:resource="https://gitlab.gnome.org/haecker-felix/gnome-store/-/issues" />
+  <homepage rdf:resource="https://gitlab.gnome.org/haecker-felix/souk" />
+  <download-page rdf:resource="https://gitlab.gnome.org/haecker-felix/souk/" />
+  <bug-database rdf:resource="https://gitlab.gnome.org/haecker-felix/souk/-/issues" />
 
   <maintainer>
     <foaf:Person>

@@ -16,7 +16,7 @@ pub struct ExplorePage {
 
 impl ExplorePage {
     pub fn new(sender: Sender<Action>) -> Rc<Self> {
-        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/explore_page.ui");
+        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/explore_page.ui");
         get_widget!(builder, gtk::Box, explore_page);
 
         let explore_page = Rc::new(Self {

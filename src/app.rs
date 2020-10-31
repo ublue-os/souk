@@ -14,7 +14,7 @@ use std::rc::Rc;
 use crate::backend::FlatpakBackend;
 use crate::config;
 use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage, SearchPage};
-use crate::ui::{GsApplicationWindow, View};
+use crate::ui::{SoukApplicationWindow, View};
 
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -22,7 +22,7 @@ pub enum Action {
     ViewGoBack,
 }
 
-pub struct GsApplicationPrivate {
+pub struct SoukApplicationPrivate {
     sender: Sender<Action>,
     receiver: RefCell<Option<Receiver<Action>>>,
 
@@ -33,11 +33,11 @@ pub struct GsApplicationPrivate {
     pub search_page: Rc<SearchPage>,
     pub package_details_page: Rc<PackageDetailsPage>,
 
-    window: RefCell<Option<GsApplicationWindow>>,
+    window: RefCell<Option<SoukApplicationWindow>>,
 }
 
-impl ObjectSubclass for GsApplicationPrivate {
-    const NAME: &'static str = "GsApplication";
+impl ObjectSubclass for SoukApplicationPrivate {
+    const NAME: &'static str = "SoukApplication";
     type ParentType = gtk::Application;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -70,14 +70,14 @@ impl ObjectSubclass for GsApplicationPrivate {
     }
 }
 
-// Implement GLib.OBject for GsApplication
-impl ObjectImpl for GsApplicationPrivate {}
+// Implement GLib.OBject for SoukApplication
+impl ObjectImpl for SoukApplicationPrivate {}
 
-// Implement Gtk.Application for GsApplication
-impl GtkApplicationImpl for GsApplicationPrivate {}
+// Implement Gtk.Application for SoukApplication
+impl GtkApplicationImpl for SoukApplicationPrivate {}
 
-// Implement Gio.Application for GsApplication
-impl ApplicationImpl for GsApplicationPrivate {
+// Implement Gio.Application for SoukApplication
+impl ApplicationImpl for SoukApplicationPrivate {
     fn activate(&self, _app: &gio::Application) {
         debug!("gio::Application -> activate()");
 
@@ -91,7 +91,7 @@ impl ApplicationImpl for GsApplicationPrivate {
 
         // No window available -> we have to create one
         let app = ObjectSubclass::get_instance(self)
-            .downcast::<GsApplication>()
+            .downcast::<SoukApplication>()
             .unwrap();
         let window = app.create_window();
         window.present();
@@ -104,21 +104,21 @@ impl ApplicationImpl for GsApplicationPrivate {
     }
 }
 
-// Wrap GsApplicationPrivate into a usable gtk-rs object
+// Wrap SoukApplicationPrivate into a usable gtk-rs object
 glib_wrapper! {
-    pub struct GsApplication(
-        Object<subclass::simple::InstanceStruct<GsApplicationPrivate>,
-        subclass::simple::ClassStruct<GsApplicationPrivate>,
-        GsApplicationClass>)
+    pub struct SoukApplication(
+        Object<subclass::simple::InstanceStruct<SoukApplicationPrivate>,
+        subclass::simple::ClassStruct<SoukApplicationPrivate>,
+        SoukApplicationClass>)
         @extends gio::Application, gtk::Application;
 
     match fn {
-        get_type => || GsApplicationPrivate::get_type().to_glib(),
+        get_type => || SoukApplicationPrivate::get_type().to_glib(),
     }
 }
 
-// GsApplication implementation itself
-impl GsApplication {
+// SoukApplication implementation itself
+impl SoukApplication {
     pub fn run() {
         info!(
             "{} ({}) ({})",
@@ -128,32 +128,32 @@ impl GsApplication {
         );
         info!("Version: {} ({})", config::VERSION, config::PROFILE);
 
-        // Create new GObject and downcast it into GsApplication
+        // Create new GObject and downcast it into SoukApplication
         let app = glib::Object::new(
-            GsApplication::static_type(),
+            SoukApplication::static_type(),
             &[
                 ("application-id", &Some(config::APP_ID)),
                 ("flags", &ApplicationFlags::empty()),
             ],
         )
         .unwrap()
-        .downcast::<GsApplication>()
+        .downcast::<SoukApplication>()
         .unwrap();
 
-        app.set_resource_base_path(Some("/org/gnome/Store"));
+        app.set_resource_base_path(Some("/de/haeckerfelix/Souk"));
 
         // Start running gtk::Application
         let args: Vec<String> = env::args().collect();
         ApplicationExtManual::run(&app, &args);
     }
 
-    fn create_window(&self) -> GsApplicationWindow {
-        let self_ = GsApplicationPrivate::from_instance(self);
-        let window = GsApplicationWindow::new(self_.sender.clone(), self.clone());
+    fn create_window(&self) -> SoukApplicationWindow {
+        let self_ = SoukApplicationPrivate::from_instance(self);
+        let window = SoukApplicationWindow::new(self_.sender.clone(), self.clone());
 
         // Load custom styling
         let p = gtk::CssProvider::new();
-        gtk::CssProvider::load_from_resource(&p, "/org/gnome/Store/gtk/style.css");
+        gtk::CssProvider::load_from_resource(&p, "/de/haeckerfelix/Souk/gtk/style.css");
         gtk::StyleContext::add_provider_for_display(&gdk::Display::get_default().unwrap(), &p, 500);
 
         // Set initial view
@@ -163,7 +163,7 @@ impl GsApplication {
     }
 
     fn process_action(&self, action: Action) -> glib::Continue {
-        let self_ = GsApplicationPrivate::from_instance(self);
+        let self_ = SoukApplicationPrivate::from_instance(self);
 
         match action {
             Action::ViewSet(view) => self_

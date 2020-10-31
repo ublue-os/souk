@@ -1,12 +1,12 @@
 {
-    "app-id": "org.gnome.Store.Devel",
+    "app-id": "de.haeckerfelix.Souk.Devel",
     "runtime": "org.gnome.Platform",
     "runtime-version": "master",
     "sdk": "org.gnome.Sdk",
     "sdk-extensions" : [
         "org.freedesktop.Sdk.Extension.rust-stable"
     ],
-    "command": "gnome-store",
+    "command": "souk",
     "finish-args": [
         "--share=network",
         "--share=ipc",
@@ -16,7 +16,7 @@
         "--filesystem=~/.local/share/flatpak:ro",
         "--filesystem=/var/lib/flatpak:ro",
         "--talk-name=org.freedesktop.Flatpak",
-        "--env=RUST_LOG=gnome_store=debug",
+        "--env=RUST_LOG=souk=debug",
         "--env=G_MESSAGES_DEBUG=none"
     ],
     "build-options": {
@@ -26,7 +26,7 @@
         ],
         "env" : {
             "RUSTFLAGS" : "--remap-path-prefix =../",
-            "CARGO_HOME" : "/run/build/gnome-store/cargo",
+            "CARGO_HOME" : "/run/build/souk/cargo",
             "RUST_BACKTRACE" : "1",
             "MOUNT_FUSE_PATH" : "../tmp/"
         }
@@ -196,7 +196,7 @@
         },
 
         {
-            "name": "gnome-store",
+            "name": "souk",
             "builddir": true,
             "buildsystem": "meson",
             "config-opts" : [
@@ -205,7 +205,7 @@
             "sources": [
                 {
                     "type": "git",
-                    "url": "https://gitlab.gnome.org/haecker-felix/gnome-store"
+                    "url": "https://gitlab.gnome.org/haecker-felix/souk"
                 }
             ]
         }

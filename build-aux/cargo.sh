@@ -17,10 +17,10 @@ then
     echo "** DEBUG MODE **"
     cargo build --manifest-path \
         "$MESON_SOURCE_ROOT"/Cargo.toml --message-format=human && \
-        cp "$CARGO_TARGET_DIR"/debug/gnome-store $APP_OUTPUT
+        cp "$CARGO_TARGET_DIR"/debug/souk $APP_OUTPUT
 else
     echo "** RELEASE MODE **"
     cargo build --manifest-path \
         "$MESON_SOURCE_ROOT"/Cargo.toml --message-format=short --release && \
-        cp "$CARGO_TARGET_DIR"/release/gnome-store $APP_OUTPUT
+        cp "$CARGO_TARGET_DIR"/release/souk $APP_OUTPUT
 fi

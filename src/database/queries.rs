@@ -6,7 +6,7 @@ use diesel::dsl::sql;
 use crate::backend::{BasePackage, RemotePackage};
 
 pub enum DisplayLevel {
-    Apps,       /* Apps (org.gnome.Store) */
+    Apps,       /* Apps (de.haeckerfelix.Souk) */
     Runtimes,   /* Apps + Runtimes (org.gnome.Sdk) */
     Extensions, /* Apps + Runtimes + Extensions (*.Debug, *.Sources, *.Docs, ...) */
 }

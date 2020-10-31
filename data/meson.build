@@ -8,8 +8,8 @@ desktop_conf = configuration_data()
 desktop_conf.set('icon', app_id)
 desktop_file = i18n.merge_file(
   input: configure_file(
-    input: files('org.gnome.Store.desktop.in.in'),
-    output: 'org.gnome.Store.desktop.in',
+    input: files('de.haeckerfelix.Souk.desktop.in.in'),
+    output: 'de.haeckerfelix.Souk.desktop.in',
     configuration: desktop_conf
   ),
   output: '@0@.desktop'.format(app_id),
@@ -33,8 +33,8 @@ appdata_conf = configuration_data()
 appdata_conf.set('appid', app_id)
 appstream_file = i18n.merge_file(
   input: configure_file(
-    input: files('org.gnome.Store.metainfo.xml.in.in'),
-    output: 'org.gnome.Store.metainfo.xml.in',
+    input: files('de.haeckerfelix.Souk.metainfo.xml.in.in'),
+    output: 'de.haeckerfelix.Souk.metainfo.xml.in',
     configuration: appdata_conf
   ),
   output: '@0@.metainfo.xml'.format(app_id),
@@ -45,7 +45,7 @@ appstream_file = i18n.merge_file(
 
 
 # Gschema file #
-install_data('org.gnome.Store.gschema.xml',
+install_data('de.haeckerfelix.Souk.gschema.xml',
   install_dir: join_paths(datadir, 'glib-2.0/schemas')
 )
 
@@ -63,7 +63,7 @@ service_conf = configuration_data()
 service_conf.set('appid', app_id)
 service_conf.set('bindir', join_paths(get_option('prefix'), get_option('bindir')))
 configure_file(
-  input: 'org.gnome.Store.service.in',
+  input: 'de.haeckerfelix.Souk.service.in',
   output: '@0@.service'.format(app_id),
   configuration: service_conf,
   install_dir: join_paths(datadir,'dbus-1', 'services')
@@ -73,7 +73,7 @@ configure_file(
 # Resources
 gnome.compile_resources(
   app_id,
-  'org.gnome.Store.gresource.xml',
+  'de.haeckerfelix.Souk.gresource.xml',
   gresource_bundle: true,
   source_dir: meson.current_build_dir(),
   install: true,

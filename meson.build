@@ -1,4 +1,4 @@
-project('gnome-store',
+project('souk',
           version: '0.0.1',
     meson_version: '>= 0.50.0',
           license: 'GPL-3.0-or-later',
@@ -15,8 +15,8 @@ dependency('gtk+-3.0', version: '>= 3.24.11')
 dependency('libhandy-1', version: '>= 0.80.0')
 
 # Initialize project variables
-name       = 'Store'
-app_id     = 'org.gnome.Store'
+name       = 'Souk'
+app_id     = 'de.haeckerfelix.Souk'
 profile    = get_option('profile')
 vcs_tag    = run_command('git', 'rev-parse', '--short', 'HEAD').stdout().strip()
 localedir  = join_paths(get_option('prefix'), get_option('localedir'))

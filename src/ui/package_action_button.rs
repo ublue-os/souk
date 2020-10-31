@@ -21,7 +21,8 @@ pub struct PackageActionButton {
 
 impl PackageActionButton {
     pub fn new(flatpak_backend: Rc<FlatpakBackend>, package: &dyn Package) -> Rc<Self> {
-        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/package_action_button.ui");
+        let builder =
+            gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/package_action_button.ui");
         get_widget!(builder, gtk::Box, package_action_button);
         let transaction = RefCell::new(None);
 
