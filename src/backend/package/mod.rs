@@ -1,3 +1,6 @@
+mod installed_info;
+mod remote_info;
+
 use appstream::Collection;
 use appstream::Component;
 use gio::prelude::*;
@@ -16,22 +19,22 @@ use crate::database::DbPackage;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, GEnum)]
 #[repr(u32)]
-#[genum(type_name = "GsPackageKind")]
-enum GsPackageKind {
+#[genum(type_name = "SoukPackageKind")]
+enum SoukPackageKind {
     App = 0,
     Runtime = 1,
     Extension = 2,
 }
 
-impl Default for GsPackageKind {
+impl Default for SoukPackageKind {
     fn default() -> Self {
-        GsPackageKind::App
+        SoukPackageKind::App
     }
 }
 
 #[derive(Default)]
-pub struct GsPackagePrivate {
-    kind: RefCell<GsPackageKind>,
+pub struct SoukPackagePrivate {
+    kind: RefCell<SoukPackageKind>,
     name: RefCell<String>,
     arch: RefCell<String>,
     branch: RefCell<String>,
@@ -40,14 +43,26 @@ pub struct GsPackagePrivate {
     appdata: RefCell<String>,
 }
 
+// SoukInstalledInfo
+// - appdata
+// - commit
+// - installed_size
+// - deploy_dir
+
+// SoukRemoteInfo
+// - appdata
+// - commit
+// - download_size
+// - installed_size
+
 static PROPERTIES: [subclass::Property; 7] = [
     subclass::Property("kind", |kind| {
         glib::ParamSpec::enum_(
             kind,
             "PackageKind",
             "PackageKind",
-            GsPackageKind::static_type(),
-            GsPackageKind::default() as i32,
+            SoukPackageKind::static_type(),
+            SoukPackageKind::default() as i32,
             glib::ParamFlags::READABLE,
         )
     }),
@@ -77,8 +92,8 @@ static PROPERTIES: [subclass::Property; 7] = [
     }),
 ];
 
-impl ObjectSubclass for GsPackagePrivate {
-    const NAME: &'static str = "GsPackage";
+impl ObjectSubclass for SoukPackagePrivate {
+    const NAME: &'static str = "SoukPackage";
     type ParentType = glib::Object;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -94,7 +109,7 @@ impl ObjectSubclass for GsPackagePrivate {
     }
 }
 
-impl ObjectImpl for GsPackagePrivate {
+impl ObjectImpl for SoukPackagePrivate {
     fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
         let prop = &PROPERTIES[id];
 
@@ -112,21 +127,21 @@ impl ObjectImpl for GsPackagePrivate {
 }
 
 glib_wrapper! {
-    pub struct GsPackage(
-        Object<subclass::simple::InstanceStruct<GsPackagePrivate>,
-        subclass::simple::ClassStruct<GsPackagePrivate>,
+    pub struct SoukPackage(
+        Object<subclass::simple::InstanceStruct<SoukPackagePrivate>,
+        subclass::simple::ClassStruct<SoukPackagePrivate>,
         GsApplicationWindowClass>);
 
     match fn {
-        get_type => || GsPackagePrivate::get_type().to_glib(),
+        get_type => || SoukPackagePrivate::get_type().to_glib(),
     }
 }
 
-impl GsPackage {
+impl SoukPackage {
     pub fn new() -> Self {
-        let package = glib::Object::new(GsPackage::static_type(), &[])
+        let package = glib::Object::new(SoukPackage::static_type(), &[])
             .unwrap()
-            .downcast::<GsPackage>()
+            .downcast::<SoukPackage>()
             .unwrap();
 
         package
@@ -143,15 +158,15 @@ impl GsPackage {
     }
 }
 
-impl From<DbPackage> for GsPackage {
+impl From<DbPackage> for SoukPackage {
     fn from(db_package: DbPackage) -> Self {
-        let package = GsPackage::new();
-        let package_priv = GsPackagePrivate::from_instance(&package);
+        let package = SoukPackage::new();
+        let package_priv = SoukPackagePrivate::from_instance(&package);
 
         let kind = match db_package.kind.as_ref() {
-            "app" => GsPackageKind::App,
-            "runtime" => GsPackageKind::Runtime,
-            _ => GsPackageKind::Extension,
+            "app" => SoukPackageKind::App,
+            "runtime" => SoukPackageKind::Runtime,
+            _ => SoukPackageKind::Extension,
         };
 
         *package_priv.kind.borrow_mut() = kind;

@@ -5,11 +5,11 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::GsPackage;
 use crate::backend::Package;
+use crate::backend::SoukPackage;
 use crate::database::{queries, DisplayLevel};
 use crate::ui::utils;
-use crate::ui::GsPackageRow;
+use crate::ui::SoukPackageRow;
 
 pub struct SearchPage {
     pub widget: gtk::Box,
@@ -34,7 +34,7 @@ impl SearchPage {
         // As soon as we have a helper for this in libhandy/libadwaita we have to update
         // it here (e.g. HdyScrolledClamp)
 
-        let model = gio::ListStore::new(GsPackage::static_type());
+        let model = gio::ListStore::new(SoukPackage::static_type());
         let selection_model = gtk::NoSelection::new(Some(&model));
         listview.set_model(Some(&selection_model));
 
@@ -55,16 +55,16 @@ impl SearchPage {
     fn setup_widgets(self: Rc<Self>) {
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_, item| {
-            let row = GsPackageRow::new();
+            let row = SoukPackageRow::new();
             item.set_child(Some(&row));
         });
 
         factory.connect_bind(|_, item| {
             let child = item.get_child().unwrap();
-            let row = child.clone().downcast::<GsPackageRow>().unwrap();
+            let row = child.clone().downcast::<SoukPackageRow>().unwrap();
 
             let item = item.get_item().unwrap();
-            let package = item.clone().downcast::<GsPackage>().unwrap();
+            let package = item.clone().downcast::<SoukPackage>().unwrap();
             row.set_package(&package);
         });
         self.listview.set_factory(Some(&factory));

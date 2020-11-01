@@ -25,14 +25,16 @@ run_command(
 
 # Source code itself
 sources = files(
+  'backend/package/installed_info.rs',
+  'backend/package/mod.rs',
+  'backend/package/remote_info.rs',
   'backend/transaction_backend/host_backend.rs',
   'backend/transaction_backend/mod.rs',
   'backend/transaction_backend/sandbox_backend.rs',
   'backend/backend_message.rs',
   'backend/flatpak_backend.rs',
-  'backend/gpackage.rs',
   'backend/mod.rs',
-  'backend/package.rs',
+  'backend/legacy_package.rs',
   'backend/package_action.rs',
   'backend/package_transaction.rs',
   'backend/package_transaction.rs',

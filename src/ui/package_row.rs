@@ -10,16 +10,16 @@ use libhandy::prelude::*;
 use std::cell::RefCell;
 
 use crate::app::{Action, SoukApplication, SoukApplicationPrivate};
-use crate::backend::GsPackage;
+use crate::backend::SoukPackage;
 use crate::config;
 use crate::ui::utils;
 
-pub struct GsPackageRowPrivate {
+pub struct SoukPackageRowPrivate {
     builder: gtk::Builder,
 }
 
-impl ObjectSubclass for GsPackageRowPrivate {
-    const NAME: &'static str = "GsPackageRow";
+impl ObjectSubclass for SoukPackageRowPrivate {
+    const NAME: &'static str = "SoukPackageRow";
     type ParentType = gtk::Box;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -33,40 +33,40 @@ impl ObjectSubclass for GsPackageRowPrivate {
     }
 }
 
-impl ObjectImpl for GsPackageRowPrivate {}
+impl ObjectImpl for SoukPackageRowPrivate {}
 
-impl WidgetImpl for GsPackageRowPrivate {}
+impl WidgetImpl for SoukPackageRowPrivate {}
 
-impl BoxImpl for GsPackageRowPrivate {}
+impl BoxImpl for SoukPackageRowPrivate {}
 
 glib_wrapper! {
-    pub struct GsPackageRow(
-        Object<subclass::simple::InstanceStruct<GsPackageRowPrivate>,
-        subclass::simple::ClassStruct<GsPackageRowPrivate>,
+    pub struct SoukPackageRow(
+        Object<subclass::simple::InstanceStruct<SoukPackageRowPrivate>,
+        subclass::simple::ClassStruct<SoukPackageRowPrivate>,
         GsApplicationWindowClass>)
         @extends gtk::Widget, gtk::Box;
 
     match fn {
-        get_type => || GsPackageRowPrivate::get_type().to_glib(),
+        get_type => || SoukPackageRowPrivate::get_type().to_glib(),
     }
 }
 
-impl GsPackageRow {
+impl SoukPackageRow {
     pub fn new() -> Self {
-        let row = glib::Object::new(GsPackageRow::static_type(), &[])
+        let row = glib::Object::new(SoukPackageRow::static_type(), &[])
             .unwrap()
-            .downcast::<GsPackageRow>()
+            .downcast::<SoukPackageRow>()
             .unwrap();
 
-        let self_ = GsPackageRowPrivate::from_instance(&row);
+        let self_ = SoukPackageRowPrivate::from_instance(&row);
         get_widget!(self_.builder, gtk::Box, package_row);
         row.append(&package_row);
 
         row
     }
 
-    pub fn set_package(&self, package: &GsPackage) {
-        let self_ = GsPackageRowPrivate::from_instance(self);
+    pub fn set_package(&self, package: &SoukPackage) {
+        let self_ = SoukPackageRowPrivate::from_instance(self);
         get_widget!(self_.builder, gtk::Label, title_label);
         get_widget!(self_.builder, gtk::Label, summary_label);
         get_widget!(self_.builder, gtk::Image, icon_image);

@@ -8,7 +8,7 @@ use libhandy::prelude::*;
 
 use std::path::PathBuf;
 
-use crate::backend::{GsPackage, Package, PackageKind};
+use crate::backend::{Package, PackageKind, SoukPackage};
 
 pub fn set_label_translatable_string(label: &gtk::Label, text: Option<TranslatableString>) {
     match text {
@@ -98,7 +98,7 @@ pub fn set_icon(package: &dyn Package, image: &gtk::Image, size: i32) {
     }
 }
 
-pub fn set_gs_icon(package: &GsPackage, image: &gtk::Image, size: i32) {
+pub fn set_gs_icon(package: &SoukPackage, image: &gtk::Image, size: i32) {
     let remote: String = package
         .get_property("remote")
         .unwrap()
