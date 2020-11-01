@@ -4,10 +4,9 @@
          xmlns:gnome="http://api.gnome.org/doap-extensions#"
          xmlns="http://usefulinc.com/ns/doap#">
 
-  <name xml:lang="en">souk</name>
+  <name xml:lang="en">Souk</name>
   <category rdf:resource="http://api.gnome.org/doap-extensions#apps" />
   <programming-language>Rust</programming-language>
-
   <homepage rdf:resource="https://gitlab.gnome.org/haecker-felix/souk" />
   <download-page rdf:resource="https://gitlab.gnome.org/haecker-felix/souk/" />
   <bug-database rdf:resource="https://gitlab.gnome.org/haecker-felix/souk/-/issues" />
@@ -27,8 +26,6 @@
       <gnome:userid>BrainBlasted</gnome:userid>
     </foaf:Person>
   </maintainer>
-
-  <license rdf:resource="http://www.gnu.org/licenses/gpl-2.0.txt" />
 
 </Project>
 
