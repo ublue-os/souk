@@ -13,10 +13,7 @@ use crate::database::{package_database, DisplayLevel};
 
 pub struct FlatpakBackend {
     pub system_installation: Installation,
-    pub user_installation: Installation,
-
     system_monitor: gio::FileMonitor,
-    user_monitor: gio::FileMonitor,
 
     transaction_backend: Box<dyn TransactionBackend>,
     broadcast: BroadcastChannel<BackendMessage>,
@@ -27,16 +24,7 @@ impl FlatpakBackend {
         let system_installation =
             flatpak::Installation::new_system(Some(&gio::Cancellable::new())).unwrap();
 
-        let mut user_path = glib::get_home_dir().unwrap();
-        user_path.push(".local");
-        user_path.push("share");
-        user_path.push("flatpak");
-        let user_installation = flatpak::Installation::new_for_path(
-            &gio::File::new_for_path(user_path),
-            true,
-            Some(&gio::Cancellable::new()),
-        )
-        .unwrap();
+        // TODO: Add support for user installations
 
         let broadcast = BroadcastChannel::new();
 
@@ -49,15 +37,10 @@ impl FlatpakBackend {
         let system_monitor = system_installation
             .create_monitor(Some(&gio::Cancellable::new()))
             .unwrap();
-        let user_monitor = user_installation
-            .create_monitor(Some(&gio::Cancellable::new()))
-            .unwrap();
 
         let backend = Rc::new(Self {
             system_installation,
-            user_installation,
             system_monitor,
-            user_monitor,
             transaction_backend,
             broadcast,
         });
@@ -72,10 +55,6 @@ impl FlatpakBackend {
         self.system_monitor.connect_changed(|_, _, _, _| {
             debug!("Detected change on system installation.");
         });
-
-        self.user_monitor.connect_changed(|_, _, _, _| {
-            debug!("Detected change on user installation.");
-        });
     }
 
     pub fn get_channel(self: Rc<Self>) -> BroadcastChannel<BackendMessage> {
@@ -87,14 +66,9 @@ impl FlatpakBackend {
             .system_installation
             .list_installed_refs(Some(&gio::Cancellable::new()))
             .unwrap();
-        let mut user_refs = self
-            .user_installation
-            .list_installed_refs(Some(&gio::Cancellable::new()))
-            .unwrap();
 
         let mut installed_refs = Vec::new();
         installed_refs.append(&mut system_refs);
-        installed_refs.append(&mut user_refs);
 
         installed_refs
     }

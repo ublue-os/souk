@@ -86,14 +86,15 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
         remotes.insert(remote.get_name().unwrap().to_string(), remote);
     }
 
+    // TODO: Add support for user remotes
     // Get user remotes
-    let user_remotes = flatpak_backend
-        .user_installation
-        .list_remotes(Some(&gio::Cancellable::new()))
-        .unwrap();
-    for remote in user_remotes {
-        remotes.insert(remote.get_name().unwrap().to_string(), remote);
-    }
+    //let user_remotes = flatpak_backend
+    //    .user_installation
+    //    .list_remotes(Some(&gio::Cancellable::new()))
+    //    .unwrap();
+    //for remote in user_remotes {
+    //    remotes.insert(remote.get_name().unwrap().to_string(), remote);
+    //}
 
     for remote in remotes {
         let url = remote.1.get_url().unwrap().to_string();
