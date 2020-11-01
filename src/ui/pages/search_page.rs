@@ -13,6 +13,10 @@ use crate::ui::GsPackageRow;
 
 pub struct SearchPage {
     pub widget: gtk::Box,
+    listview: gtk::ListView,
+
+    model: gio::ListStore,
+    selection_model: gtk::NoSelection,
 
     builder: gtk::Builder,
     sender: Sender<Action>,
@@ -22,9 +26,23 @@ impl SearchPage {
     pub fn new(sender: Sender<Action>) -> Rc<Self> {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/search_page.ui");
         get_widget!(builder, gtk::Box, search_page);
+        get_widget!(builder, gtk::ListView, listview);
+
+        // TODO: Currently we're adding a GtkListView to a HdyClamp
+        // This doesn't make any sense and defeats the purpose of using a GtkListView
+        // since with using a HdyClamp all rows are getting rendered.
+        // As soon as we have a helper for this in libhandy/libadwaita we have to update
+        // it here (e.g. HdyScrolledClamp)
+
+        let model = gio::ListStore::new(GsPackage::static_type());
+        let selection_model = gtk::NoSelection::new(Some(&model));
+        listview.set_model(Some(&selection_model));
 
         let search_page = Rc::new(Self {
             widget: search_page,
+            listview,
+            model,
+            selection_model,
             builder,
             sender,
         });
@@ -35,17 +53,12 @@ impl SearchPage {
     }
 
     fn setup_widgets(self: Rc<Self>) {
-        get_widget!(self.builder, gtk::ListView, listview);
-
-        let model = gio::ListStore::new(GsPackage::static_type());
-        let selection_model = gtk::NoSelection::new(Some(&model));
-        listview.set_model(Some(&selection_model));
-
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_, item| {
             let row = GsPackageRow::new();
             item.set_child(Some(&row));
         });
+
         factory.connect_bind(|_, item| {
             let child = item.get_child().unwrap();
             let row = child.clone().downcast::<GsPackageRow>().unwrap();
@@ -54,19 +67,25 @@ impl SearchPage {
             let package = item.clone().downcast::<GsPackage>().unwrap();
             row.set_package(&package);
         });
-        listview.set_factory(Some(&factory));
+        self.listview.set_factory(Some(&factory));
+    }
 
+    fn setup_signals(self: Rc<Self>) {
         get_widget!(self.builder, gtk::SearchEntry, search_entry);
         search_entry.connect_search_changed(clone!(@weak self as this => move|entry|{
             let text = entry.get_text().unwrap().to_string();
             let packages = queries::get_packages_by_name(text, 10000, DisplayLevel::Apps).unwrap();
-            model.remove_all();
+            this.model.remove_all();
 
             for package in packages{
-                model.append(&package);
+                this.model.append(&package);
             }
         }));
-    }
 
-    fn setup_signals(self: Rc<Self>) {}
+        self.listview
+            .connect_activate(clone!(@weak self as this => move|_, pos|{
+                //send!(sender, Action::ViewSet(View::PackageDetails(Box::new(base_package.clone()))));
+                debug!("activated");
+            }));
+    }
 }

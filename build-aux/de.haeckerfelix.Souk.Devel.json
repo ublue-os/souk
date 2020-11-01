@@ -25,7 +25,6 @@
             "--share=network"
         ],
         "env" : {
-            "RUSTFLAGS" : "--remap-path-prefix =../",
             "CARGO_HOME" : "/run/build/souk/cargo",
             "RUST_BACKTRACE" : "1",
             "MOUNT_FUSE_PATH" : "../tmp/"

@@ -53,9 +53,3 @@
 	border-top-left-radius: 0px;
 	border-top-right-radius: 0px;
 }
-
-.package-list .view {
-  border-left: solid 1px;
-  border-right: solid 1px;
-  border-color: @borders;
-}

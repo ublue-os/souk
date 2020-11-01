@@ -9,7 +9,7 @@ use libhandy::prelude::*;
 
 use std::cell::RefCell;
 
-use crate::app::{Action, GsApplication, GsApplicationPrivate};
+use crate::app::{Action, SoukApplication, SoukApplicationPrivate};
 use crate::backend::GsPackage;
 use crate::config;
 use crate::ui::utils;
@@ -27,7 +27,7 @@ impl ObjectSubclass for GsPackageRowPrivate {
     glib_object_subclass!();
 
     fn new() -> Self {
-        let builder = gtk::Builder::from_resource("/org/gnome/Store/gtk/package_row.ui");
+        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/package_row.ui");
 
         Self { builder }
     }
