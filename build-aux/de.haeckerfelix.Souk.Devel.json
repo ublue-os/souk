@@ -16,8 +16,10 @@
         "--filesystem=~/.local/share/flatpak:ro",
         "--filesystem=/var/lib/flatpak:ro",
         "--talk-name=org.freedesktop.Flatpak",
+        "--talk-name=org.a11y.Bus",
         "--env=RUST_LOG=souk=debug",
-        "--env=G_MESSAGES_DEBUG=none"
+        "--env=G_MESSAGES_DEBUG=none",
+        "--env=GOBJECT_DEBUG=instance-count"
     ],
     "build-options": {
         "append-path" : "/usr/lib/sdk/rust-stable/bin",

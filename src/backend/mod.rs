@@ -7,6 +7,7 @@ mod flatpak_backend;
 pub use flatpak_backend::FlatpakBackend;
 
 mod package;
+pub use package::SoukInstalledInfo;
 pub use package::SoukPackage;
 
 mod legacy_package;

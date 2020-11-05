@@ -1,5 +1,8 @@
 mod installed_info;
+pub use installed_info::SoukInstalledInfo;
+
 mod remote_info;
+pub use remote_info::SoukRemoteInfo;
 
 use appstream::Collection;
 use appstream::Component;
@@ -38,22 +41,11 @@ pub struct SoukPackagePrivate {
     name: RefCell<String>,
     arch: RefCell<String>,
     branch: RefCell<String>,
-    commit: RefCell<String>,
     remote: RefCell<String>,
-    appdata: RefCell<String>,
+
+    remote_info: RefCell<Option<SoukRemoteInfo>>,
+    installed_info: RefCell<Option<SoukInstalledInfo>>,
 }
-
-// SoukInstalledInfo
-// - appdata
-// - commit
-// - installed_size
-// - deploy_dir
-
-// SoukRemoteInfo
-// - appdata
-// - commit
-// - download_size
-// - installed_size
 
 static PROPERTIES: [subclass::Property; 7] = [
     subclass::Property("kind", |kind| {
@@ -75,19 +67,25 @@ static PROPERTIES: [subclass::Property; 7] = [
     subclass::Property("branch", |branch| {
         glib::ParamSpec::string(branch, "Branch", "Branch", None, glib::ParamFlags::READABLE)
     }),
-    subclass::Property("commit", |commit| {
-        glib::ParamSpec::string(commit, "Commit", "Commit", None, glib::ParamFlags::READABLE)
-    }),
     subclass::Property("remote", |remote| {
         glib::ParamSpec::string(remote, "Remote", "Remote", None, glib::ParamFlags::READABLE)
     }),
-    subclass::Property("appdata", |appdata| {
-        glib::ParamSpec::string(
-            appdata,
-            "AppData",
-            "AppData",
-            None,
-            glib::ParamFlags::READABLE,
+    subclass::Property("remote_info", |remote_info| {
+        glib::ParamSpec::object(
+            remote_info,
+            "Remote Information",
+            "Remote Information",
+            SoukRemoteInfo::static_type(),
+            glib::ParamFlags::READWRITE,
+        )
+    }),
+    subclass::Property("installed_info", |installed_info| {
+        glib::ParamSpec::object(
+            installed_info,
+            "Installed Information",
+            "Installed Information",
+            SoukInstalledInfo::static_type(),
+            glib::ParamFlags::READWRITE,
         )
     }),
 ];
@@ -110,6 +108,22 @@ impl ObjectSubclass for SoukPackagePrivate {
 }
 
 impl ObjectImpl for SoukPackagePrivate {
+    fn set_property(&self, _obj: &glib::Object, id: usize, value: &glib::Value) {
+        let prop = &PROPERTIES[id];
+
+        match *prop {
+            subclass::Property("remote_info", ..) => {
+                let remote_info = value.get().unwrap();
+                *self.remote_info.borrow_mut() = remote_info;
+            }
+            subclass::Property("installed_info", ..) => {
+                let installed_info = value.get().unwrap();
+                *self.installed_info.borrow_mut() = installed_info;
+            }
+            _ => unimplemented!(),
+        }
+    }
+
     fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
         let prop = &PROPERTIES[id];
 
@@ -118,9 +132,9 @@ impl ObjectImpl for SoukPackagePrivate {
             subclass::Property("name", ..) => Ok(self.name.borrow().to_value()),
             subclass::Property("arch", ..) => Ok(self.arch.borrow().to_value()),
             subclass::Property("branch", ..) => Ok(self.branch.borrow().to_value()),
-            subclass::Property("commit", ..) => Ok(self.commit.borrow().to_value()),
             subclass::Property("remote", ..) => Ok(self.remote.borrow().to_value()),
-            subclass::Property("appdata", ..) => Ok(self.appdata.borrow().to_value()),
+            subclass::Property("remote_info", ..) => Ok(self.remote_info.borrow().to_value()),
+            subclass::Property("installed_info", ..) => Ok(self.installed_info.borrow().to_value()),
             _ => unimplemented!(),
         }
     }
@@ -148,13 +162,14 @@ impl SoukPackage {
     }
 
     pub fn appdata(&self) -> Option<Component> {
-        let xml: String = self
+        /*let xml: String = self
             .get_property("appdata")
             .unwrap()
             .get()
             .unwrap()
             .unwrap();
-        serde_json::from_str(&xml).ok()
+        serde_json::from_str(&xml).ok()*/
+        None
     }
 }
 
@@ -170,12 +185,13 @@ impl From<DbPackage> for SoukPackage {
         };
 
         *package_priv.kind.borrow_mut() = kind;
-        *package_priv.name.borrow_mut() = db_package.name;
-        *package_priv.arch.borrow_mut() = db_package.arch;
-        *package_priv.branch.borrow_mut() = db_package.branch;
-        *package_priv.commit.borrow_mut() = db_package.commit;
-        *package_priv.remote.borrow_mut() = db_package.remote;
-        *package_priv.appdata.borrow_mut() = db_package.appdata;
+        *package_priv.name.borrow_mut() = db_package.name.clone();
+        *package_priv.arch.borrow_mut() = db_package.arch.clone();
+        *package_priv.branch.borrow_mut() = db_package.branch.clone();
+        *package_priv.remote.borrow_mut() = db_package.remote.clone();
+
+        let remote_info = SoukRemoteInfo::new(&db_package);
+        *package_priv.remote_info.borrow_mut() = Some(remote_info);
 
         package
     }
