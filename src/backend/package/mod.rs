@@ -177,14 +177,18 @@ impl SoukPackage {
     }
 
     pub fn appdata(&self) -> Option<Component> {
-        /*let xml: String = self
-            .get_property("appdata")
-            .unwrap()
-            .get()
-            .unwrap()
-            .unwrap();
-        serde_json::from_str(&xml).ok()*/
-        None
+        let self_ = SoukPackagePrivate::from_instance(self);
+
+        if self_.remote_info.borrow().is_some() {
+            self_.remote_info.borrow().as_ref().unwrap().get_appdata()
+        } else {
+            self_
+                .installed_info
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .get_appdata()
+        }
     }
 }
 
@@ -221,20 +225,6 @@ impl From<InstalledRef> for SoukPackage {
         keyfile
             .load_from_bytes(&keyfile_bytes, glib::KeyFileFlags::NONE)
             .unwrap();
-
-        // Load appdata
-        let mut path = PathBuf::new();
-        let appstream_dir = installed_ref.get_deploy_dir().unwrap().to_string();
-        path.push(appstream_dir);
-        path.push(&format!(
-            "files/share/app-info/xmls/{}.xml.gz",
-            installed_ref.get_name().unwrap().to_string()
-        ));
-
-        // Parse appstream data
-        let appdata = Collection::from_gzipped(path.clone())
-            .map(|appdata| appdata.components[0].clone())
-            .ok();
 
         let package = SoukPackage::new();
         let package_priv = SoukPackagePrivate::from_instance(&package);

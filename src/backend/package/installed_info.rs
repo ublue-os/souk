@@ -1,4 +1,4 @@
-use appstream::Component;
+use appstream::{Collection, Component};
 use flatpak::prelude::*;
 use flatpak::InstalledRef;
 use gio::prelude::*;
@@ -7,25 +7,17 @@ use glib::subclass::prelude::*;
 use glib::translate::*;
 
 use std::cell::RefCell;
+use std::path::PathBuf;
 
 #[derive(Default)]
 pub struct SoukInstalledInfoPrivate {
-    appdata: RefCell<String>,
+    appdata: RefCell<Option<Component>>,
     commit: RefCell<String>,
     installed_size: RefCell<u64>,
     deploy_dir: RefCell<String>,
 }
 
-static PROPERTIES: [subclass::Property; 4] = [
-    subclass::Property("appdata", |appdata| {
-        glib::ParamSpec::string(
-            appdata,
-            "AppData",
-            "AppData",
-            None,
-            glib::ParamFlags::READABLE,
-        )
-    }),
+static PROPERTIES: [subclass::Property; 3] = [
     subclass::Property("commit", |commit| {
         glib::ParamSpec::string(commit, "Commit", "Commit", None, glib::ParamFlags::READABLE)
     }),
@@ -73,7 +65,6 @@ impl ObjectImpl for SoukInstalledInfoPrivate {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("appdata", ..) => Ok(self.appdata.borrow().to_value()),
             subclass::Property("commit", ..) => Ok(self.commit.borrow().to_value()),
             subclass::Property("installed_size", ..) => Ok(self.installed_size.borrow().to_value()),
             subclass::Property("deploy_dir", ..) => Ok(self.deploy_dir.borrow().to_value()),
@@ -100,7 +91,22 @@ impl SoukInstalledInfo {
             .downcast::<SoukInstalledInfo>()
             .unwrap();
 
+        // Load appdata
+        let mut path = PathBuf::new();
+        let appstream_dir = installed_ref.get_deploy_dir().unwrap().to_string();
+        path.push(appstream_dir);
+        path.push(&format!(
+            "files/share/app-info/xmls/{}.xml.gz",
+            installed_ref.get_name().unwrap().to_string()
+        ));
+
+        // Parse appstream data
+        let appdata = Collection::from_gzipped(path.clone())
+            .map(|appdata| appdata.components[0].clone())
+            .ok();
+
         let info_priv = SoukInstalledInfoPrivate::from_instance(&info);
+        *info_priv.appdata.borrow_mut() = appdata;
         *info_priv.commit.borrow_mut() = installed_ref.get_latest_commit().unwrap().to_string();
         *info_priv.installed_size.borrow_mut() = installed_ref.get_installed_size();
         *info_priv.deploy_dir.borrow_mut() = installed_ref.get_deploy_dir().unwrap().to_string();
@@ -108,13 +114,8 @@ impl SoukInstalledInfo {
         info
     }
 
-    pub fn appdata(&self) -> Option<Component> {
-        let xml: String = self
-            .get_property("appdata")
-            .unwrap()
-            .get()
-            .unwrap()
-            .unwrap();
-        serde_json::from_str(&xml).ok()
+    pub fn get_appdata(&self) -> Option<Component> {
+        let self_ = SoukInstalledInfoPrivate::from_instance(self);
+        self_.appdata.borrow().clone()
     }
 }

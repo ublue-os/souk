@@ -16,16 +16,7 @@ pub struct SoukRemoteInfoPrivate {
     download_size: RefCell<u64>,
 }
 
-static PROPERTIES: [subclass::Property; 4] = [
-    subclass::Property("appdata", |appdata| {
-        glib::ParamSpec::string(
-            appdata,
-            "AppData",
-            "AppData",
-            None,
-            glib::ParamFlags::READABLE,
-        )
-    }),
+static PROPERTIES: [subclass::Property; 3] = [
     subclass::Property("commit", |commit| {
         glib::ParamSpec::string(commit, "Commit", "Commit", None, glib::ParamFlags::READABLE)
     }),
@@ -75,7 +66,6 @@ impl ObjectImpl for SoukRemoteInfoPrivate {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("appdata", ..) => Ok(self.appdata.borrow().to_value()),
             subclass::Property("commit", ..) => Ok(self.commit.borrow().to_value()),
             subclass::Property("installed_size", ..) => Ok(self.installed_size.borrow().to_value()),
             subclass::Property("download_size", ..) => Ok(self.download_size.borrow().to_value()),
@@ -103,6 +93,7 @@ impl SoukRemoteInfo {
             .unwrap();
 
         let info_priv = SoukRemoteInfoPrivate::from_instance(&info);
+        *info_priv.appdata.borrow_mut() = db_package.appdata.clone();
         *info_priv.commit.borrow_mut() = db_package.commit.clone();
         *info_priv.installed_size.borrow_mut() = db_package.installed_size.clone() as u64;
         *info_priv.download_size.borrow_mut() = db_package.download_size.clone() as u64;
@@ -110,13 +101,8 @@ impl SoukRemoteInfo {
         info
     }
 
-    pub fn appdata(&self) -> Option<Component> {
-        let xml: String = self
-            .get_property("appdata")
-            .unwrap()
-            .get()
-            .unwrap()
-            .unwrap();
-        serde_json::from_str(&xml).ok()
+    pub fn get_appdata(&self) -> Option<Component> {
+        let self_ = SoukRemoteInfoPrivate::from_instance(self);
+        serde_json::from_str(&self_.appdata.borrow()).ok()
     }
 }
