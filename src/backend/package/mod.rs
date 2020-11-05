@@ -1,7 +1,6 @@
 mod installed_info;
-pub use installed_info::SoukInstalledInfo;
-
 mod remote_info;
+pub use installed_info::SoukInstalledInfo;
 pub use remote_info::SoukRemoteInfo;
 
 use appstream::Collection;
@@ -27,7 +26,7 @@ use crate::database::DbPackage;
 #[derive(Debug, Eq, PartialEq, Clone, Copy, GEnum)]
 #[repr(u32)]
 #[genum(type_name = "SoukPackageKind")]
-enum SoukPackageKind {
+pub enum SoukPackageKind {
     App = 0,
     Runtime = 1,
     Extension = 2,
