@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::backend::{
-    BackendMessage, BasePackage, FlatpakBackend, Package, PackageKind, PackageTransaction,
+    BackendMessage, BasePackage, Package, PackageKind, PackageTransaction, SoukFlatpakBackend,
     TransactionMode,
 };
 use crate::ui::utils;
@@ -15,12 +15,12 @@ pub struct PackageActionButton {
     package: BasePackage,
     transaction: RefCell<Option<Arc<PackageTransaction>>>,
 
-    flatpak_backend: Rc<FlatpakBackend>,
+    flatpak_backend: SoukFlatpakBackend,
     builder: gtk::Builder,
 }
 
 impl PackageActionButton {
-    pub fn new(flatpak_backend: Rc<FlatpakBackend>, package: &dyn Package) -> Rc<Self> {
+    pub fn new(flatpak_backend: SoukFlatpakBackend, package: &dyn Package) -> Rc<Self> {
         let builder =
             gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/package_action_button.ui");
         get_widget!(builder, gtk::Box, package_action_button);

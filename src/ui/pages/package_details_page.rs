@@ -5,15 +5,15 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::FlatpakBackend;
 use crate::backend::Package;
+use crate::backend::SoukFlatpakBackend;
 use crate::database::{queries, DisplayLevel};
 use crate::ui::package_widgets::{PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
 use crate::ui::{utils, PackageActionButton, PackageTile};
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
-    flatpak_backend: Rc<FlatpakBackend>,
+    flatpak_backend: SoukFlatpakBackend,
 
     package_widgets: Vec<Box<dyn PackageWidget>>,
 
@@ -22,7 +22,7 @@ pub struct PackageDetailsPage {
 }
 
 impl PackageDetailsPage {
-    pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
+    pub fn new(sender: Sender<Action>, flatpak_backend: SoukFlatpakBackend) -> Rc<Self> {
         let builder =
             gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/package_details_page.ui");
         get_widget!(builder, gtk::Box, package_details_page);

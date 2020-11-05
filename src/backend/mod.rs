@@ -4,7 +4,7 @@ mod backend_message;
 pub use backend_message::BackendMessage;
 
 mod flatpak_backend;
-pub use flatpak_backend::FlatpakBackend;
+pub use flatpak_backend::SoukFlatpakBackend;
 
 mod package;
 pub use package::SoukInstalledInfo;

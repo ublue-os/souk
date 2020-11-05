@@ -1,7 +1,11 @@
 use broadcaster::BroadcastChannel;
 use flatpak::{Installation, InstallationExt, InstalledRef, RefExt};
 use gio::prelude::*;
+use glib::subclass;
+use glib::subclass::prelude::*;
+use glib::translate::*;
 
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -11,58 +15,80 @@ use crate::backend::{
 };
 use crate::database::{package_database, DisplayLevel};
 
-pub struct FlatpakBackend {
+pub struct SoukFlatpakBackendPrivate {
     pub system_installation: Installation,
-    system_monitor: gio::FileMonitor,
 
     transaction_backend: Box<dyn TransactionBackend>,
     broadcast: BroadcastChannel<BackendMessage>,
 }
 
-impl FlatpakBackend {
-    pub fn new() -> Rc<Self> {
-        let system_installation =
-            flatpak::Installation::new_system(Some(&gio::Cancellable::new())).unwrap();
+impl ObjectSubclass for SoukFlatpakBackendPrivate {
+    const NAME: &'static str = "SoukFlatpakBackend";
+    type ParentType = glib::Object;
+    type Instance = subclass::simple::InstanceStruct<Self>;
+    type Class = subclass::simple::ClassStruct<Self>;
 
+    glib_object_subclass!();
+
+    fn new() -> Self {
         // TODO: Add support for user installations
-
+        let system_installation =
+            flatpak::Installation::new_system(None::<&gio::Cancellable>).unwrap();
         let broadcast = BroadcastChannel::new();
 
-        let transaction_backend = if Self::is_sandboxed() {
+        let transaction_backend = if SoukFlatpakBackend::is_sandboxed() {
             Box::new(SandboxBackend::new())
         } else {
             unimplemented!("Host backend not implemented yet");
         };
 
-        let system_monitor = system_installation
-            .create_monitor(Some(&gio::Cancellable::new()))
-            .unwrap();
-
-        let backend = Rc::new(Self {
+        Self {
             system_installation,
-            system_monitor,
             transaction_backend,
             broadcast,
-        });
+        }
+    }
+}
+
+impl ObjectImpl for SoukFlatpakBackendPrivate {}
+
+glib_wrapper! {
+    pub struct SoukFlatpakBackend(
+        Object<subclass::simple::InstanceStruct<SoukFlatpakBackendPrivate>,
+        subclass::simple::ClassStruct<SoukFlatpakBackendPrivate>,
+        GsApplicationWindowClass>);
+
+    match fn {
+        get_type => || SoukFlatpakBackendPrivate::get_type().to_glib(),
+    }
+}
+
+impl SoukFlatpakBackend {
+    pub fn new() -> Self {
+        let backend = glib::Object::new(SoukFlatpakBackend::static_type(), &[])
+            .unwrap()
+            .downcast::<SoukFlatpakBackend>()
+            .unwrap();
 
         package_database::init(backend.clone());
 
-        backend.clone().setup_signals();
         backend
     }
 
-    fn setup_signals(self: Rc<Self>) {
-        self.system_monitor.connect_changed(|_, _, _, _| {
-            debug!("Detected change on system installation.");
-        });
+    pub fn get_system_installation(&self) -> flatpak::Installation {
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        self_.system_installation.clone()
     }
 
-    pub fn get_channel(self: Rc<Self>) -> BroadcastChannel<BackendMessage> {
-        self.broadcast.clone()
+    pub fn get_channel(&self) -> BroadcastChannel<BackendMessage> {
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        self_.broadcast.clone()
     }
 
-    pub fn get_installed_refs(self: Rc<Self>) -> Vec<InstalledRef> {
-        let mut system_refs = self
+    pub fn get_installed_refs(&self) -> Vec<InstalledRef> {
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+
+        let mut system_refs = self_
             .system_installation
             .list_installed_refs(Some(&gio::Cancellable::new()))
             .unwrap();
@@ -73,7 +99,7 @@ impl FlatpakBackend {
         installed_refs
     }
 
-    pub fn get_installed_packages(self: Rc<Self>, level: DisplayLevel) -> Vec<InstalledPackage> {
+    pub fn get_installed_packages(&self, level: DisplayLevel) -> Vec<InstalledPackage> {
         let mut installed_packages = Vec::new();
 
         for installed_ref in self.get_installed_refs() {
@@ -95,7 +121,7 @@ impl FlatpakBackend {
         installed_packages
     }
 
-    pub fn is_package_installed(self: Rc<Self>, package: &dyn Package) -> bool {
+    pub fn is_package_installed(&self, package: &dyn Package) -> bool {
         self.get_installed_refs()
             .iter()
             .map(|r| r.get_commit().unwrap().to_string())
@@ -103,27 +129,31 @@ impl FlatpakBackend {
             .map_or(false, |_| true)
     }
 
-    pub fn install_package(self: Rc<Self>, package: &dyn Package) {
+    pub fn install_package(&self, package: &dyn Package) {
         let transaction =
             PackageTransaction::new(package.base_package().clone(), PackageAction::Install);
         self.clone()
             .send_message(BackendMessage::PackageTransaction(transaction.clone()));
 
-        self.transaction_backend
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        self_
+            .transaction_backend
             .add_package_transaction(transaction);
     }
 
-    pub fn uninstall_package(self: Rc<Self>, package: &dyn Package) {
+    pub fn uninstall_package(&self, package: &dyn Package) {
         let transaction =
             PackageTransaction::new(package.base_package().clone(), PackageAction::Uninstall);
         self.clone()
             .send_message(BackendMessage::PackageTransaction(transaction.clone()));
 
-        self.transaction_backend
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        self_
+            .transaction_backend
             .add_package_transaction(transaction);
     }
 
-    pub fn launch_package(self: Rc<Self>, package: &dyn Package) {
+    pub fn launch_package(&self, package: &dyn Package) {
         match std::process::Command::new("flatpak-spawn")
             .arg("--host")
             .arg("flatpak")
@@ -140,24 +170,27 @@ impl FlatpakBackend {
         };
     }
 
-    pub fn cancel_package_transaction(self: Rc<Self>, transaction: Arc<PackageTransaction>) {
-        self.transaction_backend
+    pub fn cancel_package_transaction(&self, transaction: Arc<PackageTransaction>) {
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        self_
+            .transaction_backend
             .cancel_package_transaction(transaction);
     }
 
-    pub fn get_active_transaction(
-        self: Rc<Self>,
-        package: &dyn Package,
-    ) -> Option<Arc<PackageTransaction>> {
-        self.transaction_backend
+    pub fn get_active_transaction(&self, package: &dyn Package) -> Option<Arc<PackageTransaction>> {
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        self_
+            .transaction_backend
             .get_active_transaction(&package.base_package())
     }
 
-    fn send_message(self: Rc<Self>, message: BackendMessage) {
-        let future = async move {
-            self.broadcast.send(&message).await.unwrap();
-        };
-        spawn!(future);
+    fn send_message(&self, message: BackendMessage) {
+        // TODO: Port this to a gtk-rs signal / callback
+        //let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        //let future = async move {
+        //    self_.broadcast.send(&message).await.unwrap();
+        //};
+        //spawn!(future);
     }
 
     fn is_sandboxed() -> bool {

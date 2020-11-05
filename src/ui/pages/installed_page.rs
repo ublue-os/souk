@@ -5,20 +5,20 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::Action;
-use crate::backend::{BackendMessage, FlatpakBackend, PackageTransaction, TransactionMode};
+use crate::backend::{BackendMessage, PackageTransaction, SoukFlatpakBackend, TransactionMode};
 use crate::database::DisplayLevel;
 use crate::ui::PackageTile;
 
 pub struct InstalledPage {
     pub widget: gtk::Box,
-    flatpak_backend: Rc<FlatpakBackend>,
+    flatpak_backend: SoukFlatpakBackend,
 
     builder: gtk::Builder,
     sender: Sender<Action>,
 }
 
 impl InstalledPage {
-    pub fn new(sender: Sender<Action>, flatpak_backend: Rc<FlatpakBackend>) -> Rc<Self> {
+    pub fn new(sender: Sender<Action>, flatpak_backend: SoukFlatpakBackend) -> Rc<Self> {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/installed_page.ui");
         get_widget!(builder, gtk::Box, installed_page);
 

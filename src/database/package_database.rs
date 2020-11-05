@@ -10,8 +10,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::SystemTime;
 
-use crate::backend::FlatpakBackend;
 use crate::backend::RemotePackage;
+use crate::backend::SoukFlatpakBackend;
 use crate::database::queries;
 use crate::database::DbInfo;
 
@@ -22,7 +22,7 @@ lazy_static! {
     pub static ref DB_LIFETIME: i64 = 3;
 }
 
-pub fn init(flatpak_backend: Rc<FlatpakBackend>) {
+pub fn init(flatpak_backend: SoukFlatpakBackend) {
     if needs_rebuilt() {
         debug!("Database needs rebuilt.");
         rebuild(flatpak_backend);
@@ -69,7 +69,7 @@ pub fn needs_rebuilt() -> bool {
 }
 
 // TODO: Make this asynchronous, and report parsing progress to UI
-pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
+pub fn rebuild(flatpak_backend: SoukFlatpakBackend) {
     debug!("Rebuild package database.");
 
     // Delete previous data
@@ -79,7 +79,7 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
 
     // Get system remotes
     let system_remotes = flatpak_backend
-        .system_installation
+        .get_system_installation()
         .list_remotes(Some(&gio::Cancellable::new()))
         .unwrap();
     for remote in system_remotes {
@@ -114,7 +114,7 @@ pub fn rebuild(flatpak_backend: Rc<FlatpakBackend>) {
 
         // Get all refs from remote
         let refs = flatpak_backend
-            .system_installation
+            .get_system_installation()
             .list_remote_refs_sync(&remote_name, Some(&gio::Cancellable::new()));
 
         if let Err(err) = refs {

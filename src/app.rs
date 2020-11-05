@@ -11,7 +11,7 @@ use std::cell::RefCell;
 use std::env;
 use std::rc::Rc;
 
-use crate::backend::FlatpakBackend;
+use crate::backend::SoukFlatpakBackend;
 use crate::config;
 use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage, SearchPage};
 use crate::ui::{SoukApplicationWindow, View};
@@ -26,7 +26,7 @@ pub struct SoukApplicationPrivate {
     sender: Sender<Action>,
     receiver: RefCell<Option<Receiver<Action>>>,
 
-    flatpak_backend: Rc<FlatpakBackend>,
+    flatpak_backend: SoukFlatpakBackend,
 
     pub explore_page: Rc<ExplorePage>,
     pub installed_page: Rc<InstalledPage>,
@@ -48,7 +48,7 @@ impl ObjectSubclass for SoukApplicationPrivate {
         let (sender, r) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
         let receiver = RefCell::new(Some(r));
 
-        let flatpak_backend = FlatpakBackend::new();
+        let flatpak_backend = SoukFlatpakBackend::new();
 
         let explore_page = ExplorePage::new(sender.clone());
         let search_page = SearchPage::new(sender.clone());
