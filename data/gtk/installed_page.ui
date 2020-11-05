@@ -44,7 +44,7 @@
                   <object class="GtkLabel">
                     <property name="xalign">0</property>
                     <property name="margin_bottom">12</property>
-                    <property name="label" translatable="yes">System Runtimes</property>
+                    <property name="label" translatable="yes">System Libraries</property>
                     <style>
                       <class name="title-2"/>
                     </style>
