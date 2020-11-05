@@ -6,16 +6,20 @@ pub use remote_info::SoukRemoteInfo;
 
 use appstream::Collection;
 use appstream::Component;
+use flatpak::prelude::*;
+use flatpak::InstalledRef;
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
+use glib::KeyFile;
 use glib::Sender;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{WidgetImpl, WindowImpl};
 use libhandy::prelude::*;
 
 use std::cell::RefCell;
+use std::path::PathBuf;
 
 use crate::backend::PackageKind;
 use crate::database::DbPackage;
@@ -31,6 +35,18 @@ enum SoukPackageKind {
 
 impl Default for SoukPackageKind {
     fn default() -> Self {
+        SoukPackageKind::App
+    }
+}
+
+impl SoukPackageKind {
+    pub fn from_keyfile(keyfile: KeyFile) -> Self {
+        if keyfile.has_group("ExtensionOf") {
+            return SoukPackageKind::Extension;
+        }
+        if keyfile.has_group("Runtime") {
+            return SoukPackageKind::Runtime;
+        }
         SoukPackageKind::App
     }
 }
@@ -192,6 +208,46 @@ impl From<DbPackage> for SoukPackage {
 
         let remote_info = SoukRemoteInfo::new(&db_package);
         *package_priv.remote_info.borrow_mut() = Some(remote_info);
+
+        package
+    }
+}
+
+impl From<InstalledRef> for SoukPackage {
+    fn from(installed_ref: InstalledRef) -> Self {
+        let keyfile_bytes = installed_ref
+            .load_metadata(Some(&gio::Cancellable::new()))
+            .unwrap();
+        let keyfile = glib::KeyFile::new();
+        keyfile
+            .load_from_bytes(&keyfile_bytes, glib::KeyFileFlags::NONE)
+            .unwrap();
+
+        // Load appdata
+        let mut path = PathBuf::new();
+        let appstream_dir = installed_ref.get_deploy_dir().unwrap().to_string();
+        path.push(appstream_dir);
+        path.push(&format!(
+            "files/share/app-info/xmls/{}.xml.gz",
+            installed_ref.get_name().unwrap().to_string()
+        ));
+
+        // Parse appstream data
+        let appdata = Collection::from_gzipped(path.clone())
+            .map(|appdata| appdata.components[0].clone())
+            .ok();
+
+        let package = SoukPackage::new();
+        let package_priv = SoukPackagePrivate::from_instance(&package);
+
+        *package_priv.kind.borrow_mut() = SoukPackageKind::from_keyfile(keyfile);
+        *package_priv.name.borrow_mut() = installed_ref.get_name().unwrap().to_string();
+        *package_priv.arch.borrow_mut() = installed_ref.get_arch().unwrap().to_string();
+        *package_priv.branch.borrow_mut() = installed_ref.get_branch().unwrap().to_string();
+        *package_priv.remote.borrow_mut() = installed_ref.get_origin().unwrap().to_string();
+
+        let installed_info = SoukInstalledInfo::new(&installed_ref);
+        *package_priv.installed_info.borrow_mut() = Some(installed_info);
 
         package
     }

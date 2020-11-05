@@ -8,25 +8,22 @@
     <property name="orientation">vertical</property>
     <child>
       <object class="GtkScrolledWindow">
-        <property name="vexpand">True</property>
-        <property name="hscrollbar_policy">never</property>
         <child>
           <object class="HdyClamp">
-            <property name="margin_start">12</property>
-            <property name="margin_end">12</property>
+            <property name="vexpand">True</property>
             <property name="maximum_size">900</property>
+            <property name="hexpand">True</property>
+            <property name="margin_top">12</property>
+            <property name="margin_bottom">12</property>
+            <property name="margin_start">6</property>
+            <property name="margin_end">6</property>
             <child>
-              <object class="GtkBox">
-                <property name="margin_top">22</property>
-                <property name="margin_bottom">22</property>
-                <property name="orientation">vertical</property>
-                <child>
-                  <object class="GtkFlowBox" id="installed_flowbox">
-                    <property name="homogeneous">True</property>
-                    <property name="selection_mode">none</property>
-                    <property name="activate_on_single_click">False</property>
-                  </object>
-                </child>
+              <object class="GtkListBox" id="listbox_apps">
+                <property name="vexpand">true</property>
+                <property name="selection_mode">GTK_SELECTION_NONE</property>
+                <style>
+                  <class name="content"/>
+                </style>
               </object>
             </child>
           </object>
@@ -35,3 +32,4 @@
     </child>
   </object>
 </interface>
+

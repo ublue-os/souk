@@ -12,8 +12,8 @@ use crate::database::DbPackage;
 pub struct SoukRemoteInfoPrivate {
     appdata: RefCell<String>,
     commit: RefCell<String>,
-    installed_size: RefCell<i64>,
-    download_size: RefCell<i64>,
+    installed_size: RefCell<u64>,
+    download_size: RefCell<u64>,
 }
 
 static PROPERTIES: [subclass::Property; 4] = [
@@ -30,23 +30,23 @@ static PROPERTIES: [subclass::Property; 4] = [
         glib::ParamSpec::string(commit, "Commit", "Commit", None, glib::ParamFlags::READABLE)
     }),
     subclass::Property("installed_size", |installed_size| {
-        glib::ParamSpec::int64(
+        glib::ParamSpec::uint64(
             installed_size,
             "Installed Size",
             "Installed Size",
             0,
-            std::i64::MAX,
+            std::u64::MAX,
             0,
             glib::ParamFlags::READABLE,
         )
     }),
     subclass::Property("download_size", |download_size| {
-        glib::ParamSpec::int64(
+        glib::ParamSpec::uint64(
             download_size,
             "Download Size",
             "Download Size",
             0,
-            std::i64::MAX,
+            std::u64::MAX,
             0,
             glib::ParamFlags::READABLE,
         )
@@ -104,8 +104,8 @@ impl SoukRemoteInfo {
 
         let info_priv = SoukRemoteInfoPrivate::from_instance(&info);
         *info_priv.commit.borrow_mut() = db_package.commit.clone();
-        *info_priv.installed_size.borrow_mut() = db_package.installed_size.clone();
-        *info_priv.download_size.borrow_mut() = db_package.download_size.clone();
+        *info_priv.installed_size.borrow_mut() = db_package.installed_size.clone() as u64;
+        *info_priv.download_size.borrow_mut() = db_package.download_size.clone() as u64;
 
         info
     }

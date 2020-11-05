@@ -5,9 +5,9 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::app::Action;
-use crate::backend::{BackendMessage, PackageTransaction, SoukFlatpakBackend, TransactionMode};
+use crate::backend::{PackageTransaction, SoukFlatpakBackend, SoukPackage, TransactionMode};
 use crate::database::DisplayLevel;
-use crate::ui::PackageTile;
+use crate::ui::SoukPackageRow;
 
 pub struct InstalledPage {
     pub widget: gtk::Box,
@@ -30,47 +30,26 @@ impl InstalledPage {
         });
 
         installed_page.clone().setup_widgets();
-        installed_page.clone().setup_signals();
         installed_page
     }
 
     fn setup_widgets(self: Rc<Self>) {
-        get_widget!(self.builder, gtk::FlowBox, installed_flowbox);
-
-        let packages = self
+        get_widget!(self.builder, gtk::ListBox, listbox_apps);
+        let model: gio::ListStore = self
             .flatpak_backend
-            .clone()
-            .get_installed_packages(DisplayLevel::Runtimes);
-        for package in packages {
-            let tile = PackageTile::new(self.sender.clone(), &package);
-            installed_flowbox.insert(&tile.widget, -1);
-        }
-    }
+            .get_property("installed_packages")
+            .unwrap()
+            .get()
+            .unwrap()
+            .unwrap();
 
-    fn setup_signals(self: Rc<Self>) {
-        spawn!(self.backend_message_receiver());
-    }
-
-    async fn backend_message_receiver(self: Rc<Self>) {
-        let mut channel = self.flatpak_backend.clone().get_channel();
-
-        while let Some(message) = channel.recv().await {
-            match message {
-                BackendMessage::PackageTransaction(transaction) => {
-                    spawn!(self.clone().package_transaction_receiver(transaction));
-                }
-            }
-        }
-    }
-
-    async fn package_transaction_receiver(self: Rc<Self>, transaction: Arc<PackageTransaction>) {
-        let mut channel = transaction.clone().get_channel();
-
-        while let Some(state) = channel.recv().await {
-            // TODO: implement UI
-            if state.mode == TransactionMode::Finished || state.mode == TransactionMode::Cancelled {
-                break;
-            }
-        }
+        listbox_apps.bind_model(
+            Some(&model),
+            Some(Box::new(|package| {
+                let row = SoukPackageRow::new();
+                row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
+                row.upcast::<gtk::Widget>()
+            })),
+        );
     }
 }

@@ -1,4 +1,6 @@
 use appstream::Component;
+use flatpak::prelude::*;
+use flatpak::InstalledRef;
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
@@ -10,7 +12,7 @@ use std::cell::RefCell;
 pub struct SoukInstalledInfoPrivate {
     appdata: RefCell<String>,
     commit: RefCell<String>,
-    installed_size: RefCell<i64>,
+    installed_size: RefCell<u64>,
     deploy_dir: RefCell<String>,
 }
 
@@ -28,12 +30,12 @@ static PROPERTIES: [subclass::Property; 4] = [
         glib::ParamSpec::string(commit, "Commit", "Commit", None, glib::ParamFlags::READABLE)
     }),
     subclass::Property("installed_size", |installed_size| {
-        glib::ParamSpec::int64(
+        glib::ParamSpec::uint64(
             installed_size,
             "Installed Size",
             "Installed Size",
             0,
-            std::i64::MAX,
+            std::u64::MAX,
             0,
             glib::ParamFlags::READABLE,
         )
@@ -92,11 +94,16 @@ glib_wrapper! {
 }
 
 impl SoukInstalledInfo {
-    pub fn new() -> Self {
+    pub fn new(installed_ref: &InstalledRef) -> Self {
         let info = glib::Object::new(SoukInstalledInfo::static_type(), &[])
             .unwrap()
             .downcast::<SoukInstalledInfo>()
             .unwrap();
+
+        let info_priv = SoukInstalledInfoPrivate::from_instance(&info);
+        *info_priv.commit.borrow_mut() = installed_ref.get_latest_commit().unwrap().to_string();
+        *info_priv.installed_size.borrow_mut() = installed_ref.get_installed_size();
+        *info_priv.deploy_dir.borrow_mut() = installed_ref.get_deploy_dir().unwrap().to_string();
 
         info
     }

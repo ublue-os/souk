@@ -28,7 +28,6 @@
                 <property name="label">label</property>
                 <property name="ellipsize">end</property>
                 <property name="single_line_mode">True</property>
-                <property name="max_width_chars">25</property>
                 <property name="xalign">0</property>
                 <attributes>
                   <attribute name="weight" value="bold"/>
