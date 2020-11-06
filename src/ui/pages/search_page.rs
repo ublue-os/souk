@@ -5,7 +5,6 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::Package;
 use crate::backend::SoukPackage;
 use crate::database::{queries, DisplayLevel};
 use crate::ui::SoukPackageRow;

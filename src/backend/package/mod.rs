@@ -3,7 +3,6 @@ mod remote_info;
 pub use installed_info::SoukInstalledInfo;
 pub use remote_info::SoukRemoteInfo;
 
-use appstream::Collection;
 use appstream::Component;
 use flatpak::prelude::*;
 use flatpak::InstalledRef;
@@ -12,15 +11,9 @@ use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
 use glib::KeyFile;
-use glib::Sender;
-use gtk::prelude::*;
-use gtk::subclass::prelude::{WidgetImpl, WindowImpl};
-use libhandy::prelude::*;
 
 use std::cell::RefCell;
-use std::path::PathBuf;
 
-use crate::backend::PackageKind;
 use crate::database::DbPackage;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, GEnum)]

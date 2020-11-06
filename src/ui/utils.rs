@@ -75,30 +75,7 @@ pub fn set_date_label(label: &gtk::Label, date: Option<DateTime<Utc>>) {
     };
 }
 
-pub fn set_icon(package: &dyn Package, image: &gtk::Image, size: i32) {
-    let mut path = PathBuf::new();
-    path.push(format!(
-        "/var/lib/flatpak/appstream/{}/{}/active/icons/{}x{}/{}.png",
-        package.remote(),
-        std::env::consts::ARCH,
-        size,
-        size,
-        package.name()
-    ));
-
-    if path.exists() {
-        image.set_from_file(&path);
-    } else {
-        match package.kind() {
-            PackageKind::App => image.set_from_icon_name(Some("dialog-question-symbolic")),
-            PackageKind::Runtime | PackageKind::Extension => {
-                image.set_from_icon_name(Some("system-run-symbolic"))
-            }
-        };
-    }
-}
-
-pub fn set_gs_icon(package: &SoukPackage, image: &gtk::Image, size: i32) {
+pub fn set_icon(package: &SoukPackage, image: &gtk::Image, size: i32) {
     let remote: String = package.get_remote();
     let name: String = package.get_name();
 

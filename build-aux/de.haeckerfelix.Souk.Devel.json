@@ -18,8 +18,7 @@
         "--talk-name=org.freedesktop.Flatpak",
         "--talk-name=org.a11y.Bus",
         "--env=RUST_LOG=souk=debug",
-        "--env=G_MESSAGES_DEBUG=none",
-        "--env=GOBJECT_DEBUG=instance-count"
+        "--env=G_MESSAGES_DEBUG=none"
     ],
     "build-options": {
         "append-path" : "/usr/lib/sdk/rust-stable/bin",
@@ -27,6 +26,7 @@
             "--share=network"
         ],
         "env" : {
+            "RUSTFLAGS" : "--remap-path-prefix =../",
             "CARGO_HOME" : "/run/build/souk/cargo",
             "RUST_BACKTRACE" : "1",
             "MOUNT_FUSE_PATH" : "../tmp/"

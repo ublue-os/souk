@@ -91,7 +91,7 @@ impl PackageDetailsPage {
         //package_action_button_box.append(&action_button.widget);
 
         // Set icon
-        utils::set_gs_icon(&package, &icon_image, 128);
+        utils::set_icon(&package, &icon_image, 128);
 
         let appdata = match package.get_appdata() {
             Some(appdata) => appdata,

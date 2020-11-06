@@ -14,7 +14,6 @@ pub use package::SoukRemoteInfo;
 
 mod legacy_package;
 pub use legacy_package::BasePackage;
-pub use legacy_package::InstalledPackage;
 pub use legacy_package::Package;
 pub use legacy_package::PackageKind;
 pub use legacy_package::RemotePackage;

@@ -1,11 +1,8 @@
-use appstream::Collection;
 use appstream::Component;
 use dyn_clone::DynClone;
 use flatpak::prelude::*;
-use flatpak::{InstalledRef, RemoteRef};
+use flatpak::RemoteRef;
 use glib::KeyFile;
-
-use std::path::PathBuf;
 
 use crate::database::DbPackage;
 
@@ -143,81 +140,6 @@ impl std::fmt::Debug for BasePackage {
 }
 
 //
-// InstalledPackage
-//
-#[derive(Debug, Clone, PartialEq)]
-pub struct InstalledPackage {
-    base_package: BasePackage,
-
-    commit: String,
-    is_current: bool,
-    installed_size: i64,
-}
-
-impl InstalledPackage {
-    pub fn commit(&self) -> String {
-        self.commit.clone()
-    }
-
-    pub fn is_current(&self) -> bool {
-        self.is_current
-    }
-
-    pub fn installed_size(&self) -> i64 {
-        self.installed_size
-    }
-}
-
-impl Package for InstalledPackage {
-    fn base_package(&self) -> &BasePackage {
-        &self.base_package
-    }
-}
-
-impl From<InstalledRef> for InstalledPackage {
-    fn from(installed_ref: InstalledRef) -> Self {
-        let keyfile_bytes = installed_ref
-            .load_metadata(Some(&gio::Cancellable::new()))
-            .unwrap();
-        let keyfile = glib::KeyFile::new();
-        keyfile
-            .load_from_bytes(&keyfile_bytes, glib::KeyFileFlags::NONE)
-            .unwrap();
-
-        // Load appdata
-        let mut path = PathBuf::new();
-        let appstream_dir = installed_ref.get_deploy_dir().unwrap().to_string();
-        path.push(appstream_dir);
-        path.push(&format!(
-            "files/share/app-info/xmls/{}.xml.gz",
-            installed_ref.get_name().unwrap().to_string()
-        ));
-
-        // Parse appstream data
-        let appdata = Collection::from_gzipped(path.clone())
-            .map(|appdata| appdata.components[0].clone())
-            .ok();
-
-        let base_package = BasePackage {
-            kind: PackageKind::from_keyfile(keyfile),
-            name: installed_ref.get_name().unwrap().to_string(),
-            arch: installed_ref.get_arch().unwrap().to_string(),
-            branch: installed_ref.get_branch().unwrap().to_string(),
-            commit: installed_ref.get_commit().unwrap().to_string(),
-            remote: installed_ref.get_origin().unwrap().to_string(),
-            appdata,
-        };
-
-        Self {
-            base_package,
-            commit: installed_ref.get_commit().unwrap().to_string(),
-            is_current: installed_ref.get_is_current(),
-            installed_size: installed_ref.get_installed_size() as i64,
-        }
-    }
-}
-
-//
 // RemotePackage
 //
 #[derive(Debug, Clone, PartialEq)]
@@ -266,34 +188,6 @@ impl From<(RemoteRef, Option<Component>)> for RemotePackage {
             base_package,
             download_size: remote_ref.0.get_download_size() as i64,
             installed_size: remote_ref.0.get_installed_size() as i64,
-        }
-    }
-}
-
-impl From<DbPackage> for RemotePackage {
-    fn from(db_package: DbPackage) -> Self {
-        let kind = match db_package.kind.as_ref() {
-            "app" => PackageKind::App,
-            "runtime" => PackageKind::Runtime,
-            _ => PackageKind::Extension,
-        };
-
-        let appdata = serde_json::from_str(&db_package.appdata).ok();
-
-        let base_package = BasePackage {
-            kind,
-            name: db_package.name,
-            arch: db_package.arch,
-            branch: db_package.branch,
-            commit: db_package.commit,
-            remote: db_package.remote,
-            appdata,
-        };
-
-        Self {
-            base_package,
-            download_size: db_package.download_size,
-            installed_size: db_package.installed_size,
         }
     }
 }

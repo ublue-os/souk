@@ -3,7 +3,7 @@ use crate::database::*;
 use crate::diesel::prelude::*;
 use diesel::dsl::sql;
 
-use crate::backend::{BasePackage, RemotePackage, SoukPackage};
+use crate::backend::SoukPackage;
 
 pub enum DisplayLevel {
     Apps,       /* Apps (de.haeckerfelix.Souk) */

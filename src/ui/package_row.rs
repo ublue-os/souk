@@ -109,7 +109,7 @@ impl SoukPackageRow {
             get_widget!(self_.builder, gtk::Image, icon_image);
 
             // Icon
-            utils::set_gs_icon(&package, &icon_image, 64);
+            utils::set_icon(&package, &icon_image, 64);
 
             match package.get_appdata() {
                 Some(appdata) => {

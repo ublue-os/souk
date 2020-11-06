@@ -5,16 +5,11 @@ use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
 
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
-use crate::backend::{
-    BackendMessage, InstalledPackage, Package, PackageAction, PackageKind, PackageTransaction,
-    SoukPackage,
-};
-use crate::database::{package_database, DisplayLevel};
+use crate::backend::{BackendMessage, Package, PackageAction, PackageTransaction, SoukPackage};
+use crate::database::package_database;
 
 pub struct SoukFlatpakBackendPrivate {
     system_installation: Installation,

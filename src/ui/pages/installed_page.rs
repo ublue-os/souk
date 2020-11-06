@@ -2,11 +2,9 @@ use glib::Sender;
 use gtk::prelude::*;
 
 use std::rc::Rc;
-use std::sync::Arc;
 
 use crate::app::Action;
-use crate::backend::{SoukFlatpakBackend, SoukPackage, SoukPackageKind, TransactionMode};
-use crate::database::DisplayLevel;
+use crate::backend::{SoukFlatpakBackend, SoukPackage, SoukPackageKind};
 use crate::ui::SoukPackageRow;
 use crate::ui::View;
 
