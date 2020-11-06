@@ -129,13 +129,12 @@ impl PackageDetailsPage {
             }
 
             other_apps.set_visible(names.len() != 0);
-        }
+        }*/
 
         // Set package for all package widgets
         for package_widget in &self.package_widgets {
-            package_widget.set_package(package);
+            package_widget.set_package(&package);
         }
-        */
     }
 
     pub fn reset(&self) {

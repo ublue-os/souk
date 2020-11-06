@@ -2,7 +2,7 @@ use appstream::enums::ProjectUrl;
 use gtk::prelude::*;
 use libhandy::prelude::*;
 
-use crate::backend::Package;
+use crate::backend::SoukPackage;
 use crate::ui::package_widgets::PackageWidget;
 
 pub struct ProjectUrlsBox {
@@ -36,8 +36,8 @@ impl PackageWidget for ProjectUrlsBox {
         project_urls_box
     }
 
-    fn set_package(&self, package: &dyn Package) {
-        let urls = package.appdata().expect("No appdata available").urls;
+    fn set_package(&self, package: &SoukPackage) {
+        let urls = package.get_appdata().expect("No appdata available").urls;
 
         get_widget!(self.builder, gtk::ListBox, listbox);
         get_widget!(self.builder, libhandy::ActionRow, donation_row);

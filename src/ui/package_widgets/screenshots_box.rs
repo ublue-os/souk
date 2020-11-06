@@ -6,7 +6,7 @@ use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
 use libhandy::CarouselExt;
 
-use crate::backend::Package;
+use crate::backend::SoukPackage;
 use crate::error::Error;
 use crate::ui::package_widgets::PackageWidget;
 use crate::ui::utils;
@@ -44,8 +44,11 @@ impl PackageWidget for ScreenshotsBox {
         }
     }
 
-    fn set_package(&self, package: &dyn Package) {
-        let screenshots = package.appdata().expect("No appdata available").screenshots;
+    fn set_package(&self, package: &SoukPackage) {
+        let screenshots = package
+            .get_appdata()
+            .expect("No appdata available")
+            .screenshots;
 
         get_widget!(self.builder, gtk::Box, screenshots_box);
         get_widget!(self.builder, libhandy::Carousel, carousel);
