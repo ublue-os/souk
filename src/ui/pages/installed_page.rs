@@ -8,6 +8,7 @@ use crate::app::Action;
 use crate::backend::{SoukFlatpakBackend, SoukPackage, SoukPackageKind, TransactionMode};
 use crate::database::DisplayLevel;
 use crate::ui::SoukPackageRow;
+use crate::ui::View;
 
 pub struct InstalledPage {
     pub widget: gtk::Box,
@@ -30,6 +31,7 @@ impl InstalledPage {
         });
 
         installed_page.clone().setup_widgets();
+        installed_page.clone().setup_signals();
         installed_page
     }
 
@@ -37,25 +39,12 @@ impl InstalledPage {
         get_widget!(self.builder, gtk::ListBox, listbox_apps);
         get_widget!(self.builder, gtk::ListBox, listbox_runtimes);
 
-        let model: gio::ListStore = self
-            .flatpak_backend
-            .get_property("installed_packages")
-            .unwrap()
-            .get()
-            .unwrap()
-            .unwrap();
+        let model: gio::ListStore = self.flatpak_backend.get_installed_packages();
 
         // Apps section
         let apps_filter = gtk::CustomFilter::new(Some(Box::new(|object| {
             let package = object.clone().downcast::<SoukPackage>().unwrap();
-            let kind: SoukPackageKind = package
-                .get_property("kind")
-                .unwrap()
-                .get()
-                .unwrap()
-                .unwrap();
-
-            kind == SoukPackageKind::App
+            package.get_kind() == SoukPackageKind::App
         })));
         let apps_model = gtk::FilterListModel::new(Some(&model), Some(&apps_filter));
 
@@ -63,7 +52,7 @@ impl InstalledPage {
             Some(&apps_model),
             Some(Box::new(|package| {
                 let row = SoukPackageRow::new();
-                row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
+                row.set_property("package", package).unwrap();
                 row.upcast::<gtk::Widget>()
             })),
         );
@@ -71,14 +60,7 @@ impl InstalledPage {
         // Runtimes section
         let runtimes_filter = gtk::CustomFilter::new(Some(Box::new(|object| {
             let package = object.clone().downcast::<SoukPackage>().unwrap();
-            let kind: SoukPackageKind = package
-                .get_property("kind")
-                .unwrap()
-                .get()
-                .unwrap()
-                .unwrap();
-
-            kind == SoukPackageKind::Runtime
+            package.get_kind() == SoukPackageKind::Runtime
         })));
         let runtimes_model = gtk::FilterListModel::new(Some(&model), Some(&runtimes_filter));
 
@@ -86,9 +68,24 @@ impl InstalledPage {
             Some(&runtimes_model),
             Some(Box::new(|package| {
                 let row = SoukPackageRow::new();
-                row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
+                row.set_property("package", package).unwrap();
                 row.upcast::<gtk::Widget>()
             })),
         );
+    }
+
+    fn setup_signals(self: Rc<Self>) {
+        get_widget!(self.builder, gtk::ListBox, listbox_apps);
+        get_widget!(self.builder, gtk::ListBox, listbox_runtimes);
+
+        let closure = clone!(@weak self as this => move|_: &gtk::ListBox, row: &gtk::ListBoxRow|{
+            let child = row.get_child().unwrap();
+            let row = child.downcast::<SoukPackageRow>().unwrap();
+            let package: SoukPackage = row.get_package().unwrap();
+            send!(this.sender, Action::ViewSet(View::PackageDetails(package)));
+        });
+
+        listbox_apps.connect_row_activated(closure.clone());
+        listbox_runtimes.connect_row_activated(closure.clone());
     }
 }

@@ -106,6 +106,14 @@ impl SoukFlatpakBackend {
         backend
     }
 
+    pub fn get_installed_packages(&self) -> gio::ListStore {
+        self.get_property("installed_packages")
+            .unwrap()
+            .get()
+            .unwrap()
+            .unwrap()
+    }
+
     pub fn get_system_installation(&self) -> flatpak::Installation {
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
         self_.system_installation.clone()

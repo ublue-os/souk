@@ -8,8 +8,8 @@ use crate::app::Action;
 use crate::backend::Package;
 use crate::backend::SoukPackage;
 use crate::database::{queries, DisplayLevel};
-use crate::ui::utils;
 use crate::ui::SoukPackageRow;
+use crate::ui::View;
 
 pub struct SearchPage {
     pub widget: gtk::Box,
@@ -64,8 +64,7 @@ impl SearchPage {
             let row = child.clone().downcast::<SoukPackageRow>().unwrap();
 
             let item = item.get_item().unwrap();
-            let package = item.clone().downcast::<SoukPackage>().unwrap();
-            row.set_package(&package);
+            row.set_property("package", &item).unwrap();
         });
         self.listview.set_factory(Some(&factory));
     }
@@ -83,9 +82,10 @@ impl SearchPage {
         }));
 
         self.listview
-            .connect_activate(clone!(@weak self as this => move|_, pos|{
-                //send!(sender, Action::ViewSet(View::PackageDetails(Box::new(base_package.clone()))));
-                debug!("activated");
+            .connect_activate(clone!(@weak self as this => move|listview, pos|{
+                let model = listview.get_model().unwrap();
+                let package = model.get_object(pos).unwrap().downcast::<SoukPackage>().unwrap();
+                send!(this.sender, Action::ViewSet(View::PackageDetails(package)));
             }));
     }
 }

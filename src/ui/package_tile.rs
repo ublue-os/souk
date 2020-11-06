@@ -43,7 +43,7 @@ impl PackageTile {
 
         let base_package = package.base_package().clone();
         package_tile.connect_clicked(clone!(@strong sender => move |_|{
-            send!(sender, Action::ViewSet(View::PackageDetails(Box::new(base_package.clone()))));
+            //send!(sender, Action::ViewSet(View::PackageDetails(Box::new(base_package.clone()))));
         }));
 
         tile

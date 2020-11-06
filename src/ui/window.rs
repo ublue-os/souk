@@ -10,7 +10,7 @@ use libhandy::prelude::*;
 use std::cell::RefCell;
 
 use crate::app::{Action, SoukApplication, SoukApplicationPrivate};
-use crate::backend::Package;
+use crate::backend::SoukPackage;
 use crate::config;
 
 #[derive(Debug, Clone)]
@@ -19,7 +19,7 @@ pub enum View {
     Installed,
     Updates,
     Search,
-    PackageDetails(Box<dyn Package>),
+    PackageDetails(SoukPackage),
 }
 
 pub struct SoukApplicationWindowPrivate {
@@ -225,7 +225,7 @@ impl SoukApplicationWindow {
             View::PackageDetails(package) => {
                 window_stack.set_visible_child_name("package-details");
                 app_private.package_details_page.reset();
-                app_private.package_details_page.set_package(&*package);
+                app_private.package_details_page.set_package(package);
             }
         }
 

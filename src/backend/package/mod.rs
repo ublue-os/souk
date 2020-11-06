@@ -176,7 +176,35 @@ impl SoukPackage {
         package
     }
 
-    pub fn appdata(&self) -> Option<Component> {
+    pub fn get_kind(&self) -> SoukPackageKind {
+        self.get_property("kind").unwrap().get().unwrap().unwrap()
+    }
+
+    pub fn get_name(&self) -> String {
+        self.get_property("name").unwrap().get().unwrap().unwrap()
+    }
+
+    pub fn get_arch(&self) -> String {
+        self.get_property("arch").unwrap().get().unwrap().unwrap()
+    }
+
+    pub fn get_branch(&self) -> String {
+        self.get_property("branch").unwrap().get().unwrap().unwrap()
+    }
+
+    pub fn get_remote(&self) -> String {
+        self.get_property("remote").unwrap().get().unwrap().unwrap()
+    }
+
+    pub fn get_remote_info(&self) -> Option<SoukRemoteInfo> {
+        self.get_property("remote_info").unwrap().get().unwrap()
+    }
+
+    pub fn get_installed_info(&self) -> Option<SoukInstalledInfo> {
+        self.get_property("installed_info").unwrap().get().unwrap()
+    }
+
+    pub fn get_appdata(&self) -> Option<Component> {
         let self_ = SoukPackagePrivate::from_instance(self);
 
         if self_.remote_info.borrow().is_some() {

@@ -5,8 +5,8 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::Package;
 use crate::backend::SoukFlatpakBackend;
+use crate::backend::SoukPackage;
 use crate::database::{queries, DisplayLevel};
 use crate::ui::package_widgets::{PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
 use crate::ui::{utils, PackageActionButton, PackageTile};
@@ -61,7 +61,7 @@ impl PackageDetailsPage {
 
     fn setup_signals(&self) {}
 
-    pub fn set_package(&self, package: &dyn Package) {
+    pub fn set_package(&self, package: SoukPackage) {
         get_widget!(self.builder, gtk::Image, icon_image);
         get_widget!(self.builder, gtk::Label, title_label);
         get_widget!(self.builder, gtk::Label, developer_label);
@@ -75,27 +75,23 @@ impl PackageDetailsPage {
         }
 
         // Setup package action button
-        get_widget!(self.builder, gtk::Box, package_action_button_box);
-        let action_button = PackageActionButton::new(self.flatpak_backend.clone(), package);
-        package_action_button_box.append(&action_button.widget);
+        //get_widget!(self.builder, gtk::Box, package_action_button_box);
+        //let action_button = PackageActionButton::new(self.flatpak_backend.clone(), package);
+        //package_action_button_box.append(&action_button.widget);
 
         // Set icon
-        utils::set_icon(package, &icon_image, 128);
+        utils::set_gs_icon(&package, &icon_image, 128);
 
-        let appdata = match package.appdata() {
+        let appdata = match package.get_appdata() {
             Some(appdata) => appdata,
             None => {
-                warn!("No appdata available for package {}", package.name());
+                warn!("No appdata available for package {}", package.get_name());
 
                 // Fallback to basic information
-                title_label.set_text(&package.name());
-                developer_label.set_text(&format!("Source: {}", package.remote()));
-                summary_label.set_text(&format!("System {} component", package.kind().to_string()));
-                description_label.set_text(&format!(
-                    "Branch: {}\nCommit: {}",
-                    package.branch(),
-                    package.commit()
-                ));
+                title_label.set_text(&package.get_name());
+                developer_label.set_text(&format!("Source: {}", package.get_remote()));
+                summary_label.set_text(&format!("{:?} component", package.get_kind()));
+                description_label.set_text(&format!("Branch: {}", package.get_branch(),));
 
                 return;
             }
@@ -111,7 +107,7 @@ impl PackageDetailsPage {
         );
 
         // Populate "Other Apps by X" flowbox
-        if let Some(n) = appdata.developer_name {
+        /*if let Some(n) = appdata.developer_name {
             get_widget!(self.builder, gtk::Box, other_apps);
             get_widget!(self.builder, gtk::Label, other_apps_label);
             get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
@@ -139,6 +135,7 @@ impl PackageDetailsPage {
         for package_widget in &self.package_widgets {
             package_widget.set_package(package);
         }
+        */
     }
 
     pub fn reset(&self) {
