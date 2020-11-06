@@ -5,11 +5,11 @@
     <section>
       <item>
         <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
-        <attribute name="action">win.show-help-overlay</attribute>
+        <attribute name="action">app.show-help-overlay</attribute>
       </item>
       <item>
         <attribute name="label" translatable="yes">_About Souk</attribute>
-        <attribute name="action">win.about</attribute>
+        <attribute name="action">app.about</attribute>
       </item>
     </section>
   </menu>

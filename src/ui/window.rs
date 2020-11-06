@@ -12,7 +12,6 @@ use std::cell::RefCell;
 use crate::app::{Action, SoukApplication, SoukApplicationPrivate};
 use crate::backend::Package;
 use crate::config;
-use crate::ui::about_dialog;
 
 #[derive(Debug, Clone)]
 pub enum View {
@@ -101,7 +100,6 @@ impl SoukApplicationWindow {
         app.add_window(&window);
         window.setup_widgets();
         window.setup_signals(sender.clone());
-        window.setup_gactions(sender);
         window
     }
 
@@ -174,52 +172,6 @@ impl SoukApplicationWindow {
             }
             glib::signal::Inhibit(false)
         }));*/
-    }
-
-    fn setup_gactions(&self, sender: Sender<Action>) {
-        // We need to upcast from SoukApplicationWindow to libhandy::ApplicationWindow, because SoukApplicationWindow
-        // currently doesn't implement GLib.ActionMap, since it's not supported in gtk-rs for subclassing (13-01-2020)
-        let window = self.clone().upcast::<gtk::ApplicationWindow>();
-        let app = window.get_application().unwrap();
-
-        // win.quit
-        action!(
-            window,
-            "quit",
-            clone!(@weak app => move |_, _| {
-                app.quit();
-            })
-        );
-        app.set_accels_for_action("win.quit", &["<primary>q"]);
-
-        // win.about
-        action!(
-            window,
-            "about",
-            clone!(@weak window => move |_, _| {
-                about_dialog::show_about_dialog(window);
-            })
-        );
-
-        // win.show-search
-        action!(
-            window,
-            "show-search",
-            clone!(@weak window, @strong sender => move |_, _| {
-                send!(sender, Action::ViewSet(View::Search));
-            })
-        );
-        app.set_accels_for_action("win.show-search", &["<primary>f"]);
-
-        // win.go-back
-        action!(
-            window,
-            "go-back",
-            clone!(@strong sender => move |_, _| {
-                send!(sender, Action::ViewGoBack);
-            })
-        );
-        app.set_accels_for_action("win.go-back", &["Escape"]);
     }
 
     pub fn go_back(&self) {

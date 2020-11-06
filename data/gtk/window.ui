@@ -29,7 +29,7 @@
                     <child>
                       <object class="GtkButton" id="search_button">
                         <property name="icon_name">system-search-symbolic</property>
-                        <property name="action_name">win.show-search</property>
+                        <property name="action_name">app.search</property>
                       </object>
                     </child>
                   </object>

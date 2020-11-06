@@ -13,6 +13,7 @@ use std::rc::Rc;
 
 use crate::backend::SoukFlatpakBackend;
 use crate::config;
+use crate::ui::about_dialog;
 use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage, SearchPage};
 use crate::ui::{SoukApplicationWindow, View};
 
@@ -159,7 +160,56 @@ impl SoukApplication {
         // Set initial view
         window.set_view(View::Explore, false);
 
+        // Setup GActions
+        self.setup_gactions();
+
         window
+    }
+
+    fn setup_gactions(&self) {
+        let self_ = SoukApplicationPrivate::from_instance(self);
+        let app = self.clone().upcast::<gtk::Application>();
+        let window: gtk::ApplicationWindow = self.get_active_window().unwrap().downcast().unwrap();
+        let sender = self_.sender.clone();
+
+        // app.quit
+        action!(
+            app,
+            "quit",
+            clone!(@weak app => move |_, _| {
+                app.quit();
+            })
+        );
+        app.set_accels_for_action("app.quit", &["<primary>q"]);
+
+        // app.about
+        action!(
+            app,
+            "about",
+            clone!(@weak window => move |_, _| {
+                about_dialog::show_about_dialog(window);
+            })
+        );
+
+        // app.search
+        action!(
+            app,
+            "search",
+            clone!(@weak window, @strong sender => move |_, _| {
+                send!(sender, Action::ViewSet(View::Search));
+            })
+        );
+        app.set_accels_for_action("app.search", &["<primary>f"]);
+
+        // win.go-back
+        action!(
+            window,
+            "go-back",
+            clone!(@strong sender => move |_, _| {
+                send!(sender, Action::ViewGoBack);
+            })
+        );
+        app.set_accels_for_action("win.go-back", &["Escape"]);
     }
 
     fn process_action(&self, action: Action) -> glib::Continue {

@@ -3,7 +3,7 @@ pub mod pages;
 
 mod utils;
 
-mod about_dialog;
+pub mod about_dialog;
 
 mod package_action_button;
 pub use package_action_button::PackageActionButton;
