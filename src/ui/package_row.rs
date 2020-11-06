@@ -2,16 +2,12 @@ use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
-use glib::Sender;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{BoxImpl, WidgetImpl};
-use libhandy::prelude::*;
 
 use std::cell::RefCell;
 
-use crate::app::{Action, SoukApplication, SoukApplicationPrivate};
 use crate::backend::SoukPackage;
-use crate::config;
 use crate::ui::utils;
 
 pub struct SoukPackageRowPrivate {

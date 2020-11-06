@@ -9,7 +9,7 @@ use crate::backend::SoukFlatpakBackend;
 use crate::backend::SoukPackage;
 use crate::database::{queries, DisplayLevel};
 use crate::ui::package_widgets::{PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
-use crate::ui::{utils, PackageActionButton, PackageTile};
+use crate::ui::{utils, PackageActionButton, SoukPackageTile, View};
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
@@ -55,11 +55,22 @@ impl PackageDetailsPage {
             sender,
         });
 
-        package_details_page.setup_signals();
+        package_details_page.clone().setup_signals();
         package_details_page
     }
 
-    fn setup_signals(&self) {}
+    fn setup_signals(self: Rc<Self>) {
+        get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
+
+        let closure = clone!(@weak self as this => move|_: &gtk::FlowBox, row: &gtk::FlowBoxChild|{
+            let child = row.get_child().unwrap();
+            let row = child.downcast::<SoukPackageTile>().unwrap();
+            let package: SoukPackage = row.get_package().unwrap();
+            send!(this.sender, Action::ViewSet(View::PackageDetails(package)));
+        });
+
+        other_apps_flowbox.connect_child_activated(closure.clone());
+    }
 
     pub fn set_package(&self, package: SoukPackage) {
         get_widget!(self.builder, gtk::Image, icon_image);
@@ -107,7 +118,7 @@ impl PackageDetailsPage {
         );
 
         // Populate "Other Apps by X" flowbox
-        /*if let Some(n) = appdata.developer_name {
+        if let Some(n) = appdata.developer_name {
             get_widget!(self.builder, gtk::Box, other_apps);
             get_widget!(self.builder, gtk::Label, other_apps_label);
             get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
@@ -116,20 +127,23 @@ impl PackageDetailsPage {
             other_apps_label.set_text(&format!("Other Apps by {}", name));
 
             let mut names = HashSet::new();
-            for pkg in
-                queries::get_packages_by_developer_name(&name, 10, DisplayLevel::Apps).unwrap()
-            {
-                let pkg_name = pkg.name();
-                if pkg_name != package.name() && !names.contains(&pkg_name) {
-                    debug!("Found package {} by {}", pkg_name, name);
-                    names.insert(pkg_name);
-                    let tile = PackageTile::new(self.sender.clone(), &pkg);
-                    other_apps_flowbox.insert(&tile.widget, -1);
+            let packages =
+                queries::get_packages_by_developer_name(&name, 10, DisplayLevel::Apps).unwrap();
+
+            for p in packages {
+                let p_name = p.get_name();
+                if p_name != package.get_name() && !names.contains(&p_name) {
+                    debug!("Found package {} by {}", p_name, name);
+                    names.insert(p_name);
+
+                    let tile = SoukPackageTile::new();
+                    tile.set_property("package", &p).unwrap();
+                    other_apps_flowbox.insert(&tile, -1);
                 }
             }
 
             other_apps.set_visible(names.len() != 0);
-        }*/
+        }
 
         // Set package for all package widgets
         for package_widget in &self.package_widgets {

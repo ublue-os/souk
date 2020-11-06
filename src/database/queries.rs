@@ -33,7 +33,7 @@ pub fn get_package(
     pkg_app_id: String,
     pkg_branch: String,
     pkg_remote: String,
-) -> Result<Option<BasePackage>, diesel::result::Error> {
+) -> Result<Option<SoukPackage>, diesel::result::Error> {
     use crate::database::schema::appstream_packages::dsl::*;
     let con = connect_db!();
 
@@ -72,7 +72,7 @@ pub fn get_packages_by_name(
 pub fn get_recently_updated_packages(
     limit: i64,
     level: DisplayLevel,
-) -> Result<Vec<RemotePackage>, diesel::result::Error> {
+) -> Result<Vec<SoukPackage>, diesel::result::Error> {
     use crate::database::schema::appstream_packages::dsl::*;
     let con = connect_db!();
 
@@ -95,7 +95,7 @@ pub fn get_packages_by_developer_name(
     pkg_developer_name: &str,
     limit: i64,
     level: DisplayLevel,
-) -> Result<Vec<RemotePackage>, diesel::result::Error> {
+) -> Result<Vec<SoukPackage>, diesel::result::Error> {
     use crate::database::schema::appstream_packages::dsl::*;
     let con = connect_db!();
 

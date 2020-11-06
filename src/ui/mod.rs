@@ -12,7 +12,7 @@ mod package_row;
 pub use package_row::SoukPackageRow;
 
 mod package_tile;
-pub use package_tile::PackageTile;
+pub use package_tile::SoukPackageTile;
 
 mod window;
 pub use window::SoukApplicationWindow;

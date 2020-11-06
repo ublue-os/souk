@@ -170,7 +170,8 @@
                               <object class="GtkFlowBox" id="other_apps_flowbox">
                                 <property name="homogeneous">True</property>
                                 <property name="selection_mode">none</property>
-                                <property name="activate_on_single_click">False</property>
+                                <property name="column_spacing">6</property>
+                                <property name="row_spacing">6</property>
                               </object>
                             </child>
                           </object>
