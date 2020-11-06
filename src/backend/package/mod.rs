@@ -14,6 +14,8 @@ use glib::KeyFile;
 
 use std::cell::RefCell;
 
+use crate::app::SoukApplication;
+use crate::backend::SoukFlatpakBackend;
 use crate::database::DbPackage;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, GEnum)]
@@ -43,7 +45,6 @@ impl SoukPackageKind {
     }
 }
 
-#[derive(Default)]
 pub struct SoukPackagePrivate {
     kind: RefCell<SoukPackageKind>,
     name: RefCell<String>,
@@ -53,6 +54,8 @@ pub struct SoukPackagePrivate {
 
     remote_info: RefCell<Option<SoukRemoteInfo>>,
     installed_info: RefCell<Option<SoukInstalledInfo>>,
+
+    flatpak_backend: SoukFlatpakBackend,
 }
 
 static PROPERTIES: [subclass::Property; 7] = [
@@ -111,7 +114,19 @@ impl ObjectSubclass for SoukPackagePrivate {
     }
 
     fn new() -> Self {
-        Self::default()
+        let app: SoukApplication = gio::Application::get_default().unwrap().downcast().unwrap();
+        let flatpak_backend = app.get_flatpak_backend();
+
+        SoukPackagePrivate {
+            kind: RefCell::default(),
+            name: RefCell::default(),
+            arch: RefCell::default(),
+            branch: RefCell::default(),
+            remote: RefCell::default(),
+            remote_info: RefCell::default(),
+            installed_info: RefCell::default(),
+            flatpak_backend,
+        }
     }
 }
 

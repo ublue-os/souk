@@ -96,12 +96,11 @@ impl SoukFlatpakBackend {
             .unwrap();
 
         package_database::init(backend.clone());
-        backend.reload_installed_packages();
-
         backend
     }
 
     pub fn get_installed_packages(&self) -> gio::ListStore {
+        self.reload_installed_packages();
         self.get_property("installed_packages")
             .unwrap()
             .get()
@@ -112,43 +111,6 @@ impl SoukFlatpakBackend {
     pub fn get_system_installation(&self) -> flatpak::Installation {
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
         self_.system_installation.clone()
-    }
-
-    pub fn get_channel(&self) -> BroadcastChannel<BackendMessage> {
-        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        self_.broadcast.clone()
-    }
-
-    pub fn is_package_installed(&self, package: &dyn Package) -> bool {
-        self.get_installed_refs()
-            .iter()
-            .map(|r| r.get_commit().unwrap().to_string())
-            .find(|commit| &package.commit() == commit)
-            .map_or(false, |_| true)
-    }
-
-    pub fn install_package(&self, package: &dyn Package) {
-        let transaction =
-            PackageTransaction::new(package.base_package().clone(), PackageAction::Install);
-        self.clone()
-            .send_message(BackendMessage::PackageTransaction(transaction.clone()));
-
-        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        self_
-            .transaction_backend
-            .add_package_transaction(transaction);
-    }
-
-    pub fn uninstall_package(&self, package: &dyn Package) {
-        let transaction =
-            PackageTransaction::new(package.base_package().clone(), PackageAction::Uninstall);
-        self.clone()
-            .send_message(BackendMessage::PackageTransaction(transaction.clone()));
-
-        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        self_
-            .transaction_backend
-            .add_package_transaction(transaction);
     }
 
     pub fn launch_package(&self, package: &dyn Package) {
@@ -168,52 +130,22 @@ impl SoukFlatpakBackend {
         };
     }
 
-    pub fn cancel_package_transaction(&self, transaction: Arc<PackageTransaction>) {
-        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        self_
-            .transaction_backend
-            .cancel_package_transaction(transaction);
-    }
-
-    pub fn get_active_transaction(&self, package: &dyn Package) -> Option<Arc<PackageTransaction>> {
-        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        self_
-            .transaction_backend
-            .get_active_transaction(&package.base_package())
-    }
-
-    fn send_message(&self, message: BackendMessage) {
-        // TODO: Port this to a gtk-rs signal / callback
-        //let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        //let future = async move {
-        //    self_.broadcast.send(&message).await.unwrap();
-        //};
-        //spawn!(future);
-    }
-
     fn is_sandboxed() -> bool {
         std::path::Path::new("/.flatpak-info").exists()
     }
 
-    fn get_installed_refs(&self) -> Vec<InstalledRef> {
+    fn reload_installed_packages(&self) {
+        // TODO: This is eating much time on startup. Make this async.
+
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        self_.installed_packages.remove_all();
 
         let mut system_refs = self_
             .system_installation
             .list_installed_refs(Some(&gio::Cancellable::new()))
             .unwrap();
 
-        let mut installed_refs = Vec::new();
-        installed_refs.append(&mut system_refs);
-
-        installed_refs
-    }
-
-    fn reload_installed_packages(&self) {
-        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        self_.installed_packages.remove_all();
-
-        for installed_ref in self.get_installed_refs() {
+        for installed_ref in system_refs {
             let package: SoukPackage = installed_ref.into();
             self_.installed_packages.append(&package);
         }

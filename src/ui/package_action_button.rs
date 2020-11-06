@@ -35,7 +35,7 @@ impl PackageActionButton {
         });
 
         // Check if a transcation is already running
-        match pab
+        /*match pab
             .flatpak_backend
             .clone()
             .get_active_transaction(&pab.package)
@@ -46,7 +46,7 @@ impl PackageActionButton {
                 spawn!(pab.clone().receive_transaction_messages());
             }
             None => (),
-        }
+        }*/
 
         // Hide open button for runtimes and extensions
         if package.kind() != PackageKind::App {
@@ -63,34 +63,35 @@ impl PackageActionButton {
         // install
         get_widget!(self.builder, gtk::Button, install_button);
         install_button.connect_clicked(clone!(@weak self as this => move |_|{
-            this.flatpak_backend.clone().install_package(&this.package);
+            //this.flatpak_backend.clone().install_package(&this.package);
         }));
 
         // uninstall
         get_widget!(self.builder, gtk::Button, uninstall_button);
         uninstall_button.connect_clicked(clone!(@weak self as this => move |_|{
             debug!("Uninstall");
-            this.flatpak_backend.clone().uninstall_package(&this.package);
+            //this.flatpak_backend.clone().uninstall_package(&this.package);
         }));
 
         // open
         get_widget!(self.builder, gtk::Button, open_button);
         open_button.connect_clicked(clone!(@weak self as this => move |_|{
-            this.flatpak_backend.clone().launch_package(&this.package);
+            //this.flatpak_backend.clone().launch_package(&this.package);
         }));
 
         // cancel
         get_widget!(self.builder, gtk::Button, cancel_button);
         cancel_button.connect_clicked(clone!(@weak self as this => move |_|{
             match this.transaction.borrow().clone(){
-                Some(t) => this.flatpak_backend.clone().cancel_package_transaction(t),
+                Some(t) => (), //this.flatpak_backend.clone().cancel_package_transaction(t),
                 None => warn!("No transaction available to cancel"),
             };
         }));
 
-        spawn!(self.receive_backend_messages());
+        //spawn!(self.receive_backend_messages());
     }
 
+    /*
     async fn receive_backend_messages(self: Rc<Self>) {
         let mut backend_channel = self.flatpak_backend.clone().get_channel();
 
@@ -141,12 +142,12 @@ impl PackageActionButton {
         }
 
         *self.transaction.borrow_mut() = None;
-    }
+    }*/
 
     fn update_stack(self: Rc<Self>) {
         get_widget!(self.builder, gtk::Stack, button_stack);
 
-        match self
+        /*match self
             .flatpak_backend
             .clone()
             .is_package_installed(&self.package)
@@ -157,6 +158,6 @@ impl PackageActionButton {
             false => {
                 button_stack.set_visible_child_name("install");
             }
-        };
+        };*/
     }
 }

@@ -131,16 +131,23 @@ impl SoukApplicationWindow {
 
         // wire everything up
         get_widget!(self_.window_builder, gtk::Box, explore_box);
-        explore_box.append(&app_private.explore_page.widget);
+        explore_box.append(&app_private.explore_page.borrow().as_ref().unwrap().widget);
 
         get_widget!(self_.window_builder, gtk::Box, installed_box);
-        installed_box.append(&app_private.installed_page.widget);
+        installed_box.append(&app_private.installed_page.borrow().as_ref().unwrap().widget);
 
         get_widget!(self_.window_builder, gtk::Box, search_box);
-        search_box.append(&app_private.search_page.widget);
+        search_box.append(&app_private.search_page.borrow().as_ref().unwrap().widget);
 
         get_widget!(self_.window_builder, gtk::Box, package_details_box);
-        package_details_box.append(&app_private.package_details_page.widget);
+        package_details_box.append(
+            &app_private
+                .package_details_page
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .widget,
+        );
 
         // Add headerbar/content to the window itself
         get_widget!(self_.window_builder, gtk::Box, window);
@@ -224,8 +231,18 @@ impl SoukApplicationWindow {
             }
             View::PackageDetails(package) => {
                 window_stack.set_visible_child_name("package-details");
-                app_private.package_details_page.reset();
-                app_private.package_details_page.set_package(package);
+                app_private
+                    .package_details_page
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .reset();
+                app_private
+                    .package_details_page
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .set_package(package);
             }
         }
 

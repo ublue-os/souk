@@ -29,10 +29,10 @@ pub struct SoukApplicationPrivate {
 
     flatpak_backend: SoukFlatpakBackend,
 
-    pub explore_page: Rc<ExplorePage>,
-    pub installed_page: Rc<InstalledPage>,
-    pub search_page: Rc<SearchPage>,
-    pub package_details_page: Rc<PackageDetailsPage>,
+    pub explore_page: RefCell<Option<Rc<ExplorePage>>>,
+    pub installed_page: RefCell<Option<Rc<InstalledPage>>>,
+    pub search_page: RefCell<Option<Rc<SearchPage>>>,
+    pub package_details_page: RefCell<Option<Rc<PackageDetailsPage>>>,
 
     window: RefCell<Option<SoukApplicationWindow>>,
 }
@@ -51,10 +51,10 @@ impl ObjectSubclass for SoukApplicationPrivate {
 
         let flatpak_backend = SoukFlatpakBackend::new();
 
-        let explore_page = ExplorePage::new(sender.clone());
-        let search_page = SearchPage::new(sender.clone());
-        let installed_page = InstalledPage::new(sender.clone(), flatpak_backend.clone());
-        let package_details_page = PackageDetailsPage::new(sender.clone(), flatpak_backend.clone());
+        let explore_page = RefCell::new(None);
+        let search_page = RefCell::new(None);
+        let installed_page = RefCell::new(None);
+        let package_details_page = RefCell::new(None);
 
         let window = RefCell::new(None);
 
@@ -80,7 +80,7 @@ impl GtkApplicationImpl for SoukApplicationPrivate {}
 // Implement Gio.Application for SoukApplication
 impl ApplicationImpl for SoukApplicationPrivate {
     fn activate(&self, _app: &gio::Application) {
-        debug!("gio::Application -> activate()");
+        debug!("Activate GIO Application...");
 
         // If the window already exists,
         // present it instead creating a new one again.
@@ -94,6 +94,11 @@ impl ApplicationImpl for SoukApplicationPrivate {
         let app = ObjectSubclass::get_instance(self)
             .downcast::<SoukApplication>()
             .unwrap();
+
+        debug!("Setup Souk base components...");
+        app.setup();
+
+        debug!("Create new application window...");
         let window = app.create_window();
         window.present();
         self.window.replace(Some(window));
@@ -141,11 +146,32 @@ impl SoukApplication {
         .downcast::<SoukApplication>()
         .unwrap();
 
+        app.set_default();
         app.set_resource_base_path(Some("/de/haeckerfelix/Souk"));
 
         // Start running gtk::Application
         let args: Vec<String> = env::args().collect();
         ApplicationExtManual::run(&app, &args);
+    }
+
+    fn setup(&self) {
+        let self_ = SoukApplicationPrivate::from_instance(self);
+        let sender = self_.sender.clone();
+        let flatpak_backend = self_.flatpak_backend.clone();
+
+        *self_.explore_page.borrow_mut() = Some(ExplorePage::new(sender.clone()));
+        *self_.search_page.borrow_mut() = Some(SearchPage::new(sender.clone()));
+        *self_.installed_page.borrow_mut() =
+            Some(InstalledPage::new(sender.clone(), flatpak_backend.clone()));
+        *self_.package_details_page.borrow_mut() = Some(PackageDetailsPage::new(
+            sender.clone(),
+            flatpak_backend.clone(),
+        ));
+    }
+
+    pub fn get_flatpak_backend(&self) -> SoukFlatpakBackend {
+        let self_ = SoukApplicationPrivate::from_instance(self);
+        self_.flatpak_backend.clone()
     }
 
     fn create_window(&self) -> SoukApplicationWindow {
