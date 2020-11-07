@@ -4,6 +4,7 @@ use async_process::Stdio;
 use futures_util::io::BufReader;
 use futures_util::AsyncBufReadExt;
 use futures_util::StreamExt;
+use glib::prelude::*;
 use regex::Regex;
 
 use std::cell::RefCell;
@@ -14,7 +15,7 @@ use std::sync::Arc;
 use crate::backend::transaction_backend::TransactionBackend;
 use crate::backend::{
     BasePackage, Package, PackageTransaction, SoukPackageAction, SoukTransactionMode,
-    TransactionState,
+    SoukTransactionState,
 };
 
 type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
@@ -56,9 +57,11 @@ impl TransactionBackend for SandboxBackend {
 
         match tupl.1.kill() {
             Ok(()) => {
-                let mut state = TransactionState::default();
-                state.mode = SoukTransactionMode::Cancelled;
-                state.percentage = 1.0;
+                let mut state = SoukTransactionState::default();
+                state
+                    .set_property("mode", &SoukTransactionMode::Cancelled)
+                    .unwrap();
+                state.set_property("percentage", &1.0).unwrap();
                 transaction.set_state(state);
                 debug!("Sucessfully cancelled transaction");
             }
@@ -83,8 +86,8 @@ impl SandboxBackend {
         transactions: Transactions,
     ) {
         // Set initial transaction state
-        let mut state = TransactionState::default();
-        state.percentage = 0.0;
+        let mut state = SoukTransactionState::default();
+        state.set_property("percentage", &0.0).unwrap();
         transaction.set_state(state);
 
         // Setup flatpak child / procress and spawn it
@@ -121,13 +124,15 @@ impl SandboxBackend {
             .remove(&transaction.package.ref_name())
         {
             Some((_, mut child)) => {
-                let mut state = TransactionState::default();
+                let mut state = SoukTransactionState::default();
                 // Transaction finished, so let set it to 100%
-                state.percentage = 1.0;
+                state.set_property("percentage", &1.0).unwrap();
 
                 // Check if it ended successfully (return code == 0)
                 if child.status().await.unwrap().success() {
-                    state.mode = SoukTransactionMode::Finished;
+                    state
+                        .set_property("mode", &SoukTransactionMode::Finished)
+                        .unwrap();
                     debug!("Package transaction ended successfully.");
                 } else {
                     // Get stderr information
@@ -138,7 +143,9 @@ impl SandboxBackend {
 
                     // TODO: Transfer error message somewhere else
                     //state.mode = SoukTransactionMode::Error(err_lines);
-                    state.mode = SoukTransactionMode::Error;
+                    state
+                        .set_property("mode", &SoukTransactionMode::Error)
+                        .unwrap();
                     debug!("Package transaction did not end successfully.");
                 }
 
@@ -182,15 +189,18 @@ impl SandboxBackend {
         args
     }
 
-    fn parse_line(line: String) -> TransactionState {
-        let mut state = TransactionState::default();
-        state.mode = SoukTransactionMode::Running;
+    fn parse_line(line: String) -> SoukTransactionState {
+        let mut state = SoukTransactionState::default();
+        state
+            .set_property("mode", &SoukTransactionMode::Running)
+            .unwrap();
 
         // Regex to get percentage value
         let regex = Regex::new(r"(\d{1,3})%").unwrap();
 
         let mut n: f32 = 1.0;
         let mut big_n: f32 = 1.0;
+
         if let Some(percentage) = regex.captures(&line) {
             let value = percentage.get(1).unwrap().as_str();
             let percentage = value.parse::<f32>().unwrap() / 100.0;
@@ -202,18 +212,21 @@ impl SandboxBackend {
                 n = package_number[1].parse().unwrap();
                 big_n = package_number[2].parse().unwrap();
                 let global_percentage = (n - 1.0 + percentage) / big_n;
-                state.percentage = global_percentage;
+                state
+                    .set_property("percentage", &global_percentage)
+                    .unwrap();
             } else {
-                state.percentage = percentage;
+                state.set_property("percentage", &percentage).unwrap();
             }
         }
 
         // When the number of packages is 1, this just means, if percentage
         // is lower than 0.99.
-        if state.percentage < n / big_n - 0.01 {
+        let mut message = String::new();
+        if state.get_percentage() < n / big_n - 0.01 {
             let re = Regex::new(r"(\d+.\d+)\u{a0}(\w+)/s").unwrap();
             if let Some(speed) = re.captures(&line) {
-                state.message = format!(
+                message = format!(
                     "Downloading {} {}/s",
                     speed[1].to_string(),
                     speed[2].to_string()
@@ -221,17 +234,18 @@ impl SandboxBackend {
             } else {
                 let re = Regex::new(r"^Looking for matches…$").unwrap();
                 if re.is_match(&line) {
-                    state.message = "Preparing…".to_string();
+                    message = "Preparing…".to_string();
                 }
             }
         } else {
             let re = Regex::new(r"^Updating \d+/\d+…").unwrap();
             if re.is_match(&line) {
-                state.message = "Updating…".to_string();
+                message = "Updating…".to_string();
             } else {
-                state.message = "Installing…".to_string();
+                message = "Installing…".to_string();
             }
         }
+        state.set_property("message", &message).unwrap();
 
         state
     }

@@ -3,45 +3,40 @@ use broadcaster::BroadcastChannel;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use crate::backend::{BasePackage, SoukPackageAction, TransactionState};
+use crate::backend::{BasePackage, SoukPackageAction, SoukTransactionState};
 
 #[derive(Debug)]
 pub struct PackageTransaction {
     pub package: BasePackage,
     pub action: SoukPackageAction,
-    state: Mutex<TransactionState>,
-
-    broadcast: BroadcastChannel<TransactionState>,
+    state: Mutex<SoukTransactionState>,
+    //broadcast: BroadcastChannel<SoukTransactionState>,
 }
 
 impl PackageTransaction {
     pub fn new(package: BasePackage, action: SoukPackageAction) -> Arc<Self> {
-        let state = Mutex::new(TransactionState::default());
-        let broadcast = BroadcastChannel::new();
+        let state = Mutex::new(SoukTransactionState::default());
+        //let broadcast = BroadcastChannel::new();
 
         Arc::new(Self {
             package,
             action,
             state,
-            broadcast,
+            //broadcast,
         })
     }
 
-    pub fn get_channel(&self) -> BroadcastChannel<TransactionState> {
-        self.broadcast.clone()
-    }
-
-    pub fn set_state(&self, state: TransactionState) {
+    pub fn set_state(&self, state: SoukTransactionState) {
         *self.state.lock().unwrap() = state.clone();
         self.send_message(state);
     }
 
-    fn send_message(&self, message: TransactionState) {
-        let broadcast = self.broadcast.clone();
-        let future = async move {
-            broadcast.send(&message).await.unwrap();
-        };
-        spawn!(future);
+    fn send_message(&self, message: SoukTransactionState) {
+        //let broadcast = self.broadcast.clone();
+        //let future = async move {
+        //    broadcast.send(&message).await.unwrap();
+        //};
+        //spawn!(future);
     }
 }
 
