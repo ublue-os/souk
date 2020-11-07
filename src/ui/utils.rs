@@ -116,14 +116,6 @@ pub fn clear_flowbox(flowbox: &gtk::FlowBox) {
     }
 }
 
-pub fn clear_box(gbox: &gtk::Box) {
-    let listmodel = gbox.observe_children().unwrap();
-    while let Some(o) = listmodel.get_object(0) {
-        let widget = o.clone().downcast::<gtk::Widget>().unwrap();
-        gbox.remove(&widget);
-    }
-}
-
 pub fn clear_carousel(carousel: &libhandy::Carousel) {
     for _ in 0..carousel.get_n_pages() {
         let page = carousel.get_nth_page(0).unwrap();

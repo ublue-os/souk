@@ -1,3 +1,6 @@
+mod package_action_button;
+pub use package_action_button::PackageActionButton;
+
 mod releases_box;
 pub use releases_box::ReleasesBox;
 

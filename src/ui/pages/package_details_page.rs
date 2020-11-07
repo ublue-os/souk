@@ -8,8 +8,10 @@ use crate::app::Action;
 use crate::backend::SoukFlatpakBackend;
 use crate::backend::SoukPackage;
 use crate::database::{queries, DisplayLevel};
-use crate::ui::package_widgets::{PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox};
-use crate::ui::{utils, PackageActionButton, SoukPackageTile, View};
+use crate::ui::package_widgets::{
+    PackageActionButton, PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox,
+};
+use crate::ui::{utils, SoukPackageTile, View};
 
 pub struct PackageDetailsPage {
     pub widget: gtk::Box,
@@ -28,6 +30,12 @@ impl PackageDetailsPage {
         get_widget!(builder, gtk::Box, package_details_page);
 
         let mut package_widgets: Vec<Box<dyn PackageWidget>> = Vec::new();
+
+        // PackageActionButton
+        let pab = PackageActionButton::new();
+        get_widget!(builder, gtk::Box, pab_box);
+        pab_box.append(&pab.widget);
+        package_widgets.push(Box::new(pab));
 
         // Screenshots
         let pw_screenshots_box = ScreenshotsBox::new();
@@ -84,11 +92,6 @@ impl PackageDetailsPage {
         if let Some(adj) = scrolled_window.get_vadjustment() {
             adj.set_value(0.0)
         }
-
-        // Setup package action button
-        //get_widget!(self.builder, gtk::Box, package_action_button_box);
-        //let action_button = PackageActionButton::new(self.flatpak_backend.clone(), package);
-        //package_action_button_box.append(&action_button.widget);
 
         // Set icon
         utils::set_icon(&package, &icon_image, 128);
@@ -154,9 +157,7 @@ impl PackageDetailsPage {
     pub fn reset(&self) {
         get_widget!(self.builder, gtk::Box, other_apps);
         get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
-        get_widget!(self.builder, gtk::Box, package_action_button_box);
 
-        utils::clear_box(&package_action_button_box);
         utils::clear_flowbox(&other_apps_flowbox);
         other_apps.set_visible(false);
 

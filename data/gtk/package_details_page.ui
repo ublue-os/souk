@@ -81,7 +81,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="GtkBox" id="package_action_button_box">
+                              <object class="GtkBox" id="pab_box">
                                 <property name="valign">center</property>
                                 <property name="orientation">vertical</property>
                               </object>

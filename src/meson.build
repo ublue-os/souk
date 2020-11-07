@@ -47,9 +47,10 @@ sources = files(
   'database/queries.rs',
   'database/schema.rs',
 
-  'ui/package_widgets/releases_box.rs',
   'ui/package_widgets/mod.rs',
+  'ui/package_widgets/package_action_button.rs',
   'ui/package_widgets/project_urls_box.rs',
+  'ui/package_widgets/releases_box.rs',
   'ui/package_widgets/screenshots_box.rs',
 
   'ui/pages/explore_page.rs',
@@ -60,7 +61,6 @@ sources = files(
 
   'ui/about_dialog.rs',
   'ui/mod.rs',
-  'ui/package_action_button.rs',
   'ui/package_row.rs',
   'ui/package_tile.rs',
   'ui/utils.rs',
