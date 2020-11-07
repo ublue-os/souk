@@ -1,6 +1,8 @@
 mod installed_info;
+mod package_kind;
 mod remote_info;
 pub use installed_info::SoukInstalledInfo;
+pub use package_kind::SoukPackageKind;
 pub use remote_info::SoukRemoteInfo;
 
 use appstream::Component;
@@ -17,21 +19,6 @@ use std::cell::RefCell;
 use crate::app::SoukApplication;
 use crate::backend::{SoukFlatpakBackend, SoukPackageAction};
 use crate::database::DbPackage;
-
-#[derive(Debug, Eq, PartialEq, Clone, Copy, GEnum)]
-#[repr(u32)]
-#[genum(type_name = "SoukPackageKind")]
-pub enum SoukPackageKind {
-    App = 0,
-    Runtime = 1,
-    Extension = 2,
-}
-
-impl Default for SoukPackageKind {
-    fn default() -> Self {
-        SoukPackageKind::App
-    }
-}
 
 impl SoukPackageKind {
     pub fn from_keyfile(keyfile: KeyFile) -> Self {
