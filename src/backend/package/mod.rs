@@ -17,7 +17,9 @@ use glib::KeyFile;
 use std::cell::RefCell;
 
 use crate::app::SoukApplication;
-use crate::backend::{SoukFlatpakBackend, SoukPackageAction, SoukTransactionState};
+use crate::backend::{
+    SoukFlatpakBackend, SoukPackageAction, SoukTransaction, SoukTransactionState,
+};
 use crate::database::DbPackage;
 
 impl SoukPackageKind {
@@ -183,7 +185,56 @@ impl SoukPackage {
             .downcast::<SoukPackage>()
             .unwrap();
 
+        package.setup_signals();
         package
+    }
+
+    fn setup_signals(&self) {
+        let self_ = SoukPackagePrivate::from_instance(self);
+        self_.flatpak_backend.connect_local("new_transaction", false, clone!(@weak self as this => @default-return None, move |data|{
+            let object: glib::Object = data[1].get().unwrap().unwrap();
+            let transaction: SoukTransaction = object.downcast().unwrap();
+
+            if transaction.get_package() == this{
+                // Set transaction action
+                let self_ = SoukPackagePrivate::from_instance(&this);
+                *self_.transaction_action.borrow_mut() = transaction.get_action();
+                this.notify("transaction_action");
+
+                // Listen to transaction state changes
+                transaction.connect_local("notify::state", false, clone!(@weak this => @default-return None, move |data|{
+                    let object: glib::Object = data[0].get().unwrap().unwrap();
+                    let transaction: SoukTransaction = object.downcast().unwrap();
+                    let state = transaction.get_state();
+
+                    // Update `transaction_state` property of package
+                    let self_ = SoukPackagePrivate::from_instance(&this);
+                    *self_.transaction_state.borrow_mut() = Some(state);
+                    this.notify("transaction_state");
+
+                    None
+                })).unwrap();
+            }
+
+            None
+        })).unwrap();
+    }
+
+    pub fn install(&self) {
+        let transaction = SoukTransaction::new(self.clone(), SoukPackageAction::Install);
+        let self_ = SoukPackagePrivate::from_instance(self);
+        self_.flatpak_backend.add_transaction(transaction);
+    }
+
+    pub fn uninstall(&self) {
+        let transaction = SoukTransaction::new(self.clone(), SoukPackageAction::Uninstall);
+        let self_ = SoukPackagePrivate::from_instance(self);
+        self_.flatpak_backend.add_transaction(transaction);
+    }
+
+    pub fn launch(&self) {
+        let self_ = SoukPackagePrivate::from_instance(self);
+        self_.flatpak_backend.launch_package(self);
     }
 
     pub fn get_kind(&self) -> SoukPackageKind {

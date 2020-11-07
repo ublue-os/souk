@@ -3,7 +3,7 @@ use gtk::prelude::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::backend::{SoukPackage, SoukPackageKind};
+use crate::backend::{SoukPackage, SoukPackageKind, SoukTransactionMode};
 use crate::ui::package_widgets::PackageWidget;
 
 pub struct PackageActionButton {
@@ -18,20 +18,19 @@ impl PackageActionButton {
         // install
         get_widget!(self.builder, gtk::Button, install_button);
         install_button.connect_clicked(clone!(@weak self.package as package => move |_|{
-            //this.flatpak_backend.clone().install_package(&this.package);
+            package.borrow().as_ref().unwrap().install();
         }));
 
         // uninstall
         get_widget!(self.builder, gtk::Button, uninstall_button);
         uninstall_button.connect_clicked(clone!(@weak self.package as package => move |_|{
-            debug!("Uninstall");
-            //this.flatpak_backend.clone().uninstall_package(&this.package);
+            package.borrow().as_ref().unwrap().uninstall();
         }));
 
         // open
         get_widget!(self.builder, gtk::Button, open_button);
         open_button.connect_clicked(clone!(@weak self.package as package => move |_|{
-            //this.flatpak_backend.clone().launch_package(&this.package);
+            package.borrow().as_ref().unwrap().launch();
         }));
 
         // cancel
@@ -44,59 +43,38 @@ impl PackageActionButton {
         }));
     }
 
-    /*
-    async fn receive_transaction_messages(self: Rc<Self>) {
-        get_widget!(self.builder, gtk::Stack, button_stack);
-        get_widget!(self.builder, gtk::ProgressBar, progressbar);
-        get_widget!(self.builder, gtk::Label, status_label);
+    fn update_stack(builder: gtk::Builder, package: SoukPackage) {
+        get_widget!(builder, gtk::Stack, button_stack);
+        get_widget!(builder, gtk::Label, status_label);
+        get_widget!(builder, gtk::ProgressBar, progressbar);
 
-        let mut transaction_channel = self.transaction.borrow().as_ref().unwrap().get_channel();
-        button_stack.set_visible_child_name("processing");
+        match package.get_transaction_state() {
+            Some(state) => {
+                button_stack.set_visible_child_name("processing");
+                progressbar.set_fraction(state.get_percentage().into());
+                if &state.get_message() != "" {
+                    status_label.set_text(&state.get_message());
+                }
 
-        // TODO: Don't show this message when installing packages.
-        // It is currently being displayed for ~20ms.
-        status_label.set_text("Working…");
-        // Listen to transaction state changes
-        while let Some(state) = transaction_channel.recv().await {
-            progressbar.set_fraction(state.percentage.into());
-            if &state.message != "" {
-                status_label.set_text(&state.message);
+                match state.get_mode() {
+                    SoukTransactionMode::Finished | SoukTransactionMode::Cancelled => {
+                        status_label.set_text("");
+                    }
+                    SoukTransactionMode::Error => {
+                        status_label.set_text("");
+                        //utils::show_error_dialog(&err);
+                    }
+                    _ => (),
+                };
             }
-
-            match state.mode {
-                TransactionMode::Finished | TransactionMode::Cancelled => {
-                    status_label.set_text("");
-                    self.clone().update_stack();
-                    break;
+            None => {
+                if package.get_installed_info().is_some() {
+                    button_stack.set_visible_child_name("installed");
+                } else {
+                    button_stack.set_visible_child_name("install");
                 }
-                TransactionMode::Error(err) => {
-                    status_label.set_text("");
-                    self.clone().update_stack();
-                    utils::show_error_dialog(&err);
-                    break;
-                }
-                _ => (),
-            };
+            }
         }
-
-        *self.transaction.borrow_mut() = None;
-    }*/
-
-    fn update_stack(&self) {
-        get_widget!(self.builder, gtk::Stack, button_stack);
-
-        /*match self
-            .flatpak_backend
-            .clone()
-            .is_package_installed(&self.package)
-        {
-            true => {
-                button_stack.set_visible_child_name("installed");
-            }
-            false => {
-                button_stack.set_visible_child_name("install");
-            }
-        };*/
     }
 }
 
@@ -112,12 +90,16 @@ impl PackageWidget for PackageActionButton {
             builder,
         };
 
-        pab.update_stack();
         pab.setup_signals();
         pab
     }
 
     fn set_package(&self, package: &SoukPackage) {
+        Self::update_stack(self.builder.clone(), package.clone());
+        package.connect_local("notify::transaction_state", false, clone!(@weak self.builder as builder, @weak package => @default-return None, move |_|{
+            Self::update_stack(builder.clone(), package.clone());
+            None
+        })).unwrap();
         *self.package.borrow_mut() = Some(package.clone());
 
         // Hide open button for runtimes and extensions

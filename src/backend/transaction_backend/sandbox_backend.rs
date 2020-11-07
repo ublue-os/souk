@@ -29,7 +29,7 @@ impl TransactionBackend for SandboxBackend {
         Self { transactions }
     }
 
-    fn add_package_transaction(&self, transaction: SoukTransaction) {
+    fn add_transaction(&self, transaction: SoukTransaction) {
         debug!(
             "New transaction: {:?} -> {}",
             transaction.get_action(),
@@ -191,12 +191,12 @@ impl SandboxBackend {
         // Regex to get percentage value
         let regex = Regex::new(r"(\d{1,3})%").unwrap();
 
-        let mut n: f32 = 1.0;
-        let mut big_n: f32 = 1.0;
+        let mut n: f64 = 1.0;
+        let mut big_n: f64 = 1.0;
 
         if let Some(percentage) = regex.captures(&line) {
             let value = percentage.get(1).unwrap().as_str();
-            let percentage = value.parse::<f32>().unwrap() / 100.0;
+            let percentage = value.parse::<f64>().unwrap() / 100.0;
 
             // Regex to get which package `n` out of how many packages `big_n`
             // is being installed.

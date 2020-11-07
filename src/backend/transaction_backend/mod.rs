@@ -10,7 +10,7 @@ pub trait TransactionBackend {
     where
         Self: Sized;
 
-    fn add_package_transaction(&self, transaction: SoukTransaction);
+    fn add_transaction(&self, transaction: SoukTransaction);
 
     fn cancel_package_transaction(&self, transaction: SoukTransaction);
 

@@ -5,7 +5,7 @@ use glib::subclass::prelude::*;
 use glib::translate::*;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
-use crate::backend::SoukPackage;
+use crate::backend::{SoukPackage, SoukTransaction};
 use crate::database::package_database;
 
 pub struct SoukFlatpakBackendPrivate {
@@ -36,6 +36,12 @@ impl ObjectSubclass for SoukFlatpakBackendPrivate {
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
+        klass.add_signal(
+            "new_transaction",
+            glib::SignalFlags::ACTION,
+            &[glib::Type::BaseObject],
+            glib::Type::Unit,
+        );
     }
 
     glib_object_subclass!();
@@ -125,6 +131,12 @@ impl SoukFlatpakBackend {
                 err.to_string()
             ),
         };
+    }
+
+    pub fn add_transaction(&self, transaction: SoukTransaction) {
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        self.emit("new_transaction", &[&transaction]).unwrap();
+        self_.transaction_backend.add_transaction(transaction);
     }
 
     fn is_sandboxed() -> bool {

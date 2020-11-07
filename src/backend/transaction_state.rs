@@ -9,7 +9,7 @@ use crate::backend::SoukTransactionMode;
 
 pub struct SoukTransactionStatePrivate {
     message: RefCell<String>,
-    percentage: RefCell<f32>,
+    percentage: RefCell<f64>,
     mode: RefCell<SoukTransactionMode>,
 }
 
@@ -20,18 +20,18 @@ static PROPERTIES: [subclass::Property; 3] = [
             "Message",
             "Message",
             None,
-            glib::ParamFlags::READABLE,
+            glib::ParamFlags::READWRITE,
         )
     }),
     subclass::Property("percentage", |percentage| {
-        glib::ParamSpec::float(
+        glib::ParamSpec::double(
             percentage,
             "Percentage",
             "Percentage",
             0.0,
             1.0,
             0.0,
-            glib::ParamFlags::READABLE,
+            glib::ParamFlags::READWRITE,
         )
     }),
     subclass::Property("mode", |mode| {
@@ -41,7 +41,7 @@ static PROPERTIES: [subclass::Property; 3] = [
             "Mode",
             SoukTransactionMode::static_type(),
             SoukTransactionMode::default() as i32,
-            glib::ParamFlags::READABLE,
+            glib::ParamFlags::READWRITE,
         )
     }),
 ];
@@ -130,7 +130,7 @@ impl SoukTransactionState {
             .unwrap()
     }
 
-    pub fn get_percentage(&self) -> f32 {
+    pub fn get_percentage(&self) -> f64 {
         self.get_property("percentage")
             .unwrap()
             .get()
