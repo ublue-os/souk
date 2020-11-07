@@ -84,6 +84,7 @@ glib_wrapper! {
     }
 }
 
+#[allow(dead_code)]
 impl SoukInstalledInfo {
     pub fn new(installed_ref: &InstalledRef) -> Self {
         let info = glib::Object::new(SoukInstalledInfo::static_type(), &[])
@@ -112,6 +113,26 @@ impl SoukInstalledInfo {
         *info_priv.deploy_dir.borrow_mut() = installed_ref.get_deploy_dir().unwrap().to_string();
 
         info
+    }
+
+    pub fn get_commit(&self) -> String {
+        self.get_property("commit").unwrap().get().unwrap().unwrap()
+    }
+
+    pub fn get_installed_size(&self) -> u64 {
+        self.get_property("installed_size")
+            .unwrap()
+            .get()
+            .unwrap()
+            .unwrap()
+    }
+
+    pub fn get_deploy_dir(&self) -> String {
+        self.get_property("deploy_dir")
+            .unwrap()
+            .get()
+            .unwrap()
+            .unwrap()
     }
 
     pub fn get_appdata(&self) -> Option<Component> {

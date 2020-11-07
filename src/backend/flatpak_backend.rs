@@ -5,7 +5,7 @@ use glib::subclass::prelude::*;
 use glib::translate::*;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
-use crate::backend::{Package, SoukPackage};
+use crate::backend::SoukPackage;
 use crate::database::package_database;
 
 pub struct SoukFlatpakBackendPrivate {
@@ -51,13 +51,11 @@ impl ObjectSubclass for SoukFlatpakBackendPrivate {
         } else {
             unimplemented!("Host backend not implemented yet");
         };
-        //let broadcast = BroadcastChannel::new();
 
         Self {
             system_installation,
             installed_packages,
             transaction_backend,
-            //broadcast,
         }
     }
 }
@@ -91,8 +89,11 @@ impl SoukFlatpakBackend {
             .downcast::<SoukFlatpakBackend>()
             .unwrap();
 
-        package_database::init(backend.clone());
         backend
+    }
+
+    pub fn init(&self) {
+        package_database::init(self.clone());
     }
 
     pub fn get_installed_packages(&self) -> gio::ListStore {
@@ -109,18 +110,18 @@ impl SoukFlatpakBackend {
         self_.system_installation.clone()
     }
 
-    pub fn launch_package(&self, package: &dyn Package) {
+    pub fn launch_package(&self, package: &SoukPackage) {
         match std::process::Command::new("flatpak-spawn")
             .arg("--host")
             .arg("flatpak")
             .arg("run")
-            .arg(package.ref_name())
+            .arg(package.get_ref_name())
             .spawn()
         {
             Ok(_) => (),
             Err(err) => warn!(
                 "Unable to launch {}: {}",
-                package.ref_name(),
+                package.get_ref_name(),
                 err.to_string()
             ),
         };

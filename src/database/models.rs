@@ -2,7 +2,7 @@ use appstream::TranslatableString;
 use chrono::NaiveDate;
 
 use super::schema::*;
-use crate::backend::{Package, RemotePackage};
+use crate::backend::SoukPackage;
 
 #[derive(Queryable, Insertable, Debug, Clone)]
 #[table_name = "appstream_packages"]
@@ -39,8 +39,8 @@ impl DbPackage {
     }
 }
 
-impl From<RemotePackage> for DbPackage {
-    fn from(package: RemotePackage) -> Self {
+impl From<SoukPackage> for DbPackage {
+    fn from(package: SoukPackage) -> Self {
         let mut display_name = "".to_string();
         let mut version = "".to_string();
         let mut summary = "".to_string();
@@ -50,7 +50,7 @@ impl From<RemotePackage> for DbPackage {
         let mut release_date = None;
         let mut appdata = "".to_string();
 
-        if let Some(ad) = package.appdata() {
+        if let Some(ad) = package.get_appdata() {
             display_name = Self::get_string(&Some(ad.name.clone()));
             summary = Self::get_string(&ad.summary);
             developer_name = Self::get_string(&ad.developer_name);
@@ -76,15 +76,23 @@ impl From<RemotePackage> for DbPackage {
         DbPackage {
             id: None,
 
-            kind: package.kind().clone().to_string(),
-            name: package.name().clone(),
-            arch: package.arch().clone(),
-            branch: package.branch().clone(),
-            commit: package.commit().clone(),
-            remote: package.remote().clone(),
+            kind: package.get_kind().clone().to_string(),
+            name: package.get_name().clone(),
+            arch: package.get_arch().clone(),
+            branch: package.get_branch().clone(),
+            commit: package.get_remote_info().unwrap().get_commit().clone(),
+            remote: package.get_remote().clone(),
 
-            download_size: package.download_size().clone(),
-            installed_size: package.installed_size().clone(),
+            download_size: package
+                .get_remote_info()
+                .unwrap()
+                .get_download_size()
+                .clone() as i64,
+            installed_size: package
+                .get_remote_info()
+                .unwrap()
+                .get_installed_size()
+                .clone() as i64,
 
             display_name,
             version,

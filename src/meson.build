@@ -34,7 +34,6 @@ sources = files(
   'backend/transaction_backend/sandbox_backend.rs',
   'backend/flatpak_backend.rs',
   'backend/mod.rs',
-  'backend/legacy_package.rs',
   'backend/package_action.rs',
   'backend/transaction.rs',
   'backend/transaction_mode.rs',

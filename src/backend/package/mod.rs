@@ -7,7 +7,7 @@ pub use remote_info::SoukRemoteInfo;
 
 use appstream::Component;
 use flatpak::prelude::*;
-use flatpak::InstalledRef;
+use flatpak::{InstalledRef, RemoteRef};
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
@@ -300,6 +300,30 @@ impl From<InstalledRef> for SoukPackage {
 
         let installed_info = SoukInstalledInfo::new(&installed_ref);
         *package_priv.installed_info.borrow_mut() = Some(installed_info);
+
+        package
+    }
+}
+
+impl From<(RemoteRef, String)> for SoukPackage {
+    fn from(remote_ref: (RemoteRef, String)) -> Self {
+        let keyfile_bytes = remote_ref.0.get_metadata().unwrap();
+        let keyfile = glib::KeyFile::new();
+        keyfile
+            .load_from_bytes(&keyfile_bytes, glib::KeyFileFlags::NONE)
+            .unwrap();
+
+        let package = SoukPackage::new();
+        let package_priv = SoukPackagePrivate::from_instance(&package);
+
+        *package_priv.kind.borrow_mut() = SoukPackageKind::from_keyfile(keyfile);
+        *package_priv.name.borrow_mut() = remote_ref.0.get_name().unwrap().to_string();
+        *package_priv.arch.borrow_mut() = remote_ref.0.get_arch().unwrap().to_string();
+        *package_priv.branch.borrow_mut() = remote_ref.0.get_branch().unwrap().to_string();
+        *package_priv.remote.borrow_mut() = remote_ref.0.get_remote_name().unwrap().to_string();
+
+        let remote_info = SoukRemoteInfo::new_from_remote_ref(remote_ref.0, remote_ref.1);
+        *package_priv.remote_info.borrow_mut() = Some(remote_info);
 
         package
     }

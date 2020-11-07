@@ -1,4 +1,6 @@
 use appstream::Component;
+use flatpak::prelude::*;
+use flatpak::RemoteRef;
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
@@ -85,6 +87,7 @@ glib_wrapper! {
     }
 }
 
+#[allow(dead_code)]
 impl SoukRemoteInfo {
     pub fn new(db_package: &DbPackage) -> Self {
         let info = glib::Object::new(SoukRemoteInfo::static_type(), &[])
@@ -99,6 +102,41 @@ impl SoukRemoteInfo {
         *info_priv.download_size.borrow_mut() = db_package.download_size.clone() as u64;
 
         info
+    }
+
+    pub fn new_from_remote_ref(remote_ref: RemoteRef, appdata: String) -> Self {
+        let info = glib::Object::new(SoukRemoteInfo::static_type(), &[])
+            .unwrap()
+            .downcast::<SoukRemoteInfo>()
+            .unwrap();
+
+        let info_priv = SoukRemoteInfoPrivate::from_instance(&info);
+        *info_priv.appdata.borrow_mut() = appdata;
+        *info_priv.commit.borrow_mut() = remote_ref.get_commit().unwrap().to_string();
+        *info_priv.installed_size.borrow_mut() = remote_ref.get_installed_size();
+        *info_priv.download_size.borrow_mut() = remote_ref.get_download_size();
+
+        info
+    }
+
+    pub fn get_commit(&self) -> String {
+        self.get_property("commit").unwrap().get().unwrap().unwrap()
+    }
+
+    pub fn get_installed_size(&self) -> u64 {
+        self.get_property("installed_size")
+            .unwrap()
+            .get()
+            .unwrap()
+            .unwrap()
+    }
+
+    pub fn get_download_size(&self) -> u64 {
+        self.get_property("download_size")
+            .unwrap()
+            .get()
+            .unwrap()
+            .unwrap()
     }
 
     pub fn get_appdata(&self) -> Option<Component> {

@@ -9,12 +9,6 @@ pub use package::SoukPackage;
 pub use package::SoukPackageKind;
 pub use package::SoukRemoteInfo;
 
-mod legacy_package;
-pub use legacy_package::BasePackage;
-pub use legacy_package::Package;
-pub use legacy_package::PackageKind;
-pub use legacy_package::RemotePackage;
-
 mod package_action;
 pub use package_action::SoukPackageAction;
 

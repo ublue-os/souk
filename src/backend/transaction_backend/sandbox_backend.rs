@@ -13,8 +13,7 @@ use std::rc::Rc;
 
 use crate::backend::transaction_backend::TransactionBackend;
 use crate::backend::{
-    BasePackage, Package, SoukPackageAction, SoukTransaction, SoukTransactionMode,
-    SoukTransactionState,
+    SoukPackage, SoukPackageAction, SoukTransaction, SoukTransactionMode, SoukTransactionState,
 };
 
 type Transactions = Rc<RefCell<HashMap<String, (SoukTransaction, Child)>>>;
@@ -68,8 +67,8 @@ impl TransactionBackend for SandboxBackend {
         }
     }
 
-    fn get_active_transaction(&self, package: &BasePackage) -> Option<SoukTransaction> {
-        match self.transactions.borrow().get(&package.ref_name()) {
+    fn get_active_transaction(&self, package: &SoukPackage) -> Option<SoukTransaction> {
+        match self.transactions.borrow().get(&package.get_ref_name()) {
             Some((t, _)) => Some(t.clone()),
             None => None,
         }

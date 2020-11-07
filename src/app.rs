@@ -159,6 +159,8 @@ impl SoukApplication {
         let sender = self_.sender.clone();
         let flatpak_backend = self_.flatpak_backend.clone();
 
+        flatpak_backend.init();
+
         *self_.explore_page.borrow_mut() = Some(ExplorePage::new(sender.clone()));
         *self_.search_page.borrow_mut() = Some(SearchPage::new(sender.clone()));
         *self_.installed_page.borrow_mut() =

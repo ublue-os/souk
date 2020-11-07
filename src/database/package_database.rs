@@ -9,8 +9,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
-use crate::backend::RemotePackage;
-use crate::backend::SoukFlatpakBackend;
+use crate::backend::{SoukFlatpakBackend, SoukPackage};
 use crate::database::queries;
 use crate::database::DbInfo;
 
@@ -177,8 +176,11 @@ pub fn rebuild(flatpak_backend: SoukFlatpakBackend) {
             };
 
             // Create new remote package and push it into the databse
-            let remote_package = RemotePackage::from((remote_ref, component));
-            db_packages.push(remote_package.into());
+            let package = SoukPackage::from((
+                remote_ref,
+                serde_json::to_string(&component).unwrap().to_string(),
+            ));
+            db_packages.push(package.into());
 
             pos = pos + 1.0;
         }
