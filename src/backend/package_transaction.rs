@@ -3,19 +3,19 @@ use broadcaster::BroadcastChannel;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use crate::backend::{BasePackage, PackageAction, TransactionState};
+use crate::backend::{BasePackage, SoukPackageAction, TransactionState};
 
 #[derive(Debug)]
 pub struct PackageTransaction {
     pub package: BasePackage,
-    pub action: PackageAction,
+    pub action: SoukPackageAction,
     state: Mutex<TransactionState>,
 
     broadcast: BroadcastChannel<TransactionState>,
 }
 
 impl PackageTransaction {
-    pub fn new(package: BasePackage, action: PackageAction) -> Arc<Self> {
+    pub fn new(package: BasePackage, action: SoukPackageAction) -> Arc<Self> {
         let state = Mutex::new(TransactionState::default());
         let broadcast = BroadcastChannel::new();
 

@@ -19,7 +19,7 @@ pub use legacy_package::PackageKind;
 pub use legacy_package::RemotePackage;
 
 mod package_action;
-pub use package_action::PackageAction;
+pub use package_action::SoukPackageAction;
 
 mod package_transaction;
 pub use package_transaction::PackageTransaction;

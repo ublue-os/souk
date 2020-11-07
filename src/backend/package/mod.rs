@@ -15,7 +15,7 @@ use glib::KeyFile;
 use std::cell::RefCell;
 
 use crate::app::SoukApplication;
-use crate::backend::SoukFlatpakBackend;
+use crate::backend::{SoukFlatpakBackend, SoukPackageAction};
 use crate::database::DbPackage;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, GEnum)]
@@ -55,10 +55,12 @@ pub struct SoukPackagePrivate {
     remote_info: RefCell<Option<SoukRemoteInfo>>,
     installed_info: RefCell<Option<SoukInstalledInfo>>,
 
+    transaction_action: RefCell<SoukPackageAction>,
+
     flatpak_backend: SoukFlatpakBackend,
 }
 
-static PROPERTIES: [subclass::Property; 7] = [
+static PROPERTIES: [subclass::Property; 8] = [
     subclass::Property("kind", |kind| {
         glib::ParamSpec::enum_(
             kind,
@@ -87,7 +89,7 @@ static PROPERTIES: [subclass::Property; 7] = [
             "Remote Information",
             "Remote Information",
             SoukRemoteInfo::static_type(),
-            glib::ParamFlags::READWRITE,
+            glib::ParamFlags::READABLE,
         )
     }),
     subclass::Property("installed_info", |installed_info| {
@@ -96,7 +98,17 @@ static PROPERTIES: [subclass::Property; 7] = [
             "Installed Information",
             "Installed Information",
             SoukInstalledInfo::static_type(),
-            glib::ParamFlags::READWRITE,
+            glib::ParamFlags::READABLE,
+        )
+    }),
+    subclass::Property("transaction_action", |transaction_action| {
+        glib::ParamSpec::enum_(
+            transaction_action,
+            "Transaction Action",
+            "Transaction Action",
+            SoukPackageAction::static_type(),
+            SoukPackageAction::default() as i32,
+            glib::ParamFlags::READABLE,
         )
     }),
 ];
@@ -125,28 +137,13 @@ impl ObjectSubclass for SoukPackagePrivate {
             remote: RefCell::default(),
             remote_info: RefCell::default(),
             installed_info: RefCell::default(),
+            transaction_action: RefCell::default(),
             flatpak_backend,
         }
     }
 }
 
 impl ObjectImpl for SoukPackagePrivate {
-    fn set_property(&self, _obj: &glib::Object, id: usize, value: &glib::Value) {
-        let prop = &PROPERTIES[id];
-
-        match *prop {
-            subclass::Property("remote_info", ..) => {
-                let remote_info = value.get().unwrap();
-                *self.remote_info.borrow_mut() = remote_info;
-            }
-            subclass::Property("installed_info", ..) => {
-                let installed_info = value.get().unwrap();
-                *self.installed_info.borrow_mut() = installed_info;
-            }
-            _ => unimplemented!(),
-        }
-    }
-
     fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
         let prop = &PROPERTIES[id];
 
@@ -158,6 +155,9 @@ impl ObjectImpl for SoukPackagePrivate {
             subclass::Property("remote", ..) => Ok(self.remote.borrow().to_value()),
             subclass::Property("remote_info", ..) => Ok(self.remote_info.borrow().to_value()),
             subclass::Property("installed_info", ..) => Ok(self.installed_info.borrow().to_value()),
+            subclass::Property("transaction_action", ..) => {
+                Ok(self.transaction_action.borrow().to_value())
+            }
             _ => unimplemented!(),
         }
     }

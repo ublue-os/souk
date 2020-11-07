@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use crate::backend::transaction_backend::TransactionBackend;
 use crate::backend::{
-    BasePackage, Package, PackageAction, PackageTransaction, TransactionMode, TransactionState,
+    BasePackage, Package, PackageTransaction, SoukPackageAction, TransactionMode, TransactionState,
 };
 
 type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
@@ -160,14 +160,14 @@ impl SandboxBackend {
         // Note: The command cannot ask any further questions,
         // everything must run automatically, so we set "-y" everywhere.
         match transaction.action {
-            PackageAction::Install => {
+            SoukPackageAction::Install => {
                 args.push("install".into());
                 args.push("--system".into());
                 args.push(transaction.package.remote().clone());
                 args.push(transaction.package.name().clone());
                 args.push("-y".into());
             }
-            PackageAction::Uninstall => {
+            SoukPackageAction::Uninstall => {
                 args.push("uninstall".into());
                 args.push("--system".into());
                 args.push(transaction.package.name().clone());
