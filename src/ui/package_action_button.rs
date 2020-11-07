@@ -4,16 +4,12 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::backend::{
-    BackendMessage, BasePackage, Package, PackageKind, PackageTransaction, SoukFlatpakBackend,
-    SoukTransactionMode,
-};
-use crate::ui::utils;
+use crate::backend::{BasePackage, Package, PackageKind, SoukFlatpakBackend, SoukTransaction};
 
 pub struct PackageActionButton {
     pub widget: gtk::Box,
     package: BasePackage,
-    transaction: RefCell<Option<Arc<PackageTransaction>>>,
+    transaction: RefCell<Option<Arc<SoukTransaction>>>,
 
     flatpak_backend: SoukFlatpakBackend,
     builder: gtk::Builder,
@@ -97,7 +93,7 @@ impl PackageActionButton {
 
         while let Some(backend_message) = backend_channel.recv().await {
             match backend_message {
-                BackendMessage::PackageTransaction(transaction) => {
+                BackendMessage::SoukTransaction(transaction) => {
                     if transaction.package == self.package {
                         *self.transaction.borrow_mut() = Some(transaction.clone());
                         self.clone().receive_transaction_messages().await;

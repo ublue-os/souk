@@ -1,14 +1,11 @@
-use broadcaster::BroadcastChannel;
-use flatpak::{Installation, InstallationExt, InstalledRef, RefExt};
+use flatpak::{Installation, InstallationExt};
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
 
-use std::sync::Arc;
-
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
-use crate::backend::{BackendMessage, Package, PackageAction, PackageTransaction, SoukPackage};
+use crate::backend::{Package, SoukPackage};
 use crate::database::package_database;
 
 pub struct SoukFlatpakBackendPrivate {
@@ -16,7 +13,6 @@ pub struct SoukFlatpakBackendPrivate {
     installed_packages: gio::ListStore,
 
     transaction_backend: Box<dyn TransactionBackend>,
-    broadcast: BroadcastChannel<BackendMessage>,
 }
 
 static PROPERTIES: [subclass::Property; 1] = [subclass::Property(
@@ -55,13 +51,13 @@ impl ObjectSubclass for SoukFlatpakBackendPrivate {
         } else {
             unimplemented!("Host backend not implemented yet");
         };
-        let broadcast = BroadcastChannel::new();
+        //let broadcast = BroadcastChannel::new();
 
         Self {
             system_installation,
             installed_packages,
             transaction_backend,
-            broadcast,
+            //broadcast,
         }
     }
 }
@@ -140,7 +136,7 @@ impl SoukFlatpakBackend {
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
         self_.installed_packages.remove_all();
 
-        let mut system_refs = self_
+        let system_refs = self_
             .system_installation
             .list_installed_refs(Some(&gio::Cancellable::new()))
             .unwrap();

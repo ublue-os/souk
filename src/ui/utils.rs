@@ -8,7 +8,7 @@ use libhandy::prelude::*;
 
 use std::path::PathBuf;
 
-use crate::backend::{Package, PackageKind, SoukPackage};
+use crate::backend::SoukPackage;
 
 pub fn set_label_translatable_string(label: &gtk::Label, text: Option<TranslatableString>) {
     match text {

@@ -10,18 +10,17 @@ use regex::Regex;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::Arc;
 
 use crate::backend::transaction_backend::TransactionBackend;
 use crate::backend::{
-    BasePackage, Package, PackageTransaction, SoukPackageAction, SoukTransactionMode,
+    BasePackage, Package, SoukPackageAction, SoukTransaction, SoukTransactionMode,
     SoukTransactionState,
 };
 
-type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
+type Transactions = Rc<RefCell<HashMap<String, (SoukTransaction, Child)>>>;
 
 pub struct SandboxBackend {
-    // HashMap < app_id , ( PackageTransaction, Child ) >
+    // HashMap < app_id , ( SoukTransaction, Child ) >
     transactions: Transactions,
 }
 
@@ -31,11 +30,11 @@ impl TransactionBackend for SandboxBackend {
         Self { transactions }
     }
 
-    fn add_package_transaction(&self, transaction: Arc<PackageTransaction>) {
+    fn add_package_transaction(&self, transaction: SoukTransaction) {
         debug!(
             "New transaction: {:?} -> {}",
-            transaction.action,
-            transaction.package.ref_name()
+            transaction.get_action(),
+            transaction.get_package().get_ref_name()
         );
         spawn!(Self::execute_package_transacton(
             transaction,
@@ -43,36 +42,33 @@ impl TransactionBackend for SandboxBackend {
         ));
     }
 
-    fn cancel_package_transaction(&self, transaction: Arc<PackageTransaction>) {
+    fn cancel_package_transaction(&self, transaction: SoukTransaction) {
         debug!(
             "Cancel transaction: {:?} -> {}",
-            transaction.action,
-            transaction.package.ref_name()
+            transaction.get_action(),
+            transaction.get_package().get_ref_name()
         );
         let mut tupl = self
             .transactions
             .borrow_mut()
-            .remove(&transaction.package.ref_name())
+            .remove(&transaction.get_package().get_ref_name())
             .unwrap();
 
         match tupl.1.kill() {
             Ok(()) => {
-                let mut state = SoukTransactionState::default();
+                let state = SoukTransactionState::default();
                 state
                     .set_property("mode", &SoukTransactionMode::Cancelled)
                     .unwrap();
                 state.set_property("percentage", &1.0).unwrap();
-                transaction.set_state(state);
+                transaction.set_property("state", &state).unwrap();
                 debug!("Sucessfully cancelled transaction");
             }
             Err(err) => warn!("Unable to cancel transaction: {}", err.to_string()),
         }
     }
 
-    fn get_active_transaction(
-        &self,
-        package: &BasePackage,
-    ) -> Option<std::sync::Arc<PackageTransaction>> {
+    fn get_active_transaction(&self, package: &BasePackage) -> Option<SoukTransaction> {
         match self.transactions.borrow().get(&package.ref_name()) {
             Some((t, _)) => Some(t.clone()),
             None => None,
@@ -81,14 +77,11 @@ impl TransactionBackend for SandboxBackend {
 }
 
 impl SandboxBackend {
-    async fn execute_package_transacton(
-        transaction: Arc<PackageTransaction>,
-        transactions: Transactions,
-    ) {
+    async fn execute_package_transacton(transaction: SoukTransaction, transactions: Transactions) {
         // Set initial transaction state
-        let mut state = SoukTransactionState::default();
+        let state = SoukTransactionState::default();
         state.set_property("percentage", &0.0).unwrap();
-        transaction.set_state(state);
+        transaction.set_property("state", &state).unwrap();
 
         // Setup flatpak child / procress and spawn it
         let args = Self::get_flatpak_args(&transaction);
@@ -107,24 +100,25 @@ impl SandboxBackend {
         // Insert running child into transaction HashMap, we need to access it later...
         // 1) when we want to cancel the transaction
         // 2) when we want to know the current state of a running transaction
-        transactions
-            .borrow_mut()
-            .insert(transaction.package.ref_name(), (transaction.clone(), child));
+        transactions.borrow_mut().insert(
+            transaction.get_package().get_ref_name(),
+            (transaction.clone(), child),
+        );
 
         // Parse stdout lines till nothing is left anymore / the process stopped
         while let Some(line) = stdout_lines.next().await {
             let state = Self::parse_line(line.unwrap());
-            transaction.set_state(state);
+            transaction.set_property("state", &state).unwrap();
         }
 
         // Process stopped and isn't running anymore, so remove the transaction
         // from the HashMap again, and process the result / return code of it.
         match transactions
             .borrow_mut()
-            .remove(&transaction.package.ref_name())
+            .remove(&transaction.get_package().get_ref_name())
         {
             Some((_, mut child)) => {
-                let mut state = SoukTransactionState::default();
+                let state = SoukTransactionState::default();
                 // Transaction finished, so let set it to 100%
                 state.set_property("percentage", &1.0).unwrap();
 
@@ -150,14 +144,14 @@ impl SandboxBackend {
                 }
 
                 // Set last transaction state.
-                transaction.set_state(state);
+                transaction.set_property("state", &state).unwrap();
             }
             // When we cancel the transaction before, it isn't available in the HashMap anymore.
             None => debug!("Unable to end package transaction. Probably got cancelled before."),
         };
     }
 
-    fn get_flatpak_args(transaction: &PackageTransaction) -> Vec<String> {
+    fn get_flatpak_args(transaction: &SoukTransaction) -> Vec<String> {
         let mut args: Vec<String> = Vec::new();
         // If we kill flatpak-spawn, we also want to kill the child process too.
         args.push("--watch-bus".into());
@@ -169,18 +163,18 @@ impl SandboxBackend {
         // Generate the Flatpak command
         // Note: The command cannot ask any further questions,
         // everything must run automatically, so we set "-y" everywhere.
-        match transaction.action {
+        match transaction.get_action() {
             SoukPackageAction::Install => {
                 args.push("install".into());
                 args.push("--system".into());
-                args.push(transaction.package.remote().clone());
-                args.push(transaction.package.name().clone());
+                args.push(transaction.get_package().get_remote().clone());
+                args.push(transaction.get_package().get_name().clone());
                 args.push("-y".into());
             }
             SoukPackageAction::Uninstall => {
                 args.push("uninstall".into());
                 args.push("--system".into());
-                args.push(transaction.package.name().clone());
+                args.push(transaction.get_package().get_name().clone());
                 args.push("-y".into());
             }
             _ => (),
@@ -190,7 +184,7 @@ impl SandboxBackend {
     }
 
     fn parse_line(line: String) -> SoukTransactionState {
-        let mut state = SoukTransactionState::default();
+        let state = SoukTransactionState::default();
         state
             .set_property("mode", &SoukTransactionMode::Running)
             .unwrap();

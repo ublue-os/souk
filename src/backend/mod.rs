@@ -1,8 +1,5 @@
 mod transaction_backend;
 
-mod backend_message;
-pub use backend_message::BackendMessage;
-
 mod flatpak_backend;
 pub use flatpak_backend::SoukFlatpakBackend;
 
@@ -21,13 +18,11 @@ pub use legacy_package::RemotePackage;
 mod package_action;
 pub use package_action::SoukPackageAction;
 
-mod package_transaction;
-pub use package_transaction::PackageTransaction;
+mod transaction;
+pub use transaction::SoukTransaction;
 
 mod transaction_mode;
 pub use transaction_mode::SoukTransactionMode;
 
 mod transaction_state;
 pub use transaction_state::SoukTransactionState;
-
-mod utils;

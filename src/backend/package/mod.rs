@@ -17,7 +17,7 @@ use glib::KeyFile;
 use std::cell::RefCell;
 
 use crate::app::SoukApplication;
-use crate::backend::{SoukFlatpakBackend, SoukPackageAction};
+use crate::backend::{SoukFlatpakBackend, SoukPackageAction, SoukTransactionState};
 use crate::database::DbPackage;
 
 impl SoukPackageKind {
@@ -43,11 +43,12 @@ pub struct SoukPackagePrivate {
     installed_info: RefCell<Option<SoukInstalledInfo>>,
 
     transaction_action: RefCell<SoukPackageAction>,
+    transaction_state: RefCell<Option<SoukTransactionState>>,
 
     flatpak_backend: SoukFlatpakBackend,
 }
 
-static PROPERTIES: [subclass::Property; 8] = [
+static PROPERTIES: [subclass::Property; 9] = [
     subclass::Property("kind", |kind| {
         glib::ParamSpec::enum_(
             kind,
@@ -98,6 +99,15 @@ static PROPERTIES: [subclass::Property; 8] = [
             glib::ParamFlags::READABLE,
         )
     }),
+    subclass::Property("transaction_state", |transaction_state| {
+        glib::ParamSpec::object(
+            transaction_state,
+            "Transaction State",
+            "Transaction State",
+            SoukTransactionState::static_type(),
+            glib::ParamFlags::READABLE,
+        )
+    }),
 ];
 
 impl ObjectSubclass for SoukPackagePrivate {
@@ -125,6 +135,7 @@ impl ObjectSubclass for SoukPackagePrivate {
             remote_info: RefCell::default(),
             installed_info: RefCell::default(),
             transaction_action: RefCell::default(),
+            transaction_state: RefCell::default(),
             flatpak_backend,
         }
     }
@@ -145,6 +156,9 @@ impl ObjectImpl for SoukPackagePrivate {
             subclass::Property("transaction_action", ..) => {
                 Ok(self.transaction_action.borrow().to_value())
             }
+            subclass::Property("transaction_state", ..) => {
+                Ok(self.transaction_state.borrow().to_value())
+            }
             _ => unimplemented!(),
         }
     }
@@ -161,6 +175,7 @@ glib_wrapper! {
     }
 }
 
+#[allow(dead_code)]
 impl SoukPackage {
     pub fn new() -> Self {
         let package = glib::Object::new(SoukPackage::static_type(), &[])
@@ -199,6 +214,21 @@ impl SoukPackage {
         self.get_property("installed_info").unwrap().get().unwrap()
     }
 
+    pub fn get_transaction_action(&self) -> SoukPackageAction {
+        self.get_property("transaction_action")
+            .unwrap()
+            .get()
+            .unwrap()
+            .unwrap()
+    }
+
+    pub fn get_transaction_state(&self) -> Option<SoukTransactionState> {
+        self.get_property("transaction_state")
+            .unwrap()
+            .get()
+            .unwrap()
+    }
+
     pub fn get_appdata(&self) -> Option<Component> {
         let self_ = SoukPackagePrivate::from_instance(self);
 
@@ -212,6 +242,16 @@ impl SoukPackage {
                 .unwrap()
                 .get_appdata()
         }
+    }
+
+    pub fn get_ref_name(&self) -> String {
+        format!(
+            "{}/{}/{}/{}",
+            &self.get_kind().to_string(),
+            &self.get_name(),
+            &self.get_arch(),
+            &self.get_branch()
+        )
     }
 }
 

@@ -111,6 +111,7 @@ glib_wrapper! {
     }
 }
 
+#[allow(dead_code)]
 impl SoukTransactionState {
     pub fn new() -> Self {
         let state = glib::Object::new(SoukTransactionState::static_type(), &[])

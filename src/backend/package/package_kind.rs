@@ -14,3 +14,13 @@ impl Default for SoukPackageKind {
         SoukPackageKind::App
     }
 }
+
+impl std::string::ToString for SoukPackageKind {
+    fn to_string(&self) -> String {
+        match self {
+            SoukPackageKind::App => "app".to_string(),
+            SoukPackageKind::Runtime => "runtime".to_string(),
+            SoukPackageKind::Extension => "extension".to_string(),
+        }
+    }
+}
