@@ -13,7 +13,8 @@ use std::sync::Arc;
 
 use crate::backend::transaction_backend::TransactionBackend;
 use crate::backend::{
-    BasePackage, Package, PackageTransaction, SoukPackageAction, TransactionMode, TransactionState,
+    BasePackage, Package, PackageTransaction, SoukPackageAction, SoukTransactionMode,
+    TransactionState,
 };
 
 type Transactions = Rc<RefCell<HashMap<String, (Arc<PackageTransaction>, Child)>>>;
@@ -56,7 +57,7 @@ impl TransactionBackend for SandboxBackend {
         match tupl.1.kill() {
             Ok(()) => {
                 let mut state = TransactionState::default();
-                state.mode = TransactionMode::Cancelled;
+                state.mode = SoukTransactionMode::Cancelled;
                 state.percentage = 1.0;
                 transaction.set_state(state);
                 debug!("Sucessfully cancelled transaction");
@@ -126,7 +127,7 @@ impl SandboxBackend {
 
                 // Check if it ended successfully (return code == 0)
                 if child.status().await.unwrap().success() {
-                    state.mode = TransactionMode::Finished;
+                    state.mode = SoukTransactionMode::Finished;
                     debug!("Package transaction ended successfully.");
                 } else {
                     // Get stderr information
@@ -135,7 +136,9 @@ impl SandboxBackend {
                         err_lines = format!("{}\n{}", err_lines, line.unwrap());
                     }
 
-                    state.mode = TransactionMode::Error(err_lines);
+                    // TODO: Transfer error message somewhere else
+                    //state.mode = SoukTransactionMode::Error(err_lines);
+                    state.mode = SoukTransactionMode::Error;
                     debug!("Package transaction did not end successfully.");
                 }
 
@@ -181,7 +184,7 @@ impl SandboxBackend {
 
     fn parse_line(line: String) -> TransactionState {
         let mut state = TransactionState::default();
-        state.mode = TransactionMode::Running;
+        state.mode = SoukTransactionMode::Running;
 
         // Regex to get percentage value
         let regex = Regex::new(r"(\d{1,3})%").unwrap();

@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::backend::{
     BackendMessage, BasePackage, Package, PackageKind, PackageTransaction, SoukFlatpakBackend,
-    TransactionMode,
+    SoukTransactionMode,
 };
 use crate::ui::utils;
 
