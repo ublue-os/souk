@@ -8,7 +8,9 @@ use crate::ui::package_widgets::PackageWidget;
 
 pub struct PackageActionButton {
     pub widget: gtk::Box,
+
     package: Rc<RefCell<Option<SoukPackage>>>,
+    signal_id: RefCell<Option<glib::SignalHandlerId>>,
 
     builder: gtk::Builder,
 }
@@ -68,6 +70,7 @@ impl PackageActionButton {
                 };
             }
             None => {
+                status_label.set_text("");
                 if package.get_installed_info().is_some() {
                     button_stack.set_visible_child_name("installed");
                 } else {
@@ -87,6 +90,7 @@ impl PackageWidget for PackageActionButton {
         let pab = Self {
             widget: package_action_button,
             package: Rc::default(),
+            signal_id: RefCell::default(),
             builder,
         };
 
@@ -95,12 +99,18 @@ impl PackageWidget for PackageActionButton {
     }
 
     fn set_package(&self, package: &SoukPackage) {
+        // Disconnect from previous package signal
+        if let Some(id) = self.signal_id.borrow_mut().take() {
+            self.package.borrow().as_ref().unwrap().disconnect(id);
+        }
+
         Self::update_stack(self.builder.clone(), package.clone());
-        package.connect_local("notify::transaction_state", false, clone!(@weak self.builder as builder, @weak package => @default-return None, move |_|{
+        let id = package.connect_local("notify::transaction-state", false, clone!(@weak self.builder as builder, @weak package => @default-return None, move |_|{
             Self::update_stack(builder.clone(), package.clone());
             None
         })).unwrap();
         *self.package.borrow_mut() = Some(package.clone());
+        *self.signal_id.borrow_mut() = Some(id);
 
         // Hide open button for runtimes and extensions
         if package.get_kind() != SoukPackageKind::App {

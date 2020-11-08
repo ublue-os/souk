@@ -15,10 +15,12 @@ use glib::translate::*;
 use glib::KeyFile;
 
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::app::SoukApplication;
 use crate::backend::{
-    SoukFlatpakBackend, SoukPackageAction, SoukTransaction, SoukTransactionState,
+    SoukFlatpakBackend, SoukPackageAction, SoukTransaction, SoukTransactionMode,
+    SoukTransactionState,
 };
 use crate::database::DbPackage;
 
@@ -191,33 +193,62 @@ impl SoukPackage {
 
     fn setup_signals(&self) {
         let self_ = SoukPackagePrivate::from_instance(self);
-        self_.flatpak_backend.connect_local("new_transaction", false, clone!(@weak self as this => @default-return None, move |data|{
-            let object: glib::Object = data[1].get().unwrap().unwrap();
-            let transaction: SoukTransaction = object.downcast().unwrap();
-
-            if transaction.get_package() == this{
-                // Set transaction action
-                let self_ = SoukPackagePrivate::from_instance(&this);
-                *self_.transaction_action.borrow_mut() = transaction.get_action();
-                this.notify("transaction_action");
-
-                // Listen to transaction state changes
-                transaction.connect_local("notify::state", false, clone!(@weak this => @default-return None, move |data|{
-                    let object: glib::Object = data[0].get().unwrap().unwrap();
+        self_
+            .flatpak_backend
+            .connect_local(
+                "new_transaction",
+                false,
+                clone!(@strong self as this => @default-return None::<glib::Value>, move |data|{
+                    let object: glib::Object = data[1].get().unwrap().unwrap();
                     let transaction: SoukTransaction = object.downcast().unwrap();
-                    let state = transaction.get_state();
 
-                    // Update `transaction_state` property of package
-                    let self_ = SoukPackagePrivate::from_instance(&this);
-                    *self_.transaction_state.borrow_mut() = Some(state);
-                    this.notify("transaction_state");
+                    // Check if this package is affected by this transaction
+                    if transaction.get_package() == this{
+                        // Set transaction action
+                        let self_ = SoukPackagePrivate::from_instance(&this);
+                        *self_.transaction_action.borrow_mut() = transaction.get_action();
+                        this.notify("transaction_action");
+
+                        // Listen to transaction state changes
+                        // We're showing the transaction state as own property for SoukPackage
+                        this.connect_state_changes(transaction);
+                    }
 
                     None
-                })).unwrap();
+                }),
+            )
+            .unwrap();
+    }
+
+    fn connect_state_changes(&self, transaction: SoukTransaction) {
+        let signal_id: Rc<RefCell<Option<glib::SignalHandlerId>>> = Rc::new(RefCell::new(None));
+        *signal_id.borrow_mut() = Some(transaction.connect_local("notify::state", false, clone!(@weak self as this, @weak transaction, @strong signal_id => @default-return None, move |data|{
+            let object: glib::Object = data[0].get().unwrap().unwrap();
+            let transaction: SoukTransaction = object.downcast().unwrap();
+            let state = transaction.get_state();
+
+            // Update `transaction_state` property of package when transaction is still active
+            if state.get_mode() == SoukTransactionMode::Running || state.get_mode() == SoukTransactionMode::Waiting{
+                let self_ = SoukPackagePrivate::from_instance(&this);
+                *self_.transaction_state.borrow_mut() = Some(state);
+                this.notify("transaction_state");
+            }else{
+                // When transaction isn't running anymore, reset `transaction_action`...
+                let self_ = SoukPackagePrivate::from_instance(&this);
+                *self_.transaction_action.borrow_mut() = SoukPackageAction::None;
+                this.notify("transaction_action");
+
+                // ... and `transaction_state`
+                let self_ = SoukPackagePrivate::from_instance(&this);
+                *self_.transaction_state.borrow_mut() = None;
+                this.notify("transaction_state");
+
+                // Disconnect from signal
+                transaction.disconnect(signal_id.borrow_mut().take().unwrap());
             }
 
             None
-        })).unwrap();
+        })).unwrap());
     }
 
     pub fn install(&self) {
