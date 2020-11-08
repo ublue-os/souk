@@ -17,13 +17,12 @@
             <property name="maximum_size">900</property>
             <child>
               <object class="GtkBox">
-                <property name="margin_top">22</property>
-                <property name="margin_bottom">22</property>
                 <property name="orientation">vertical</property>
-                <property name="spacing">22</property>
+                <property name="spacing">12</property>
                 <child>
                   <object class="GtkBox" id="editors_picks_box">
                     <property name="orientation">vertical</property>
+                    <property name="margin_top">12</property>
                     <property name="spacing">6</property>
                     <child>
                       <object class="GtkLabel">
@@ -47,6 +46,7 @@
                 <child>
                   <object class="GtkBox" id="recently_updated_box">
                     <property name="orientation">vertical</property>
+                    <property name="margin_top">12</property>
                     <property name="spacing">6</property>
                     <child>
                       <object class="GtkLabel">

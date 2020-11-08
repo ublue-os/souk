@@ -2,6 +2,37 @@ flowboxchild{
 	padding: 0px;
 }
 
+listview.content.small > row {
+	margin-top: 0;
+	margin-bottom: 0;
+	border-radius: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	border-left-width: 0px;
+	border-right-width: 0px;
+}
+
+listview.content.small > row:first-child {
+	border-top-width: 0px;
+}
+
+listview.content.small > row:last-child {
+	border-bottom-width: 0px;
+}
+
+listview > row:first-child {
+	margin-top: 12px;
+}
+
+listview > row:last-child {
+	margin-bottom: 12px;
+}
+
+listview > row {
+	margin-left: 12px;
+	margin-right: 12px;
+}
+
 .package-tile {
 	border-radius: 8px;
 	border: solid 1px alpha(#cdc7c2, 0.7);
@@ -31,14 +62,14 @@ flowboxchild{
 	border-bottom-left-radius: 5px;
 }
 
-.action-button-progress trough.empty progress  {
+.action-button-progress trough.empty progress	{
 	min-height: 3px;
 	border-radius: 0px;
 	border-bottom-left-radius: 5px;
 	border-bottom-right-radius: 5px;
 }
 
-.action-button-progress trough.full progress  {
+.action-button-progress trough.full progress	{
 	min-height: 5px;
 	border-radius: 0px;
 	border-bottom-left-radius: 5px;
