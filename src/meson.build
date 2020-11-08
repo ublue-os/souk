@@ -27,6 +27,7 @@ run_command(
 sources = files(
   'backend/package/installed_info.rs',
   'backend/package/mod.rs',
+  'backend/package/package_action.rs',
   'backend/package/package_kind.rs',
   'backend/package/remote_info.rs',
   'backend/transaction_backend/host_backend.rs',
@@ -34,7 +35,6 @@ sources = files(
   'backend/transaction_backend/sandbox_backend.rs',
   'backend/flatpak_backend.rs',
   'backend/mod.rs',
-  'backend/package_action.rs',
   'backend/transaction.rs',
   'backend/transaction_mode.rs',
   'backend/transaction_state.rs',

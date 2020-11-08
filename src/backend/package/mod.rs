@@ -1,7 +1,9 @@
 mod installed_info;
+mod package_action;
 mod package_kind;
 mod remote_info;
 pub use installed_info::SoukInstalledInfo;
+pub use package_action::SoukPackageAction;
 pub use package_kind::SoukPackageKind;
 pub use remote_info::SoukRemoteInfo;
 
@@ -19,8 +21,7 @@ use std::rc::Rc;
 
 use crate::app::SoukApplication;
 use crate::backend::{
-    SoukFlatpakBackend, SoukPackageAction, SoukTransaction, SoukTransactionMode,
-    SoukTransactionState,
+    SoukFlatpakBackend, SoukTransaction, SoukTransactionMode, SoukTransactionState,
 };
 use crate::database::DbPackage;
 

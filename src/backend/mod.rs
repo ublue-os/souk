@@ -6,11 +6,9 @@ pub use flatpak_backend::SoukFlatpakBackend;
 mod package;
 pub use package::SoukInstalledInfo;
 pub use package::SoukPackage;
+pub use package::SoukPackageAction;
 pub use package::SoukPackageKind;
 pub use package::SoukRemoteInfo;
-
-mod package_action;
-pub use package_action::SoukPackageAction;
 
 mod transaction;
 pub use transaction::SoukTransaction;

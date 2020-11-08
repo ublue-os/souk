@@ -1,5 +1,3 @@
-use gio::prelude::*;
-
 #[derive(Debug, Eq, PartialEq, Clone, Copy, GEnum)]
 #[repr(u32)]
 #[genum(type_name = "SoukTransactionStateKind")]
