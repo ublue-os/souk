@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use crate::backend::{SoukPackage, SoukPackageKind, SoukTransactionMode};
 use crate::ui::package_widgets::PackageWidget;
+use crate::ui::utils;
 
 pub struct ActionButton {
     pub widget: gtk::Box,
@@ -62,7 +63,7 @@ impl ActionButton {
                     }
                     SoukTransactionMode::Error => {
                         status_label.set_text("");
-                        //utils::show_error_dialog(&err);
+                        utils::show_error_dialog("Someting went wrong");
                     }
                     _ => (),
                 };

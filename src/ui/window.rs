@@ -2,14 +2,13 @@ use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
-use glib::Sender;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{WidgetImpl, WindowImpl};
 use libhandy::prelude::*;
 
 use std::cell::RefCell;
 
-use crate::app::{Action, SoukApplication, SoukApplicationPrivate};
+use crate::app::{SoukApplication, SoukApplicationPrivate};
 use crate::backend::SoukPackage;
 use crate::config;
 
@@ -87,7 +86,7 @@ glib_wrapper! {
 
 // SoukApplicationWindow implementation itself
 impl SoukApplicationWindow {
-    pub fn new(sender: Sender<Action>, app: SoukApplication) -> Self {
+    pub fn new(app: SoukApplication) -> Self {
         // Create new GObject and downcast it into SoukApplicationWindow
         let window = glib::Object::new(
             SoukApplicationWindow::static_type(),
@@ -99,7 +98,7 @@ impl SoukApplicationWindow {
 
         app.add_window(&window);
         window.setup_widgets();
-        window.setup_signals(sender.clone());
+        window.setup_signals();
         window
     }
 
@@ -154,7 +153,7 @@ impl SoukApplicationWindow {
         libhandy::ApplicationWindowExt::set_child(self, Some(&window));
     }
 
-    fn setup_signals(&self, sender: Sender<Action>) {
+    fn setup_signals(&self) {
         let self_ = SoukApplicationWindowPrivate::from_instance(self);
 
         // main stack

@@ -15,7 +15,6 @@ pub struct SearchPage {
     listview: gtk::ListView,
 
     model: gio::ListStore,
-    selection_model: gtk::NoSelection,
 
     builder: gtk::Builder,
     sender: Sender<Action>,
@@ -41,7 +40,6 @@ impl SearchPage {
             widget: search_page,
             listview,
             model,
-            selection_model,
             builder,
             sender,
         });

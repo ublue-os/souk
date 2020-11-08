@@ -5,6 +5,7 @@ use diesel::dsl::sql;
 
 use crate::backend::SoukPackage;
 
+#[allow(dead_code)]
 pub enum DisplayLevel {
     Apps,       /* Apps (de.haeckerfelix.Souk) */
     Runtimes,   /* Apps + Runtimes (org.gnome.Sdk) */

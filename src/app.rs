@@ -165,10 +165,7 @@ impl SoukApplication {
         *self_.search_page.borrow_mut() = Some(SearchPage::new(sender.clone()));
         *self_.installed_page.borrow_mut() =
             Some(InstalledPage::new(sender.clone(), flatpak_backend.clone()));
-        *self_.package_details_page.borrow_mut() = Some(PackageDetailsPage::new(
-            sender.clone(),
-            flatpak_backend.clone(),
-        ));
+        *self_.package_details_page.borrow_mut() = Some(PackageDetailsPage::new(sender.clone()));
     }
 
     pub fn get_flatpak_backend(&self) -> SoukFlatpakBackend {
@@ -177,8 +174,7 @@ impl SoukApplication {
     }
 
     fn create_window(&self) -> SoukApplicationWindow {
-        let self_ = SoukApplicationPrivate::from_instance(self);
-        let window = SoukApplicationWindow::new(self_.sender.clone(), self.clone());
+        let window = SoukApplicationWindow::new(self.clone());
 
         // Load custom styling
         let p = gtk::CssProvider::new();
