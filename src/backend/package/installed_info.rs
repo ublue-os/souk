@@ -11,10 +11,11 @@ use std::path::PathBuf;
 
 #[derive(Default)]
 pub struct SoukInstalledInfoPrivate {
-    appdata: RefCell<Option<Component>>,
     commit: RefCell<String>,
     installed_size: RefCell<u64>,
     deploy_dir: RefCell<String>,
+
+    name: RefCell<String>,
 }
 
 static PROPERTIES: [subclass::Property; 3] = [
@@ -91,25 +92,11 @@ impl SoukInstalledInfo {
             .downcast::<SoukInstalledInfo>()
             .unwrap();
 
-        // Load appdata
-        let mut path = PathBuf::new();
-        let appstream_dir = installed_ref.get_deploy_dir().unwrap().to_string();
-        path.push(appstream_dir);
-        path.push(&format!(
-            "files/share/app-info/xmls/{}.xml.gz",
-            installed_ref.get_name().unwrap().to_string()
-        ));
-
-        // Parse appstream data
-        let appdata = Collection::from_gzipped(path.clone())
-            .map(|appdata| appdata.components[0].clone())
-            .ok();
-
         let info_priv = SoukInstalledInfoPrivate::from_instance(&info);
-        *info_priv.appdata.borrow_mut() = appdata;
         *info_priv.commit.borrow_mut() = installed_ref.get_latest_commit().unwrap().to_string();
         *info_priv.installed_size.borrow_mut() = installed_ref.get_installed_size();
         *info_priv.deploy_dir.borrow_mut() = installed_ref.get_deploy_dir().unwrap().to_string();
+        *info_priv.name.borrow_mut() = installed_ref.get_name().unwrap().to_string();
 
         info
     }
@@ -136,6 +123,19 @@ impl SoukInstalledInfo {
 
     pub fn get_appdata(&self) -> Option<Component> {
         let self_ = SoukInstalledInfoPrivate::from_instance(self);
-        self_.appdata.borrow().clone()
+
+        // Load appdata
+        let mut path = PathBuf::new();
+        let appstream_dir = self.get_deploy_dir();
+        path.push(appstream_dir);
+        path.push(&format!(
+            "files/share/app-info/xmls/{}.xml.gz",
+            self_.name.borrow().to_string()
+        ));
+
+        // Parse appstream data
+        Collection::from_gzipped(path.clone())
+            .map(|appdata| appdata.components[0].clone())
+            .ok()
     }
 }
