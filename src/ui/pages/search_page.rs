@@ -26,12 +26,6 @@ impl SearchPage {
         get_widget!(builder, gtk::Box, search_page);
         get_widget!(builder, gtk::ListView, listview);
 
-        // TODO: Currently we're adding a GtkListView to a HdyClamp
-        // This doesn't make any sense and defeats the purpose of using a GtkListView
-        // since with using a HdyClamp all rows are getting rendered.
-        // As soon as we have a helper for this in libhandy/libadwaita we have to update
-        // it here (e.g. HdyScrolledClamp)
-
         let model = gio::ListStore::new(SoukPackage::static_type());
         let selection_model = gtk::NoSelection::new(Some(&model));
         listview.set_model(Some(&selection_model));
