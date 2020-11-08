@@ -46,6 +46,7 @@ pub struct SoukPackagePrivate {
     remote_info: RefCell<Option<SoukRemoteInfo>>,
     installed_info: RefCell<Option<SoukInstalledInfo>>,
 
+    transaction: RefCell<Option<SoukTransaction>>,
     transaction_action: RefCell<SoukPackageAction>,
     transaction_state: RefCell<Option<SoukTransactionState>>,
 
@@ -138,6 +139,7 @@ impl ObjectSubclass for SoukPackagePrivate {
             remote: RefCell::default(),
             remote_info: RefCell::default(),
             installed_info: RefCell::default(),
+            transaction: RefCell::default(),
             transaction_action: RefCell::default(),
             transaction_state: RefCell::default(),
             flatpak_backend,
@@ -206,6 +208,8 @@ impl SoukPackage {
                     if transaction.get_package() == this{
                         // Set transaction action
                         let self_ = SoukPackagePrivate::from_instance(&this);
+                        *self_.transaction.borrow_mut() = Some(transaction.clone());
+
                         *self_.transaction_action.borrow_mut() = transaction.get_action();
                         this.notify("transaction_action");
 
@@ -246,6 +250,8 @@ impl SoukPackage {
                 // Disconnect from signal
                 transaction.disconnect(signal_id.borrow_mut().take().unwrap());
 
+                *self_.transaction.borrow_mut() = None;
+
                 this.update_installed_info();
             }
 
@@ -275,6 +281,13 @@ impl SoukPackage {
     pub fn launch(&self) {
         let self_ = SoukPackagePrivate::from_instance(self);
         self_.flatpak_backend.launch_package(self);
+    }
+
+    pub fn cancel_transaction(&self) {
+        let self_ = SoukPackagePrivate::from_instance(self);
+
+        let transaction = self_.transaction.borrow().as_ref().unwrap().clone();
+        self_.flatpak_backend.cancel_transaction(transaction);
     }
 
     pub fn get_kind(&self) -> SoukPackageKind {

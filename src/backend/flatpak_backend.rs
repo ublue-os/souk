@@ -139,6 +139,11 @@ impl SoukFlatpakBackend {
         self_.transaction_backend.add_transaction(transaction);
     }
 
+    pub fn cancel_transaction(&self, transaction: SoukTransaction) {
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        self_.transaction_backend.cancel_transaction(transaction);
+    }
+
     pub fn get_installed_info(&self, package: &SoukPackage) -> Option<SoukInstalledInfo> {
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
         let installed_ref = self_.system_installation.get_installed_ref(

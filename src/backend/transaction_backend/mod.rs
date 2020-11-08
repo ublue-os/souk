@@ -12,7 +12,7 @@ pub trait TransactionBackend {
 
     fn add_transaction(&self, transaction: SoukTransaction);
 
-    fn cancel_package_transaction(&self, transaction: SoukTransaction);
+    fn cancel_transaction(&self, transaction: SoukTransaction);
 
     fn get_active_transaction(&self, package: &SoukPackage) -> Option<SoukTransaction>;
 }

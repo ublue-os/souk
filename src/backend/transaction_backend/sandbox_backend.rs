@@ -41,7 +41,7 @@ impl TransactionBackend for SandboxBackend {
         ));
     }
 
-    fn cancel_package_transaction(&self, transaction: SoukTransaction) {
+    fn cancel_transaction(&self, transaction: SoukTransaction) {
         debug!(
             "Cancel transaction: {:?} -> {}",
             transaction.get_action(),
@@ -106,7 +106,9 @@ impl SandboxBackend {
 
         // Parse stdout lines till nothing is left anymore / the process stopped
         while let Some(line) = stdout_lines.next().await {
-            let state = Self::parse_line(line.unwrap());
+            let line = line.unwrap();
+            debug!("Flatpak CLI: {}", line);
+            let state = Self::parse_line(line);
             transaction.set_property("state", &state).unwrap();
         }
 
