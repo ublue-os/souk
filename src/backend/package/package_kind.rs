@@ -1,3 +1,5 @@
+use glib::KeyFile;
+
 #[derive(Debug, Eq, PartialEq, Clone, Copy, GEnum)]
 #[repr(u32)]
 #[genum(type_name = "SoukPackageKind")]
@@ -5,6 +7,18 @@ pub enum SoukPackageKind {
     App = 0,
     Runtime = 1,
     Extension = 2,
+}
+
+impl SoukPackageKind {
+    pub fn from_keyfile(keyfile: KeyFile) -> Self {
+        if keyfile.has_group("ExtensionOf") {
+            return SoukPackageKind::Extension;
+        }
+        if keyfile.has_group("Runtime") {
+            return SoukPackageKind::Runtime;
+        }
+        SoukPackageKind::App
+    }
 }
 
 impl Default for SoukPackageKind {

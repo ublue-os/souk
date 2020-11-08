@@ -14,7 +14,6 @@ use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
-use glib::KeyFile;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -24,18 +23,6 @@ use crate::backend::{
     SoukFlatpakBackend, SoukTransaction, SoukTransactionMode, SoukTransactionState,
 };
 use crate::database::DbPackage;
-
-impl SoukPackageKind {
-    pub fn from_keyfile(keyfile: KeyFile) -> Self {
-        if keyfile.has_group("ExtensionOf") {
-            return SoukPackageKind::Extension;
-        }
-        if keyfile.has_group("Runtime") {
-            return SoukPackageKind::Runtime;
-        }
-        SoukPackageKind::App
-    }
-}
 
 pub struct SoukPackagePrivate {
     kind: RefCell<SoukPackageKind>,
