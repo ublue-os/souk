@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::backend::{SoukPackage, SoukPackageKind, SoukTransactionMode};
 use crate::ui::package_widgets::PackageWidget;
 
-pub struct PackageActionButton {
+pub struct ActionButton {
     pub widget: gtk::Box,
 
     package: Rc<RefCell<Option<SoukPackage>>>,
@@ -16,7 +16,7 @@ pub struct PackageActionButton {
     builder: gtk::Builder,
 }
 
-impl PackageActionButton {
+impl ActionButton {
     fn setup_signals(&self) {
         // install
         get_widget!(self.builder, gtk::Button, install_button);
@@ -82,7 +82,7 @@ impl PackageActionButton {
     }
 }
 
-impl PackageWidget for PackageActionButton {
+impl PackageWidget for ActionButton {
     fn new() -> Self {
         let builder =
             gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/package_action_button.ui");

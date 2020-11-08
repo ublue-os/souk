@@ -9,7 +9,7 @@ use crate::backend::SoukFlatpakBackend;
 use crate::backend::SoukPackage;
 use crate::database::{queries, DisplayLevel};
 use crate::ui::package_widgets::{
-    PackageActionButton, PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox,
+    ActionButton, PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox,
 };
 use crate::ui::{utils, SoukPackageTile, View};
 
@@ -31,8 +31,8 @@ impl PackageDetailsPage {
 
         let mut package_widgets: Vec<Box<dyn PackageWidget>> = Vec::new();
 
-        // PackageActionButton
-        let pab = PackageActionButton::new();
+        // ActionButton
+        let pab = ActionButton::new();
         get_widget!(builder, gtk::Box, pab_box);
         pab_box.append(&pab.widget);
         package_widgets.push(Box::new(pab));
