@@ -75,8 +75,7 @@ impl libhandy::subclass::prelude::ApplicationWindowImpl for SoukApplicationWindo
 glib_wrapper! {
     pub struct SoukApplicationWindow(
         Object<subclass::simple::InstanceStruct<SoukApplicationWindowPrivate>,
-        subclass::simple::ClassStruct<SoukApplicationWindowPrivate>,
-        SoukApplicationWindowClass>)
+        subclass::simple::ClassStruct<SoukApplicationWindowPrivate>>)
         @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, libhandy::ApplicationWindow;
 
     match fn {

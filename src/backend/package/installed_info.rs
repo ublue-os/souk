@@ -76,8 +76,7 @@ impl ObjectImpl for SoukInstalledInfoPrivate {
 glib_wrapper! {
     pub struct SoukInstalledInfo(
         Object<subclass::simple::InstanceStruct<SoukInstalledInfoPrivate>,
-        subclass::simple::ClassStruct<SoukInstalledInfoPrivate>,
-        GsApplicationWindowClass>);
+        subclass::simple::ClassStruct<SoukInstalledInfoPrivate>>);
 
     match fn {
         get_type => || SoukInstalledInfoPrivate::get_type().to_glib(),

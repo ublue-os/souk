@@ -173,8 +173,7 @@ impl ObjectImpl for SoukPackagePrivate {
 glib_wrapper! {
     pub struct SoukPackage(
         Object<subclass::simple::InstanceStruct<SoukPackagePrivate>,
-        subclass::simple::ClassStruct<SoukPackagePrivate>,
-        GsApplicationWindowClass>);
+        subclass::simple::ClassStruct<SoukPackagePrivate>>);
 
     match fn {
         get_type => || SoukPackagePrivate::get_type().to_glib(),

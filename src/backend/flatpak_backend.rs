@@ -80,8 +80,7 @@ impl ObjectImpl for SoukFlatpakBackendPrivate {
 glib_wrapper! {
     pub struct SoukFlatpakBackend(
         Object<subclass::simple::InstanceStruct<SoukFlatpakBackendPrivate>,
-        subclass::simple::ClassStruct<SoukFlatpakBackendPrivate>,
-        GsApplicationWindowClass>);
+        subclass::simple::ClassStruct<SoukFlatpakBackendPrivate>>);
 
     match fn {
         get_type => || SoukFlatpakBackendPrivate::get_type().to_glib(),

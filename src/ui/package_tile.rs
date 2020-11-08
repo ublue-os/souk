@@ -75,8 +75,7 @@ impl BoxImpl for SoukPackageTilePrivate {}
 glib_wrapper! {
     pub struct SoukPackageTile(
         Object<subclass::simple::InstanceStruct<SoukPackageTilePrivate>,
-        subclass::simple::ClassStruct<SoukPackageTilePrivate>,
-        GsApplicationWindowClass>)
+        subclass::simple::ClassStruct<SoukPackageTilePrivate>>)
         @extends gtk::Widget, gtk::Box;
 
     match fn {

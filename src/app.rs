@@ -114,8 +114,7 @@ impl ApplicationImpl for SoukApplicationPrivate {
 glib_wrapper! {
     pub struct SoukApplication(
         Object<subclass::simple::InstanceStruct<SoukApplicationPrivate>,
-        subclass::simple::ClassStruct<SoukApplicationPrivate>,
-        SoukApplicationClass>)
+        subclass::simple::ClassStruct<SoukApplicationPrivate>>)
         @extends gio::Application, gtk::Application;
 
     match fn {

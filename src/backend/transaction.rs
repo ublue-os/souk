@@ -95,8 +95,7 @@ impl ObjectImpl for SoukTransactionPrivate {
 glib_wrapper! {
     pub struct SoukTransaction(
         Object<subclass::simple::InstanceStruct<SoukTransactionPrivate>,
-        subclass::simple::ClassStruct<SoukTransactionPrivate>,
-        GsApplicationWindowClass>);
+        subclass::simple::ClassStruct<SoukTransactionPrivate>>);
 
     match fn {
         get_type => || SoukTransactionPrivate::get_type().to_glib(),

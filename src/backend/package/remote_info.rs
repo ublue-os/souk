@@ -79,8 +79,7 @@ impl ObjectImpl for SoukRemoteInfoPrivate {
 glib_wrapper! {
     pub struct SoukRemoteInfo(
         Object<subclass::simple::InstanceStruct<SoukRemoteInfoPrivate>,
-        subclass::simple::ClassStruct<SoukRemoteInfoPrivate>,
-        GsApplicationWindowClass>);
+        subclass::simple::ClassStruct<SoukRemoteInfoPrivate>>);
 
     match fn {
         get_type => || SoukRemoteInfoPrivate::get_type().to_glib(),
