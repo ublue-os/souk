@@ -64,6 +64,10 @@ impl SearchPage {
         get_widget!(self.builder, gtk::SearchEntry, search_entry);
         search_entry.connect_search_changed(clone!(@weak self as this => move|entry|{
             let text = entry.get_text().unwrap().to_string();
+            if text.len() < 3 {
+                return;
+            }
+
             let packages = queries::get_packages_by_name(text, 10000, DisplayLevel::Apps).unwrap();
             this.model.remove_all();
 
