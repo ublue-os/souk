@@ -5,7 +5,7 @@ use glib::subclass::prelude::*;
 use glib::translate::*;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
-use crate::backend::{SoukPackage, SoukTransaction};
+use crate::backend::{SoukInstalledInfo, SoukPackage, SoukTransaction};
 use crate::database::package_database;
 
 pub struct SoukFlatpakBackendPrivate {
@@ -137,6 +137,22 @@ impl SoukFlatpakBackend {
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
         self.emit("new_transaction", &[&transaction]).unwrap();
         self_.transaction_backend.add_transaction(transaction);
+    }
+
+    pub fn get_installed_info(&self, package: &SoukPackage) -> Option<SoukInstalledInfo> {
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+        let installed_ref = self_.system_installation.get_installed_ref(
+            package.get_kind().into(),
+            &package.get_name(),
+            Some(&package.get_arch()),
+            Some(&package.get_branch()),
+            None::<&gio::Cancellable>,
+        );
+
+        match installed_ref {
+            Ok(installed_ref) => Some(SoukInstalledInfo::new(&installed_ref)),
+            Err(_) => None,
+        }
     }
 
     fn is_sandboxed() -> bool {

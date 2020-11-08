@@ -24,3 +24,13 @@ impl std::string::ToString for SoukPackageKind {
         }
     }
 }
+
+impl From<SoukPackageKind> for flatpak::RefKind {
+    fn from(kind: SoukPackageKind) -> Self {
+        match kind {
+            SoukPackageKind::App => flatpak::RefKind::App,
+            SoukPackageKind::Runtime => flatpak::RefKind::Runtime,
+            SoukPackageKind::Extension => flatpak::RefKind::Runtime,
+        }
+    }
+}

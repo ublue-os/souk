@@ -245,10 +245,19 @@ impl SoukPackage {
 
                 // Disconnect from signal
                 transaction.disconnect(signal_id.borrow_mut().take().unwrap());
+
+                this.update_installed_info();
             }
 
             None
         })).unwrap());
+    }
+
+    fn update_installed_info(&self) {
+        let self_ = SoukPackagePrivate::from_instance(self);
+        let installed_info = self_.flatpak_backend.get_installed_info(&self);
+        *self_.installed_info.borrow_mut() = installed_info;
+        self.notify("installed_info");
     }
 
     pub fn install(&self) {
@@ -357,6 +366,7 @@ impl From<DbPackage> for SoukPackage {
         let remote_info = SoukRemoteInfo::new(&db_package);
         *package_priv.remote_info.borrow_mut() = Some(remote_info);
 
+        package.update_installed_info();
         package
     }
 }
@@ -383,6 +393,7 @@ impl From<InstalledRef> for SoukPackage {
         let installed_info = SoukInstalledInfo::new(&installed_ref);
         *package_priv.installed_info.borrow_mut() = Some(installed_info);
 
+        package.update_installed_info();
         package
     }
 }

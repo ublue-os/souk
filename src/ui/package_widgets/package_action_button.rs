@@ -10,7 +10,8 @@ pub struct PackageActionButton {
     pub widget: gtk::Box,
 
     package: Rc<RefCell<Option<SoukPackage>>>,
-    signal_id: RefCell<Option<glib::SignalHandlerId>>,
+    state_signal_id: RefCell<Option<glib::SignalHandlerId>>,
+    installed_signal_id: RefCell<Option<glib::SignalHandlerId>>,
 
     builder: gtk::Builder,
 }
@@ -90,7 +91,8 @@ impl PackageWidget for PackageActionButton {
         let pab = Self {
             widget: package_action_button,
             package: Rc::default(),
-            signal_id: RefCell::default(),
+            state_signal_id: RefCell::default(),
+            installed_signal_id: RefCell::default(),
             builder,
         };
 
@@ -99,18 +101,34 @@ impl PackageWidget for PackageActionButton {
     }
 
     fn set_package(&self, package: &SoukPackage) {
-        // Disconnect from previous package signal
-        if let Some(id) = self.signal_id.borrow_mut().take() {
+        // Disconnect from previous package signals
+        if let Some(id) = self.state_signal_id.borrow_mut().take() {
+            self.package.borrow().as_ref().unwrap().disconnect(id);
+        }
+        if let Some(id) = self.installed_signal_id.borrow_mut().take() {
             self.package.borrow().as_ref().unwrap().disconnect(id);
         }
 
         Self::update_stack(self.builder.clone(), package.clone());
-        let id = package.connect_local("notify::transaction-state", false, clone!(@weak self.builder as builder, @weak package => @default-return None, move |_|{
+
+        let closure = clone!(@weak self.builder as builder, @weak package => @default-return None::<glib::Value>, move |_:&[glib::Value]|{
             Self::update_stack(builder.clone(), package.clone());
             None
-        })).unwrap();
+        });
+
+        // Listen to transaction state changes...
+        let state_signal_id = package
+            .connect_local("notify::transaction-state", false, closure.clone())
+            .unwrap();
+        *self.state_signal_id.borrow_mut() = Some(state_signal_id);
+
+        // Listen to installed changes...
+        let installed_signal_id = package
+            .connect_local("notify::installed-info", false, closure.clone())
+            .unwrap();
+        *self.installed_signal_id.borrow_mut() = Some(installed_signal_id);
+
         *self.package.borrow_mut() = Some(package.clone());
-        *self.signal_id.borrow_mut() = Some(id);
 
         // Hide open button for runtimes and extensions
         if package.get_kind() != SoukPackageKind::App {
