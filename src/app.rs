@@ -3,6 +3,7 @@ use gio::{self, prelude::*, ApplicationFlags};
 use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
+use glib::WeakRef;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use gtk::subclass::application::GtkApplicationImpl;
@@ -35,7 +36,7 @@ pub struct SoukApplicationPrivate {
     pub search_page: OnceCell<Rc<SearchPage>>,
     pub package_details_page: OnceCell<Rc<PackageDetailsPage>>,
 
-    window: OnceCell<SoukApplicationWindow>,
+    window: OnceCell<WeakRef<SoukApplicationWindow>>,
 }
 
 impl ObjectSubclass for SoukApplicationPrivate {
@@ -85,7 +86,8 @@ impl ApplicationImpl for SoukApplicationPrivate {
 
         // If the window already exists,
         // present it instead creating a new one again.
-        if let Some(ref window) = self.window.get() {
+        if let Some(weak_win) = self.window.get() {
+            let window = weak_win.upgrade().unwrap();
             window.present();
             info!("Application window presented.");
             return;
@@ -102,7 +104,7 @@ impl ApplicationImpl for SoukApplicationPrivate {
         debug!("Create new application window...");
         let window = app.create_window();
         window.present();
-        self.window.set(window).unwrap();
+        self.window.set(window.downgrade()).unwrap();
         info!("Created application window.");
 
         // Setup action channel
@@ -239,12 +241,15 @@ impl SoukApplication {
         app.set_accels_for_action("win.go-back", &["Escape"]);
     }
 
-    fn process_action(&self, action: Action) -> glib::Continue {
+    fn get_main_window(&self) -> SoukApplicationWindow {
         let self_ = SoukApplicationPrivate::from_instance(self);
+        self_.window.get().unwrap().clone().upgrade().unwrap()
+    }
 
+    fn process_action(&self, action: Action) -> glib::Continue {
         match action {
-            Action::ViewSet(view) => self_.window.get().unwrap().set_view(view, false),
-            Action::ViewGoBack => self_.window.get().unwrap().go_back(),
+            Action::ViewSet(view) => self.get_main_window().set_view(view, false),
+            Action::ViewGoBack => self.get_main_window().go_back(),
         }
         glib::Continue(true)
     }

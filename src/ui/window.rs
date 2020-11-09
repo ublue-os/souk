@@ -57,13 +57,7 @@ impl ObjectImpl for SoukApplicationWindowPrivate {}
 impl WidgetImpl for SoukApplicationWindowPrivate {}
 
 // Implement Gtk.Window for SoukApplicationWindow
-impl WindowImpl for SoukApplicationWindowPrivate {
-    fn close_request(&self, window: &gtk::Window) -> glib::signal::Inhibit {
-        let app = window.get_application().unwrap();
-        app.quit();
-        glib::signal::Inhibit(true)
-    }
-}
+impl WindowImpl for SoukApplicationWindowPrivate {}
 
 // Implement Gtk.ApplicationWindow for SoukApplicationWindow
 impl gtk::subclass::prelude::ApplicationWindowImpl for SoukApplicationWindowPrivate {}
@@ -151,7 +145,7 @@ impl SoukApplicationWindow {
         // main stack
         get_widget!(self_.window_builder, gtk::Stack, main_stack);
         main_stack.connect_property_visible_child_notify(
-            clone!(@strong self as this => move |main_stack| {
+            clone!(@weak self as this => move |main_stack| {
                 let view = match main_stack.get_visible_child_name().unwrap().as_str(){
                     "explore" => View::Explore,
                     "installed" => View::Installed,
