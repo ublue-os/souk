@@ -2,14 +2,15 @@ use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 use glib::translate::*;
+use once_cell::unsync::OnceCell;
 
 use std::cell::RefCell;
 
 use crate::backend::{SoukPackage, SoukPackageAction, SoukTransactionState};
 
 pub struct SoukTransactionPrivate {
-    package: RefCell<Option<SoukPackage>>,
-    action: RefCell<Option<SoukPackageAction>>,
+    package: OnceCell<SoukPackage>,
+    action: OnceCell<SoukPackageAction>,
     state: RefCell<Option<SoukTransactionState>>,
 }
 
@@ -58,8 +59,8 @@ impl ObjectSubclass for SoukTransactionPrivate {
 
     fn new() -> Self {
         SoukTransactionPrivate {
-            package: RefCell::default(),
-            action: RefCell::default(),
+            package: OnceCell::default(),
+            action: OnceCell::default(),
             state: RefCell::default(),
         }
     }
@@ -70,10 +71,8 @@ impl ObjectImpl for SoukTransactionPrivate {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("package", ..) => Ok(self.package.borrow().to_value()),
-            subclass::Property("action", ..) => {
-                Ok(self.action.borrow().as_ref().unwrap().to_value())
-            }
+            subclass::Property("package", ..) => Ok(self.package.get().to_value()),
+            subclass::Property("action", ..) => Ok(self.action.get().as_ref().unwrap().to_value()),
             subclass::Property("state", ..) => Ok(self.state.borrow().to_value()),
             _ => unimplemented!(),
         }
@@ -111,8 +110,8 @@ impl SoukTransaction {
             .unwrap();
 
         let self_ = SoukTransactionPrivate::from_instance(&transaction);
-        *self_.package.borrow_mut() = Some(package);
-        *self_.action.borrow_mut() = Some(action);
+        self_.package.set(package).unwrap();
+        self_.action.set(action).unwrap();
 
         transaction
     }

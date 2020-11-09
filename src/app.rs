@@ -6,6 +6,7 @@ use glib::translate::*;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
 use gtk::subclass::application::GtkApplicationImpl;
+use once_cell::unsync::OnceCell;
 
 use std::cell::RefCell;
 use std::env;
@@ -29,12 +30,12 @@ pub struct SoukApplicationPrivate {
 
     flatpak_backend: SoukFlatpakBackend,
 
-    pub explore_page: RefCell<Option<Rc<ExplorePage>>>,
-    pub installed_page: RefCell<Option<Rc<InstalledPage>>>,
-    pub search_page: RefCell<Option<Rc<SearchPage>>>,
-    pub package_details_page: RefCell<Option<Rc<PackageDetailsPage>>>,
+    pub explore_page: OnceCell<Rc<ExplorePage>>,
+    pub installed_page: OnceCell<Rc<InstalledPage>>,
+    pub search_page: OnceCell<Rc<SearchPage>>,
+    pub package_details_page: OnceCell<Rc<PackageDetailsPage>>,
 
-    window: RefCell<Option<SoukApplicationWindow>>,
+    window: OnceCell<SoukApplicationWindow>,
 }
 
 impl ObjectSubclass for SoukApplicationPrivate {
@@ -51,12 +52,12 @@ impl ObjectSubclass for SoukApplicationPrivate {
 
         let flatpak_backend = SoukFlatpakBackend::new();
 
-        let explore_page = RefCell::new(None);
-        let search_page = RefCell::new(None);
-        let installed_page = RefCell::new(None);
-        let package_details_page = RefCell::new(None);
+        let explore_page = OnceCell::new();
+        let search_page = OnceCell::new();
+        let installed_page = OnceCell::new();
+        let package_details_page = OnceCell::new();
 
-        let window = RefCell::new(None);
+        let window = OnceCell::new();
 
         Self {
             sender,
@@ -84,7 +85,7 @@ impl ApplicationImpl for SoukApplicationPrivate {
 
         // If the window already exists,
         // present it instead creating a new one again.
-        if let Some(ref window) = *self.window.borrow() {
+        if let Some(ref window) = self.window.get() {
             window.present();
             info!("Application window presented.");
             return;
@@ -101,7 +102,7 @@ impl ApplicationImpl for SoukApplicationPrivate {
         debug!("Create new application window...");
         let window = app.create_window();
         window.present();
-        self.window.replace(Some(window));
+        self.window.set(window).unwrap();
         info!("Created application window.");
 
         // Setup action channel
@@ -160,11 +161,14 @@ impl SoukApplication {
 
         flatpak_backend.init();
 
-        *self_.explore_page.borrow_mut() = Some(ExplorePage::new(sender.clone()));
-        *self_.search_page.borrow_mut() = Some(SearchPage::new(sender.clone()));
-        *self_.installed_page.borrow_mut() =
-            Some(InstalledPage::new(sender.clone(), flatpak_backend.clone()));
-        *self_.package_details_page.borrow_mut() = Some(PackageDetailsPage::new(sender.clone()));
+        let _ = self_.explore_page.set(ExplorePage::new(sender.clone()));
+        let _ = self_.search_page.set(SearchPage::new(sender.clone()));
+        let _ = self_
+            .installed_page
+            .set(InstalledPage::new(sender.clone(), flatpak_backend.clone()));
+        let _ = self_
+            .package_details_page
+            .set(PackageDetailsPage::new(sender.clone()));
     }
 
     pub fn get_flatpak_backend(&self) -> SoukFlatpakBackend {
@@ -239,13 +243,8 @@ impl SoukApplication {
         let self_ = SoukApplicationPrivate::from_instance(self);
 
         match action {
-            Action::ViewSet(view) => self_
-                .window
-                .borrow()
-                .as_ref()
-                .unwrap()
-                .set_view(view, false),
-            Action::ViewGoBack => self_.window.borrow().as_ref().unwrap().go_back(),
+            Action::ViewSet(view) => self_.window.get().unwrap().set_view(view, false),
+            Action::ViewGoBack => self_.window.get().unwrap().go_back(),
         }
         glib::Continue(true)
     }
