@@ -50,7 +50,7 @@ impl ExplorePage {
         get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
         for package in queries::get_recently_updated_packages(10, DisplayLevel::Apps).unwrap() {
             let tile = SoukPackageTile::new();
-            tile.set_property("package", &package).unwrap();
+            tile.set_package(&package);
             recently_updated_flowbox.insert(&tile, -1);
         }
     }
@@ -61,7 +61,7 @@ impl ExplorePage {
             .unwrap()
             .unwrap();
         let tile = SoukPackageTile::new();
-        tile.set_property("package", &package).unwrap();
+        tile.set_package(&package);
         editors_picks_flowbox.insert(&tile, -1);
     }
 

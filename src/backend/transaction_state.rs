@@ -121,6 +121,10 @@ impl SoukTransactionState {
         state
     }
 
+    pub fn set_message(&self, message: &String) {
+        self.set_property("message", message).unwrap();
+    }
+
     pub fn get_message(&self) -> String {
         self.get_property("message")
             .unwrap()
@@ -129,12 +133,20 @@ impl SoukTransactionState {
             .unwrap()
     }
 
+    pub fn set_percentage(&self, percentage: &f64) {
+        self.set_property("percentage", percentage).unwrap();
+    }
+
     pub fn get_percentage(&self) -> f64 {
         self.get_property("percentage")
             .unwrap()
             .get()
             .unwrap()
             .unwrap()
+    }
+
+    pub fn set_mode(&self, mode: &SoukTransactionMode) {
+        self.set_property("mode", mode).unwrap();
     }
 
     pub fn get_mode(&self) -> SoukTransactionMode {

@@ -50,7 +50,7 @@ impl InstalledPage {
             Some(&apps_model),
             Some(Box::new(|package| {
                 let row = SoukPackageRow::new();
-                row.set_property("package", package).unwrap();
+                row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
                 row.upcast::<gtk::Widget>()
             })),
         );
@@ -66,7 +66,7 @@ impl InstalledPage {
             Some(&runtimes_model),
             Some(Box::new(|package| {
                 let row = SoukPackageRow::new();
-                row.set_property("package", package).unwrap();
+                row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
                 row.upcast::<gtk::Widget>()
             })),
         );

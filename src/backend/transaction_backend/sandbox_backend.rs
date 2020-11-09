@@ -4,7 +4,6 @@ use async_process::Stdio;
 use futures_util::io::BufReader;
 use futures_util::AsyncBufReadExt;
 use futures_util::StreamExt;
-use glib::prelude::*;
 use regex::Regex;
 
 use std::cell::RefCell;
@@ -56,11 +55,9 @@ impl TransactionBackend for SandboxBackend {
         match tupl.1.kill() {
             Ok(()) => {
                 let state = SoukTransactionState::default();
-                state
-                    .set_property("mode", &SoukTransactionMode::Cancelled)
-                    .unwrap();
-                state.set_property("percentage", &1.0).unwrap();
-                transaction.set_property("state", &state).unwrap();
+                state.set_mode(&SoukTransactionMode::Cancelled);
+                state.set_percentage(&1.0);
+                transaction.set_state(&state);
                 debug!("Sucessfully cancelled transaction");
             }
             Err(err) => warn!("Unable to cancel transaction: {}", err.to_string()),
@@ -79,8 +76,8 @@ impl SandboxBackend {
     async fn execute_package_transacton(transaction: SoukTransaction, transactions: Transactions) {
         // Set initial transaction state
         let state = SoukTransactionState::default();
-        state.set_property("percentage", &0.0).unwrap();
-        transaction.set_property("state", &state).unwrap();
+        state.set_percentage(&0.0);
+        transaction.set_state(&state);
 
         // Setup flatpak child / procress and spawn it
         let args = Self::get_flatpak_args(&transaction);
@@ -109,7 +106,7 @@ impl SandboxBackend {
             let line = line.unwrap();
             debug!("Flatpak CLI: {}", line);
             let state = Self::parse_line(line);
-            transaction.set_property("state", &state).unwrap();
+            transaction.set_state(&state);
         }
 
         // Process stopped and isn't running anymore, so remove the transaction
@@ -121,13 +118,11 @@ impl SandboxBackend {
             Some((_, mut child)) => {
                 let state = SoukTransactionState::default();
                 // Transaction finished, so let set it to 100%
-                state.set_property("percentage", &1.0).unwrap();
+                state.set_percentage(&1.0);
 
                 // Check if it ended successfully (return code == 0)
                 if child.status().await.unwrap().success() {
-                    state
-                        .set_property("mode", &SoukTransactionMode::Finished)
-                        .unwrap();
+                    state.set_mode(&SoukTransactionMode::Finished);
                     debug!("Package transaction ended successfully.");
                 } else {
                     // Get stderr information
@@ -138,14 +133,12 @@ impl SandboxBackend {
 
                     // TODO: Transfer error message somewhere else
                     //state.mode = SoukTransactionMode::Error(err_lines);
-                    state
-                        .set_property("mode", &SoukTransactionMode::Error)
-                        .unwrap();
+                    state.set_mode(&SoukTransactionMode::Error);
                     debug!("Package transaction did not end successfully.");
                 }
 
                 // Set last transaction state.
-                transaction.set_property("state", &state).unwrap();
+                transaction.set_state(&state);
             }
             // When we cancel the transaction before, it isn't available in the HashMap anymore.
             None => debug!("Unable to end package transaction. Probably got cancelled before."),
@@ -186,9 +179,7 @@ impl SandboxBackend {
 
     fn parse_line(line: String) -> SoukTransactionState {
         let state = SoukTransactionState::default();
-        state
-            .set_property("mode", &SoukTransactionMode::Running)
-            .unwrap();
+        state.set_mode(&SoukTransactionMode::Running);
 
         // Regex to get percentage value
         let regex = Regex::new(r"(\d{1,3})%").unwrap();
@@ -207,11 +198,9 @@ impl SandboxBackend {
                 n = package_number[1].parse().unwrap();
                 big_n = package_number[2].parse().unwrap();
                 let global_percentage = (n - 1.0 + percentage) / big_n;
-                state
-                    .set_property("percentage", &global_percentage)
-                    .unwrap();
+                state.set_percentage(&global_percentage);
             } else {
-                state.set_property("percentage", &percentage).unwrap();
+                state.set_percentage(&percentage);
             }
         }
 
@@ -240,7 +229,7 @@ impl SandboxBackend {
                 message = "Installing…".to_string();
             }
         }
-        state.set_property("message", &message).unwrap();
+        state.set_message(&message);
 
         state
     }

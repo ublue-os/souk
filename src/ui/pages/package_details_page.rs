@@ -136,7 +136,7 @@ impl PackageDetailsPage {
                     names.insert(p_name);
 
                     let tile = SoukPackageTile::new();
-                    tile.set_property("package", &p).unwrap();
+                    tile.set_package(&p);
                     other_apps_flowbox.insert(&tile, -1);
                 }
             }

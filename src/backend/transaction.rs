@@ -129,6 +129,10 @@ impl SoukTransaction {
         self.get_property("action").unwrap().get().unwrap().unwrap()
     }
 
+    pub fn set_state(&self, state: &SoukTransactionState) {
+        self.set_property("state", state).unwrap();
+    }
+
     pub fn get_state(&self) -> SoukTransactionState {
         self.get_property("state").unwrap().get().unwrap().unwrap()
     }

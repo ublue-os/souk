@@ -126,6 +126,10 @@ impl SoukPackageRow {
         });
     }
 
+    pub fn set_package(&self, package: &SoukPackage) {
+        self.set_property("package", package).unwrap();
+    }
+
     pub fn get_package(&self) -> Option<SoukPackage> {
         self.get_property("package").unwrap().get().unwrap()
     }

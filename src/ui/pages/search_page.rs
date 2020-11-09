@@ -55,7 +55,7 @@ impl SearchPage {
             let row = child.clone().downcast::<SoukPackageRow>().unwrap();
 
             let item = item.get_item().unwrap();
-            row.set_property("package", &item).unwrap();
+            row.set_package(&item.downcast::<SoukPackage>().unwrap());
         });
         self.listview.set_factory(Some(&factory));
     }
