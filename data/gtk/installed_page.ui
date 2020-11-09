@@ -34,7 +34,7 @@
                   <object class="GtkListBox" id="listbox_apps">
                     <property name="vexpand">true</property>
                     <property name="selection_mode">GTK_SELECTION_NONE</property>
-                    <property name="margin_bottom">22</property>
+                    <property name="margin_bottom">24</property>
                     <style>
                       <class name="content"/>
                     </style>

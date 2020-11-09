@@ -3,11 +3,8 @@ flowboxchild{
 }
 
 listview.content.small > row {
-	margin-top: 0;
-	margin-bottom: 0;
+	margin: 0px;
 	border-radius: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
 	border-left-width: 0px;
 	border-right-width: 0px;
 }

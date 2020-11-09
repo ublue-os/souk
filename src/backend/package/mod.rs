@@ -238,11 +238,11 @@ impl SoukPackage {
             let state = transaction.get_state();
 
             // Update `transaction_state` property of package when transaction is still active
-            if state.get_mode() == SoukTransactionMode::Running || state.get_mode() == SoukTransactionMode::Waiting{
+            if state.get_mode() == SoukTransactionMode::Running || state.get_mode() == SoukTransactionMode::Waiting {
                 let self_ = SoukPackagePrivate::from_instance(&this);
                 *self_.transaction_state.borrow_mut() = Some(state);
                 this.notify("transaction_state");
-            }else{
+            } else {
                 // When transaction isn't running anymore, reset `transaction_action`...
                 let self_ = SoukPackagePrivate::from_instance(&this);
                 *self_.transaction_action.borrow_mut() = SoukPackageAction::None;
