@@ -39,6 +39,7 @@ pub struct SoukPackagePrivate {
     transaction_state: RefCell<Option<SoukTransactionState>>,
 
     flatpak_backend: SoukFlatpakBackend,
+    fb_signal_id: RefCell<Option<glib::SignalHandlerId>>,
 }
 
 static PROPERTIES: [subclass::Property; 9] = [
@@ -131,6 +132,7 @@ impl ObjectSubclass for SoukPackagePrivate {
             transaction_action: RefCell::default(),
             transaction_state: RefCell::default(),
             flatpak_backend,
+            fb_signal_id: RefCell::default(),
         }
     }
 }
@@ -158,6 +160,22 @@ impl ObjectImpl for SoukPackagePrivate {
     }
 }
 
+impl Drop for SoukPackagePrivate {
+    fn drop(&mut self) {
+        // We need to disconnect manually the signal again,
+        // otherwise this object never would get dropped,
+        // since `flatpak_backend` still would hold a reference of it.
+        //
+        // Normally we should bind the signal by using
+        // g_signal_connect_object
+        // to avoid this problem, but there aren't bindings for it available yet.
+        // https://github.com/gtk-rs/gtk-rs/issues/64
+
+        let fb_signal_id = self.fb_signal_id.borrow_mut().take();
+        self.flatpak_backend.disconnect(fb_signal_id.unwrap());
+    }
+}
+
 glib_wrapper! {
     pub struct SoukPackage(
         Object<subclass::simple::InstanceStruct<SoukPackagePrivate>,
@@ -182,12 +200,12 @@ impl SoukPackage {
 
     fn setup_signals(&self) {
         let self_ = SoukPackagePrivate::from_instance(self);
-        self_
+        let fb_signal_id = self_
             .flatpak_backend
             .connect_local(
                 "new_transaction",
                 false,
-                clone!(@strong self as this => @default-return None::<glib::Value>, move |data|{
+                clone!(@weak self as this => @default-return None::<glib::Value>, move |data|{
                     let object: glib::Object = data[1].get().unwrap().unwrap();
                     let transaction: SoukTransaction = object.downcast().unwrap();
 
@@ -209,6 +227,7 @@ impl SoukPackage {
                 }),
             )
             .unwrap();
+        *self_.fb_signal_id.borrow_mut() = Some(fb_signal_id);
     }
 
     fn connect_state_changes(&self, transaction: SoukTransaction) {
