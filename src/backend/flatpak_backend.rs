@@ -6,7 +6,6 @@ use glib::translate::*;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
 use crate::backend::{SoukInstalledInfo, SoukPackage, SoukTransaction};
-use crate::database::package_database;
 
 pub struct SoukFlatpakBackendPrivate {
     system_installation: Installation,
@@ -95,10 +94,6 @@ impl SoukFlatpakBackend {
             .unwrap();
 
         backend
-    }
-
-    pub fn init(&self) {
-        package_database::init(self.clone());
     }
 
     pub fn get_installed_packages(&self) -> gio::ListStore {

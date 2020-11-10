@@ -15,6 +15,7 @@ use std::rc::Rc;
 
 use crate::backend::SoukFlatpakBackend;
 use crate::config;
+use crate::database::PackageDatabase;
 use crate::ui::about_dialog;
 use crate::ui::pages::{ExplorePage, InstalledPage, PackageDetailsPage, SearchPage};
 use crate::ui::{SoukApplicationWindow, View};
@@ -30,6 +31,7 @@ pub struct SoukApplicationPrivate {
     receiver: RefCell<Option<Receiver<Action>>>,
 
     flatpak_backend: SoukFlatpakBackend,
+    package_database: PackageDatabase,
 
     pub explore_page: OnceCell<Rc<ExplorePage>>,
     pub installed_page: OnceCell<Rc<InstalledPage>>,
@@ -52,6 +54,7 @@ impl ObjectSubclass for SoukApplicationPrivate {
         let receiver = RefCell::new(Some(r));
 
         let flatpak_backend = SoukFlatpakBackend::new();
+        let package_database = PackageDatabase::new(flatpak_backend.clone());
 
         let explore_page = OnceCell::new();
         let search_page = OnceCell::new();
@@ -64,6 +67,7 @@ impl ObjectSubclass for SoukApplicationPrivate {
             sender,
             receiver,
             flatpak_backend,
+            package_database,
             explore_page,
             installed_page,
             search_page,
@@ -159,15 +163,14 @@ impl SoukApplication {
     fn setup(&self) {
         let self_ = SoukApplicationPrivate::from_instance(self);
         let sender = self_.sender.clone();
-        let flatpak_backend = self_.flatpak_backend.clone();
-
-        flatpak_backend.init();
+        self_.package_database.init();
 
         let _ = self_.explore_page.set(ExplorePage::new(sender.clone()));
         let _ = self_.search_page.set(SearchPage::new(sender.clone()));
-        let _ = self_
-            .installed_page
-            .set(InstalledPage::new(sender.clone(), flatpak_backend.clone()));
+        let _ = self_.installed_page.set(InstalledPage::new(
+            sender.clone(),
+            self_.flatpak_backend.clone(),
+        ));
         let _ = self_
             .package_details_page
             .set(PackageDetailsPage::new(sender.clone()));
