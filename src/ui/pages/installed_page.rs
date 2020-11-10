@@ -49,7 +49,7 @@ impl InstalledPage {
         listbox_apps.bind_model(
             Some(&apps_model),
             Some(Box::new(|package| {
-                let row = SoukPackageRow::new();
+                let row = SoukPackageRow::new(true);
                 row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
                 row.upcast::<gtk::Widget>()
             })),
@@ -65,7 +65,7 @@ impl InstalledPage {
         listbox_runtimes.bind_model(
             Some(&runtimes_model),
             Some(Box::new(|package| {
-                let row = SoukPackageRow::new();
+                let row = SoukPackageRow::new(true);
                 row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
                 row.upcast::<gtk::Widget>()
             })),

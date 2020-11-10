@@ -3,66 +3,85 @@
   <requires lib="gtk+" version="3.20"/>
   <object class="GtkBox" id="package_row">
     <child>
-      <object class="GtkOverlay">
-        <property name="hexpand">True</property>
+      <object class="GtkBox">
+        <property name="spacing">18</property>
+        <property name="margin-top">12</property>
+        <property name="margin-bottom">12</property>
+        <property name="margin-start">12</property>
+        <property name="margin-end">12</property>
+        <child>
+          <object class="GtkImage" id="icon_image">
+            <property name="pixel_size">64</property>
+            <property name="icon_name">application-x-executable-symbolic</property>
+            <style>
+              <class name="icon-dropshadow"/>
+            </style>
+          </object>
+        </child>
         <child>
           <object class="GtkBox">
-            <property name="spacing">18</property>
-            <property name="margin-top">12</property>
-            <property name="margin-bottom">12</property>
-            <property name="margin-start">12</property>
-            <property name="margin-end">12</property>
+            <property name="valign">center</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">6</property>
             <child>
-              <object class="GtkImage" id="icon_image">
-                <property name="pixel_size">64</property>
-                <property name="icon_name">application-x-executable-symbolic</property>
-                <style>
-                  <class name="icon-dropshadow"/>
-                </style>
+              <object class="GtkBox">
+                <property name="spacing">6</property>
+                <child>
+                  <object class="GtkLabel" id="title_label">
+                    <property name="ellipsize">end</property>
+                    <property name="single_line_mode">True</property>
+                    <property name="xalign">0</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="branch_label">
+                    <property name="visible">False</property>
+                    <property name="valign">center</property>
+                    <style>
+                      <class name="branch-label"/>
+                    </style>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkImage" id="installed_check">
+                    <property name="icon_name">installed-check</property>
+                    <property name="visible">False</property>
+                  </object>
+                </child>
               </object>
             </child>
             <child>
-              <object class="GtkBox">
-                <property name="valign">center</property>
-                <property name="orientation">vertical</property>
-                <property name="spacing">6</property>
-                <child>
-                  <object class="GtkBox">
-                    <property name="spacing">6</property>
-                    <child>
-                      <object class="GtkLabel" id="title_label">
-                        <property name="label">label</property>
-                        <property name="ellipsize">end</property>
-                        <property name="single_line_mode">True</property>
-                        <property name="xalign">0</property>
-                        <attributes>
-                          <attribute name="weight" value="bold"/>
-                        </attributes>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="branch_label">
-                        <property name="visible">False</property>
-                        <property name="valign">center</property>
-                        <style>
-                          <class name="branch-label"/>
-                        </style>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkImage" id="installed_check">
-                        <property name="icon_name">installed-check</property>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="summary_label">
-                    <property name="label">label</property>
-                    <property name="ellipsize">end</property>
-                    <property name="xalign">0</property>
-                  </object>
-                </child>
+              <object class="GtkLabel" id="summary_label">
+                <property name="ellipsize">end</property>
+                <property name="xalign">0</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkBox" id="uninstall_box">
+            <property name="orientation">vertical</property>
+            <property name="hexpand">True</property>
+            <property name="halign">end</property>
+            <property name="valign">center</property>
+            <property name="visible">False</property>
+            <property name="spacing">6</property>
+            <child>
+              <object class="GtkButton" id="uninstall_button">
+                <property name="icon_name">user-trash-symbolic</property>
+                <property name="halign">center</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="installed_size_label">
+                <property name="label">label</property>
+                <style>
+                  <class name="dim-label"/>
+                  <class name="size-label"/>
+                </style>
               </object>
             </child>
           </object>

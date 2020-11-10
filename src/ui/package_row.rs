@@ -4,6 +4,7 @@ use glib::subclass::prelude::*;
 use glib::translate::*;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{BoxImpl, WidgetImpl};
+use once_cell::unsync::OnceCell;
 
 use std::cell::RefCell;
 
@@ -12,6 +13,7 @@ use crate::ui::utils;
 
 pub struct SoukPackageRowPrivate {
     package: RefCell<Option<SoukPackage>>,
+    installed_view: OnceCell<bool>,
     builder: gtk::Builder,
 }
 
@@ -40,8 +42,13 @@ impl ObjectSubclass for SoukPackageRowPrivate {
     fn new() -> Self {
         let package = RefCell::new(None);
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/package_row.ui");
+        let installed_view = OnceCell::default();
 
-        Self { package, builder }
+        Self {
+            package,
+            installed_view,
+            builder,
+        }
     }
 }
 
@@ -84,13 +91,15 @@ glib_wrapper! {
 }
 
 impl SoukPackageRow {
-    pub fn new() -> Self {
+    pub fn new(installed_view: bool) -> Self {
         let row = glib::Object::new(SoukPackageRow::static_type(), &[])
             .unwrap()
             .downcast::<SoukPackageRow>()
             .unwrap();
 
         let self_ = SoukPackageRowPrivate::from_instance(&row);
+        self_.installed_view.set(installed_view).unwrap();
+
         get_widget!(self_.builder, gtk::Box, package_row);
         row.append(&package_row);
 
@@ -108,6 +117,9 @@ impl SoukPackageRow {
             get_widget!(self_.builder, gtk::Image, icon_image);
             get_widget!(self_.builder, gtk::Label, branch_label);
             get_widget!(self_.builder, gtk::Image, installed_check);
+            get_widget!(self_.builder, gtk::Box, uninstall_box);
+            get_widget!(self_.builder, gtk::Button, uninstall_button);
+            get_widget!(self_.builder, gtk::Label, installed_size_label);
 
             // Icon
             utils::set_icon(&package, &icon_image, 64);
@@ -127,11 +139,13 @@ impl SoukPackageRow {
             };
 
             // Installed indicator
-            package
-                .bind_property("is_installed", &installed_check, "visible")
-                .flags(glib::BindingFlags::SYNC_CREATE)
-                .build()
-                .unwrap();
+            if !self_.installed_view.get().unwrap() {
+                package
+                    .bind_property("is_installed", &installed_check, "visible")
+                    .flags(glib::BindingFlags::SYNC_CREATE)
+                    .build()
+                    .unwrap();
+            }
 
             // Branch label / tag
             let branch = package.get_branch();
@@ -152,6 +166,25 @@ impl SoukPackageRow {
                 }
             } else {
                 branch_label.set_visible(false);
+            }
+
+            // Uninstall button
+            uninstall_button.set_sensitive(true);
+            if *self_.installed_view.get().unwrap() {
+                uninstall_box.set_visible(true);
+
+                let bytes = package
+                    .get_installed_info()
+                    .as_ref()
+                    .unwrap()
+                    .get_installed_size();
+                let size = glib::format_size(bytes);
+                installed_size_label.set_text(&size);
+
+                uninstall_button.connect_clicked(clone!(@weak package => move|btn|{
+                    btn.set_sensitive(false);
+                    package.uninstall();
+                }));
             }
         });
     }

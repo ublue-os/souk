@@ -100,3 +100,8 @@ listview > row {
 	background-color: #C01C28;
 	border: 3px solid #C01C28;
 }
+
+.size-label{
+	font-size: smaller;
+	min-width: 55px;
+}

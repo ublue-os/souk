@@ -46,7 +46,7 @@ impl SearchPage {
     fn setup_widgets(self: Rc<Self>) {
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_, item| {
-            let row = SoukPackageRow::new();
+            let row = SoukPackageRow::new(false);
             item.set_child(Some(&row));
         });
 
