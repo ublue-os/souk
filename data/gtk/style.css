@@ -79,3 +79,22 @@ listview > row {
 	border-top-left-radius: 0px;
 	border-top-right-radius: 0px;
 }
+
+.branch-label{
+	color: white;
+	background-color: black;
+	border: 3px solid black;
+	border-radius: 5px;
+	font-size: smaller;
+	font-weight: bold;
+}
+
+.branch-label-orange{
+	background-color: #E66100;
+	border: 3px solid #E66100;
+}
+
+.branch-label-red{
+	background-color: #C01C28;
+	border: 3px solid #C01C28;
+}

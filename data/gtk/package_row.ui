@@ -24,14 +24,28 @@
             <property name="orientation">vertical</property>
             <property name="spacing">6</property>
             <child>
-              <object class="GtkLabel" id="title_label">
-                <property name="label">label</property>
-                <property name="ellipsize">end</property>
-                <property name="single_line_mode">True</property>
-                <property name="xalign">0</property>
-                <attributes>
-                  <attribute name="weight" value="bold"/>
-                </attributes>
+              <object class="GtkBox">
+                <property name="spacing">6</property>
+                <child>
+                  <object class="GtkLabel" id="title_label">
+                    <property name="label">label</property>
+                    <property name="ellipsize">end</property>
+                    <property name="single_line_mode">True</property>
+                    <property name="xalign">0</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="branch_label">
+                    <property name="visible">False</property>
+                    <property name="valign">center</property>
+                    <style>
+                      <class name="branch-label"/>
+                    </style>
+                  </object>
+                </child>
               </object>
             </child>
             <child>

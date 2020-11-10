@@ -106,6 +106,7 @@ impl SoukPackageRow {
             get_widget!(self_.builder, gtk::Label, title_label);
             get_widget!(self_.builder, gtk::Label, summary_label);
             get_widget!(self_.builder, gtk::Image, icon_image);
+            get_widget!(self_.builder, gtk::Label, branch_label);
 
             // Icon
             utils::set_icon(&package, &icon_image, 64);
@@ -123,6 +124,26 @@ impl SoukPackageRow {
                     summary_label.set_text(&package.get_branch());
                 }
             };
+
+            let branch = package.get_branch();
+            if branch != "stable" {
+                branch_label.set_text(&branch.to_uppercase());
+                branch_label.set_visible(true);
+
+                let ctx = branch_label.get_style_context();
+                ctx.remove_class("branch-label-orange");
+                ctx.remove_class("branch-label-red");
+
+                if branch == "beta" {
+                    ctx.add_class("branch-label-orange");
+                }
+
+                if branch == "master" {
+                    ctx.add_class("branch-label-red");
+                }
+            } else {
+                branch_label.set_visible(false);
+            }
         });
     }
 
