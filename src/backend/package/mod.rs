@@ -42,7 +42,7 @@ pub struct SoukPackagePrivate {
     fb_signal_id: RefCell<Option<glib::SignalHandlerId>>,
 }
 
-static PROPERTIES: [subclass::Property; 9] = [
+static PROPERTIES: [subclass::Property; 10] = [
     subclass::Property("kind", |kind| {
         glib::ParamSpec::enum_(
             kind,
@@ -102,6 +102,15 @@ static PROPERTIES: [subclass::Property; 9] = [
             glib::ParamFlags::READABLE,
         )
     }),
+    subclass::Property("is_installed", |remote| {
+        glib::ParamSpec::boolean(
+            remote,
+            "Is Installed",
+            "Is Installed",
+            false,
+            glib::ParamFlags::READABLE,
+        )
+    }),
 ];
 
 impl ObjectSubclass for SoukPackagePrivate {
@@ -154,6 +163,9 @@ impl ObjectImpl for SoukPackagePrivate {
             }
             subclass::Property("transaction_state", ..) => {
                 Ok(self.transaction_state.borrow().to_value())
+            }
+            subclass::Property("is_installed", ..) => {
+                Ok(self.installed_info.borrow().is_some().to_value())
             }
             _ => unimplemented!(),
         }
@@ -270,6 +282,7 @@ impl SoukPackage {
         let installed_info = self_.flatpak_backend.get_installed_info(&self);
         *self_.installed_info.borrow_mut() = installed_info;
         self.notify("installed_info");
+        self.notify("is_installed");
     }
 
     pub fn install(&self) {
@@ -336,6 +349,14 @@ impl SoukPackage {
         self.get_property("transaction_state")
             .unwrap()
             .get()
+            .unwrap()
+    }
+
+    pub fn get_is_installed(&self) -> bool {
+        self.get_property("is_installed")
+            .unwrap()
+            .get()
+            .unwrap()
             .unwrap()
     }
 

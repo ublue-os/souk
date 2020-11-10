@@ -107,6 +107,7 @@ impl SoukPackageRow {
             get_widget!(self_.builder, gtk::Label, summary_label);
             get_widget!(self_.builder, gtk::Image, icon_image);
             get_widget!(self_.builder, gtk::Label, branch_label);
+            get_widget!(self_.builder, gtk::Image, installed_check);
 
             // Icon
             utils::set_icon(&package, &icon_image, 64);
@@ -125,6 +126,14 @@ impl SoukPackageRow {
                 }
             };
 
+            // Installed indicator
+            package
+                .bind_property("is_installed", &installed_check, "visible")
+                .flags(glib::BindingFlags::SYNC_CREATE)
+                .build()
+                .unwrap();
+
+            // Branch label / tag
             let branch = package.get_branch();
             if branch != "stable" {
                 branch_label.set_text(&branch.to_uppercase());
