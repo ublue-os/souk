@@ -93,7 +93,7 @@ impl SoukInstalledInfo {
             .unwrap();
 
         let info_priv = SoukInstalledInfoPrivate::from_instance(&info);
-        *info_priv.commit.borrow_mut() = installed_ref.get_latest_commit().unwrap().to_string();
+        *info_priv.commit.borrow_mut() = installed_ref.get_commit().unwrap().to_string();
         *info_priv.installed_size.borrow_mut() = installed_ref.get_installed_size();
         *info_priv.deploy_dir.borrow_mut() = installed_ref.get_deploy_dir().unwrap().to_string();
         *info_priv.name.borrow_mut() = installed_ref.get_name().unwrap().to_string();
