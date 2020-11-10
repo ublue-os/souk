@@ -1,8 +1,8 @@
 mod connection;
 mod schema;
 
-mod package_database;
-pub use package_database::PackageDatabase;
+mod database;
+pub use database::SoukDatabase;
 
 pub mod queries;
 pub use queries::DisplayLevel;

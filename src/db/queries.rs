@@ -1,5 +1,5 @@
-use crate::database;
-use crate::database::*;
+use crate::db;
+use crate::db::*;
 use crate::diesel::prelude::*;
 use diesel::dsl::sql;
 
@@ -26,7 +26,7 @@ impl DisplayLevel {
 
 macro_rules! connect_db {
     () => {
-        database::connection::get_connection().get().unwrap();
+        db::connection::get_connection().get().unwrap();
     };
 }
 
@@ -35,7 +35,7 @@ pub fn get_package(
     pkg_branch: String,
     pkg_remote: String,
 ) -> Result<Option<SoukPackage>, diesel::result::Error> {
-    use crate::database::schema::appstream_packages::dsl::*;
+    use crate::db::schema::appstream_packages::dsl::*;
     let con = connect_db!();
 
     let mut packages = appstream_packages
@@ -52,7 +52,7 @@ pub fn get_packages_by_name(
     limit: i64,
     level: DisplayLevel,
 ) -> Result<Vec<SoukPackage>, diesel::result::Error> {
-    use crate::database::schema::appstream_packages::dsl::*;
+    use crate::db::schema::appstream_packages::dsl::*;
     let con = connect_db!();
 
     let db_packages = appstream_packages
@@ -74,7 +74,7 @@ pub fn get_recently_updated_packages(
     limit: i64,
     level: DisplayLevel,
 ) -> Result<Vec<SoukPackage>, diesel::result::Error> {
-    use crate::database::schema::appstream_packages::dsl::*;
+    use crate::db::schema::appstream_packages::dsl::*;
     let con = connect_db!();
 
     let db_packages = appstream_packages
@@ -97,7 +97,7 @@ pub fn get_packages_by_developer_name(
     limit: i64,
     level: DisplayLevel,
 ) -> Result<Vec<SoukPackage>, diesel::result::Error> {
-    use crate::database::schema::appstream_packages::dsl::*;
+    use crate::db::schema::appstream_packages::dsl::*;
     let con = connect_db!();
 
     let db_packages = appstream_packages
@@ -116,14 +116,14 @@ pub fn get_packages_by_developer_name(
 }
 
 pub fn get_db_info() -> Result<Vec<DbInfo>, diesel::result::Error> {
-    use crate::database::schema::info::dsl::*;
+    use crate::db::schema::info::dsl::*;
     let con = connect_db!();
 
     info.load::<DbInfo>(&con).map_err(From::from)
 }
 
 pub fn insert_db_packages(db_packages: Vec<DbPackage>) -> Result<(), diesel::result::Error> {
-    use crate::database::schema::appstream_packages::dsl::*;
+    use crate::db::schema::appstream_packages::dsl::*;
     let con = connect_db!();
 
     diesel::insert_into(appstream_packages)
@@ -134,7 +134,7 @@ pub fn insert_db_packages(db_packages: Vec<DbPackage>) -> Result<(), diesel::res
 }
 
 pub fn insert_db_info(db_info: DbInfo) -> Result<(), diesel::result::Error> {
-    use crate::database::schema::info::dsl::*;
+    use crate::db::schema::info::dsl::*;
     let con = connect_db!();
 
     diesel::insert_into(info)
@@ -147,8 +147,8 @@ pub fn insert_db_info(db_info: DbInfo) -> Result<(), diesel::result::Error> {
 pub fn reset() -> Result<(), diesel::result::Error> {
     debug!("Reset database...");
 
-    use crate::database::schema::appstream_packages::dsl::*;
-    use crate::database::schema::info::dsl::*;
+    use crate::db::schema::appstream_packages::dsl::*;
+    use crate::db::schema::info::dsl::*;
     let con = connect_db!();
 
     diesel::delete(info).execute(&*con)?;

@@ -22,7 +22,7 @@ use crate::app::SoukApplication;
 use crate::backend::{
     SoukFlatpakBackend, SoukTransaction, SoukTransactionMode, SoukTransactionState,
 };
-use crate::database::DbPackage;
+use crate::db::DbPackage;
 
 pub struct SoukPackagePrivate {
     kind: RefCell<SoukPackageKind>,

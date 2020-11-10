@@ -39,12 +39,12 @@ sources = files(
   'backend/transaction_mode.rs',
   'backend/transaction_state.rs',
 
-  'database/connection.rs',
-  'database/models.rs',
-  'database/mod.rs',
-  'database/package_database.rs',
-  'database/queries.rs',
-  'database/schema.rs',
+  'db/connection.rs',
+  'db/models.rs',
+  'db/mod.rs',
+  'db/database.rs',
+  'db/queries.rs',
+  'db/schema.rs',
 
   'ui/package_widgets/mod.rs',
   'ui/package_widgets/action_button.rs',

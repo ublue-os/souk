@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use crate::app::Action;
 use crate::backend::SoukPackage;
-use crate::database::{queries, DisplayLevel};
+use crate::db::{queries, DisplayLevel};
 use crate::ui::package_widgets::{
     ActionButton, PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox,
 };

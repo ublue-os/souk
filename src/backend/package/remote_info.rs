@@ -8,7 +8,7 @@ use glib::translate::*;
 
 use std::cell::RefCell;
 
-use crate::database::DbPackage;
+use crate::db::DbPackage;
 
 #[derive(Default)]
 pub struct SoukRemoteInfoPrivate {

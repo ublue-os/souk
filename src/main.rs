@@ -17,7 +17,7 @@ use gettextrs::*;
 mod app;
 mod backend;
 mod config;
-mod database;
+mod db;
 mod error;
 mod path;
 mod ui;

@@ -4,6 +4,10 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use flatpak::prelude::*;
 use flatpak::{InstallationExt, Remote};
 use gio::prelude::*;
+use glib::subclass;
+use glib::subclass::prelude::*;
+use glib::translate::*;
+use once_cell::unsync::OnceCell;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -12,8 +16,8 @@ use std::rc::Rc;
 use std::time::SystemTime;
 
 use crate::backend::{SoukFlatpakBackend, SoukPackage};
-use crate::database::queries;
-use crate::database::DbInfo;
+use crate::db::queries;
+use crate::db::DbInfo;
 
 lazy_static! {
     pub static ref DB_VERSION: String = "1.1".to_string();
@@ -22,17 +26,68 @@ lazy_static! {
     pub static ref DB_LIFETIME: i64 = 3;
 }
 
-pub struct PackageDatabase {
+pub struct SoukDatabasePrivate {
     busy: Rc<RefCell<bool>>,
-    flatpak_backend: SoukFlatpakBackend,
+    flatpak_backend: OnceCell<SoukFlatpakBackend>,
 }
 
-impl PackageDatabase {
-    pub fn new(flatpak_backend: SoukFlatpakBackend) -> Self {
-        Self {
+static PROPERTIES: [subclass::Property; 1] = [subclass::Property("busy", |busy| {
+    glib::ParamSpec::boolean(busy, "Busy", "Busy", false, glib::ParamFlags::READABLE)
+})];
+
+impl ObjectSubclass for SoukDatabasePrivate {
+    const NAME: &'static str = "SoukDatabase";
+    type ParentType = glib::Object;
+    type Instance = subclass::simple::InstanceStruct<Self>;
+    type Class = subclass::simple::ClassStruct<Self>;
+
+    glib_object_subclass!();
+
+    fn class_init(klass: &mut Self::Class) {
+        klass.install_properties(&PROPERTIES);
+    }
+
+    fn new() -> Self {
+        SoukDatabasePrivate {
             busy: Rc::default(),
-            flatpak_backend,
+            flatpak_backend: OnceCell::default(),
         }
+    }
+}
+
+impl ObjectImpl for SoukDatabasePrivate {
+    fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
+        let prop = &PROPERTIES[id];
+
+        match *prop {
+            subclass::Property("busy", ..) => Ok(self.busy.borrow().to_value()),
+            _ => unimplemented!(),
+        }
+    }
+}
+
+glib_wrapper! {
+    pub struct SoukDatabase(
+        Object<subclass::simple::InstanceStruct<SoukDatabasePrivate>,
+        subclass::simple::ClassStruct<SoukDatabasePrivate>>);
+
+    match fn {
+        get_type => || SoukDatabasePrivate::get_type().to_glib(),
+    }
+}
+
+#[allow(dead_code)]
+impl SoukDatabase {
+    pub fn new(flatpak_backend: SoukFlatpakBackend) -> Self {
+        let database = glib::Object::new(SoukDatabase::static_type(), &[])
+            .unwrap()
+            .downcast::<SoukDatabase>()
+            .unwrap();
+
+        let self_ = SoukDatabasePrivate::from_instance(&database);
+        self_.flatpak_backend.set(flatpak_backend).unwrap();
+
+        database
     }
 
     pub fn init(&self) {
@@ -83,6 +138,7 @@ impl PackageDatabase {
 
     // TODO: Make this asynchronous, and report parsing progress to UI
     pub fn rebuild(&self) {
+        let self_ = SoukDatabasePrivate::from_instance(self);
         debug!("Rebuild package database.");
 
         // Delete previous data
@@ -91,8 +147,10 @@ impl PackageDatabase {
         let mut remotes: HashMap<String, Remote> = HashMap::new();
 
         // Get system remotes
-        let system_remotes = self
+        let system_remotes = self_
             .flatpak_backend
+            .get()
+            .unwrap()
             .get_system_installation()
             .list_remotes(Some(&gio::Cancellable::new()))
             .unwrap();
@@ -127,8 +185,10 @@ impl PackageDatabase {
             debug!("Load remote \"{}\" ({})", remote_name, url);
 
             // Get all refs from remote
-            let refs = self
+            let refs = self_
                 .flatpak_backend
+                .get()
+                .unwrap()
                 .get_system_installation()
                 .list_remote_refs_sync(&remote_name, Some(&gio::Cancellable::new()));
 
