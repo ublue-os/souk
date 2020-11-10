@@ -4,16 +4,16 @@ use glib::subclass::prelude::*;
 use glib::translate::*;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{BoxImpl, WidgetImpl};
-use once_cell::unsync::OnceCell;
 
 use std::cell::RefCell;
+use std::cell::Cell;
 
 use crate::backend::SoukPackage;
 use crate::ui::utils;
 
 pub struct SoukPackageRowPrivate {
     package: RefCell<Option<SoukPackage>>,
-    installed_view: OnceCell<bool>,
+    installed_view: Cell<bool>,
     builder: gtk::Builder,
 }
 
@@ -42,7 +42,7 @@ impl ObjectSubclass for SoukPackageRowPrivate {
     fn new() -> Self {
         let package = RefCell::new(None);
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/package_row.ui");
-        let installed_view = OnceCell::default();
+        let installed_view = Cell::default();
 
         Self {
             package,
@@ -98,7 +98,7 @@ impl SoukPackageRow {
             .unwrap();
 
         let self_ = SoukPackageRowPrivate::from_instance(&row);
-        self_.installed_view.set(installed_view).unwrap();
+        self_.installed_view.set(installed_view);
 
         get_widget!(self_.builder, gtk::Box, package_row);
         row.append(&package_row);
@@ -139,7 +139,7 @@ impl SoukPackageRow {
             };
 
             // Installed indicator
-            if !self_.installed_view.get().unwrap() {
+            if !self_.installed_view.get() {
                 package
                     .bind_property("is_installed", &installed_check, "visible")
                     .flags(glib::BindingFlags::SYNC_CREATE)
@@ -170,7 +170,7 @@ impl SoukPackageRow {
 
             // Uninstall button
             uninstall_button.set_sensitive(true);
-            if *self_.installed_view.get().unwrap() {
+            if self_.installed_view.get() {
                 uninstall_box.set_visible(true);
 
                 let bytes = package
