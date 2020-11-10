@@ -5,8 +5,8 @@ use glib::translate::*;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{BoxImpl, WidgetImpl};
 
-use std::cell::RefCell;
 use std::cell::Cell;
+use std::cell::RefCell;
 
 use crate::backend::SoukPackage;
 use crate::ui::utils;
