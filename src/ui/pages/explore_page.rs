@@ -57,12 +57,15 @@ impl ExplorePage {
 
     fn add_tile(self: Rc<Self>, app_id: String) {
         get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
-        let package = queries::get_package(app_id, "stable".to_string(), "flathub".to_string())
-            .unwrap()
-            .unwrap();
-        let tile = SoukPackageTile::new();
-        tile.set_package(&package);
-        editors_picks_flowbox.insert(&tile, -1);
+        if let Ok(pkg_option) =
+            queries::get_package(app_id, "stable".to_string(), "flathub".to_string())
+        {
+            if let Some(package) = pkg_option {
+                let tile = SoukPackageTile::new();
+                tile.set_package(&package);
+                editors_picks_flowbox.insert(&tile, -1);
+            }
+        }
     }
 
     fn setup_signals(self: Rc<Self>) {
