@@ -29,10 +29,15 @@ impl PackageDetailsPage {
         let mut package_widgets: Vec<Box<dyn PackageWidget>> = Vec::new();
 
         // ActionButton
-        let pab = ActionButton::new();
-        get_widget!(builder, gtk::Box, pab_box);
-        pab_box.append(&pab.widget);
-        package_widgets.push(Box::new(pab));
+        let wide_pab = ActionButton::new();
+        get_widget!(builder, gtk::Box, wide_pab_box);
+        wide_pab_box.append(&wide_pab.widget);
+        package_widgets.push(Box::new(wide_pab));
+
+        let narrow_pab = ActionButton::new();
+        get_widget!(builder, gtk::Box, narrow_pab_box);
+        narrow_pab_box.append(&narrow_pab.widget);
+        package_widgets.push(Box::new(narrow_pab));
 
         // Screenshots
         let pw_screenshots_box = ScreenshotsBox::new();
@@ -78,8 +83,10 @@ impl PackageDetailsPage {
 
     pub fn set_package(&self, package: SoukPackage) {
         get_widget!(self.builder, gtk::Image, icon_image);
-        get_widget!(self.builder, gtk::Label, title_label);
-        get_widget!(self.builder, gtk::Label, developer_label);
+        get_widget!(self.builder, gtk::Label, wide_title_label);
+        get_widget!(self.builder, gtk::Label, wide_developer_label);
+        get_widget!(self.builder, gtk::Label, narrow_title_label);
+        get_widget!(self.builder, gtk::Label, narrow_developer_label);
         get_widget!(self.builder, gtk::Label, summary_label);
         get_widget!(self.builder, gtk::Label, description_label);
         get_widget!(self.builder, gtk::ScrolledWindow, scrolled_window);
@@ -98,8 +105,10 @@ impl PackageDetailsPage {
                 warn!("No appdata available for package {}", package.get_name());
 
                 // Fallback to basic information
-                title_label.set_text(&package.get_name());
-                developer_label.set_text(&format!("Source: {}", package.get_remote()));
+                wide_title_label.set_text(&package.get_name());
+                wide_developer_label.set_text("Unknown Developer");
+                narrow_title_label.set_text(&package.get_name());
+                narrow_developer_label.set_text("Unknown Developer");
                 summary_label.set_text(&format!("{:?} component", package.get_kind()));
                 description_label.set_text(&format!("Branch: {}", package.get_branch(),));
 
@@ -108,8 +117,13 @@ impl PackageDetailsPage {
         };
 
         // Set general information
-        utils::set_label_translatable_string(&title_label, Some(appdata.name.clone()));
-        utils::set_label_translatable_string(&developer_label, appdata.developer_name.clone());
+        utils::set_label_translatable_string(&wide_title_label, Some(appdata.name.clone()));
+        utils::set_label_translatable_string(&wide_developer_label, appdata.developer_name.clone());
+        utils::set_label_translatable_string(&narrow_title_label, Some(appdata.name.clone()));
+        utils::set_label_translatable_string(
+            &narrow_developer_label,
+            appdata.developer_name.clone(),
+        );
         utils::set_label_translatable_string(&summary_label, appdata.summary.clone());
         utils::set_label_markup_translatable_string(
             &description_label,

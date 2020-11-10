@@ -49,47 +49,84 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkFlowBox">
-                            <property name="selection_mode">none</property>
-                            <property name="activate_on_single_click">False</property>
-                            <property name="max_children_per_line">2</property>
-                            <property name="column_spacing">12</property>
-                            <property name="row_spacing">6</property>
-                            <property name="valign">center</property>
+                          <object class="HdySqueezer">
                             <child>
                               <object class="GtkBox">
-                                <property name="hexpand">True</property>
-                                <property name="orientation">vertical</property>
+                                <property name="spacing">12</property>
                                 <child>
-                                  <object class="GtkLabel" id="title_label">
-                                    <property name="label">Title</property>
-                                    <property name="wrap">True</property>
-                                    <property name="wrap_mode">word-char</property>
-                                    <property name="xalign">0</property>
-                                    <style>
-                                      <class name="title-1"/>
-                                    </style>
+                                  <object class="GtkBox">
+                                    <property name="hexpand">True</property>
+                                    <property name="orientation">vertical</property>
+                                    <property name="valign">center</property>
+                                    <child>
+                                      <object class="GtkLabel" id="wide_title_label">
+                                        <property name="label">Title</property>
+                                        <property name="xalign">0</property>
+                                        <style>
+                                          <class name="title-1"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="wide_developer_label">
+                                        <property name="label">Developer</property>
+                                        <property name="xalign">0</property>
+                                        <style>
+                                          <class name="title-3"/>
+                                          <class name="dim-label"/>
+                                        </style>
+                                      </object>
+                                    </child>
                                   </object>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel" id="developer_label">
-                                    <property name="label">Developer</property>
-                                    <property name="wrap">True</property>
-                                    <property name="wrap_mode">word-char</property>
-                                    <property name="xalign">0</property>
-                                    <style>
-                                      <class name="title-3"/>
-                                      <class name="dim-label"/>
-                                    </style>
+                                  <object class="GtkBox" id="wide_pab_box">
+                                    <property name="valign">center</property>
+                                    <property name="halign">end</property>
+                                    <property name="orientation">vertical</property>
                                   </object>
                                 </child>
                               </object>
                             </child>
                             <child>
-                              <object class="GtkBox" id="pab_box">
-                                <property name="valign">center</property>
-                                <property name="halign">end</property>
+                              <object class="GtkBox">
+                                <property name="spacing">12</property>
                                 <property name="orientation">vertical</property>
+                                <child>
+                                  <object class="GtkBox">
+                                    <property name="hexpand">True</property>
+                                    <property name="orientation">vertical</property>
+                                    <property name="valign">center</property>
+                                    <child>
+                                      <object class="GtkLabel" id="narrow_title_label">
+                                        <property name="label">Title</property>
+                                        <property name="xalign">0</property>
+                                        <property name="ellipsize">end</property>
+                                        <style>
+                                          <class name="title-1"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="narrow_developer_label">
+                                        <property name="label">Developer</property>
+                                        <property name="xalign">0</property>
+                                        <property name="ellipsize">end</property>
+                                        <style>
+                                          <class name="title-3"/>
+                                          <class name="dim-label"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkBox" id="narrow_pab_box">
+                                    <property name="valign">center</property>
+                                    <property name="halign">start</property>
+                                    <property name="orientation">vertical</property>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                           </object>
@@ -122,6 +159,7 @@
                               <object class="GtkLabel" id="summary_label">
                                 <property name="margin_bottom">6</property>
                                 <property name="label">Summary</property>
+                                <property name="wrap">True</property>
                                 <property name="xalign">0</property>
                                 <style>
                                   <class name="title-3"/>
