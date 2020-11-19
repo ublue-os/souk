@@ -33,7 +33,7 @@ pub fn set_label_markup_translatable_string(
 }
 
 pub fn render_markup_widget(text: Option<MarkupTranslatableString>) -> Option<gtk::Box> {
-    let details_box = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    let details_box = gtk::Box::new(gtk::Orientation::Vertical, 8);
 
     match text {
         Some(t) => {
@@ -73,9 +73,14 @@ pub fn render_markup_widget(text: Option<MarkupTranslatableString>) -> Option<gt
                             details_box.append(&bx);
                         }
                         HtmlBlock::Text(t) => {
-                            let label = gtk::Label::new(Some(&t));
-                            set_label_styles(&label);
-                            details_box.append(&label)
+                            // TODO html2pango inserts a single newline
+                            // after each paragraph. This could change in a future
+                            // version.
+                            for text in t.split('\n') {
+                                let label = gtk::Label::new(Some(&text));
+                                set_label_styles(&label);
+                                details_box.append(&label);
+                            }
                         }
                         _ => (),
                     };
