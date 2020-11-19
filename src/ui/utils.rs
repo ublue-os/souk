@@ -108,22 +108,9 @@ pub fn render_markup(text: &str) -> Option<String> {
     let mut markup: Vec<String> = vec![];
     if let Ok(blocks) = markup_html(text) {
         for block in blocks {
-            let text = match block {
-                HtmlBlock::UList(elements) => elements
-                    .iter()
-                    .map(|li| format!("  • {}", li))
-                    .collect::<Vec<String>>()
-                    .join("\n"),
-                HtmlBlock::OList(elements) => elements
-                    .iter()
-                    .enumerate()
-                    .map(|(i, li)| format!("  {}. {}", i + 1, li))
-                    .collect::<Vec<String>>()
-                    .join("\n"),
-                HtmlBlock::Text(t) => t,
-                _ => String::new(),
-            };
-            markup.push(text + "\n");
+            if let HtmlBlock::Text(t) = block {
+                markup.push(t);
+            }
         }
         Some(
             markup
