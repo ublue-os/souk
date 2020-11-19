@@ -32,6 +32,73 @@ pub fn set_label_markup_translatable_string(
     };
 }
 
+pub fn render_markup_widget(text: Option<MarkupTranslatableString>) -> Option<gtk::Box> {
+    let details_box = gtk::Box::new(gtk::Orientation::Vertical, 6);
+
+    match text {
+        Some(t) => {
+            let text = &t.get_default().unwrap_or(&"???".to_string()).to_string();
+
+            if let Ok(blocks) = markup_html(text) {
+                for block in blocks {
+                    match block {
+                        HtmlBlock::UList(elements) => {
+                            let bx = gtk::Box::new(gtk::Orientation::Vertical, 3);
+                            for li in elements.iter() {
+                                let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+                                let bullet = gtk::Label::new(Some("•"));
+                                bullet.set_valign(gtk::Align::Start);
+                                let w = gtk::Label::new(None);
+                                set_label_styles(&w);
+                                h_box.append(&bullet);
+                                h_box.append(&w);
+                                w.set_markup(&li);
+                                bx.append(&h_box);
+                            }
+                            details_box.append(&bx);
+                        }
+                        HtmlBlock::OList(elements) => {
+                            let bx = gtk::Box::new(gtk::Orientation::Vertical, 3);
+                            for (i, ol) in elements.iter().enumerate() {
+                                let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+                                let bullet = gtk::Label::new(Some(&format!("{}.", i + 1)));
+                                bullet.set_valign(gtk::Align::Start);
+                                let w = gtk::Label::new(None);
+                                h_box.append(&bullet);
+                                h_box.append(&w);
+                                w.set_markup(&ol);
+                                set_label_styles(&w);
+                                bx.append(&h_box);
+                            }
+                            details_box.append(&bx);
+                        }
+                        HtmlBlock::Text(t) => {
+                            let label = gtk::Label::new(Some(&t));
+                            set_label_styles(&label);
+                            details_box.append(&label)
+                        }
+                        _ => (),
+                    };
+                }
+                Some(details_box)
+            } else {
+                debug!("Could not parse: {}", text);
+                Some(gtk::Box::new(gtk::Orientation::Horizontal, 6))
+            }
+        }
+        None => Some(gtk::Box::new(gtk::Orientation::Horizontal, 6)),
+    }
+}
+
+fn set_label_styles(w: &gtk::Label) {
+    w.set_wrap(true);
+    w.set_wrap_mode(pango::WrapMode::WordChar);
+    w.set_justify(gtk::Justification::Left);
+    w.set_xalign(0.0);
+    w.set_valign(gtk::Align::Start);
+    w.set_halign(gtk::Align::Fill);
+}
+
 pub fn render_markup(text: &str) -> Option<String> {
     let mut markup: Vec<String> = vec![];
     if let Ok(blocks) = markup_html(text) {

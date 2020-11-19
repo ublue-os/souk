@@ -88,7 +88,7 @@ impl PackageDetailsPage {
         get_widget!(self.builder, gtk::Label, narrow_title_label);
         get_widget!(self.builder, gtk::Label, narrow_developer_label);
         get_widget!(self.builder, gtk::Label, summary_label);
-        get_widget!(self.builder, gtk::Label, description_label);
+        get_widget!(self.builder, gtk::Box, description_box);
         get_widget!(self.builder, gtk::ScrolledWindow, scrolled_window);
 
         // scroll up when a new package gets set
@@ -98,6 +98,8 @@ impl PackageDetailsPage {
 
         // Set icon
         utils::set_icon(&package, &icon_image, 128);
+
+        let def = gtk::Label::new(Some(&format!("Branch: {}", package.get_branch())));
 
         let appdata = match package.get_appdata() {
             Some(appdata) => appdata,
@@ -110,7 +112,7 @@ impl PackageDetailsPage {
                 narrow_title_label.set_text(&package.get_name());
                 narrow_developer_label.set_text("Unknown Developer");
                 summary_label.set_text(&format!("{:?} component", package.get_kind()));
-                description_label.set_text(&format!("Branch: {}", package.get_branch(),));
+                description_box.append(&def);
 
                 return;
             }
@@ -125,10 +127,11 @@ impl PackageDetailsPage {
             appdata.developer_name.clone(),
         );
         utils::set_label_translatable_string(&summary_label, appdata.summary.clone());
-        utils::set_label_markup_translatable_string(
-            &description_label,
-            appdata.description.clone(),
-        );
+        if let Some(bx) = &utils::render_markup_widget(appdata.description.clone()) {
+            description_box.append(bx);
+        } else if package.get_appdata().is_some() {
+            description_box.append(&def);
+        }
 
         // Populate "Other Apps by X" flowbox
         if let Some(n) = appdata.developer_name {
@@ -170,6 +173,11 @@ impl PackageDetailsPage {
 
         utils::clear_flowbox(&other_apps_flowbox);
         other_apps.set_visible(false);
+
+        get_widget!(self.builder, gtk::Box, description_box);
+        while let Some(w) = description_box.get_first_child() {
+            description_box.remove(&w);
+        }
 
         for package_widget in &self.package_widgets {
             package_widget.reset();
