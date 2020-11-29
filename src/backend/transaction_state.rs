@@ -1,7 +1,6 @@
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use glib::translate::*;
 
 use std::cell::RefCell;
 
@@ -48,6 +47,7 @@ static PROPERTIES: [subclass::Property; 3] = [
 
 impl ObjectSubclass for SoukTransactionStatePrivate {
     const NAME: &'static str = "SoukTransactionState";
+    type Type = SoukTransactionState;
     type ParentType = glib::Object;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -68,18 +68,18 @@ impl ObjectSubclass for SoukTransactionStatePrivate {
 }
 
 impl ObjectImpl for SoukTransactionStatePrivate {
-    fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
+    fn get_property(&self, _obj: &SoukTransactionState, id: usize) -> glib::Value {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("message", ..) => Ok(self.message.borrow().to_value()),
-            subclass::Property("percentage", ..) => Ok(self.percentage.borrow().to_value()),
-            subclass::Property("mode", ..) => Ok(self.mode.borrow().to_value()),
+            subclass::Property("message", ..) => self.message.borrow().to_value(),
+            subclass::Property("percentage", ..) => self.percentage.borrow().to_value(),
+            subclass::Property("mode", ..) => self.mode.borrow().to_value(),
             _ => unimplemented!(),
         }
     }
 
-    fn set_property(&self, _obj: &glib::Object, id: usize, value: &glib::Value) {
+    fn set_property(&self, _obj: &SoukTransactionState, id: usize, value: &glib::Value) {
         let prop = &PROPERTIES[id];
 
         match *prop {
@@ -101,13 +101,7 @@ impl ObjectImpl for SoukTransactionStatePrivate {
 }
 
 glib_wrapper! {
-    pub struct SoukTransactionState(
-        Object<subclass::simple::InstanceStruct<SoukTransactionStatePrivate>,
-        subclass::simple::ClassStruct<SoukTransactionStatePrivate>>);
-
-    match fn {
-        get_type => || SoukTransactionStatePrivate::get_type().to_glib(),
-    }
+    pub struct SoukTransactionState(ObjectSubclass<SoukTransactionStatePrivate>);
 }
 
 #[allow(dead_code)]

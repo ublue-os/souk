@@ -4,7 +4,6 @@ use flatpak::RemoteRef;
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use glib::translate::*;
 
 use std::cell::RefCell;
 
@@ -48,6 +47,7 @@ static PROPERTIES: [subclass::Property; 3] = [
 
 impl ObjectSubclass for SoukRemoteInfoPrivate {
     const NAME: &'static str = "SoukRemoteInfo";
+    type Type = SoukRemoteInfo;
     type ParentType = glib::Object;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -64,26 +64,20 @@ impl ObjectSubclass for SoukRemoteInfoPrivate {
 }
 
 impl ObjectImpl for SoukRemoteInfoPrivate {
-    fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
+    fn get_property(&self, _obj: &SoukRemoteInfo, id: usize) -> glib::Value {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("commit", ..) => Ok(self.commit.borrow().to_value()),
-            subclass::Property("installed_size", ..) => Ok(self.installed_size.borrow().to_value()),
-            subclass::Property("download_size", ..) => Ok(self.download_size.borrow().to_value()),
+            subclass::Property("commit", ..) => self.commit.borrow().to_value(),
+            subclass::Property("installed_size", ..) => self.installed_size.borrow().to_value(),
+            subclass::Property("download_size", ..) => self.download_size.borrow().to_value(),
             _ => unimplemented!(),
         }
     }
 }
 
 glib_wrapper! {
-    pub struct SoukRemoteInfo(
-        Object<subclass::simple::InstanceStruct<SoukRemoteInfoPrivate>,
-        subclass::simple::ClassStruct<SoukRemoteInfoPrivate>>);
-
-    match fn {
-        get_type => || SoukRemoteInfoPrivate::get_type().to_glib(),
-    }
+    pub struct SoukRemoteInfo(ObjectSubclass<SoukRemoteInfoPrivate>);
 }
 
 #[allow(dead_code)]

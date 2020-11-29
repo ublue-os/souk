@@ -2,7 +2,6 @@ use flatpak::{Installation, InstallationExt};
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use glib::translate::*;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
 use crate::backend::{SoukInstalledInfo, SoukPackage, SoukRemoteInfo, SoukTransaction};
@@ -30,6 +29,7 @@ static PROPERTIES: [subclass::Property; 1] = [subclass::Property(
 
 impl ObjectSubclass for SoukFlatpakBackendPrivate {
     const NAME: &'static str = "SoukFlatpakBackend";
+    type Type = SoukFlatpakBackend;
     type ParentType = glib::Object;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -67,24 +67,18 @@ impl ObjectSubclass for SoukFlatpakBackendPrivate {
 }
 
 impl ObjectImpl for SoukFlatpakBackendPrivate {
-    fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
+    fn get_property(&self, _obj: &SoukFlatpakBackend, id: usize) -> glib::Value {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("installed_packages", ..) => Ok(self.installed_packages.to_value()),
+            subclass::Property("installed_packages", ..) => self.installed_packages.to_value(),
             _ => unimplemented!(),
         }
     }
 }
 
 glib_wrapper! {
-    pub struct SoukFlatpakBackend(
-        Object<subclass::simple::InstanceStruct<SoukFlatpakBackendPrivate>,
-        subclass::simple::ClassStruct<SoukFlatpakBackendPrivate>>);
-
-    match fn {
-        get_type => || SoukFlatpakBackendPrivate::get_type().to_glib(),
-    }
+    pub struct SoukFlatpakBackend(ObjectSubclass<SoukFlatpakBackendPrivate>);
 }
 
 impl SoukFlatpakBackend {

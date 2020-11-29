@@ -1,7 +1,6 @@
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use glib::translate::*;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{WidgetImpl, WindowImpl};
 use libhandy::prelude::*;
@@ -30,6 +29,7 @@ pub struct SoukApplicationWindowPrivate {
 
 impl ObjectSubclass for SoukApplicationWindowPrivate {
     const NAME: &'static str = "SoukApplicationWindow";
+    type Type = SoukApplicationWindow;
     type ParentType = libhandy::ApplicationWindow;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -67,14 +67,8 @@ impl libhandy::subclass::prelude::ApplicationWindowImpl for SoukApplicationWindo
 
 // Wrap SoukApplicationWindowPrivate into a usable gtk-rs object
 glib_wrapper! {
-    pub struct SoukApplicationWindow(
-        Object<subclass::simple::InstanceStruct<SoukApplicationWindowPrivate>,
-        subclass::simple::ClassStruct<SoukApplicationWindowPrivate>>)
-        @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, libhandy::ApplicationWindow;
-
-    match fn {
-        get_type => || SoukApplicationWindowPrivate::get_type().to_glib(),
-    }
+    pub struct SoukApplicationWindow(ObjectSubclass<SoukApplicationWindowPrivate>)
+    @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, libhandy::ApplicationWindow;
 }
 
 // SoukApplicationWindow implementation itself

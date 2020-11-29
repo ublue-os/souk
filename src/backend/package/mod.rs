@@ -13,7 +13,6 @@ use flatpak::{InstalledRef, RemoteRef};
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use glib::translate::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -115,6 +114,7 @@ static PROPERTIES: [subclass::Property; 10] = [
 
 impl ObjectSubclass for SoukPackagePrivate {
     const NAME: &'static str = "SoukPackage";
+    type Type = SoukPackage;
     type ParentType = glib::Object;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -147,22 +147,22 @@ impl ObjectSubclass for SoukPackagePrivate {
 }
 
 impl ObjectImpl for SoukPackagePrivate {
-    fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
+    fn get_property(&self, _obj: &SoukPackage, id: usize) -> glib::Value {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("kind", ..) => Ok(self.kind.borrow().to_value()),
-            subclass::Property("name", ..) => Ok(self.name.borrow().to_value()),
-            subclass::Property("arch", ..) => Ok(self.arch.borrow().to_value()),
-            subclass::Property("branch", ..) => Ok(self.branch.borrow().to_value()),
-            subclass::Property("remote", ..) => Ok(self.remote.borrow().to_value()),
-            subclass::Property("remote_info", ..) => Ok(self.remote_info.borrow().to_value()),
-            subclass::Property("installed_info", ..) => Ok(self.installed_info.borrow().to_value()),
+            subclass::Property("kind", ..) => self.kind.borrow().to_value(),
+            subclass::Property("name", ..) => self.name.borrow().to_value(),
+            subclass::Property("arch", ..) => self.arch.borrow().to_value(),
+            subclass::Property("branch", ..) => self.branch.borrow().to_value(),
+            subclass::Property("remote", ..) => self.remote.borrow().to_value(),
+            subclass::Property("remote_info", ..) => self.remote_info.borrow().to_value(),
+            subclass::Property("installed_info", ..) => self.installed_info.borrow().to_value(),
             subclass::Property("transaction_action", ..) => {
-                Ok(self.transaction_action.borrow().to_value())
+                self.transaction_action.borrow().to_value()
             }
             subclass::Property("transaction_state", ..) => {
-                Ok(self.transaction_state.borrow().to_value())
+                self.transaction_state.borrow().to_value()
             }
             subclass::Property("is_installed", ..) => {
                 Ok(self.installed_info.borrow().is_some().to_value())
@@ -189,13 +189,7 @@ impl Drop for SoukPackagePrivate {
 }
 
 glib_wrapper! {
-    pub struct SoukPackage(
-        Object<subclass::simple::InstanceStruct<SoukPackagePrivate>,
-        subclass::simple::ClassStruct<SoukPackagePrivate>>);
-
-    match fn {
-        get_type => || SoukPackagePrivate::get_type().to_glib(),
-    }
+    pub struct SoukPackage(ObjectSubclass<SoukPackagePrivate>);
 }
 
 #[allow(dead_code)]
@@ -217,7 +211,7 @@ impl SoukPackage {
             .connect_local(
                 "new_transaction",
                 false,
-                clone!(@weak self as this => @default-return None::<glib::Value>, move |data|{
+                clone!(@weak self as this => @default-panic, move |data|{
                     let object: glib::Object = data[1].get().unwrap().unwrap();
                     let transaction: SoukTransaction = object.downcast().unwrap();
 

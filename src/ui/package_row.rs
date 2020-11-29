@@ -1,7 +1,6 @@
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use glib::translate::*;
 use gtk::prelude::*;
 use gtk::subclass::prelude::{BoxImpl, WidgetImpl};
 
@@ -29,6 +28,7 @@ static PROPERTIES: [subclass::Property; 1] = [subclass::Property("package", |pac
 
 impl ObjectSubclass for SoukPackageRowPrivate {
     const NAME: &'static str = "SoukPackageRow";
+    type Type = SoukPackageRow;
     type ParentType = gtk::Box;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -53,7 +53,7 @@ impl ObjectSubclass for SoukPackageRowPrivate {
 }
 
 impl ObjectImpl for SoukPackageRowPrivate {
-    fn set_property(&self, _obj: &glib::Object, id: usize, value: &glib::Value) {
+    fn set_property(&self, _obj: &SoukPackageRow, id: usize, value: &glib::Value) {
         let prop = &PROPERTIES[id];
 
         match *prop {
@@ -65,11 +65,11 @@ impl ObjectImpl for SoukPackageRowPrivate {
         }
     }
 
-    fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
+    fn get_property(&self, _obj: &SoukPackageRow, id: usize) -> glib::Value {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("package", ..) => Ok(self.package.borrow().to_value()),
+            subclass::Property("package", ..) => self.package.borrow().to_value(),
             _ => unimplemented!(),
         }
     }
@@ -80,14 +80,8 @@ impl WidgetImpl for SoukPackageRowPrivate {}
 impl BoxImpl for SoukPackageRowPrivate {}
 
 glib_wrapper! {
-    pub struct SoukPackageRow(
-        Object<subclass::simple::InstanceStruct<SoukPackageRowPrivate>,
-        subclass::simple::ClassStruct<SoukPackageRowPrivate>>)
-        @extends gtk::Widget, gtk::Box;
-
-    match fn {
-        get_type => || SoukPackageRowPrivate::get_type().to_glib(),
-    }
+    pub struct SoukPackageRow(ObjectSubclass<SoukPackageRowPrivate>)
+    @extends gtk::Widget, gtk::Box;
 }
 
 impl SoukPackageRow {

@@ -2,7 +2,6 @@ use gio::subclass::prelude::ApplicationImpl;
 use gio::{self, prelude::*, ApplicationFlags};
 use glib::subclass;
 use glib::subclass::prelude::*;
-use glib::translate::*;
 use glib::WeakRef;
 use glib::{Receiver, Sender};
 use gtk::prelude::*;
@@ -43,6 +42,7 @@ pub struct SoukApplicationPrivate {
 
 impl ObjectSubclass for SoukApplicationPrivate {
     const NAME: &'static str = "SoukApplication";
+    type Type = SoukApplication;
     type ParentType = gtk::Application;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -85,7 +85,7 @@ impl GtkApplicationImpl for SoukApplicationPrivate {}
 
 // Implement Gio.Application for SoukApplication
 impl ApplicationImpl for SoukApplicationPrivate {
-    fn activate(&self, _app: &gio::Application) {
+    fn activate(&self, _app: &SoukApplication) {
         debug!("Activate GIO Application...");
 
         // If the window already exists,
@@ -120,14 +120,8 @@ impl ApplicationImpl for SoukApplicationPrivate {
 
 // Wrap SoukApplicationPrivate into a usable gtk-rs object
 glib_wrapper! {
-    pub struct SoukApplication(
-        Object<subclass::simple::InstanceStruct<SoukApplicationPrivate>,
-        subclass::simple::ClassStruct<SoukApplicationPrivate>>)
-        @extends gio::Application, gtk::Application;
-
-    match fn {
-        get_type => || SoukApplicationPrivate::get_type().to_glib(),
-    }
+    pub struct SoukApplication(ObjectSubclass<SoukApplicationPrivate>)
+    @extends gio::Application, gtk::Application;
 }
 
 // SoukApplication implementation itself

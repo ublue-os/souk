@@ -4,7 +4,6 @@ use flatpak::InstalledRef;
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use glib::translate::*;
 
 use std::cell::RefCell;
 use std::path::PathBuf;
@@ -46,6 +45,7 @@ static PROPERTIES: [subclass::Property; 3] = [
 
 impl ObjectSubclass for SoukInstalledInfoPrivate {
     const NAME: &'static str = "SoukInstalledInfo";
+    type Type = SoukInstalledInfo;
     type ParentType = glib::Object;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -62,26 +62,20 @@ impl ObjectSubclass for SoukInstalledInfoPrivate {
 }
 
 impl ObjectImpl for SoukInstalledInfoPrivate {
-    fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
+    fn get_property(&self, _obj: &SoukInstalledInfo, id: usize) -> glib::Value {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("commit", ..) => Ok(self.commit.borrow().to_value()),
-            subclass::Property("installed_size", ..) => Ok(self.installed_size.borrow().to_value()),
-            subclass::Property("deploy_dir", ..) => Ok(self.deploy_dir.borrow().to_value()),
+            subclass::Property("commit", ..) => self.commit.borrow().to_value(),
+            subclass::Property("installed_size", ..) => self.installed_size.borrow().to_value(),
+            subclass::Property("deploy_dir", ..) => self.deploy_dir.borrow().to_value(),
             _ => unimplemented!(),
         }
     }
 }
 
 glib_wrapper! {
-    pub struct SoukInstalledInfo(
-        Object<subclass::simple::InstanceStruct<SoukInstalledInfoPrivate>,
-        subclass::simple::ClassStruct<SoukInstalledInfoPrivate>>);
-
-    match fn {
-        get_type => || SoukInstalledInfoPrivate::get_type().to_glib(),
-    }
+    pub struct SoukInstalledInfo(ObjectSubclass<SoukInstalledInfoPrivate>);
 }
 
 #[allow(dead_code)]

@@ -109,7 +109,7 @@ impl PackageWidget for ActionButton {
 
         Self::update_stack(self.builder.clone(), package.clone());
 
-        let closure = clone!(@weak self.builder as builder, @weak package => @default-return None::<glib::Value>, move |_:&[glib::Value]|{
+        let closure = clone!(@weak self.builder as builder, @weak package => @default-panic, move |_:&[glib::Value]|{
             Self::update_stack(builder.clone(), package.clone());
             None
         });

@@ -168,7 +168,7 @@ pub fn show_error_dialog(message: &str) {
 }
 
 pub fn clear_flowbox(flowbox: &gtk::FlowBox) {
-    let listmodel = flowbox.observe_children().unwrap();
+    let listmodel = flowbox.observe_children();
     while let Some(o) = listmodel.get_object(0) {
         let widget = o.clone().downcast::<gtk::Widget>().unwrap();
         flowbox.remove(&widget);
