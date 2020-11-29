@@ -37,6 +37,7 @@ static PROPERTIES: [subclass::Property; 1] = [subclass::Property("busy", |busy| 
 
 impl ObjectSubclass for SoukDatabasePrivate {
     const NAME: &'static str = "SoukDatabase";
+    type Type = SoukDatabase;
     type ParentType = glib::Object;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
@@ -56,24 +57,18 @@ impl ObjectSubclass for SoukDatabasePrivate {
 }
 
 impl ObjectImpl for SoukDatabasePrivate {
-    fn get_property(&self, _obj: &glib::Object, id: usize) -> Result<glib::Value, ()> {
+    fn get_property(&self, _obj: &SoukDatabase, id: usize) -> glib::Value {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("busy", ..) => Ok(self.busy.borrow().to_value()),
+            subclass::Property("busy", ..) => self.busy.borrow().to_value(),
             _ => unimplemented!(),
         }
     }
 }
 
 glib_wrapper! {
-    pub struct SoukDatabase(
-        Object<subclass::simple::InstanceStruct<SoukDatabasePrivate>,
-        subclass::simple::ClassStruct<SoukDatabasePrivate>>);
-
-    match fn {
-        get_type => || SoukDatabasePrivate::get_type().to_glib(),
-    }
+    pub struct SoukDatabase(ObjectSubclass<SoukDatabasePrivate>);
 }
 
 #[allow(dead_code)]
