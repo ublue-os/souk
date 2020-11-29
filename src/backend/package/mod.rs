@@ -277,6 +277,13 @@ impl SoukPackage {
         })).unwrap());
     }
 
+    fn update_remote_info(&self) {
+        let self_ = SoukPackagePrivate::from_instance(self);
+        let remote_info = self_.flatpak_backend.get_remote_info(&self);
+        *self_.remote_info.borrow_mut() = remote_info;
+        self.notify("remote_info");
+    }
+
     fn update_installed_info(&self) {
         let self_ = SoukPackagePrivate::from_instance(self);
         let installed_info = self_.flatpak_backend.get_installed_info(&self);
@@ -430,10 +437,13 @@ impl From<InstalledRef> for SoukPackage {
         *package_priv.branch.borrow_mut() = installed_ref.get_branch().unwrap().to_string();
         *package_priv.remote.borrow_mut() = installed_ref.get_origin().unwrap().to_string();
 
+        // Set installed info
         let installed_info = SoukInstalledInfo::new(&installed_ref);
         *package_priv.installed_info.borrow_mut() = Some(installed_info);
 
-        package.update_installed_info();
+        // Set remote info
+        package.update_remote_info();
+
         package
     }
 }
@@ -455,8 +465,12 @@ impl From<(RemoteRef, String)> for SoukPackage {
         *package_priv.branch.borrow_mut() = remote_ref.0.get_branch().unwrap().to_string();
         *package_priv.remote.borrow_mut() = remote_ref.0.get_remote_name().unwrap().to_string();
 
+        // Set remote info
         let remote_info = SoukRemoteInfo::new_from_remote_ref(remote_ref.0, remote_ref.1);
         *package_priv.remote_info.borrow_mut() = Some(remote_info);
+
+        // Set installed info
+        package.update_installed_info();
 
         package
     }

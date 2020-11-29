@@ -5,7 +5,8 @@ use glib::subclass::prelude::*;
 use glib::translate::*;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
-use crate::backend::{SoukInstalledInfo, SoukPackage, SoukTransaction};
+use crate::backend::{SoukInstalledInfo, SoukPackage, SoukRemoteInfo, SoukTransaction};
+use crate::db::queries;
 
 pub struct SoukFlatpakBackendPrivate {
     system_installation: Installation,
@@ -154,11 +155,25 @@ impl SoukFlatpakBackend {
         }
     }
 
+    pub fn get_remote_info(&self, package: &SoukPackage) -> Option<SoukRemoteInfo> {
+        match queries::get_db_package(
+            package.get_name(),
+            package.get_branch(),
+            package.get_remote(),
+        )
+        .unwrap()
+        {
+            Some(db_package) => Some(SoukRemoteInfo::new(&db_package)),
+            None => None,
+        }
+    }
+
     fn is_sandboxed() -> bool {
         std::path::Path::new("/.flatpak-info").exists()
     }
 
     fn reload_installed_packages(&self) {
+        debug!("Reload installed packages...");
         // TODO: This is eating much time on startup. Make this async.
 
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);

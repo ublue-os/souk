@@ -47,6 +47,23 @@ pub fn get_package(
     Ok(packages.pop().map(|p| p.into()))
 }
 
+pub fn get_db_package(
+    pkg_app_id: String,
+    pkg_branch: String,
+    pkg_remote: String,
+) -> Result<Option<DbPackage>, diesel::result::Error> {
+    use crate::db::schema::appstream_packages::dsl::*;
+    let con = connect_db!();
+
+    let mut packages = appstream_packages
+        .filter(name.eq(pkg_app_id))
+        .filter(branch.eq(pkg_branch))
+        .filter(remote.eq(pkg_remote))
+        .load::<DbPackage>(&con)?;
+
+    Ok(packages.pop().map(|p| p.into()))
+}
+
 pub fn get_packages_by_name(
     pkg_name: String,
     limit: i64,

@@ -104,6 +104,7 @@ impl ApplicationImpl for SoukApplicationPrivate {
 
         debug!("Setup Souk base components...");
         app.setup();
+        debug!("Souk base components are ready.");
 
         debug!("Create new application window...");
         let window = app.create_window();
