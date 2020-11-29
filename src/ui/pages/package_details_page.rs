@@ -72,9 +72,8 @@ impl PackageDetailsPage {
         get_widget!(self.builder, gtk::FlowBox, other_apps_flowbox);
 
         let closure = clone!(@weak self as this => move|_: &gtk::FlowBox, row: &gtk::FlowBoxChild|{
-            let child = row.get_child().unwrap();
-            let row = child.downcast::<SoukPackageTile>().unwrap();
-            let package: SoukPackage = row.get_package().unwrap();
+            let tile = row.clone().downcast::<SoukPackageTile>().unwrap();
+            let package: SoukPackage = tile.get_package().unwrap();
             send!(this.sender, Action::ViewSet(View::PackageDetails(package)));
         });
 
