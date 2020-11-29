@@ -165,7 +165,7 @@ impl ObjectImpl for SoukPackagePrivate {
                 self.transaction_state.borrow().to_value()
             }
             subclass::Property("is_installed", ..) => {
-                Ok(self.installed_info.borrow().is_some().to_value())
+                self.installed_info.borrow().is_some().to_value()
             }
             _ => unimplemented!(),
         }
