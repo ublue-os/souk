@@ -1,17 +1,25 @@
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use gtk::prelude::*;
-use gtk::subclass::prelude::{BoxImpl, WidgetImpl};
+use gtk::subclass::prelude::*;
+use gtk::subclass::widget::{CompositeTemplate, TemplateChild, WidgetClassSubclassExt};
+use gtk::{prelude::*, CompositeTemplate};
 
 use std::cell::RefCell;
 
 use crate::backend::SoukPackage;
 use crate::ui::utils;
 
+#[derive(Debug, CompositeTemplate)]
 pub struct SoukPackageTilePrivate {
+    #[template_child(id = "title_label")]
+    pub title_label: TemplateChild<gtk::Label>,
+    #[template_child(id = "summary_label")]
+    pub summary_label: TemplateChild<gtk::Label>,
+    #[template_child(id = "icon_image")]
+    pub icon_image: TemplateChild<gtk::Image>,
+
     package: RefCell<Option<SoukPackage>>,
-    builder: gtk::Builder,
 }
 
 static PROPERTIES: [subclass::Property; 1] = [subclass::Property("package", |package| {
@@ -27,21 +35,26 @@ static PROPERTIES: [subclass::Property; 1] = [subclass::Property("package", |pac
 impl ObjectSubclass for SoukPackageTilePrivate {
     const NAME: &'static str = "SoukPackageTile";
     type Type = SoukPackageTile;
-    type ParentType = gtk::Box;
+    type ParentType = gtk::FlowBoxChild;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
+        klass.set_template_from_resource("/de/haeckerfelix/Souk/gtk/package_tile.ui");
+        Self::bind_template_children(klass);
     }
 
     glib_object_subclass!();
 
     fn new() -> Self {
         let package = RefCell::new(None);
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/package_tile.ui");
-
-        Self { package, builder }
+        Self {
+            title_label: TemplateChild::default(),
+            summary_label: TemplateChild::default(),
+            icon_image: TemplateChild::default(),
+            package,
+        }
     }
 }
 
@@ -66,15 +79,20 @@ impl ObjectImpl for SoukPackageTilePrivate {
             _ => unimplemented!(),
         }
     }
+
+    fn constructed(&self, obj: &Self::Type) {
+        obj.init_template();
+        self.parent_constructed(obj);
+    }
 }
 
 impl WidgetImpl for SoukPackageTilePrivate {}
 
-impl BoxImpl for SoukPackageTilePrivate {}
+impl FlowBoxChildImpl for SoukPackageTilePrivate {}
 
 glib_wrapper! {
     pub struct SoukPackageTile(ObjectSubclass<SoukPackageTilePrivate>)
-    @extends gtk::Widget, gtk::Box;
+    @extends gtk::Widget, gtk::FlowBoxChild;
 }
 
 impl SoukPackageTile {
@@ -83,10 +101,6 @@ impl SoukPackageTile {
             .unwrap()
             .downcast::<SoukPackageTile>()
             .unwrap();
-
-        let self_ = SoukPackageTilePrivate::from_instance(&tile);
-        get_widget!(self_.builder, gtk::Box, package_tile);
-        tile.append(&package_tile);
 
         tile.setup_signals();
         tile
@@ -97,24 +111,26 @@ impl SoukPackageTile {
             let self_ = SoukPackageTilePrivate::from_instance(this);
             let package = self_.package.borrow().as_ref().unwrap().clone();
 
-            get_widget!(self_.builder, gtk::Label, title_label);
-            get_widget!(self_.builder, gtk::Label, summary_label);
-            get_widget!(self_.builder, gtk::Image, icon_image);
-
             // Icon
-            utils::set_icon(&package, &icon_image, 64);
+            utils::set_icon(&package, &self_.icon_image.get(), 64);
 
             match package.get_appdata() {
                 Some(appdata) => {
                     // Title
-                    utils::set_label_translatable_string(&title_label, Some(appdata.name.clone()));
+                    utils::set_label_translatable_string(
+                        &self_.title_label.get(),
+                        Some(appdata.name.clone()),
+                    );
                     // Summary
-                    utils::set_label_translatable_string(&summary_label, appdata.summary.clone());
+                    utils::set_label_translatable_string(
+                        &self_.summary_label.get(),
+                        appdata.summary.clone(),
+                    );
                 }
                 None => {
                     // Fallback to basic information when no appdata available
-                    title_label.set_text(&package.get_name());
-                    summary_label.set_text(&package.get_branch());
+                    self_.title_label.get().set_text(&package.get_name());
+                    self_.summary_label.get().set_text(&package.get_branch());
                 }
             };
         });
