@@ -1,8 +1,9 @@
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use gtk::prelude::*;
-use gtk::subclass::prelude::{BoxImpl, WidgetImpl};
+use gtk::subclass::prelude::*;
+use gtk::subclass::widget::{CompositeTemplate, TemplateChild, WidgetClassSubclassExt};
+use gtk::{prelude::*, CompositeTemplate};
 
 use std::cell::Cell;
 use std::cell::RefCell;
@@ -10,10 +11,27 @@ use std::cell::RefCell;
 use crate::backend::SoukPackage;
 use crate::ui::utils;
 
+#[derive(Debug, CompositeTemplate)]
 pub struct SoukPackageRowPrivate {
+    #[template_child(id = "title_label")]
+    pub title_label: TemplateChild<gtk::Label>,
+    #[template_child(id = "summary_label")]
+    pub summary_label: TemplateChild<gtk::Label>,
+    #[template_child(id = "icon_image")]
+    pub icon_image: TemplateChild<gtk::Image>,
+    #[template_child(id = "branch_label")]
+    pub branch_label: TemplateChild<gtk::Label>,
+    #[template_child(id = "installed_check")]
+    pub installed_check: TemplateChild<gtk::Image>,
+    #[template_child(id = "uninstall_box")]
+    pub uninstall_box: TemplateChild<gtk::Box>,
+    #[template_child(id = "uninstall_button")]
+    pub uninstall_button: TemplateChild<gtk::Button>,
+    #[template_child(id = "installed_size_label")]
+    pub installed_size_label: TemplateChild<gtk::Label>,
+
     package: RefCell<Option<SoukPackage>>,
     installed_view: Cell<bool>,
-    builder: gtk::Builder,
 }
 
 static PROPERTIES: [subclass::Property; 1] = [subclass::Property("package", |package| {
@@ -29,25 +47,33 @@ static PROPERTIES: [subclass::Property; 1] = [subclass::Property("package", |pac
 impl ObjectSubclass for SoukPackageRowPrivate {
     const NAME: &'static str = "SoukPackageRow";
     type Type = SoukPackageRow;
-    type ParentType = gtk::Box;
+    type ParentType = gtk::ListBoxRow;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
+        klass.set_template_from_resource("/de/haeckerfelix/Souk/gtk/package_row.ui");
+        Self::bind_template_children(klass);
     }
 
     glib_object_subclass!();
 
     fn new() -> Self {
         let package = RefCell::new(None);
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/package_row.ui");
         let installed_view = Cell::default();
 
         Self {
+            title_label: TemplateChild::default(),
+            summary_label: TemplateChild::default(),
+            icon_image: TemplateChild::default(),
+            branch_label: TemplateChild::default(),
+            installed_check: TemplateChild::default(),
+            uninstall_box: TemplateChild::default(),
+            uninstall_button: TemplateChild::default(),
+            installed_size_label: TemplateChild::default(),
             package,
             installed_view,
-            builder,
         }
     }
 }
@@ -73,15 +99,20 @@ impl ObjectImpl for SoukPackageRowPrivate {
             _ => unimplemented!(),
         }
     }
+
+    fn constructed(&self, obj: &Self::Type) {
+        obj.init_template();
+        self.parent_constructed(obj);
+    }
 }
 
 impl WidgetImpl for SoukPackageRowPrivate {}
 
-impl BoxImpl for SoukPackageRowPrivate {}
+impl ListBoxRowImpl for SoukPackageRowPrivate {}
 
 glib_wrapper! {
     pub struct SoukPackageRow(ObjectSubclass<SoukPackageRowPrivate>)
-    @extends gtk::Widget, gtk::Box;
+    @extends gtk::Widget, gtk::ListBoxRow;
 }
 
 impl SoukPackageRow {
@@ -94,9 +125,6 @@ impl SoukPackageRow {
         let self_ = SoukPackageRowPrivate::from_instance(&row);
         self_.installed_view.set(installed_view);
 
-        get_widget!(self_.builder, gtk::Box, package_row);
-        row.append(&package_row);
-
         row.setup_signals();
         row
     }
@@ -106,36 +134,33 @@ impl SoukPackageRow {
             let self_ = SoukPackageRowPrivate::from_instance(this);
             let package = self_.package.borrow().as_ref().unwrap().clone();
 
-            get_widget!(self_.builder, gtk::Label, title_label);
-            get_widget!(self_.builder, gtk::Label, summary_label);
-            get_widget!(self_.builder, gtk::Image, icon_image);
-            get_widget!(self_.builder, gtk::Label, branch_label);
-            get_widget!(self_.builder, gtk::Image, installed_check);
-            get_widget!(self_.builder, gtk::Box, uninstall_box);
-            get_widget!(self_.builder, gtk::Button, uninstall_button);
-            get_widget!(self_.builder, gtk::Label, installed_size_label);
-
             // Icon
-            utils::set_icon(&package, &icon_image, 64);
+            utils::set_icon(&package, &self_.icon_image.get(), 64);
 
             match package.get_appdata() {
                 Some(appdata) => {
                     // Title
-                    utils::set_label_translatable_string(&title_label, Some(appdata.name.clone()));
+                    utils::set_label_translatable_string(
+                        &self_.title_label.get(),
+                        Some(appdata.name.clone()),
+                    );
                     // Summary
-                    utils::set_label_translatable_string(&summary_label, appdata.summary.clone());
+                    utils::set_label_translatable_string(
+                        &self_.summary_label.get(),
+                        appdata.summary.clone(),
+                    );
                 }
                 None => {
                     // Fallback to basic information when no appdata available
-                    title_label.set_text(&package.get_name());
-                    summary_label.set_text(&package.get_branch());
+                    self_.title_label.get().set_text(&package.get_name());
+                    self_.summary_label.get().set_text(&package.get_branch());
                 }
             };
 
             // Installed indicator
             if !self_.installed_view.get() {
                 package
-                    .bind_property("is_installed", &installed_check, "visible")
+                    .bind_property("is_installed", &self_.installed_check.get(), "visible")
                     .flags(glib::BindingFlags::SYNC_CREATE)
                     .build()
                     .unwrap();
@@ -144,10 +169,10 @@ impl SoukPackageRow {
             // Branch label / tag
             let branch = package.get_branch();
             if branch != "stable" {
-                branch_label.set_text(&branch.to_uppercase());
-                branch_label.set_visible(true);
+                self_.branch_label.get().set_text(&branch.to_uppercase());
+                self_.branch_label.get().set_visible(true);
 
-                let ctx = branch_label.get_style_context();
+                let ctx = self_.branch_label.get().get_style_context();
                 ctx.remove_class("branch-label-orange");
                 ctx.remove_class("branch-label-red");
 
@@ -159,13 +184,13 @@ impl SoukPackageRow {
                     ctx.add_class("branch-label-red");
                 }
             } else {
-                branch_label.set_visible(false);
+                self_.branch_label.get().set_visible(false);
             }
 
             // Uninstall button
-            uninstall_button.set_sensitive(true);
+            self_.uninstall_button.get().set_sensitive(true);
             if self_.installed_view.get() {
-                uninstall_box.set_visible(true);
+                self_.uninstall_box.get().set_visible(true);
 
                 let bytes = package
                     .get_installed_info()
@@ -173,12 +198,15 @@ impl SoukPackageRow {
                     .unwrap()
                     .get_installed_size();
                 let size = glib::format_size(bytes);
-                installed_size_label.set_text(&size);
+                self_.installed_size_label.get().set_text(&size);
 
-                uninstall_button.connect_clicked(clone!(@weak package => move|btn|{
-                    btn.set_sensitive(false);
-                    package.uninstall();
-                }));
+                self_
+                    .uninstall_button
+                    .get()
+                    .connect_clicked(clone!(@weak package => move|btn|{
+                        btn.set_sensitive(false);
+                        package.uninstall();
+                    }));
             }
         });
     }

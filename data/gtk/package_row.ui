@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk+" version="3.20"/>
-  <object class="GtkBox" id="package_row">
+  <template class="SoukPackageRow" parent="GtkListBoxRow">
     <child>
       <object class="GtkBox">
         <property name="spacing">18</property>
@@ -88,6 +88,6 @@
         </child>
       </object>
     </child>
-  </object>
+  </template>
 </interface>
 

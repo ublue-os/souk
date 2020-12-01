@@ -6,7 +6,6 @@ use flatpak::{InstallationExt, Remote};
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use glib::translate::*;
 use once_cell::unsync::OnceCell;
 
 use std::cell::RefCell;
