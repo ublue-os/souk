@@ -1,169 +1,39 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
-   sodipodi:docname="de.haeckerfelix.Souk.svg"
-   width="128"
-   height="128"
-   id="svg11300"
-   version="1.0"
-   style="display:inline;enable-background:new"
-   viewBox="0 0 128 128">
-  <sodipodi:namedview
-     inkscape:current-layer="layer1"
-     inkscape:window-maximized="0"
-     inkscape:window-y="23"
-     inkscape:window-x="26"
-     inkscape:cy="64"
-     inkscape:cx="61.259446"
-     inkscape:zoom="6.203125"
-     showgrid="false"
-     id="namedview21"
-     inkscape:window-height="1016"
-     inkscape:window-width="968"
-     inkscape:pageshadow="2"
-     inkscape:pageopacity="0"
-     guidetolerance="10"
-     gridtolerance="10"
-     objecttolerance="10"
-     borderopacity="1"
-     bordercolor="#666666"
-     pagecolor="#ffffff" />
-  <title
-     id="title4162">Adwaita Icon Template</title>
-  <defs
-     id="defs3">
-    <linearGradient
-       id="linearGradient1494">
-      <stop
-         style="stop-color:#babdb6;stop-opacity:1;"
-         offset="0"
-         id="stop1490" />
-      <stop
-         style="stop-color:#babdb6;stop-opacity:0;"
-         offset="1"
-         id="stop1492" />
+<?xml version="1.0" encoding="UTF-8"?>
+<svg height="128px" viewBox="0 0 128 128" width="128px" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <linearGradient id="a" gradientUnits="userSpaceOnUse" x1="88" x2="88" y1="46" y2="26">
+        <stop offset="0" stop-color="#9141ac"/>
+        <stop offset="1" stop-color="#dc8add"/>
     </linearGradient>
-    <linearGradient
-       xlink:href="#linearGradient1494"
-       id="linearGradient1496"
-       x1="280"
-       y1="172"
-       x2="280"
-       y2="20"
-       gradientUnits="userSpaceOnUse" />
-  </defs>
-  <metadata
-     id="metadata4">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:creator>
-          <cc:Agent>
-            <dc:title>GNOME Design Team</dc:title>
-          </cc:Agent>
-        </dc:creator>
-        <dc:source />
-        <cc:license
-           rdf:resource="http://creativecommons.org/licenses/by-sa/4.0/" />
-        <dc:title>Adwaita Icon Template</dc:title>
-        <dc:subject>
-          <rdf:Bag />
-        </dc:subject>
-        <dc:date />
-        <dc:rights>
-          <cc:Agent>
-            <dc:title />
-          </cc:Agent>
-        </dc:rights>
-        <dc:publisher>
-          <cc:Agent>
-            <dc:title />
-          </cc:Agent>
-        </dc:publisher>
-        <dc:identifier />
-        <dc:relation />
-        <dc:language />
-        <dc:coverage />
-        <dc:description />
-        <dc:contributor>
-          <cc:Agent>
-            <dc:title />
-          </cc:Agent>
-        </dc:contributor>
-      </cc:Work>
-      <cc:License
-         rdf:about="http://creativecommons.org/licenses/by-sa/4.0/">
-        <cc:permits
-           rdf:resource="http://creativecommons.org/ns#Reproduction" />
-        <cc:permits
-           rdf:resource="http://creativecommons.org/ns#Distribution" />
-        <cc:requires
-           rdf:resource="http://creativecommons.org/ns#Notice" />
-        <cc:requires
-           rdf:resource="http://creativecommons.org/ns#Attribution" />
-        <cc:permits
-           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
-        <cc:requires
-           rdf:resource="http://creativecommons.org/ns#ShareAlike" />
-      </cc:License>
-    </rdf:RDF>
-  </metadata>
-  <g
-     id="layer1"
-     style="display:inline"
-     transform="translate(0,-172)">
-    <rect
-       style="vector-effect:none;fill:#33d17a;fill-opacity:1;stroke:none;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.673228"
-       id="rect1127"
-       width="104"
-       height="44"
-       x="12"
-       y="244"
-       rx="8"
-       ry="8" />
-    <g
-       transform="rotate(-30,403.50258,307.81151)"
-       id="g1710" />
-    <rect
-       style="vector-effect:none;fill:#8ff0a4;fill-opacity:1;stroke:none;stroke-width:27.7128;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal"
-       id="rect1051"
-       width="104"
-       height="88"
-       x="12"
-       y="192" />
-    <circle
-       r="5"
-       cy="201"
-       cx="50"
-       id="path1047"
-       style="fill:#26a269;fill-opacity:1;stroke:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-    <circle
-       style="fill:#26a269;fill-opacity:1;stroke:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       id="circle1049"
-       cx="78"
-       cy="201"
-       r="5" />
-    <path
-       id="rect1044"
-       d="m 50,200 v -8 c 0,-7.756 6.244,-14 14,-14 7.756,0 14,6.244 14,14 v 8"
-       style="fill:none;fill-opacity:1;stroke:#2ec27e;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-    <path
-       style="display:inline;fill:#26a269;fill-opacity:1;stroke:none;stroke-width:0.0112982px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal;enable-background:new"
-       d="m 64,216 a 20,20.000002 0 0 0 -20,20 20,20.000002 0 0 0 20,20 20,20.000002 0 0 0 20,-20 20,20.000002 0 0 0 -20,-20 z m -8,10 a 1.9999997,2 0 0 1 2,2 1.9999997,2 0 0 1 -2,2 1.9999997,2 0 0 1 -2,-2 1.9999997,2 0 0 1 2,-2 z m 8,0 a 1.9999997,2 0 0 1 2,2 1.9999997,2 0 0 1 -2,2 1.9999997,2 0 0 1 -2,-2 1.9999997,2 0 0 1 2,-2 z m 8,0 a 1.9999997,2 0 0 1 2,2 1.9999997,2 0 0 1 -2,2 1.9999997,2 0 0 1 -2,-2 1.9999997,2 0 0 1 2,-2 z m -16,8 a 1.9999997,2 0 0 1 2,2 1.9999997,2 0 0 1 -2,2 1.9999997,2 0 0 1 -2,-2 1.9999997,2 0 0 1 2,-2 z m 8,0 a 1.9999997,2 0 0 1 2,2 1.9999997,2 0 0 1 -2,2 1.9999997,2 0 0 1 -2,-2 1.9999997,2 0 0 1 2,-2 z m 8,0 a 1.9999997,2 0 0 1 2,2 1.9999997,2 0 0 1 -2,2 1.9999997,2 0 0 1 -2,-2 1.9999997,2 0 0 1 2,-2 z m -16,8 a 1.9999997,2 0 0 1 2,2 1.9999997,2 0 0 1 -2,2 1.9999997,2 0 0 1 -2,-2 1.9999997,2 0 0 1 2,-2 z m 8,0 a 1.9999997,2 0 0 1 2,2 1.9999997,2 0 0 1 -2,2 1.9999997,2 0 0 1 -2,-2 1.9999997,2 0 0 1 2,-2 z m 8,0 a 1.9999997,2 0 0 1 2,2 1.9999997,2 0 0 1 -2,2 1.9999997,2 0 0 1 -2,-2 1.9999997,2 0 0 1 2,-2 z"
-       id="path920" />
-    <g
-       id="g1480"
-       style="fill:url(#linearGradient1496);fill-opacity:1" />
-  </g>
+    <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="14" x2="110" y1="82" y2="82">
+        <stop offset="0" stop-color="#e5a50a"/>
+        <stop offset="0.104167" stop-color="#f5c211"/>
+        <stop offset="0.1875" stop-color="#e5a50a"/>
+        <stop offset="0.8125" stop-color="#e5a50a"/>
+        <stop offset="0.895833" stop-color="#f5c211"/>
+        <stop offset="1" stop-color="#e5a50a"/>
+    </linearGradient>
+    <linearGradient id="c" gradientTransform="matrix(1.5 0 0 1.1875 -48 -198.5)" gradientUnits="userSpaceOnUse" x1="68" x2="68" y1="204" y2="184">
+        <stop offset="0" stop-color="#ed333b"/>
+        <stop offset="1" stop-color="#f66151"/>
+    </linearGradient>
+    <linearGradient id="d" gradientTransform="matrix(0 -1 -1.1875 0 272.5 118)" gradientUnits="userSpaceOnUse" x1="68" x2="68" y1="216" y2="184">
+        <stop offset="0" stop-color="#3584e4"/>
+        <stop offset="1" stop-color="#99ebf2"/>
+    </linearGradient>
+    <path d="m 80 26 h 24 c 2.210938 0 4 1.789062 4 4 v 24 c 0 2.210938 -1.789062 4 -4 4 h -24 c -2.210938 0 -4 -1.789062 -4 -4 v -24 c 0 -2.210938 1.789062 -4 4 -4 z m 0 0" fill="url(#a)"/>
+    <path d="m 106.09375 106.222656 l 9.90625 -46.222656 v -10 h -108 v 10 l 9.90625 46.222656 c 1.21875 5.703125 6.261719 9.777344 12.09375 9.777344 h 64 c 5.832031 0 10.875 -4.074219 12.09375 -9.777344 z m 0 0" fill="url(#b)"/>
+    <path d="m 40 20 h 40 c 2.210938 0 4 1.789062 4 4 v 30 c 0 2.210938 -1.789062 4 -4 4 h -40 c -2.210938 0 -4 -1.789062 -4 -4 v -30 c 0 -2.210938 1.789062 -4 4 -4 z m 0 0" fill="url(#c)"/>
+    <path d="m 66 20 h 4 v 38 h -4 z m 0 0" fill="#a51d2d"/>
+    <path d="m 54 54 v -16 c 0 -4.417969 -3.582031 -8 -8 -8 h -22 c -4.417969 0 -8 3.582031 -8 8 v 16 c 0 4.417969 3.582031 8 8 8 h 22 c 4.417969 0 8 -3.582031 8 -8 z m 0 0" fill="url(#d)"/>
+    <path d="m 106.09375 96.222656 l 9.90625 -46.222656 h -108 l 9.90625 46.222656 c 1.21875 5.703125 6.261719 9.777344 12.09375 9.777344 h 64 c 5.832031 0 10.875 -4.074219 12.09375 -9.777344 z m 0 0" fill="#f6d32d"/>
+    <g fill="none" stroke="#e5a50a" stroke-linecap="round" stroke-width="6">
+        <path d="m 43 69 v 22"/>
+        <path d="m 63 69 v 22"/>
+        <path d="m 83 69 v 22"/>
+    </g>
+    <path d="m 6 48 h 112 v 12 h -112 z m 0 0" fill="#e5a50a"/>
+    <path d="m 6 44 h 112 v 12 h -112 z m 0 0" fill="#f6d32d"/>
+    <path d="m 62 7 c 3.3125 0 6 2.6875 6 6 v 36 c 0 3.3125 -2.6875 6 -6 6 s -6 -2.6875 -6 -6 v -36 c 0 -3.3125 2.6875 -6 6 -6 z m 0 0" fill="#9c7007"/>
+    <path d="m 62 7 c 3.3125 0 6 2.6875 6 6 v 34 c 0 3.3125 -2.6875 6 -6 6 s -6 -2.6875 -6 -6 v -34 c 0 -3.3125 2.6875 -6 6 -6 z m 0 0" fill="#e5a50a"/>
+    <path d="m 64.980469 47 c 0 1.644531 -1.335938 2.980469 -2.980469 2.980469 s -2.980469 -1.335938 -2.980469 -2.980469 s 1.335938 -2.980469 2.980469 -2.980469 s 2.980469 1.335938 2.980469 2.980469 z m 0 0" fill="#9c7007"/>
 </svg>
