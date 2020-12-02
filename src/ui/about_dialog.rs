@@ -18,7 +18,7 @@ pub fn show_about_dialog(window: gtk::ApplicationWindow) {
     dialog.set_modal(true);
 
     dialog.set_authors(&["Felix Häcker", "Christopher Davis"]);
-    dialog.set_artists(&["Felix Häcker"]);
+    dialog.set_artists(&["Felix Häcker", "Tobias Bernard"]);
 
     dialog.show();
 }
