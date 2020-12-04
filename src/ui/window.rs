@@ -1,8 +1,9 @@
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use gtk::prelude::*;
-use gtk::subclass::prelude::{WidgetImpl, WindowImpl};
+use gtk::subclass::prelude::*;
+use gtk::subclass::widget::{CompositeTemplate, TemplateChild, WidgetClassSubclassExt};
+use gtk::{prelude::*, CompositeTemplate};
 use libhandy::prelude::*;
 
 use std::cell::RefCell;
@@ -20,10 +21,26 @@ pub enum View {
     PackageDetails(SoukPackage),
 }
 
+#[derive(Debug, CompositeTemplate)]
 pub struct SoukApplicationWindowPrivate {
-    window_builder: gtk::Builder,
-    menu_builder: gtk::Builder,
+    #[template_child(id = "view_switcher_title")]
+    pub view_switcher_title: TemplateChild<libhandy::ViewSwitcherTitle>,
+    #[template_child(id = "appmenu_button")]
+    pub appmenu_button: TemplateChild<gtk::MenuButton>,
+    #[template_child(id = "explore_box")]
+    pub explore_box: TemplateChild<gtk::Box>,
+    #[template_child(id = "installed_box")]
+    pub installed_box: TemplateChild<gtk::Box>,
+    #[template_child(id = "search_box")]
+    pub search_box: TemplateChild<gtk::Box>,
+    #[template_child(id = "package_details_box")]
+    pub package_details_box: TemplateChild<gtk::Box>,
+    #[template_child(id = "main_stack")]
+    pub main_stack: TemplateChild<gtk::Stack>,
+    #[template_child(id = "window_stack")]
+    pub window_stack: TemplateChild<gtk::Stack>,
 
+    menu_builder: gtk::Builder,
     pages_stack: RefCell<Vec<View>>,
 }
 
@@ -34,16 +51,26 @@ impl ObjectSubclass for SoukApplicationWindowPrivate {
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
+    fn class_init(klass: &mut Self::Class) {
+        klass.set_template_from_resource("/de/haeckerfelix/Souk/gtk/window.ui");
+        Self::bind_template_children(klass);
+    }
+
     glib_object_subclass!();
 
     fn new() -> Self {
-        let window_builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/window.ui");
         let menu_builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/menu.ui");
-
         let pages_stack = RefCell::new(Vec::new());
 
         Self {
-            window_builder,
+            view_switcher_title: TemplateChild::default(),
+            appmenu_button: TemplateChild::default(),
+            explore_box: TemplateChild::default(),
+            installed_box: TemplateChild::default(),
+            search_box: TemplateChild::default(),
+            package_details_box: TemplateChild::default(),
+            main_stack: TemplateChild::default(),
+            window_stack: TemplateChild::default(),
             menu_builder,
             pages_stack,
         }
@@ -51,7 +78,12 @@ impl ObjectSubclass for SoukApplicationWindowPrivate {
 }
 
 // Implement GLib.OBject for SoukApplicationWindow
-impl ObjectImpl for SoukApplicationWindowPrivate {}
+impl ObjectImpl for SoukApplicationWindowPrivate {
+    fn constructed(&self, obj: &Self::Type) {
+        obj.init_template();
+        self.parent_constructed(obj);
+    }
+}
 
 // Implement Gtk.Widget for SoukApplicationWindow
 impl WidgetImpl for SoukApplicationWindowPrivate {}
@@ -98,58 +130,58 @@ impl SoukApplicationWindow {
             .unwrap();
         let app_private = SoukApplicationPrivate::from_instance(&app);
 
-        // set default size
-        self.set_default_size(900, 700);
-
         // set title
-        get_widget!(
-            self_.window_builder,
-            libhandy::ViewSwitcherTitle,
-            view_switcher_title
-        );
-        view_switcher_title.set_title(Some(config::NAME));
+        self_
+            .view_switcher_title
+            .get()
+            .set_title(Some(config::NAME));
         self.set_title(config::NAME);
 
         // Set hamburger menu
-        get_widget!(self_.window_builder, gtk::MenuButton, appmenu_button);
         get_widget!(self_.menu_builder, gio::MenuModel, primary_menu);
-        appmenu_button.set_menu_model(Some(&primary_menu));
+        self_
+            .appmenu_button
+            .get()
+            .set_menu_model(Some(&primary_menu));
 
         // wire everything up
-        get_widget!(self_.window_builder, gtk::Box, explore_box);
-        explore_box.append(&app_private.explore_page.get().unwrap().widget);
-
-        get_widget!(self_.window_builder, gtk::Box, installed_box);
-        installed_box.append(&app_private.installed_page.get().unwrap().widget);
-
-        get_widget!(self_.window_builder, gtk::Box, search_box);
-        search_box.append(&app_private.search_page.get().unwrap().widget);
-
-        get_widget!(self_.window_builder, gtk::Box, package_details_box);
-        package_details_box.append(&app_private.package_details_page.get().unwrap().widget);
-
-        // Add headerbar/content to the window itself
-        get_widget!(self_.window_builder, gtk::Box, window);
-        libhandy::ApplicationWindowExt::set_child(self, Some(&window));
+        self_
+            .explore_box
+            .get()
+            .append(&app_private.explore_page.get().unwrap().widget);
+        self_
+            .installed_box
+            .get()
+            .append(&app_private.installed_page.get().unwrap().widget);
+        self_
+            .search_box
+            .get()
+            .append(&app_private.search_page.get().unwrap().widget);
+        self_
+            .package_details_box
+            .get()
+            .append(&app_private.package_details_page.get().unwrap().widget);
     }
 
     fn setup_signals(&self) {
         let self_ = SoukApplicationWindowPrivate::from_instance(self);
 
         // main stack
-        get_widget!(self_.window_builder, gtk::Stack, main_stack);
-        main_stack.connect_property_visible_child_notify(
-            clone!(@weak self as this => move |main_stack| {
-                let view = match main_stack.get_visible_child_name().unwrap().as_str(){
-                    "explore" => View::Explore,
-                    "installed" => View::Installed,
-                    "updates" => View::Updates,
-                    "search" => View::Search,
-                    _ => View::Explore,
-                };
-                this.set_view(view, false);
-            }),
-        );
+        self_
+            .main_stack
+            .get()
+            .connect_property_visible_child_notify(
+                clone!(@weak self as this => move |main_stack| {
+                    let view = match main_stack.get_visible_child_name().unwrap().as_str(){
+                        "explore" => View::Explore,
+                        "installed" => View::Installed,
+                        "updates" => View::Updates,
+                        "search" => View::Search,
+                        _ => View::Explore,
+                    };
+                    this.set_view(view, false);
+                }),
+            );
 
         // TODO: back button (mouse)
         /* self.connect_button_press_event(clone!(@strong sender => move |_, event|{
@@ -188,8 +220,8 @@ impl SoukApplicationWindow {
             .unwrap();
         let app_private = SoukApplicationPrivate::from_instance(&app);
 
-        get_widget!(self_.window_builder, gtk::Stack, window_stack);
-        get_widget!(self_.window_builder, gtk::Stack, main_stack);
+        let main_stack = self_.main_stack.get();
+        let window_stack = self_.window_stack.get();
 
         // Show requested view / page
         match view.clone() {
