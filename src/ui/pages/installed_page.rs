@@ -76,9 +76,8 @@ impl InstalledPage {
         get_widget!(self.builder, gtk::ListBox, listbox_apps);
         get_widget!(self.builder, gtk::ListBox, listbox_runtimes);
 
-        let closure = clone!(@weak self as this => move|_: &gtk::ListBox, row: &gtk::ListBoxRow|{
-            let child = row.get_child().unwrap();
-            let row = child.downcast::<SoukPackageRow>().unwrap();
+        let closure = clone!(@weak self as this => move|_: &gtk::ListBox, listbox_row: &gtk::ListBoxRow|{
+            let row = listbox_row.clone().downcast::<SoukPackageRow>().unwrap();
             let package: SoukPackage = row.get_package().unwrap();
             send!(this.sender, Action::ViewSet(View::PackageDetails(package)));
         });
