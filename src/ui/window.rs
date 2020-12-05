@@ -12,6 +12,7 @@ use crate::config;
 
 #[derive(Debug, Clone)]
 pub enum View {
+    Loading,
     Explore,
     Installed,
     Updates,
@@ -23,6 +24,8 @@ pub enum View {
 pub struct SoukApplicationWindowPrivate {
     #[template_child(id = "view_switcher_title")]
     pub view_switcher_title: TemplateChild<libhandy::ViewSwitcherTitle>,
+    #[template_child(id = "loading_box")]
+    pub loading_box: TemplateChild<gtk::Box>,
     #[template_child(id = "explore_box")]
     pub explore_box: TemplateChild<gtk::Box>,
     #[template_child(id = "installed_box")]
@@ -58,6 +61,7 @@ impl ObjectSubclass for SoukApplicationWindowPrivate {
 
         Self {
             view_switcher_title: TemplateChild::default(),
+            loading_box: TemplateChild::default(),
             explore_box: TemplateChild::default(),
             installed_box: TemplateChild::default(),
             search_box: TemplateChild::default(),
@@ -130,6 +134,10 @@ impl SoukApplicationWindow {
         self.set_title(Some(config::NAME));
 
         // wire everything up
+        self_
+            .loading_box
+            .get()
+            .append(&app_private.loading_page.get().unwrap().widget);
         self_
             .explore_box
             .get()
@@ -210,6 +218,9 @@ impl SoukApplicationWindow {
 
         // Show requested view / page
         match view.clone() {
+            View::Loading => {
+                window_stack.set_visible_child_name("loading");
+            }
             View::Explore => {
                 main_stack.set_visible_child_name("explore");
                 window_stack.set_visible_child_name("main");

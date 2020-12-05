@@ -29,7 +29,8 @@
             "RUSTFLAGS" : "--remap-path-prefix =../",
             "CARGO_HOME" : "/run/build/souk/cargo",
             "RUST_BACKTRACE" : "1",
-            "MOUNT_FUSE_PATH" : "../tmp/"
+            "MOUNT_FUSE_PATH" : "../tmp/",
+            "G_MESSAGES_DEBUG" : "none"
         }
     },
     "cleanup": [

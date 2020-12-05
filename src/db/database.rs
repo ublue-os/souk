@@ -2,16 +2,15 @@ use appstream::enums::Bundle;
 use appstream::{AppId, Collection, Component};
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use flatpak::prelude::*;
-use flatpak::{InstallationExt, Remote};
+use flatpak::InstallationExt;
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
-use once_cell::unsync::OnceCell;
 
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::thread;
 use std::time::SystemTime;
 
 use crate::backend::{SoukFlatpakBackend, SoukPackage};
@@ -25,14 +24,39 @@ lazy_static! {
     pub static ref DB_LIFETIME: i64 = 3;
 }
 
-pub struct SoukDatabasePrivate {
-    busy: Rc<RefCell<bool>>,
-    flatpak_backend: OnceCell<SoukFlatpakBackend>,
+#[derive(Clone)]
+enum DbMessage {
+    PopulatingStarted,
+    PopulatingEnded,
+    Percentage(f64),
+    Remote(String),
 }
 
-static PROPERTIES: [subclass::Property; 1] = [subclass::Property("busy", |busy| {
-    glib::ParamSpec::boolean(busy, "Busy", "Busy", false, glib::ParamFlags::READABLE)
-})];
+pub struct SoukDatabasePrivate {
+    busy: Rc<RefCell<bool>>,
+    percentage: Rc<RefCell<f64>>,
+    remote: Rc<RefCell<String>>,
+
+    sender: glib::Sender<DbMessage>,
+    receiver: RefCell<Option<glib::Receiver<DbMessage>>>,
+}
+
+static PROPERTIES: [subclass::Property; 2] = [
+    subclass::Property("percentage", |percentage| {
+        glib::ParamSpec::double(
+            percentage,
+            "Percentage",
+            "Percentage",
+            0.0,
+            1.0,
+            0.0,
+            glib::ParamFlags::READABLE,
+        )
+    }),
+    subclass::Property("remote", |remote| {
+        glib::ParamSpec::string(remote, "Remote", "Remote", None, glib::ParamFlags::READABLE)
+    }),
+];
 
 impl ObjectSubclass for SoukDatabasePrivate {
     const NAME: &'static str = "SoukDatabase";
@@ -45,12 +69,29 @@ impl ObjectSubclass for SoukDatabasePrivate {
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
+        klass.add_signal(
+            "populating-started",
+            glib::SignalFlags::ACTION,
+            &[],
+            glib::Type::Unit,
+        );
+        klass.add_signal(
+            "populating-ended",
+            glib::SignalFlags::ACTION,
+            &[],
+            glib::Type::Unit,
+        );
     }
 
     fn new() -> Self {
+        let (sender, receiver) = glib::MainContext::channel(glib::PRIORITY_LOW);
+
         SoukDatabasePrivate {
             busy: Rc::default(),
-            flatpak_backend: OnceCell::default(),
+            percentage: Rc::default(),
+            remote: Rc::default(),
+            sender,
+            receiver: RefCell::new(Some(receiver)),
         }
     }
 }
@@ -60,7 +101,8 @@ impl ObjectImpl for SoukDatabasePrivate {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("busy", ..) => self.busy.borrow().to_value(),
+            subclass::Property("percentage", ..) => self.percentage.borrow().to_value(),
+            subclass::Property("remote", ..) => self.remote.borrow().to_value(),
             _ => unimplemented!(),
         }
     }
@@ -72,14 +114,16 @@ glib_wrapper! {
 
 #[allow(dead_code)]
 impl SoukDatabase {
-    pub fn new(flatpak_backend: SoukFlatpakBackend) -> Self {
+    pub fn new() -> Self {
         let database = glib::Object::new(SoukDatabase::static_type(), &[])
             .unwrap()
             .downcast::<SoukDatabase>()
             .unwrap();
 
         let self_ = SoukDatabasePrivate::from_instance(&database);
-        self_.flatpak_backend.set(flatpak_backend).unwrap();
+        let receiver = self_.receiver.borrow_mut().take().unwrap();
+        let db = database.clone();
+        receiver.attach(None, move |msg| db.process_db_message(msg));
 
         database
     }
@@ -87,9 +131,13 @@ impl SoukDatabase {
     pub fn init(&self) {
         if Self::needs_rebuilt() {
             debug!("Database needs rebuilt.");
-            self.rebuild();
+            self.populate_database();
         } else {
-            debug!("Database it up-to-date, don't rebuild it.");
+            debug!("Database it up-to-date, don't repopulate it.");
+
+            let self_ = SoukDatabasePrivate::from_instance(self);
+            *self_.busy.borrow_mut() = false;
+            self.emit("populating-ended", &[]).unwrap();
         }
     }
 
@@ -130,149 +178,182 @@ impl SoukDatabase {
         false
     }
 
-    // TODO: Make this asynchronous, and report parsing progress to UI
-    pub fn rebuild(&self) {
+    pub fn populate_database(&self) {
+        debug!("Populating / refreshing package database.");
+
         let self_ = SoukDatabasePrivate::from_instance(self);
-        debug!("Rebuild package database.");
+        let sender = self_.sender.clone();
 
-        // Delete previous data
-        queries::reset().unwrap();
-
-        let mut remotes: HashMap<String, Remote> = HashMap::new();
-
-        // Get system remotes
-        let system_remotes = self_
-            .flatpak_backend
-            .get()
-            .unwrap()
-            .get_system_installation()
-            .list_remotes(Some(&gio::Cancellable::new()))
-            .unwrap();
-        for remote in system_remotes {
-            remotes.insert(remote.get_name().unwrap().to_string(), remote);
+        if *self_.busy.borrow() {
+            info!("Database is already populating, skip.");
+            return;
         }
 
-        // TODO: Add support for user remotes
-        // Get user remotes
-        //let user_remotes = self.flatpak_backend
-        //    .user_installation
-        //    .list_remotes(Some(&gio::Cancellable::new()))
-        //    .unwrap();
-        //for remote in user_remotes {
-        //    remotes.insert(remote.get_name().unwrap().to_string(), remote);
-        //}
+        thread::spawn(move || {
+            send!(sender, DbMessage::PopulatingStarted);
 
-        for remote in remotes {
-            let url = remote.1.get_url().unwrap().to_string();
-            let remote_name = remote.1.get_name().unwrap().to_string();
+            let mut remotes = Vec::new();
+            let flatpak_backend = SoukFlatpakBackend::new();
 
-            if url.starts_with("oci+") {
-                // TODO: Add support for OCI remotes
-                // https://gitlab.gnome.org/haecker-felix/souk/-/issues/11#note_925791
-                warn!(
-                    "Unable to load remote \"{}\" ({}): OCI remotes aren't supported yet",
-                    remote_name, url
-                );
-                continue;
-            }
+            // Reset data
+            send!(sender, DbMessage::Remote("".to_string()));
+            send!(sender, DbMessage::Percentage(0.0));
 
-            debug!("Load remote \"{}\" ({})", remote_name, url);
+            // Delete previous data
+            queries::reset().unwrap();
 
-            // Get all refs from remote
-            let refs = self_
-                .flatpak_backend
-                .get()
-                .unwrap()
+            // Package count to calculcate progress
+            let mut pkg_count = 0;
+            let mut pkg_pos = 0;
+
+            // Get remotes
+            let result = flatpak_backend
                 .get_system_installation()
-                .list_remote_refs_sync(&remote_name, Some(&gio::Cancellable::new()));
-
-            if let Err(err) = refs {
-                warn!(
-                    "Unable to retrieve refs from remote \"{}\": {}",
-                    remote.1.get_name().unwrap().to_string(),
-                    err.to_string()
-                );
-                continue;
-            }
-            let refs = refs.unwrap();
-
-            // Get path of appstream data
-            let mut appstream_file = PathBuf::new();
-            let appstream_dir = remote
-                .1
-                .get_appstream_dir(Some(std::env::consts::ARCH))
+                .list_remotes(Some(&gio::Cancellable::new()))
                 .unwrap();
-            appstream_file.push(appstream_dir.get_path().unwrap().to_str().unwrap());
-            appstream_file.push("appstream.xml");
 
-            // Parse appstream data
-            let appdata_collection = Collection::from_path(appstream_file.clone()).ok();
-            if appdata_collection.is_none() {
-                warn!(
-                    "Unable to parse appstream for remote {:?}",
-                    &remote.1.get_name().unwrap().to_string()
-                );
-            }
-
-            let mut db_packages = Vec::new();
-            let count = refs.len();
-            let mut pos = 0.0;
-
-            for remote_ref in refs {
-                let ref_name = remote_ref.format_ref().unwrap().to_string();
-                debug!(
-                    "[{}%] Load package {}",
-                    (pos / count as f32) * 100.0,
-                    ref_name
-                );
-
-                // We only care about our arch
-                if remote_ref.get_arch().unwrap().to_string() != std::env::consts::ARCH {
-                    pos = pos + 1.0;
+            for remote in result {
+                let name = remote.get_name().unwrap().to_string();
+                if remote.get_url().unwrap().to_string().starts_with("oci+") {
+                    warn!(
+                        "Unable to load remote \"{}\": OCI remotes aren't supported yet",
+                        name
+                    );
                     continue;
                 }
 
-                // Try to retrieve appstream component
-                let component: Option<Component> = match &appdata_collection {
-                    Some(collection) => {
-                        let app_id = AppId(remote_ref.get_name().unwrap().to_string());
-                        let components = collection.find_by_id(app_id);
+                let refs = flatpak_backend
+                    .get_system_installation()
+                    .list_remote_refs_sync(&name, Some(&gio::Cancellable::new()));
 
-                        components
-                            .into_iter()
-                            .find(|c| Self::get_ref_name(c) == ref_name)
-                            .cloned()
+                match refs {
+                    Ok(refs) => {
+                        remotes.insert(0, remote);
+                        pkg_count = pkg_count + refs.len();
                     }
-                    None => None,
-                };
-
-                // Create new remote package and push it into the databse
-                let package = SoukPackage::from((
-                    remote_ref,
-                    serde_json::to_string(&component).unwrap().to_string(),
-                ));
-                db_packages.push(package.into());
-
-                pos = pos + 1.0;
+                    Err(err) => warn!("Unable to load remote \"{}\": {}", name, err.to_string()),
+                }
             }
 
-            match queries::insert_db_packages(db_packages) {
-                Ok(_) => (),
-                Err(err) => debug!("Unable to insert db packages: {}", err.to_string()),
-            };
+            debug!(
+                "Loading {} remotes with {} packages...",
+                remotes.len(),
+                pkg_count
+            );
+
+            for remote in remotes {
+                let url = remote.get_url().unwrap().to_string();
+                let remote_name = remote.get_name().unwrap().to_string();
+
+                debug!("Load remote \"{}\" ({})", remote_name, url);
+                send!(sender, DbMessage::Remote(remote_name.clone()));
+
+                // Get all refs from remote
+                let refs = flatpak_backend
+                    .get_system_installation()
+                    .list_remote_refs_sync(&remote_name, Some(&gio::Cancellable::new()))
+                    .unwrap();
+
+                // Get path of remote appstream data
+                let mut appstream_file = PathBuf::new();
+                let appstream_dir = remote
+                    .get_appstream_dir(Some(std::env::consts::ARCH))
+                    .unwrap();
+                appstream_file.push(appstream_dir.get_path().unwrap().to_str().unwrap());
+                appstream_file.push("appstream.xml");
+
+                // Parse remote appstream data
+                let appdata_collection = Collection::from_path(appstream_file.clone()).ok();
+                if appdata_collection.is_none() {
+                    warn!(
+                        "Unable to parse appstream for remote {:?}",
+                        &remote.get_name().unwrap().to_string()
+                    );
+                }
+
+                let mut db_packages = Vec::new();
+                for remote_ref in refs {
+                    let ref_name = remote_ref.format_ref().unwrap().to_string();
+                    debug!("Load package {}", ref_name);
+
+                    // We only care about our arch
+                    if remote_ref.get_arch().unwrap().to_string() != std::env::consts::ARCH {
+                        pkg_pos += 1;
+                        continue;
+                    }
+
+                    // Try to retrieve appstream component
+                    let component: Option<Component> = match &appdata_collection {
+                        Some(collection) => {
+                            let app_id = AppId(remote_ref.get_name().unwrap().to_string());
+                            let components = collection.find_by_id(app_id);
+
+                            components
+                                .into_iter()
+                                .find(|c| Self::get_ref_name(c) == ref_name)
+                                .cloned()
+                        }
+                        None => None,
+                    };
+
+                    // Create new remote package and push it into the databse
+                    let package = SoukPackage::from((
+                        remote_ref,
+                        serde_json::to_string(&component).unwrap().to_string(),
+                    ));
+                    db_packages.push(package.into());
+
+                    pkg_pos += 1;
+
+                    // Calculate percentage
+                    let percentage = pkg_pos as f64 / pkg_count as f64;
+                    send!(sender, DbMessage::Percentage(percentage));
+                }
+
+                match queries::insert_db_packages(db_packages) {
+                    Ok(_) => (),
+                    Err(err) => debug!("Unable to insert db packages: {}", err.to_string()),
+                };
+            }
+
+            // Set database info
+            let mut db_info = DbInfo::default();
+            db_info.db_version = DB_VERSION.to_string();
+            db_info.db_timestamp = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                .to_string();
+            queries::insert_db_info(db_info).unwrap();
+
+            debug!("Finished populating database.");
+            send!(sender, DbMessage::PopulatingEnded);
+        });
+    }
+
+    fn process_db_message(&self, msg: DbMessage) -> glib::Continue {
+        let self_ = SoukDatabasePrivate::from_instance(self);
+
+        match msg {
+            DbMessage::PopulatingStarted => {
+                *self_.busy.borrow_mut() = true;
+                self.emit("populating-started", &[]).unwrap();
+            }
+            DbMessage::PopulatingEnded => {
+                *self_.busy.borrow_mut() = false;
+                self.emit("populating-ended", &[]).unwrap();
+            }
+            DbMessage::Percentage(p) => {
+                *self_.percentage.borrow_mut() = p;
+                self.notify("percentage");
+            }
+            DbMessage::Remote(remote) => {
+                *self_.remote.borrow_mut() = remote;
+                self.notify("remote");
+            }
         }
 
-        // Set database info
-        let mut db_info = DbInfo::default();
-        db_info.db_version = DB_VERSION.to_string();
-        db_info.db_timestamp = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-            .to_string();
-        queries::insert_db_info(db_info).unwrap();
-
-        debug!("Finished rebuilding database.")
+        glib::Continue(true)
     }
 
     fn get_ref_name(component: &Component) -> String {
@@ -288,4 +369,17 @@ impl SoukDatabase {
         }
         String::new()
     }
+
+    pub fn get_percentage(&self) -> f64 {
+        self.get_property("percentage")
+            .unwrap()
+            .get()
+            .unwrap()
+            .unwrap()
+    }
+
+    pub fn get_remote(&self) -> String {
+        self.get_property("remote").unwrap().get().unwrap().unwrap()
+    }
 }
+

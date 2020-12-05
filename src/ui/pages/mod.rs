@@ -4,6 +4,9 @@ pub use explore_page::ExplorePage;
 mod installed_page;
 pub use installed_page::InstalledPage;
 
+mod loading_page;
+pub use loading_page::LoadingPage;
+
 mod package_details_page;
 pub use package_details_page::PackageDetailsPage;
 

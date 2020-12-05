@@ -54,6 +54,7 @@ sources = files(
 
   'ui/pages/explore_page.rs',
   'ui/pages/installed_page.rs',
+  'ui/pages/loading_page.rs',
   'ui/pages/mod.rs',
   'ui/pages/package_details_page.rs',
   'ui/pages/search_page.rs',
