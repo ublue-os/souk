@@ -5,9 +5,8 @@ use gtk::prelude::*;
 use std::rc::Rc;
 
 use crate::app::Action;
-use crate::backend::{SoukFlatpakBackend, SoukPackage};
-use crate::db::{queries, DisplayLevel, SoukDatabase};
-use crate::ui::SoukPackageRow;
+use crate::config;
+use crate::db::SoukDatabase;
 use crate::ui::View;
 
 pub struct LoadingPage {
@@ -35,7 +34,11 @@ impl LoadingPage {
         loading_page
     }
 
-    fn setup_widgets(self: Rc<Self>) {}
+    fn setup_widgets(self: Rc<Self>) {
+        get_widget!(self.builder, gtk::Image, image);
+        image.set_from_icon_name(Some(&config::APP_ID));
+        image.set_pixel_size(192);
+    }
 
     fn setup_signals(self: Rc<Self>) {
         self.database.connect_local("notify::is-busy", false, clone!(@strong self.sender as sender, @weak self.database as db => @default-return None::<glib::Value>, move |_|{
@@ -46,13 +49,18 @@ impl LoadingPage {
             }
 
             None
-        }));
+        })).unwrap();
 
         get_widget!(self.builder, gtk::ProgressBar, progressbar);
         self.database.connect_local("notify::percentage", false, clone!(@weak progressbar, @weak self.database as db => @default-return None::<glib::Value>, move |_|{
             progressbar.set_fraction(db.get_percentage());
-
             None
-        }));
+        })).unwrap();
+
+        get_widget!(self.builder, gtk::Label, label);
+        self.database.connect_local("notify::remote", false, clone!(@weak label, @weak self.database as db => @default-return None::<glib::Value>, move |_|{
+            label.set_text(&format!("Parsing metadata from remote \"{}\"", db.get_remote()));
+            None
+        })).unwrap();
     }
 }
