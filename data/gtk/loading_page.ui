@@ -51,7 +51,7 @@
                     <property name="label" translatable="yes">Loading Apps…</property>
                     <property name="margin_bottom">24</property>
                     <style>
-                      <class name="title-1"/>
+                      <class name="large-title"/>
                     </style>
                   </object>
                 </child>

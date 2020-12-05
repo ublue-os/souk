@@ -47,7 +47,6 @@ impl LoadingPage {
             }else{
                 send!(sender, Action::ViewSet(View::Explore));
             }
-
             None
         })).unwrap();
 
@@ -59,7 +58,11 @@ impl LoadingPage {
 
         get_widget!(self.builder, gtk::Label, label);
         self.database.connect_local("notify::remote", false, clone!(@weak label, @weak self.database as db => @default-return None::<glib::Value>, move |_|{
-            label.set_text(&format!("Parsing metadata from remote \"{}\"", db.get_remote()));
+            if db.get_remote() != "" {
+                label.set_text(&format!("Parsing metadata from remote \"{}\"", db.get_remote()));
+            }else{
+                label.set_text("");
+            }
             None
         })).unwrap();
     }
