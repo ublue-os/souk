@@ -23,6 +23,7 @@ use crate::ui::{SoukApplicationWindow, View};
 pub enum Action {
     ViewSet(View),
     ViewGoBack,
+    RebuildDatabase,
 }
 
 pub struct SoukApplicationPrivate {
@@ -234,6 +235,16 @@ impl SoukApplication {
         );
         app.set_accels_for_action("app.search", &["<primary>f"]);
 
+        // app.rebuild-database
+        action!(
+            app,
+            "rebuild-database",
+            clone!(@strong sender => move |_, _| {
+                send!(sender, Action::RebuildDatabase);
+            })
+        );
+        app.set_accels_for_action("app.rebuild-database", &["<primary>r"]);
+
         // win.go-back
         action!(
             window,
@@ -251,9 +262,12 @@ impl SoukApplication {
     }
 
     fn process_action(&self, action: Action) -> glib::Continue {
+        let self_ = SoukApplicationPrivate::from_instance(self);
+
         match action {
             Action::ViewSet(view) => self.get_main_window().set_view(view, false),
             Action::ViewGoBack => self.get_main_window().go_back(),
+            Action::RebuildDatabase => self_.database.rebuild(),
         }
         glib::Continue(true)
     }
