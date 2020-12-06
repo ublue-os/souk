@@ -62,6 +62,7 @@ sources = files(
 
   'ui/about_dialog.rs',
   'ui/mod.rs',
+  'ui/releases_window.rs',
   'ui/package_row.rs',
   'ui/package_tile.rs',
   'ui/utils.rs',
