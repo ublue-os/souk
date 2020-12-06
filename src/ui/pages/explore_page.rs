@@ -6,8 +6,19 @@ use std::rc::Rc;
 use crate::app::Action;
 use crate::backend::SoukPackage;
 use crate::db::{queries, DisplayLevel};
+use crate::ui::utils;
 use crate::ui::SoukPackageTile;
 use crate::ui::View;
+
+static EDITOR_PICKS: [&str; 7] = [
+    "de.haeckerfelix.Shortwave",
+    "de.haeckerfelix.Fragments",
+    "org.gnome.Podcasts",
+    "org.gnome.design.IconLibrary",
+    "org.gnome.design.Contrast",
+    "com.jetbrains.IntelliJ-IDEA-Community",
+    "com.google.AndroidStudio",
+];
 
 pub struct ExplorePage {
     pub widget: gtk::Box,
@@ -27,27 +38,23 @@ impl ExplorePage {
             sender,
         });
 
-        explore_page.clone().setup_widgets();
         explore_page.clone().setup_signals();
         explore_page
     }
 
-    fn setup_widgets(self: Rc<Self>) {
-        self.clone()
-            .add_tile("de.haeckerfelix.Shortwave".to_string());
-        self.clone()
-            .add_tile("de.haeckerfelix.Fragments".to_string());
-        self.clone().add_tile("org.gnome.Podcasts".to_string());
-        self.clone()
-            .add_tile("org.gnome.design.IconLibrary".to_string());
-        self.clone()
-            .add_tile("org.gnome.design.Contrast".to_string());
-        self.clone()
-            .add_tile("com.google.AndroidStudio".to_string());
-        self.clone()
-            .add_tile("com.jetbrains.IntelliJ-IDEA-Community".to_string());
-
+    pub fn load_data(self: Rc<Self>) {
+        // Reset old data
+        get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
         get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
+        utils::clear_flowbox(&editors_picks_flowbox);
+        utils::clear_flowbox(&recently_updated_flowbox);
+
+        // Editors pick flowbox
+        for app in &EDITOR_PICKS {
+            self.clone().add_tile(app.to_string());
+        }
+
+        // Recently updated flowbox
         for package in queries::get_recently_updated_packages(10, DisplayLevel::Apps).unwrap() {
             let tile = SoukPackageTile::new();
             tile.set_package(&package);

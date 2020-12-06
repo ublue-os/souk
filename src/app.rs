@@ -23,7 +23,9 @@ use crate::ui::{SoukApplicationWindow, View};
 pub enum Action {
     ViewSet(View),
     ViewGoBack,
-    RebuildDatabase,
+
+    DatabaseRebuild,
+    DatabaseLoadData,
 }
 
 pub struct SoukApplicationPrivate {
@@ -162,20 +164,27 @@ impl SoukApplication {
     fn setup(&self) {
         let self_ = SoukApplicationPrivate::from_instance(self);
         let sender = self_.sender.clone();
-        self_.database.init();
 
-        let _ = self_
-            .loading_page
-            .set(LoadingPage::new(sender.clone(), self_.database.clone()));
-        let _ = self_.explore_page.set(ExplorePage::new(sender.clone()));
-        let _ = self_.search_page.set(SearchPage::new(sender.clone()));
-        let _ = self_.installed_page.set(InstalledPage::new(
-            sender.clone(),
-            self_.flatpak_backend.clone(),
-        ));
-        let _ = self_
-            .package_details_page
-            .set(PackageDetailsPage::new(sender.clone()));
+        let loading_page = LoadingPage::new(sender.clone(), self_.database.clone());
+        let _ = self_.loading_page.set(loading_page);
+
+        let explore_page = ExplorePage::new(sender.clone());
+        let _ = self_.explore_page.set(explore_page);
+
+        let search_page = SearchPage::new(sender.clone());
+        let _ = self_.search_page.set(search_page);
+
+        let installed_page = InstalledPage::new(sender.clone(), self_.flatpak_backend.clone());
+        let _ = self_.installed_page.set(installed_page);
+
+        let package_details_page = PackageDetailsPage::new(sender.clone());
+        let _ = self_.package_details_page.set(package_details_page);
+
+        // Setup signals
+        self.setup_signals();
+
+        // Setup database
+        self_.database.init();
     }
 
     pub fn get_flatpak_backend(&self) -> SoukFlatpakBackend {
@@ -198,6 +207,17 @@ impl SoukApplication {
         self.setup_gactions();
 
         window
+    }
+
+    fn setup_signals(&self) {
+        let self_ = SoukApplicationPrivate::from_instance(self);
+
+        self_.database.connect_local("notify::is-busy", false, clone!(@weak self_.database as db, @strong self_.sender as sender => @default-return None::<glib::Value>, move |_|{
+            if !db.get_is_busy(){
+                send!(sender, Action::DatabaseLoadData);
+            }
+            None
+        })).unwrap();
     }
 
     fn setup_gactions(&self) {
@@ -240,7 +260,7 @@ impl SoukApplication {
             app,
             "rebuild-database",
             clone!(@strong sender => move |_, _| {
-                send!(sender, Action::RebuildDatabase);
+                send!(sender, Action::DatabaseRebuild);
             })
         );
         app.set_accels_for_action("app.rebuild-database", &["<primary>r"]);
@@ -267,7 +287,11 @@ impl SoukApplication {
         match action {
             Action::ViewSet(view) => self.get_main_window().set_view(view, false),
             Action::ViewGoBack => self.get_main_window().go_back(),
-            Action::RebuildDatabase => self_.database.rebuild(),
+            Action::DatabaseRebuild => self_.database.rebuild(),
+            Action::DatabaseLoadData => {
+                self_.flatpak_backend.reload_installed_packages();
+                self_.explore_page.get().unwrap().clone().load_data();
+            }
         }
         glib::Continue(true)
     }

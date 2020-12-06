@@ -382,4 +382,3 @@ impl SoukDatabase {
         self.get_property("remote").unwrap().get().unwrap().unwrap()
     }
 }
-

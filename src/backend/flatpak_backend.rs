@@ -92,7 +92,6 @@ impl SoukFlatpakBackend {
     }
 
     pub fn get_installed_packages(&self) -> gio::ListStore {
-        self.reload_installed_packages();
         self.get_property("installed_packages")
             .unwrap()
             .get()
@@ -166,7 +165,7 @@ impl SoukFlatpakBackend {
         std::path::Path::new("/.flatpak-info").exists()
     }
 
-    fn reload_installed_packages(&self) {
+    pub fn reload_installed_packages(&self) {
         debug!("Reload installed packages...");
         // TODO: This is eating much time on startup. Make this async.
 
