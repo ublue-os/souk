@@ -31,11 +31,13 @@ impl PackageWidget for ReleasesBox {
 
             get_widget!(self.builder, gtk::Label, date_label);
             get_widget!(self.builder, gtk::Label, header_label);
-            get_widget!(self.builder, gtk::Label, description_label);
+            get_widget!(self.builder, gtk::Box, description_box);
 
             utils::set_date_label(&date_label, release.date);
             header_label.set_text(&format!("New in Version {}", &release.version));
-            utils::set_label_markup_translatable_string(&description_label, release.description);
+            if let Some(bx) = &utils::render_markup_widget(release.description.clone()) {
+                description_box.append(bx);
+            }
         } else {
             self.widget.set_visible(false);
         }
@@ -44,10 +46,12 @@ impl PackageWidget for ReleasesBox {
     fn reset(&self) {
         get_widget!(self.builder, gtk::Label, date_label);
         get_widget!(self.builder, gtk::Label, header_label);
-        get_widget!(self.builder, gtk::Label, description_label);
+        get_widget!(self.builder, gtk::Box, description_box);
 
         date_label.set_text("–");
         header_label.set_text("–");
-        description_label.set_text("–");
+        while let Some(w) = description_box.get_first_child() {
+            description_box.remove(&w);
+        }
     }
 }

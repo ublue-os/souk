@@ -14,11 +14,13 @@
             <child>
               <object class="GtkBox">
                 <property name="orientation">vertical</property>
+                <property name="margin_top">12</property>
+                <property name="margin_start">12</property>
+                <property name="margin_end">12</property>
+                <property name="margin_bottom">12</property>
+                <property name="spacing">12</property>
                 <child>
                   <object class="GtkBox">
-                    <property name="margin_start">12</property>
-                    <property name="margin_end">12</property>
-                    <property name="margin_top">12</property>
                     <property name="spacing">12</property>
                     <child>
                       <object class="GtkLabel" id="header_label">
@@ -43,15 +45,7 @@
                   </object>
                 </child>
                 <child>
-                  <object class="GtkLabel" id="description_label">
-                    <property name="margin_start">12</property>
-                    <property name="margin_end">12</property>
-                    <property name="margin_top">12</property>
-                    <property name="margin_bottom">12</property>
-                    <property name="label" translatable="yes">description</property>
-                    <property name="wrap">True</property>
-                    <property name="xalign">0</property>
-                  </object>
+                  <object class="GtkBox" id="description_box"/>
                 </child>
               </object>
             </child>
