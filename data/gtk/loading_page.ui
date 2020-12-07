@@ -49,6 +49,9 @@
                 <child>
                   <object class="GtkLabel">
                     <property name="label" translatable="yes">Loading Apps…</property>
+                    <property name="wrap" translatable="yes">True</property>
+                    <property name="max_width_chars">20</property>
+                    <property name="justify">center</property>
                     <property name="margin_bottom">24</property>
                     <style>
                       <class name="large-title"/>
@@ -62,6 +65,9 @@
                 </child>
                 <child>
                   <object class="GtkLabel" id="label">
+                    <property name="wrap" translatable="yes">True</property>
+                    <property name="justify">center</property>
+                    <property name="max_width_chars">20</property>
                     <property name="margin_bottom">48</property>
                     <style>
                       <class name="dim-label"/>

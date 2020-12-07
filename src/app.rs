@@ -24,7 +24,7 @@ pub enum Action {
     ViewSet(View),
     ViewGoBack,
 
-    DatabaseRebuild,
+    DatabasePopulate,
     DatabaseLoadData,
 }
 
@@ -258,7 +258,7 @@ impl SoukApplication {
             app,
             "rebuild-database",
             clone!(@strong sender => move |_, _| {
-                send!(sender, Action::DatabaseRebuild);
+                send!(sender, Action::DatabasePopulate);
             })
         );
         app.set_accels_for_action("app.rebuild-database", &["<primary>r"]);
@@ -285,7 +285,7 @@ impl SoukApplication {
         match action {
             Action::ViewSet(view) => self.get_main_window().set_view(view, false),
             Action::ViewGoBack => self.get_main_window().go_back(),
-            Action::DatabaseRebuild => self_.database.populate_database(),
+            Action::DatabasePopulate => self_.database.populate_database(),
             Action::DatabaseLoadData => {
                 self_.flatpak_backend.reload_installed_packages();
                 self_.explore_page.get().unwrap().clone().load_data();
