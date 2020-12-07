@@ -41,12 +41,13 @@ impl LoadingPage {
     }
 
     fn setup_signals(self: Rc<Self>) {
-        self.database.connect_local("notify::is-busy", false, clone!(@strong self.sender as sender, @weak self.database as db => @default-return None::<glib::Value>, move |_|{
-            if db.get_is_busy() {
-                send!(sender, Action::ViewSet(View::Loading));
-            }else{
-                send!(sender, Action::ViewSet(View::Explore));
-            }
+        self.database.connect_local("populating-started", false, clone!(@strong self.sender as sender => @default-return None::<glib::Value>, move |_|{
+            send!(sender, Action::ViewSet(View::Loading));
+            None
+        })).unwrap();
+
+        self.database.connect_local("populating-ended", false, clone!(@strong self.sender as sender => @default-return None::<glib::Value>, move |_|{
+            send!(sender, Action::ViewSet(View::Explore));
             None
         })).unwrap();
 

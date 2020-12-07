@@ -212,10 +212,8 @@ impl SoukApplication {
     fn setup_signals(&self) {
         let self_ = SoukApplicationPrivate::from_instance(self);
 
-        self_.database.connect_local("notify::is-busy", false, clone!(@weak self_.database as db, @strong self_.sender as sender => @default-return None::<glib::Value>, move |_|{
-            if !db.get_is_busy(){
-                send!(sender, Action::DatabaseLoadData);
-            }
+        self_.database.connect_local("populating-ended", false, clone!(@strong self_.sender as sender => @default-return None::<glib::Value>, move |_|{
+            send!(sender, Action::DatabaseLoadData);
             None
         })).unwrap();
     }
@@ -287,7 +285,7 @@ impl SoukApplication {
         match action {
             Action::ViewSet(view) => self.get_main_window().set_view(view, false),
             Action::ViewGoBack => self.get_main_window().go_back(),
-            Action::DatabaseRebuild => self_.database.rebuild(),
+            Action::DatabaseRebuild => self_.database.populate_database(),
             Action::DatabaseLoadData => {
                 self_.flatpak_backend.reload_installed_packages();
                 self_.explore_page.get().unwrap().clone().load_data();
