@@ -2,7 +2,6 @@ use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::subclass::widget::{CompositeTemplate, TemplateChild, WidgetClassSubclassExt};
 use gtk::{prelude::*, CompositeTemplate};
 
 use std::cell::Cell;
