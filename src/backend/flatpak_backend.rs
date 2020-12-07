@@ -167,7 +167,6 @@ impl SoukFlatpakBackend {
 
     pub fn reload_installed_packages(&self) {
         debug!("Reload installed packages...");
-        // TODO: This is eating much time on startup. Make this async.
 
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
         self_.installed_packages.remove_all();
