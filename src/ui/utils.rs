@@ -16,21 +16,6 @@ pub fn set_label_translatable_string(label: &gtk::Label, text: Option<Translatab
     };
 }
 
-pub fn set_label_markup_translatable_string(
-    label: &gtk::Label,
-    text: Option<MarkupTranslatableString>,
-) {
-    match text {
-        Some(t) => {
-            let text = &t.get_default().unwrap_or(&"???".to_string()).to_string();
-            let markup = render_markup(text).unwrap_or("???".to_string());
-            label.set_use_markup(true);
-            label.set_markup(&markup);
-        }
-        None => label.set_text("–"),
-    };
-}
-
 pub fn render_markup_widget(text: Option<MarkupTranslatableString>) -> Option<gtk::Box> {
     let details_box = gtk::Box::new(gtk::Orientation::Vertical, 8);
 
@@ -105,29 +90,6 @@ fn set_label_styles(w: &gtk::Label) {
     w.set_xalign(0.0);
     w.set_valign(gtk::Align::Start);
     w.set_halign(gtk::Align::Fill);
-}
-
-pub fn render_markup(text: &str) -> Option<String> {
-    let mut markup: Vec<String> = vec![];
-    if let Ok(blocks) = markup_html(text) {
-        for block in blocks {
-            if let HtmlBlock::Text(t) = block {
-                markup.push(t);
-            }
-        }
-        Some(
-            markup
-                .into_iter()
-                .filter(|x| !x.is_empty())
-                .collect::<Vec<String>>()
-                .join("\n")
-                .trim_end()
-                .to_string(),
-        )
-    } else {
-        debug!("Could not parse: {}", text);
-        None
-    }
 }
 
 pub fn set_date_label(label: &gtk::Label, date: Option<DateTime<Utc>>) {
