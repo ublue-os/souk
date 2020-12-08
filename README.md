@@ -30,10 +30,11 @@ No. Souk is an independent third-party application.
 GNOME Builder is the environment used for developing this application. It can use Flatpak manifests to create a consistent building and running environment cross-distro. Thus, it is highly
 recommended you use it.
 
-1. Download [GNOME Builder](https://flathub.org/apps/details/org.gnome.Builder).
-2. In Builder, click the "Clone Repository" button at the bottom, using `git@gitlab.gnome.org/haecker-felix/souk.git`
+1. Make sure that the Rust SDK extension is installed. You can install it by running `flatpak install flathub org.freedesktop.Sdk.Extension.rust-stable//20.08`
+2. Download [GNOME Builder](https://flathub.org/apps/details/org.gnome.Builder).
+3. In Builder, click the "Clone Repository" button at the bottom, using `git@gitlab.gnome.org/haecker-felix/souk.git`
 or `https://gitlab.gnome.org/haecker-felix/souk.git` as the URL.
-3. Click the build button at the top once the project is loaded.
+4. Click the build button at the top once the project is loaded.
 
 
 ## Installation
