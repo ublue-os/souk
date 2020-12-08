@@ -24,8 +24,6 @@ pub enum View {
 pub struct SoukApplicationWindowPrivate {
     #[template_child(id = "view_switcher_title")]
     pub view_switcher_title: TemplateChild<libhandy::ViewSwitcherTitle>,
-    #[template_child(id = "appmenu_button")]
-    pub appmenu_button: TemplateChild<gtk::MenuButton>,
     #[template_child(id = "explore_box")]
     pub explore_box: TemplateChild<gtk::Box>,
     #[template_child(id = "installed_box")]
@@ -39,7 +37,6 @@ pub struct SoukApplicationWindowPrivate {
     #[template_child(id = "window_stack")]
     pub window_stack: TemplateChild<gtk::Stack>,
 
-    menu_builder: gtk::Builder,
     pages_stack: RefCell<Vec<View>>,
 }
 
@@ -58,19 +55,16 @@ impl ObjectSubclass for SoukApplicationWindowPrivate {
     glib_object_subclass!();
 
     fn new() -> Self {
-        let menu_builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/menu.ui");
         let pages_stack = RefCell::new(Vec::new());
 
         Self {
             view_switcher_title: TemplateChild::default(),
-            appmenu_button: TemplateChild::default(),
             explore_box: TemplateChild::default(),
             installed_box: TemplateChild::default(),
             search_box: TemplateChild::default(),
             package_details_box: TemplateChild::default(),
             main_stack: TemplateChild::default(),
             window_stack: TemplateChild::default(),
-            menu_builder,
             pages_stack,
         }
     }
@@ -135,13 +129,6 @@ impl SoukApplicationWindow {
             .get()
             .set_title(Some(config::NAME));
         self.set_title(config::NAME);
-
-        // Set hamburger menu
-        get_widget!(self_.menu_builder, gio::MenuModel, primary_menu);
-        self_
-            .appmenu_button
-            .get()
-            .set_menu_model(Some(&primary_menu));
 
         // wire everything up
         self_

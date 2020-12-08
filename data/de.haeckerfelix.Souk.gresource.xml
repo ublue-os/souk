@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/de/haeckerfelix/Souk">
-    <file>gtk/menu.ui</file>
     <file>gtk/window.ui</file>
     <file>gtk/package_action_button.ui</file>
     <file>gtk/package_details_page.ui</file>
