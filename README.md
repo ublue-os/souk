@@ -10,6 +10,19 @@ on desktop and on mobile devices like the PinePhone, PineTab, and Librem 5.
 If you have any questions regarding the use or development of Souk,
 want to discuss design or simply hang out, please join us on our [#souk:gnome.org](https://matrix.to/#/#souk:gnome.org) channel.
 
+## FAQ
+- What is the goal/scope of Souk?
+
+Souk just wants to do one thing well - being a Flatpak focussed store. Not more - not less. To achieve this we're using Rust, GTK4, and libhandy to make the application fully adaptive, so it'll work on mobile devices too.
+
+- Is Souk going to replace GNOME Software?
+
+No. GNOME Software does a lot more things like doing firmware upgrades, managing packagekit packages, or doing complete OS upgrades. We don't want to add such functionality in Souk.
+
+- Is Souk an official GNOME app?
+
+No. Souk is an independent third-party application.
+
 ## Building
 
 ### GNOME Builder
