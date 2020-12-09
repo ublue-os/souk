@@ -7,6 +7,7 @@ use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 
+use std::cell::Cell;
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -33,8 +34,8 @@ enum DbMessage {
 }
 
 pub struct SoukDatabasePrivate {
-    busy: Rc<RefCell<bool>>,
-    percentage: Rc<RefCell<f64>>,
+    busy: Cell<bool>,
+    percentage: Cell<f64>,
     remote: Rc<RefCell<String>>,
 
     sender: glib::Sender<DbMessage>,
@@ -87,8 +88,8 @@ impl ObjectSubclass for SoukDatabasePrivate {
         let (sender, receiver) = glib::MainContext::channel(glib::PRIORITY_LOW);
 
         SoukDatabasePrivate {
-            busy: Rc::default(),
-            percentage: Rc::default(),
+            busy: Cell::default(),
+            percentage: Cell::default(),
             remote: Rc::default(),
             sender,
             receiver: RefCell::new(Some(receiver)),
@@ -101,7 +102,7 @@ impl ObjectImpl for SoukDatabasePrivate {
         let prop = &PROPERTIES[id];
 
         match *prop {
-            subclass::Property("percentage", ..) => self.percentage.borrow().to_value(),
+            subclass::Property("percentage", ..) => self.percentage.get().to_value(),
             subclass::Property("remote", ..) => self.remote.borrow().to_value(),
             _ => unimplemented!(),
         }
@@ -136,7 +137,7 @@ impl SoukDatabase {
             debug!("Database it up-to-date, don't repopulate it.");
 
             let self_ = SoukDatabasePrivate::from_instance(self);
-            *self_.busy.borrow_mut() = false;
+            self_.busy.set(false);
             self.emit("populating-ended", &[]).unwrap();
         }
     }
@@ -184,7 +185,7 @@ impl SoukDatabase {
         let self_ = SoukDatabasePrivate::from_instance(self);
         let sender = self_.sender.clone();
 
-        if *self_.busy.borrow() {
+        if self_.busy.get() {
             info!("Database is already populating, skip.");
             return;
         }
@@ -336,15 +337,15 @@ impl SoukDatabase {
 
         match msg {
             DbMessage::PopulatingStarted => {
-                *self_.busy.borrow_mut() = true;
+                self_.busy.set(true);
                 self.emit("populating-started", &[]).unwrap();
             }
             DbMessage::PopulatingEnded => {
-                *self_.busy.borrow_mut() = false;
+                self_.busy.set(false);
                 self.emit("populating-ended", &[]).unwrap();
             }
             DbMessage::Percentage(p) => {
-                *self_.percentage.borrow_mut() = p;
+                self_.percentage.set(p);
                 self.notify("percentage");
             }
             DbMessage::Remote(remote) => {
