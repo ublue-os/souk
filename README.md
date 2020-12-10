@@ -32,7 +32,7 @@ recommended you use it.
 
 1. Make sure that the Rust SDK extension is installed. You can install it by running `flatpak install flathub org.freedesktop.Sdk.Extension.rust-stable//20.08`
 2. Download [GNOME Builder](https://flathub.org/apps/details/org.gnome.Builder).
-3. In Builder, click the "Clone Repository" button at the bottom, using `git@gitlab.gnome.org/haecker-felix/souk.git`
+3. In Builder, click the "Clone Repository" button at the bottom, using `git@gitlab.gnome.org:haecker-felix/souk.git`
 or `https://gitlab.gnome.org/haecker-felix/souk.git` as the URL.
 4. Click the build button at the top once the project is loaded.
 
