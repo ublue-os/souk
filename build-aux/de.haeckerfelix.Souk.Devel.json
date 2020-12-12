@@ -57,8 +57,8 @@
             "sources" : [
                 {
                     "type" : "archive",
-                    "url" : "https://github.com/libfuse/libfuse/releases/download/fuse-2.9.7/fuse-2.9.7.tar.gz",
-                    "sha256" : "832432d1ad4f833c20e13b57cf40ce5277a9d33e483205fc63c78111b3358874"
+                    "url" : "https://github.com/libfuse/libfuse/releases/download/fuse-2.9.9/fuse-2.9.9.tar.gz",
+                    "sha256" : "d0e69d5d608cc22ff4843791ad097f554dd32540ddc9bed7638cc6fea7c1b4b5"
                 },
                 {
                     "type" : "patch",
@@ -67,6 +67,20 @@
                 {
                     "type" : "patch",
                     "path" : "patches/fuse-disable-sys-mount-under-flatpak.patch"
+                }
+            ]
+        },
+        {
+            "name": "pyparsing",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} pyparsing"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "url": "https://files.pythonhosted.org/packages/11/fa/0160cd525c62d7abd076a070ff02b2b94de589f1a9789774f17d7c54058e/pyparsing-2.4.2-py2.py3-none-any.whl",
+                    "sha256": "d9338df12903bbf5d65a0e4e87c2161968b10d2e489652bb47001d82a9b028b4"
                 }
             ]
         },
@@ -137,7 +151,8 @@
             "sources" : [
                 {
                     "type" : "git",
-                    "url" : "https://github.com/ostreedev/ostree.git"
+                    "url" : "https://github.com/ostreedev/ostree.git",
+                    "branch" : "v2020.6"
                 }
             ]
         },
@@ -148,7 +163,8 @@
                 "--disable-seccomp",
                 "--disable-sandboxed-triggers",
                 "--disable-system-helper",
-                "--with-system-install-dir=/var/lib/flatpak"
+                "--with-system-install-dir=/var/lib/flatpak",
+                "--sysconfdir=/var/run/host/etc"
             ],
             "cleanup" : [
                 "/bin/flatpak-bisect",
@@ -168,9 +184,9 @@
             ],
             "sources" : [
                 {
-                    "type" : "archive",
-                    "url" : "https://github.com/flatpak/flatpak/releases/download/1.5.1/flatpak-1.5.1.tar.xz",
-                    "sha256" : "4dc2c2f83c27822758031e030097e7547f4c1155a10c295a23baf10fab462a9a"
+                    "type" : "git",
+                    "url" : "https://github.com/flatpak/flatpak.git",
+                    "branch" : "1.8.3"
                 }
             ]
         },

@@ -215,14 +215,6 @@ impl SoukDatabase {
 
             for remote in result {
                 let name = remote.get_name().unwrap().to_string();
-                if remote.get_url().unwrap().to_string().starts_with("oci+") {
-                    warn!(
-                        "Unable to load remote \"{}\": OCI remotes aren't supported yet",
-                        name
-                    );
-                    continue;
-                }
-
                 let refs = flatpak_backend
                     .get_system_installation()
                     .list_remote_refs_sync(&name, Some(&gio::Cancellable::new()));
