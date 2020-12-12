@@ -3,7 +3,6 @@ use glib::subclass;
 use glib::subclass::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{prelude::*, CompositeTemplate};
-use libhandy::prelude::*;
 
 use std::cell::RefCell;
 
@@ -128,7 +127,7 @@ impl SoukApplicationWindow {
             .view_switcher_title
             .get()
             .set_title(Some(config::NAME));
-        self.set_title(config::NAME);
+        self.set_title(Some(config::NAME));
 
         // wire everything up
         self_

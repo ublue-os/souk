@@ -4,7 +4,6 @@ use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use isahc::config::RedirectPolicy;
 use isahc::prelude::*;
-use libhandy::CarouselExt;
 
 use crate::backend::SoukPackage;
 use crate::error::Error;

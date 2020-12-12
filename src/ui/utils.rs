@@ -4,7 +4,6 @@ use gio::prelude::*;
 use gtk::prelude::*;
 use html2pango::block::markup_html;
 use html2pango::block::HtmlBlock;
-use libhandy::prelude::*;
 
 use std::path::PathBuf;
 
@@ -160,7 +159,7 @@ pub fn show_error_dialog(message: &str) {
         &format!("<span font_family=\"monospace\">{}</span>", message),
     );
 
-    dialog.set_title("Something went wrong");
+    dialog.set_title(Some("Something went wrong"));
     dialog.set_property_use_markup(true);
 
     dialog.show();
