@@ -39,6 +39,10 @@ impl PackageWidget for ReleasesBox {
             let release_row = ReleaseRow::new(release, true);
 
             get_widget!(self.builder, gtk::ListBox, releases_box_listbox);
+            get_widget!(self.builder, gtk::ListBoxRow, version_history_row);
+
+            version_history_row.set_activatable(releases.len() > 1);
+            version_history_row.set_sensitive(releases.len() > 1);
 
             self.signal_handler_id
                 .replace(Some(releases_box_listbox.connect_row_activated(
