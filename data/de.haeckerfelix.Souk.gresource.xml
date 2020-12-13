@@ -10,6 +10,7 @@
     <file>gtk/explore_page.ui</file>
     <file>gtk/installed_page.ui</file>
     <file>gtk/releases_box.ui</file>
+    <file>gtk/release_row.ui</file>
     <file>gtk/screenshots_box.ui</file>
     <file>gtk/project_urls_box.ui</file>
     <file>gtk/search_page.ui</file>

@@ -1,12 +1,15 @@
+use std::cell::RefCell;
+
 use gtk::prelude::*;
 
 use crate::backend::SoukPackage;
 use crate::ui::package_widgets::PackageWidget;
-use crate::ui::utils;
+use crate::ui::release_row::ReleaseRow;
 
 pub struct ReleasesBox {
     pub widget: gtk::Box,
     builder: gtk::Builder,
+    release_row: RefCell<Option<gtk::ListBoxRow>>,
 }
 
 impl PackageWidget for ReleasesBox {
@@ -17,6 +20,7 @@ impl PackageWidget for ReleasesBox {
         Self {
             widget: releases_box,
             builder,
+            release_row: RefCell::default(),
         }
     }
 
@@ -28,30 +32,22 @@ impl PackageWidget for ReleasesBox {
         if !releases.is_empty() {
             self.widget.set_visible(true);
             let release = releases[0].clone();
+            let release_row = ReleaseRow::new(release);
 
-            get_widget!(self.builder, gtk::Label, date_label);
-            get_widget!(self.builder, gtk::Label, header_label);
-            get_widget!(self.builder, gtk::Box, description_box);
+            get_widget!(self.builder, gtk::ListBox, releases_box_listbox);
 
-            utils::set_date_label(&date_label, release.date);
-            header_label.set_text(&format!("New in Version {}", &release.version));
-            if let Some(bx) = &utils::render_markup_widget(release.description.clone()) {
-                description_box.append(bx);
-            }
+            releases_box_listbox.prepend(&release_row.widget);
+            self.release_row.replace(Some(release_row.widget));
         } else {
             self.widget.set_visible(false);
         }
     }
 
     fn reset(&self) {
-        get_widget!(self.builder, gtk::Label, date_label);
-        get_widget!(self.builder, gtk::Label, header_label);
-        get_widget!(self.builder, gtk::Box, description_box);
+        get_widget!(self.builder, gtk::ListBox, releases_box_listbox);
 
-        date_label.set_text("–");
-        header_label.set_text("–");
-        while let Some(w) = description_box.get_first_child() {
-            description_box.remove(&w);
+        if let Some(row) = self.release_row.borrow_mut().take() {
+            releases_box_listbox.remove(&row)
         }
     }
 }

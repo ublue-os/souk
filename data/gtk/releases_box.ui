@@ -4,53 +4,9 @@
   <object class="GtkBox" id="releases_box">
     <property name="orientation">vertical</property>
     <child>
-      <object class="GtkListBox">
+      <object class="GtkListBox" id="releases_box_listbox">
         <property name="selection_mode">none</property>
         <property name="activate_on_single_click">False</property>
-        <child>
-          <object class="GtkListBoxRow">
-            <property name="activatable">False</property>
-            <property name="selectable">False</property>
-            <child>
-              <object class="GtkBox">
-                <property name="orientation">vertical</property>
-                <property name="margin_top">12</property>
-                <property name="margin_start">12</property>
-                <property name="margin_end">12</property>
-                <property name="margin_bottom">12</property>
-                <property name="spacing">12</property>
-                <child>
-                  <object class="GtkBox">
-                    <property name="spacing">12</property>
-                    <child>
-                      <object class="GtkLabel" id="header_label">
-                        <property name="label" translatable="yes">header</property>
-                        <property name="wrap">True</property>
-                        <property name="xalign">0</property>
-                        <style>
-                          <class name="title-4"/>
-                        </style>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="date_label">
-                        <property name="label" translatable="yes">date</property>
-                        <property name="wrap">True</property>
-                        <property name="xalign">0</property>
-                        <style>
-                          <class name="dim-label"/>
-                        </style>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkBox" id="description_box"/>
-                </child>
-              </object>
-            </child>
-          </object>
-        </child>
         <style>
           <class name="content"/>
         </style>
