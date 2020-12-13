@@ -36,7 +36,7 @@ impl PackageWidget for ReleasesBox {
         if !releases.is_empty() {
             self.widget.set_visible(true);
             let release = releases[0].clone();
-            let release_row = ReleaseRow::new(release);
+            let release_row = ReleaseRow::new(release, true);
 
             get_widget!(self.builder, gtk::ListBox, releases_box_listbox);
 

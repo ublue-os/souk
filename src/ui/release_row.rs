@@ -10,7 +10,7 @@ pub struct ReleaseRow {
 }
 
 impl ReleaseRow {
-    pub fn new(release: Release) -> Self {
+    pub fn new(release: Release, show_new_header: bool) -> Self {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/release_row.ui");
         get_widget!(builder, gtk::ListBoxRow, release_row);
 
@@ -19,11 +19,11 @@ impl ReleaseRow {
             builder,
             release,
         };
-        releases_window_row.setup_widgets();
+        releases_window_row.setup_widgets(show_new_header);
         releases_window_row
     }
 
-    pub fn setup_widgets(&self) {
+    fn setup_widgets(&self, show_new_header: bool) {
         let release = self.release.clone();
         self.widget.set_visible(true);
 
@@ -32,7 +32,12 @@ impl ReleaseRow {
         get_widget!(self.builder, gtk::Box, description_box);
 
         utils::set_date_label(&date_label, release.date);
-        header_label.set_text(&format!("{}", &release.version));
+        if show_new_header {
+            header_label.set_text(&format!("New in Version {}", text));
+        } else {
+            header_label.set_text(&format!("{}", &release.version));
+        }
+
         if let Some(bx) = &utils::render_markup_widget(release.description.clone()) {
             description_box.append(bx);
         }

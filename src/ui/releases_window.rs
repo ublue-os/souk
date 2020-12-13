@@ -31,7 +31,7 @@ impl ReleasesWindow {
         self.widget.set_modal(true);
         get_widget!(self.builder, gtk::ListBox, listbox);
         for release in self.releases.clone().into_iter() {
-            let r = ReleaseRow::new(release);
+            let r = ReleaseRow::new(release, false);
             listbox.append(&r.widget);
         }
     }
