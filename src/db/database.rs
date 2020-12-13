@@ -256,18 +256,29 @@ impl SoukDatabase {
                 appstream_file.push("appstream.xml");
 
                 // Parse remote appstream data
-                let appdata_collection = Collection::from_path(appstream_file.clone()).ok();
-                if appdata_collection.is_none() {
-                    warn!(
-                        "Unable to parse appstream for remote {:?}",
-                        &remote.get_name().unwrap().to_string()
-                    );
-                }
+                debug!("Parse appstream XML {:?}...", appstream_file);
+                let appdata_collection = match Collection::from_path(appstream_file.clone()) {
+                    Ok(collection) => {
+                        debug!(
+                            "Successfully parsed appstream XML for remote {}",
+                            remote_name
+                        );
+                        Some(collection)
+                    }
+                    Err(err) => {
+                        warn!(
+                            "Unable to parse appstream XML for remote {:?}: {}",
+                            err.to_string(),
+                            remote_name
+                        );
+                        None
+                    }
+                };
 
                 let mut db_packages = Vec::new();
                 for remote_ref in refs {
                     let ref_name = remote_ref.format_ref().unwrap().to_string();
-                    debug!("Load package {}", ref_name);
+                    debug!("Found package {}", ref_name);
 
                     // We only care about our arch
                     if remote_ref.get_arch().unwrap().to_string() != std::env::consts::ARCH {
@@ -286,7 +297,10 @@ impl SoukDatabase {
                                 .find(|c| Self::get_ref_name(c) == ref_name)
                                 .cloned()
                         }
-                        None => None,
+                        None => {
+                            warn!("Unable to find appstream data for {}", ref_name);
+                            None
+                        }
                     };
 
                     // Create new remote package and push it into the databse
