@@ -43,6 +43,8 @@ pub fn render_markup_widget(text: Option<MarkupTranslatableString>) -> Option<gt
                     match block {
                         HtmlBlock::UList(elements) => {
                             let bx = gtk::Box::new(gtk::Orientation::Vertical, 3);
+                            bx.set_margin_end(6);
+                            bx.set_margin_start(6);
                             for li in elements.iter() {
                                 let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
                                 let bullet = gtk::Label::new(Some("•"));
@@ -58,6 +60,8 @@ pub fn render_markup_widget(text: Option<MarkupTranslatableString>) -> Option<gt
                         }
                         HtmlBlock::OList(elements) => {
                             let bx = gtk::Box::new(gtk::Orientation::Vertical, 3);
+                            bx.set_margin_end(6);
+                            bx.set_margin_start(6);
                             for (i, ol) in elements.iter().enumerate() {
                                 let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
                                 let bullet = gtk::Label::new(Some(&format!("{}.", i + 1)));
