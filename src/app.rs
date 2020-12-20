@@ -287,7 +287,7 @@ impl SoukApplication {
             Action::ViewGoBack => self.get_main_window().go_back(),
             Action::DatabasePopulate => self_.database.populate_database(),
             Action::DatabaseLoadData => {
-                self_.flatpak_backend.reload_installed_packages();
+                self_.flatpak_backend.reload_installed_packages_full();
                 self_.explore_page.get().unwrap().clone().load_data();
             }
         }

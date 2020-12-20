@@ -210,14 +210,14 @@ impl SoukDatabase {
             // Get remotes
             let result = flatpak_backend
                 .get_system_installation()
-                .list_remotes(Some(&gio::Cancellable::new()))
+                .list_remotes(gio::NONE_CANCELLABLE)
                 .unwrap();
 
             for remote in result {
                 let name = remote.get_name().unwrap().to_string();
                 let refs = flatpak_backend
                     .get_system_installation()
-                    .list_remote_refs_sync(&name, Some(&gio::Cancellable::new()));
+                    .list_remote_refs_sync(&name, gio::NONE_CANCELLABLE);
 
                 match refs {
                     Ok(refs) => {
@@ -244,7 +244,7 @@ impl SoukDatabase {
                 // Get all refs from remote
                 let refs = flatpak_backend
                     .get_system_installation()
-                    .list_remote_refs_sync(&remote_name, Some(&gio::Cancellable::new()))
+                    .list_remote_refs_sync(&remote_name, gio::NONE_CANCELLABLE)
                     .unwrap();
 
                 // Get path of remote appstream data

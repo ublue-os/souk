@@ -3,15 +3,19 @@ use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 
+use std::collections::HashSet;
+
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
 use crate::backend::{SoukInstalledInfo, SoukPackage, SoukRemoteInfo, SoukTransaction};
 use crate::db::queries;
 
 pub struct SoukFlatpakBackendPrivate {
-    system_installation: Installation,
+    sys_installation: Installation,
     installed_packages: gio::ListStore,
 
     transaction_backend: Box<dyn TransactionBackend>,
+
+    sys_monitor: gio::FileMonitor,
 }
 
 static PROPERTIES: [subclass::Property; 1] = [subclass::Property(
@@ -48,8 +52,7 @@ impl ObjectSubclass for SoukFlatpakBackendPrivate {
 
     fn new() -> Self {
         // TODO: Add support for user installations
-        let system_installation =
-            flatpak::Installation::new_system(None::<&gio::Cancellable>).unwrap();
+        let sys_installation = flatpak::Installation::new_system(gio::NONE_CANCELLABLE).unwrap();
         let installed_packages = gio::ListStore::new(SoukPackage::static_type());
 
         let transaction_backend = if SoukFlatpakBackend::is_sandboxed() {
@@ -58,10 +61,15 @@ impl ObjectSubclass for SoukFlatpakBackendPrivate {
             unimplemented!("Host backend not implemented yet");
         };
 
+        let sys_monitor = sys_installation
+            .create_monitor(gio::NONE_CANCELLABLE)
+            .unwrap();
+
         Self {
-            system_installation,
+            sys_installation,
             installed_packages,
             transaction_backend,
+            sys_monitor,
         }
     }
 }
@@ -88,7 +96,18 @@ impl SoukFlatpakBackend {
             .downcast::<SoukFlatpakBackend>()
             .unwrap();
 
+        backend.setup_signals();
         backend
+    }
+
+    fn setup_signals(&self) {
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+
+        self_
+            .sys_monitor
+            .connect_changed(clone!(@weak self as this => move|_, _, _, _| {
+                this.reload_installed_packages_diff();
+            }));
     }
 
     pub fn get_installed_packages(&self) -> gio::ListStore {
@@ -101,7 +120,7 @@ impl SoukFlatpakBackend {
 
     pub fn get_system_installation(&self) -> flatpak::Installation {
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        self_.system_installation.clone()
+        self_.sys_installation.clone()
     }
 
     pub fn launch_package(&self, package: &SoukPackage) {
@@ -134,12 +153,12 @@ impl SoukFlatpakBackend {
 
     pub fn get_installed_info(&self, package: &SoukPackage) -> Option<SoukInstalledInfo> {
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        let installed_ref = self_.system_installation.get_installed_ref(
+        let installed_ref = self_.sys_installation.get_installed_ref(
             package.get_kind().into(),
             &package.get_name(),
             Some(&package.get_arch()),
             Some(&package.get_branch()),
-            None::<&gio::Cancellable>,
+            gio::NONE_CANCELLABLE,
         );
 
         match installed_ref {
@@ -165,19 +184,75 @@ impl SoukFlatpakBackend {
         std::path::Path::new("/.flatpak-info").exists()
     }
 
-    pub fn reload_installed_packages(&self) {
-        debug!("Reload installed packages...");
+    fn get_installed_packages_vec(&self) -> Vec<SoukPackage> {
+        let mut result = Vec::new();
 
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
         self_.installed_packages.remove_all();
 
         let system_refs = self_
-            .system_installation
-            .list_installed_refs(Some(&gio::Cancellable::new()))
+            .sys_installation
+            .list_installed_refs(gio::NONE_CANCELLABLE)
             .unwrap();
 
         for installed_ref in system_refs {
             let package: SoukPackage = installed_ref.into();
+            result.insert(0, package);
+        }
+
+        result
+    }
+
+    // Reload installed packages partially
+    // -> Find out what's the difference and apply those changes to model
+    pub fn reload_installed_packages_diff(&self) {
+        debug!("Reload installed packages (diff)...");
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+
+        let mut before = HashSet::new();
+        let mut after = HashSet::new();
+
+        // before
+        for x in 0..self_.installed_packages.get_n_items() {
+            let package: SoukPackage = self_
+                .installed_packages
+                .get_object(x)
+                .unwrap()
+                .downcast()
+                .unwrap();
+            before.insert(package.get_ref_name());
+        }
+
+        // after
+        let new_pkgs = self.get_installed_packages_vec();
+        for package in new_pkgs {
+            after.insert(package.get_ref_name());
+        }
+
+        // find out actual difference
+        let mut diff = Vec::new();
+        let diff_ba = before.difference(&after);
+        for d in diff_ba {
+            diff.insert(0, d);
+        }
+        let diff_ab = after.difference(&before);
+        for d in diff_ab {
+            diff.insert(0, d);
+        }
+
+        warn!("diff: {:?}", diff);
+    }
+
+    // Completely reload installed packages
+    // -> Clearing model and rebuild it
+    pub fn reload_installed_packages_full(&self) {
+        debug!("Reload installed packages (full)...");
+        let self_ = SoukFlatpakBackendPrivate::from_instance(self);
+
+        self_.installed_packages.remove_all();
+
+        let packages = self.get_installed_packages_vec();
+        for package in packages {
             self_.installed_packages.append(&package);
         }
     }

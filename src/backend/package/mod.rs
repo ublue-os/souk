@@ -414,9 +414,7 @@ impl From<DbPackage> for SoukPackage {
 
 impl From<InstalledRef> for SoukPackage {
     fn from(installed_ref: InstalledRef) -> Self {
-        let keyfile_bytes = installed_ref
-            .load_metadata(Some(&gio::Cancellable::new()))
-            .unwrap();
+        let keyfile_bytes = installed_ref.load_metadata(gio::NONE_CANCELLABLE).unwrap();
         let keyfile = glib::KeyFile::new();
         keyfile
             .load_from_bytes(&keyfile_bytes, glib::KeyFileFlags::NONE)
