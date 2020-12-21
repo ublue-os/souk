@@ -3,6 +3,7 @@ use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
 
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
@@ -186,9 +187,7 @@ impl SoukFlatpakBackend {
 
     fn get_installed_packages_vec(&self) -> Vec<SoukPackage> {
         let mut result = Vec::new();
-
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
-        self_.installed_packages.remove_all();
 
         let system_refs = self_
             .sys_installation
@@ -209,8 +208,14 @@ impl SoukFlatpakBackend {
         debug!("Reload installed packages (diff)...");
         let self_ = SoukFlatpakBackendPrivate::from_instance(self);
 
-        let mut before = HashSet::new();
-        let mut after = HashSet::new();
+        // We cannot add SoukPackage directly into the HashSet, since the
+        // Hash value is going to be different between two "same" (but not identical)
+        // GObjects. So we're using the Flatpak ref name as hash value,
+        // and access the actual package later by using the HashMap.
+        let mut before_set = HashSet::new();
+        let mut before_map = HashMap::new();
+        let mut after_set = HashSet::new();
+        let mut after_map = HashMap::new();
 
         // before
         for x in 0..self_.installed_packages.get_n_items() {
@@ -220,27 +225,45 @@ impl SoukFlatpakBackend {
                 .unwrap()
                 .downcast()
                 .unwrap();
-            before.insert(package.get_ref_name());
+
+            before_set.insert(package.get_ref_name());
+            before_map.insert(package.get_ref_name(), package);
         }
 
         // after
         let new_pkgs = self.get_installed_packages_vec();
         for package in new_pkgs {
-            after.insert(package.get_ref_name());
+            after_set.insert(package.get_ref_name());
+            after_map.insert(package.get_ref_name(), package);
         }
 
         // find out actual difference
-        let mut diff = Vec::new();
-        let diff_ba = before.difference(&after);
-        for d in diff_ba {
-            diff.insert(0, d);
-        }
-        let diff_ab = after.difference(&before);
-        for d in diff_ab {
-            diff.insert(0, d);
+        let mut differences = Vec::new();
+        for d in before_set.symmetric_difference(&after_set) {
+            differences.insert(0, d.to_owned());
         }
 
-        warn!("diff: {:?}", diff);
+        match &differences.get(0) {
+            Some(d) => {
+                // Find out if the package got installed, or uninstalled
+                let installed = after_set.contains(d.to_owned());
+                if installed {
+                    debug!("Detected package install: {:?}", differences);
+                    for diff in differences {
+                        let pkg = after_map.get(&diff).unwrap();
+                        self_.installed_packages.insert(0, pkg);
+                    }
+                } else {
+                    debug!("Detected package uninstall: {:?}", differences);
+                    for diff in differences {
+                        let pkg = before_map.get(&diff).unwrap();
+                        let pos = self_.installed_packages.find(pkg).unwrap();
+                        self_.installed_packages.remove(pos);
+                    }
+                }
+            }
+            None => debug!("Detected package change, unable to determine affected package."),
+        }
     }
 
     // Completely reload installed packages
