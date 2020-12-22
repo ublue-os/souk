@@ -60,7 +60,7 @@
                 </child>
                 <child>
                   <object class="GtkProgressBar" id="progressbar">
-                    <property name="margin_bottom">6</property>
+                    <property name="margin_bottom">12</property>
                   </object>
                 </child>
                 <child>
