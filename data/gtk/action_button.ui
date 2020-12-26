@@ -68,6 +68,20 @@
             </property>
           </object>
         </child>
+        <child>
+          <object class="GtkStackPage">
+            <property name="name">uninstalling</property>
+            <property name="child">
+              <object class="GtkButton">
+                <property name="label" translatable="yes">Uninstalling…</property>
+                <property name="sensitive">False</property>
+                <style>
+                  <class name="action-button"/>
+                </style>
+              </object>
+            </property>
+          </object>
+        </child>
       </object>
     </child>
     <child>

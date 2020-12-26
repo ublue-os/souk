@@ -5,7 +5,7 @@ use gtk::{prelude::*, CompositeTemplate};
 
 use std::cell::RefCell;
 
-use crate::backend::{SoukPackage, SoukPackageKind, SoukTransactionMode};
+use crate::backend::{SoukPackage, SoukPackageAction, SoukPackageKind, SoukTransactionMode};
 use crate::ui::package_widgets::PackageWidget;
 use crate::ui::utils;
 
@@ -120,20 +120,19 @@ impl SoukActionButton {
 
     fn update_stack(&self) {
         let self_ = SoukActionButtonPrivate::from_instance(self);
-        let state = self_
-            .package
-            .borrow()
-            .as_ref()
-            .unwrap()
-            .get_transaction_state();
+        let package = self_.package.borrow().as_ref().unwrap().clone();
+        let state = package.get_transaction_state();
+        let action = package.get_transaction_action();
 
         // Check if transaction is active / running
         if state.get_mode() == SoukTransactionMode::Running {
             // Show correct button
-            self_
-                .button_stack
-                .get()
-                .set_visible_child_name("processing");
+            let stack_name = if action == SoukPackageAction::Uninstall {
+                "uninstalling"
+            } else {
+                "processing"
+            };
+            self_.button_stack.get().set_visible_child_name(stack_name);
 
             // Set progressbar fraction
             self_

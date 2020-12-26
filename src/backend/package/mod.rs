@@ -370,8 +370,6 @@ impl SoukPackage {
         self.get_property("installed_info").unwrap().get().unwrap()
     }
 
-    // TODO: This is currently not needed, but I have the feeling
-    // it's going to be useful later...
     pub fn get_transaction_action(&self) -> SoukPackageAction {
         self.get_property("transaction_action")
             .unwrap()
