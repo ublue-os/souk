@@ -75,7 +75,7 @@ impl TransactionBackend for SandboxBackend {
 impl SandboxBackend {
     async fn execute_package_transacton(transaction: SoukTransaction, transactions: Transactions) {
         // Set initial transaction state
-        let state = SoukTransactionState::default();
+        let state = SoukTransactionState::new();
         state.set_percentage(&0.0);
         transaction.set_state(&state);
 
@@ -116,7 +116,7 @@ impl SandboxBackend {
             .remove(&transaction.get_package().get_ref_name())
         {
             Some((_, mut child)) => {
-                let state = SoukTransactionState::default();
+                let state = SoukTransactionState::new();
                 // Transaction finished, so let set it to 100%
                 state.set_percentage(&1.0);
 
@@ -178,7 +178,7 @@ impl SandboxBackend {
     }
 
     fn parse_line(line: String) -> SoukTransactionState {
-        let state = SoukTransactionState::default();
+        let state = SoukTransactionState::new();
         state.set_mode(&SoukTransactionMode::Running);
 
         // Regex to get percentage value

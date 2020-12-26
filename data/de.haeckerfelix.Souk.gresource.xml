@@ -2,7 +2,7 @@
 <gresources>
   <gresource prefix="/de/haeckerfelix/Souk">
     <file>gtk/window.ui</file>
-    <file>gtk/package_action_button.ui</file>
+    <file>gtk/action_button.ui</file>
     <file>gtk/package_details_page.ui</file>
     <file>gtk/package_tile.ui</file>
     <file>gtk/package_row.ui</file>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk+" version="3.22"/>
-  <object class="GtkBox" id="package_action_button">
+  <template class="SoukActionButton" parent="GtkBox">
     <property name="orientation">vertical</property>
     <property name="spacing">2</property>
     <child>
@@ -86,5 +86,5 @@
         </style>
       </object>
     </child>
-  </object>
+  </template>
 </interface>

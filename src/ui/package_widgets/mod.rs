@@ -1,5 +1,5 @@
 mod action_button;
-pub use action_button::ActionButton;
+pub use action_button::SoukActionButton;
 
 mod releases_box;
 pub use releases_box::ReleasesBox;

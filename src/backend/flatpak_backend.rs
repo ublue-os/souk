@@ -7,7 +7,9 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::backend::transaction_backend::{SandboxBackend, TransactionBackend};
-use crate::backend::{SoukInstalledInfo, SoukPackage, SoukRemoteInfo, SoukTransaction};
+use crate::backend::{
+    SoukInstalledInfo, SoukPackage, SoukPackageAction, SoukRemoteInfo, SoukTransaction,
+};
 use crate::db::queries;
 
 pub struct SoukFlatpakBackendPrivate {
@@ -44,7 +46,13 @@ impl ObjectSubclass for SoukFlatpakBackendPrivate {
         klass.add_signal(
             "new_transaction",
             glib::SignalFlags::ACTION,
-            &[glib::Type::BaseObject],
+            &[SoukTransaction::static_type()],
+            glib::Type::Unit,
+        );
+        klass.add_signal(
+            "package_change",
+            glib::SignalFlags::ACTION,
+            &[SoukPackageAction::static_type(), glib::Type::String],
             glib::Type::Unit,
         );
     }
@@ -252,6 +260,12 @@ impl SoukFlatpakBackend {
                     for diff in differences {
                         let pkg = after_map.get(&diff).unwrap();
                         self_.installed_packages.insert(0, pkg);
+
+                        self.emit(
+                            "package_change",
+                            &[&SoukPackageAction::Install, &pkg.get_ref_name()],
+                        )
+                        .unwrap();
                     }
                 } else {
                     debug!("Detected package uninstall: {:?}", differences);
@@ -259,6 +273,12 @@ impl SoukFlatpakBackend {
                         let pkg = before_map.get(&diff).unwrap();
                         let pos = self_.installed_packages.find(pkg).unwrap();
                         self_.installed_packages.remove(pos);
+
+                        self.emit(
+                            "package_change",
+                            &[&SoukPackageAction::Uninstall, &pkg.get_ref_name()],
+                        )
+                        .unwrap();
                     }
                 }
             }

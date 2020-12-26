@@ -10,7 +10,7 @@ use crate::backend::{SoukPackage, SoukPackageAction, SoukTransactionState};
 pub struct SoukTransactionPrivate {
     package: OnceCell<SoukPackage>,
     action: OnceCell<SoukPackageAction>,
-    state: RefCell<Option<SoukTransactionState>>,
+    state: RefCell<SoukTransactionState>,
 }
 
 static PROPERTIES: [subclass::Property; 3] = [
@@ -61,7 +61,7 @@ impl ObjectSubclass for SoukTransactionPrivate {
         SoukTransactionPrivate {
             package: OnceCell::default(),
             action: OnceCell::default(),
-            state: RefCell::default(),
+            state: RefCell::new(SoukTransactionState::new()),
         }
     }
 }
@@ -84,7 +84,7 @@ impl ObjectImpl for SoukTransactionPrivate {
         match *prop {
             subclass::Property("state", ..) => {
                 let state = value.get().unwrap();
-                *self.state.borrow_mut() = state;
+                *self.state.borrow_mut() = state.unwrap();
             }
             _ => unimplemented!(),
         }
@@ -128,5 +128,16 @@ impl SoukTransaction {
 
     pub fn get_state(&self) -> SoukTransactionState {
         self.get_property("state").unwrap().get().unwrap().unwrap()
+    }
+}
+
+impl Default for SoukTransaction {
+    fn default() -> Self {
+        let transaction = glib::Object::new(SoukTransaction::static_type(), &[])
+            .unwrap()
+            .downcast::<SoukTransaction>()
+            .unwrap();
+
+        transaction
     }
 }

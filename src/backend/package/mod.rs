@@ -33,12 +33,13 @@ pub struct SoukPackagePrivate {
     remote_info: RefCell<Option<SoukRemoteInfo>>,
     installed_info: RefCell<Option<SoukInstalledInfo>>,
 
-    transaction: RefCell<Option<SoukTransaction>>,
+    transaction: RefCell<SoukTransaction>,
     transaction_action: RefCell<SoukPackageAction>,
-    transaction_state: RefCell<Option<SoukTransactionState>>,
+    transaction_state: RefCell<SoukTransactionState>,
 
     flatpak_backend: SoukFlatpakBackend,
-    fb_signal_id: RefCell<Option<glib::SignalHandlerId>>,
+    fb_transaction_id: RefCell<Option<glib::SignalHandlerId>>,
+    fb_pkg_changes_id: RefCell<Option<glib::SignalHandlerId>>,
 }
 
 static PROPERTIES: [subclass::Property; 10] = [
@@ -141,7 +142,8 @@ impl ObjectSubclass for SoukPackagePrivate {
             transaction_action: RefCell::default(),
             transaction_state: RefCell::default(),
             flatpak_backend,
-            fb_signal_id: RefCell::default(),
+            fb_transaction_id: RefCell::default(),
+            fb_pkg_changes_id: RefCell::default(),
         }
     }
 }
@@ -183,8 +185,11 @@ impl Drop for SoukPackagePrivate {
         // to avoid this problem, but there aren't bindings for it available yet.
         // https://github.com/gtk-rs/gtk-rs/issues/64
 
-        let fb_signal_id = self.fb_signal_id.borrow_mut().take();
-        self.flatpak_backend.disconnect(fb_signal_id.unwrap());
+        let fb_transaction_id = self.fb_transaction_id.borrow_mut().take();
+        self.flatpak_backend.disconnect(fb_transaction_id.unwrap());
+
+        let fb_pkg_changes_id = self.fb_pkg_changes_id.borrow_mut().take();
+        self.flatpak_backend.disconnect(fb_pkg_changes_id.unwrap());
     }
 }
 
@@ -206,7 +211,9 @@ impl SoukPackage {
 
     fn setup_signals(&self) {
         let self_ = SoukPackagePrivate::from_instance(self);
-        let fb_signal_id = self_
+
+        // Check for new transactions from SoukFlatpakBackend side...
+        let fb_transaction_id = self_
             .flatpak_backend
             .connect_local(
                 "new_transaction",
@@ -216,54 +223,79 @@ impl SoukPackage {
                     let transaction: SoukTransaction = object.downcast().unwrap();
 
                     // Check if this package is affected by this transaction
-                    if transaction.get_package() == this{
-                        // Set transaction action
+                    if transaction.get_package().get_ref_name() == this.get_ref_name(){
                         let self_ = SoukPackagePrivate::from_instance(&this);
-                        *self_.transaction.borrow_mut() = Some(transaction.clone());
 
+                        // Set `transaction_action` property
+                        // We're using `transaction_action` and `transaction_state` as own property
+                        // and not the actual transaction itself
                         *self_.transaction_action.borrow_mut() = transaction.get_action();
                         this.notify("transaction_action");
 
                         // Listen to transaction state changes
-                        // We're showing the transaction state as own property for SoukPackage
-                        this.connect_state_changes(transaction);
+                        *self_.transaction.borrow_mut() = transaction.clone();
+                        this.connect_transaction_state_changes();
                     }
 
                     None
                 }),
             )
             .unwrap();
-        *self_.fb_signal_id.borrow_mut() = Some(fb_signal_id);
+        *self_.fb_transaction_id.borrow_mut() = Some(fb_transaction_id);
+
+        // Check for package changes SoukFlatpakBackend side, so this package can updated if needed
+        let fb_pkg_changes_id = self_
+            .flatpak_backend
+            .connect_local(
+                "package_change",
+                false,
+                clone!(@weak self as this => @default-panic, move |data|{
+                    let action: SoukPackageAction = data[1].get().unwrap().unwrap();
+                    let ref_name: String = data[2].get().unwrap().unwrap();
+
+                    // Check if this package is affected by this change
+                    if ref_name == this.get_ref_name(){
+                        this.update_installed_info();
+                    }
+
+                    None
+                }),
+            )
+            .unwrap();
+        *self_.fb_pkg_changes_id.borrow_mut() = Some(fb_pkg_changes_id);
     }
 
-    fn connect_state_changes(&self, transaction: SoukTransaction) {
+    fn connect_transaction_state_changes(&self) {
+        let self_ = SoukPackagePrivate::from_instance(self);
+
+        // We need the signal handler id to disconnect from the signal later when the transaction finished
         let signal_id: Rc<RefCell<Option<glib::SignalHandlerId>>> = Rc::new(RefCell::new(None));
-        *signal_id.borrow_mut() = Some(transaction.connect_local("notify::state", false, clone!(@weak self as this, @weak transaction, @strong signal_id => @default-return None, move |data|{
+
+        let transaction = self_.transaction.borrow().clone();
+        *signal_id.borrow_mut() = Some(transaction.connect_local("notify::state", false, clone!(@weak self as this, @strong signal_id => @default-return None, move |data|{
+            let self_ = SoukPackagePrivate::from_instance(&this);
+
             let object: glib::Object = data[0].get().unwrap().unwrap();
             let transaction: SoukTransaction = object.downcast().unwrap();
             let state = transaction.get_state();
 
             // Update `transaction_state` property of package when transaction is still active
             if state.get_mode() == SoukTransactionMode::Running || state.get_mode() == SoukTransactionMode::Waiting {
-                let self_ = SoukPackagePrivate::from_instance(&this);
-                *self_.transaction_state.borrow_mut() = Some(state);
+                *self_.transaction_state.borrow_mut() = state;
                 this.notify("transaction_state");
             } else {
-                // When transaction isn't running anymore, reset `transaction_action`...
-                let self_ = SoukPackagePrivate::from_instance(&this);
-                *self_.transaction_action.borrow_mut() = SoukPackageAction::None;
+                // The transaction isn't running anymore, so reset `transaction_action`
+                // and `transaction_state` properties
+                *self_.transaction_action.borrow_mut() = SoukPackageAction::default();
+                *self_.transaction_state.borrow_mut() = SoukTransactionState::default();
                 this.notify("transaction_action");
-
-                // ... and `transaction_state`
-                let self_ = SoukPackagePrivate::from_instance(&this);
-                *self_.transaction_state.borrow_mut() = None;
                 this.notify("transaction_state");
 
-                // Disconnect from signal
+                // Disconnect from `notify::state` signal
                 transaction.disconnect(signal_id.borrow_mut().take().unwrap());
+                *self_.transaction.borrow_mut() = SoukTransaction::default();
 
-                *self_.transaction.borrow_mut() = None;
-
+                // ... and make sure the installed info is up-to-date
                 this.update_installed_info();
             }
 
@@ -306,7 +338,7 @@ impl SoukPackage {
     pub fn cancel_transaction(&self) {
         let self_ = SoukPackagePrivate::from_instance(self);
 
-        let transaction = self_.transaction.borrow().as_ref().unwrap().clone();
+        let transaction = self_.transaction.borrow().clone();
         self_.flatpak_backend.cancel_transaction(transaction);
     }
 
@@ -338,6 +370,8 @@ impl SoukPackage {
         self.get_property("installed_info").unwrap().get().unwrap()
     }
 
+    // TODO: This is currently not needed, but I have the feeling
+    // it's going to be useful later...
     pub fn get_transaction_action(&self) -> SoukPackageAction {
         self.get_property("transaction_action")
             .unwrap()
@@ -346,10 +380,11 @@ impl SoukPackage {
             .unwrap()
     }
 
-    pub fn get_transaction_state(&self) -> Option<SoukTransactionState> {
+    pub fn get_transaction_state(&self) -> SoukTransactionState {
         self.get_property("transaction_state")
             .unwrap()
             .get()
+            .unwrap()
             .unwrap()
     }
 

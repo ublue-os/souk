@@ -150,6 +150,8 @@ impl SoukTransactionState {
 
 impl Default for SoukTransactionState {
     fn default() -> Self {
-        SoukTransactionState::new()
+        let state = SoukTransactionState::new();
+        state.set_mode(&SoukTransactionMode::None);
+        state
     }
 }
