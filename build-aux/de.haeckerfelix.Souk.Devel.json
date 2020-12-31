@@ -13,6 +13,7 @@
         "--socket=x11",
         "--socket=wayland",
         "--device=dri",
+        "--filesystem=/ostree:ro",
         "--filesystem=~/.local/share/flatpak:ro",
         "--filesystem=/var/lib/flatpak:ro",
         "--talk-name=org.freedesktop.Flatpak",
