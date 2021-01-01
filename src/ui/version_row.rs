@@ -33,6 +33,7 @@ impl VersionRow {
 
         utils::set_date_label(&date_label, release.date);
         if show_new_header {
+            // TODO This should be a translatable string.
             header_label.set_text(&format!("New in Version {}", &release.version));
         } else {
             header_label.set_text(&format!("{}", &release.version));
