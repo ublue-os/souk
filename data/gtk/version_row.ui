@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <object class="GtkListBoxRow" id="release_row">
+  <object class="GtkListBoxRow" id="version_row">
     <property name="activatable">False</property>
     <property name="selectable">False</property>
     <child>

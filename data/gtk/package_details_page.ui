@@ -177,7 +177,7 @@
                             <property name="orientation">vertical</property>
                             <property name="spacing">12</property>
                             <child>
-                              <object class="GtkBox" id="releases_box">
+                              <object class="GtkBox" id="versions_box">
                                 <property name="orientation">vertical</property>
                               </object>
                             </child>

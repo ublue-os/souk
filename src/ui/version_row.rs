@@ -3,24 +3,24 @@ use gtk::prelude::*;
 
 use crate::ui::utils;
 
-pub struct ReleaseRow {
+pub struct VersionRow {
     pub widget: gtk::ListBoxRow,
     builder: gtk::Builder,
     release: Release,
 }
 
-impl ReleaseRow {
+impl VersionRow {
     pub fn new(release: Release, show_new_header: bool) -> Self {
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/release_row.ui");
-        get_widget!(builder, gtk::ListBoxRow, release_row);
+        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/version_row.ui");
+        get_widget!(builder, gtk::ListBoxRow, version_row);
 
-        let releases_window_row = Self {
-            widget: release_row,
+        let versions_window_row = Self {
+            widget: version_row,
             builder,
             release,
         };
-        releases_window_row.setup_widgets(show_new_header);
-        releases_window_row
+        versions_window_row.setup_widgets(show_new_header);
+        versions_window_row
     }
 
     fn setup_widgets(&self, show_new_header: bool) {
@@ -33,7 +33,7 @@ impl ReleaseRow {
 
         utils::set_date_label(&date_label, release.date);
         if show_new_header {
-            header_label.set_text(&format!("New in Version {}", text));
+            header_label.set_text(&format!("New in Version {}", &release.version));
         } else {
             header_label.set_text(&format!("{}", &release.version));
         }

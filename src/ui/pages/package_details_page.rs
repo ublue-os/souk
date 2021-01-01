@@ -8,7 +8,7 @@ use crate::app::Action;
 use crate::backend::SoukPackage;
 use crate::db::{queries, DisplayLevel};
 use crate::ui::package_widgets::{
-    PackageWidget, ProjectUrlsBox, ReleasesBox, ScreenshotsBox, SoukActionButton,
+    PackageWidget, ProjectUrlsBox, ScreenshotsBox, SoukActionButton, VersionsBox,
 };
 use crate::ui::{utils, SoukPackageTile, View};
 
@@ -46,10 +46,10 @@ impl PackageDetailsPage {
         package_widgets.push(Box::new(pw_screenshots_box));
 
         // Releases
-        let pw_releases_box = ReleasesBox::new();
-        get_widget!(builder, gtk::Box, releases_box);
-        releases_box.append(&pw_releases_box.widget);
-        package_widgets.push(Box::new(pw_releases_box));
+        let pw_versions_box = VersionsBox::new();
+        get_widget!(builder, gtk::Box, versions_box);
+        versions_box.append(&pw_versions_box.widget);
+        package_widgets.push(Box::new(pw_versions_box));
 
         // Project Urls
         let pw_project_urls_box = ProjectUrlsBox::new();

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk+" version="3.22"/>
-  <object class="GtkBox" id="releases_box">
+  <object class="GtkBox" id="versions_box">
     <property name="orientation">vertical</property>
     <child>
-      <object class="GtkListBox" id="releases_box_listbox">
+      <object class="GtkListBox" id="versions_box_listbox">
         <property name="selection_mode">none</property>
         <child>
           <object class="GtkListBoxRow" id="version_history_row">

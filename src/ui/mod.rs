@@ -11,11 +11,11 @@ pub use package_row::SoukPackageRow;
 mod package_tile;
 pub use package_tile::SoukPackageTile;
 
-mod release_row;
-pub use release_row::ReleaseRow;
+mod version_row;
+pub use version_row::VersionRow;
 
-mod releases_window;
-pub use releases_window::ReleasesWindow;
+mod versions_window;
+pub use versions_window::VersionsWindow;
 
 mod window;
 pub use window::SoukApplicationWindow;

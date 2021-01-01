@@ -1,8 +1,8 @@
 mod action_button;
 pub use action_button::SoukActionButton;
 
-mod releases_box;
-pub use releases_box::ReleasesBox;
+mod versions_box;
+pub use versions_box::VersionsBox;
 
 mod project_urls_box;
 pub use project_urls_box::ProjectUrlsBox;

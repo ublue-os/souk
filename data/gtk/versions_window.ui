@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <object class="HdyWindow" id="releases_window">
+  <object class="HdyWindow" id="versions_window">
     <property name="title" translatable="yes">Version History</property>
     <property name="default_width">550</property>
     <property name="default_height">650</property>
@@ -10,8 +10,7 @@
       <object class="GtkBox">
         <property name="orientation">vertical</property>
         <child>
-          <object class="HdyHeaderBar">
-          </object>
+          <object class="HdyHeaderBar"/>
         </child>
         <child>
           <object class="GtkScrolledWindow">
