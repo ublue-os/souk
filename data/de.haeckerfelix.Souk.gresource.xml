@@ -14,12 +14,12 @@
     <file>gtk/project_urls_box.ui</file>
     <file>gtk/search_page.ui</file>
     <file>gtk/style.css</file>
-    <file preprocess="xml-stripblanks">icons/installed-check.svg</file>
-    <file preprocess="xml-stripblanks">icons/currency-symbolic.svg</file>
-    <file preprocess="xml-stripblanks">icons/external-link-symbolic.svg</file>
-    <file preprocess="xml-stripblanks">icons/globe-symbolic.svg</file>
-    <file preprocess="xml-stripblanks">icons/help-page-symbolic.svg</file>
-    <file preprocess="xml-stripblanks">icons/keyboard-layout-symbolic.svg</file>
-    <file preprocess="xml-stripblanks">icons/star-outline-thick-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="icons/scalable/actions/installed-check.svg">icons/installed-check.svg</file>
+    <file preprocess="xml-stripblanks" alias="icons/scalable/actions/currency-symbolic.svg">icons/currency-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="icons/scalable/actions/external-link-symbolic.svg">icons/external-link-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="icons/scalable/actions/globe-symbolic.svg">icons/globe-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="icons/scalable/actions/help-page-symbolic.svg">icons/help-page-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="icons/scalable/actions/keyboard-layout-symbolic.svg">icons/keyboard-layout-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="icons/scalable/actions/star-outline-thick-symbolic.svg">icons/star-outline-thick-symbolic.svg</file>
   </gresource>
 </gresources>
