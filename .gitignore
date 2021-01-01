@@ -30,3 +30,4 @@ config.rs
 packages.db
 package.db
 src/config.rs
+.flatpak
