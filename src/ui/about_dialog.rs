@@ -9,16 +9,21 @@ pub fn show_about_dialog(window: gtk::ApplicationWindow) {
         _ => format!("{}-stable", config::VERSION),
     };
 
-    let dialog = gtk::AboutDialog::new();
-    dialog.set_program_name(config::NAME);
-    dialog.set_logo_icon_name(Some(config::APP_ID));
-    dialog.set_license_type(gtk::License::Gpl30);
-    dialog.set_version(Some(version.as_str()));
-    dialog.set_transient_for(Some(&window));
-    dialog.set_modal(true);
-
-    dialog.set_authors(&["Felix Häcker", "Christopher Davis"]);
-    dialog.set_artists(&["Felix Häcker", "Tobias Bernard"]);
-
-    dialog.show();
+    gtk::AboutDialogBuilder::new()
+        .program_name(config::NAME)
+        .logo_icon_name(config::APP_ID)
+        .license_type(gtk::License::Gpl30)
+        .version(&version)
+        .transient_for(&window)
+        .modal(true)
+        .authors(vec![
+            "Felix Häcker".to_string(),
+            "Christopher Davis".to_string(),
+        ])
+        .artists(vec![
+            "Felix Häcker".to_string(),
+            "Tobias Bernard".to_string(),
+        ])
+        .build()
+        .show();
 }
