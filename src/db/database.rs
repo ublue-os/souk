@@ -21,8 +21,8 @@ use crate::db::DbInfo;
 lazy_static! {
     pub static ref DB_VERSION: String = "1.1".to_string();
 
-    // Database lifetime in hours, before it gets rebuilt
-    pub static ref DB_LIFETIME: i64 = 3;
+    // Database lifetime until it gets rebuilt
+    pub static ref DB_LIFETIME: Duration = Duration::hours(3);
 }
 
 #[derive(Clone)]
@@ -127,11 +127,11 @@ impl SoukDatabase {
     }
 
     pub fn init(&self) {
-        if Self::needs_rebuilt() {
-            debug!("Database needs rebuilt.");
+        if Self::needs_rebuild() {
+            debug!("Database needs to be rebuilt.");
             self.populate_database();
         } else {
-            debug!("Database it up-to-date, don't repopulate it.");
+            debug!("Database is up-to-date, don't repopulate it.");
 
             let self_ = SoukDatabasePrivate::from_instance(self);
             self_.busy.set(false);
@@ -139,7 +139,7 @@ impl SoukDatabase {
         }
     }
 
-    pub fn needs_rebuilt() -> bool {
+    pub fn needs_rebuild() -> bool {
         // Try to get db info
         let db_info = match queries::get_db_info() {
             Ok(dbi) => {
@@ -168,7 +168,7 @@ impl SoukDatabase {
         let database_dt =
             DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(timestamp, 0), Utc);
         let now_dt: DateTime<Utc> = chrono::offset::Utc::now();
-        if (now_dt - database_dt) > Duration::hours(*DB_LIFETIME) {
+        if (now_dt - database_dt) > *DB_LIFETIME {
             debug!("Database lifetime exceeded");
             return true;
         }
@@ -200,7 +200,7 @@ impl SoukDatabase {
             // Delete previous data
             queries::reset().unwrap();
 
-            // Package count to calculcate progress
+            // Package count to calculate progress
             let mut pkg_count = 0;
             let mut pkg_pos = 0;
 
