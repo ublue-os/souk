@@ -12,21 +12,21 @@ use crate::ui::utils;
 
 #[derive(Debug, CompositeTemplate)]
 pub struct SoukPackageRowPrivate {
-    #[template_child(id = "title_label")]
+    #[template_child]
     pub title_label: TemplateChild<gtk::Label>,
-    #[template_child(id = "summary_label")]
+    #[template_child]
     pub summary_label: TemplateChild<gtk::Label>,
-    #[template_child(id = "icon_image")]
+    #[template_child]
     pub icon_image: TemplateChild<gtk::Image>,
-    #[template_child(id = "branch_label")]
+    #[template_child]
     pub branch_label: TemplateChild<gtk::Label>,
-    #[template_child(id = "installed_check")]
+    #[template_child]
     pub installed_check: TemplateChild<gtk::Image>,
-    #[template_child(id = "uninstall_box")]
+    #[template_child]
     pub uninstall_box: TemplateChild<gtk::Box>,
-    #[template_child(id = "uninstall_button")]
+    #[template_child]
     pub uninstall_button: TemplateChild<gtk::Button>,
-    #[template_child(id = "installed_size_label")]
+    #[template_child]
     pub installed_size_label: TemplateChild<gtk::Label>,
 
     package: RefCell<Option<SoukPackage>>,

@@ -11,19 +11,19 @@ use crate::ui::utils;
 
 #[derive(Debug, CompositeTemplate)]
 pub struct SoukActionButtonPrivate {
-    #[template_child(id = "button_stack")]
+    #[template_child]
     pub button_stack: TemplateChild<gtk::Stack>,
-    #[template_child(id = "status_label")]
+    #[template_child]
     pub status_label: TemplateChild<gtk::Label>,
-    #[template_child(id = "progressbar")]
+    #[template_child]
     pub progressbar: TemplateChild<gtk::ProgressBar>,
-    #[template_child(id = "install_button")]
+    #[template_child]
     pub install_button: TemplateChild<gtk::Button>,
-    #[template_child(id = "uninstall_button")]
+    #[template_child]
     pub uninstall_button: TemplateChild<gtk::Button>,
-    #[template_child(id = "open_button")]
+    #[template_child]
     open_button: TemplateChild<gtk::Button>,
-    #[template_child(id = "cancel_button")]
+    #[template_child]
     cancel_button: TemplateChild<gtk::Button>,
 
     package: RefCell<Option<SoukPackage>>,

@@ -11,11 +11,11 @@ use crate::ui::utils;
 
 #[derive(Debug, CompositeTemplate)]
 pub struct SoukPackageTilePrivate {
-    #[template_child(id = "title_label")]
+    #[template_child]
     pub title_label: TemplateChild<gtk::Label>,
-    #[template_child(id = "summary_label")]
+    #[template_child]
     pub summary_label: TemplateChild<gtk::Label>,
-    #[template_child(id = "icon_image")]
+    #[template_child]
     pub icon_image: TemplateChild<gtk::Image>,
 
     package: RefCell<Option<SoukPackage>>,

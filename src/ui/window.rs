@@ -22,21 +22,21 @@ pub enum View {
 
 #[derive(Debug, CompositeTemplate)]
 pub struct SoukApplicationWindowPrivate {
-    #[template_child(id = "view_switcher_title")]
+    #[template_child]
     pub view_switcher_title: TemplateChild<libhandy::ViewSwitcherTitle>,
-    #[template_child(id = "loading_box")]
+    #[template_child]
     pub loading_box: TemplateChild<gtk::Box>,
-    #[template_child(id = "explore_box")]
+    #[template_child]
     pub explore_box: TemplateChild<gtk::Box>,
-    #[template_child(id = "installed_box")]
+    #[template_child]
     pub installed_box: TemplateChild<gtk::Box>,
-    #[template_child(id = "search_box")]
+    #[template_child]
     pub search_box: TemplateChild<gtk::Box>,
-    #[template_child(id = "package_details_box")]
+    #[template_child]
     pub package_details_box: TemplateChild<gtk::Box>,
-    #[template_child(id = "main_stack")]
+    #[template_child]
     pub main_stack: TemplateChild<gtk::Stack>,
-    #[template_child(id = "window_stack")]
+    #[template_child]
     pub window_stack: TemplateChild<gtk::Stack>,
 
     pages_stack: RefCell<Vec<View>>,
