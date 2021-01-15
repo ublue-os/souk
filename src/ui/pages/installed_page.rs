@@ -40,36 +40,30 @@ impl InstalledPage {
         let model: gio::ListStore = self.flatpak_backend.get_installed_packages();
 
         // Apps section
-        let apps_filter = gtk::CustomFilter::new(Some(Box::new(|object| {
+        let apps_filter = gtk::CustomFilter::new(|object| {
             let package = object.clone().downcast::<SoukPackage>().unwrap();
             package.get_kind() == SoukPackageKind::App
-        })));
+        });
         let apps_model = gtk::FilterListModel::new(Some(&model), Some(&apps_filter));
 
-        listbox_apps.bind_model(
-            Some(&apps_model),
-            Some(Box::new(|package| {
-                let row = SoukPackageRow::new(true);
-                row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
-                row.upcast::<gtk::Widget>()
-            })),
-        );
+        listbox_apps.bind_model(Some(&apps_model), |package| {
+            let row = SoukPackageRow::new(true);
+            row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
+            row.upcast::<gtk::Widget>()
+        });
 
         // Runtimes section
-        let runtimes_filter = gtk::CustomFilter::new(Some(Box::new(|object| {
+        let runtimes_filter = gtk::CustomFilter::new(|object| {
             let package = object.clone().downcast::<SoukPackage>().unwrap();
             package.get_kind() == SoukPackageKind::Runtime
-        })));
+        });
         let runtimes_model = gtk::FilterListModel::new(Some(&model), Some(&runtimes_filter));
 
-        listbox_runtimes.bind_model(
-            Some(&runtimes_model),
-            Some(Box::new(|package| {
-                let row = SoukPackageRow::new(true);
-                row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
-                row.upcast::<gtk::Widget>()
-            })),
-        );
+        listbox_runtimes.bind_model(Some(&runtimes_model), |package| {
+            let row = SoukPackageRow::new(true);
+            row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
+            row.upcast::<gtk::Widget>()
+        });
     }
 
     fn setup_signals(self: Rc<Self>) {

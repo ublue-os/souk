@@ -57,7 +57,7 @@ impl ObjectSubclass for SoukFlatpakBackendPrivate {
         );
     }
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn new() -> Self {
         // TODO: Add support for user installations
@@ -94,16 +94,13 @@ impl ObjectImpl for SoukFlatpakBackendPrivate {
     }
 }
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukFlatpakBackend(ObjectSubclass<SoukFlatpakBackendPrivate>);
 }
 
 impl SoukFlatpakBackend {
     pub fn new() -> Self {
-        let backend = glib::Object::new(SoukFlatpakBackend::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukFlatpakBackend>()
-            .unwrap();
+        let backend = glib::Object::new::<Self>(&[]).unwrap();
 
         backend.setup_signals();
         backend

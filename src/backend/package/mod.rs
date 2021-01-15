@@ -120,7 +120,7 @@ impl ObjectSubclass for SoukPackagePrivate {
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
@@ -193,17 +193,14 @@ impl Drop for SoukPackagePrivate {
     }
 }
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukPackage(ObjectSubclass<SoukPackagePrivate>);
 }
 
 #[allow(dead_code)]
 impl SoukPackage {
     pub fn new() -> Self {
-        let package = glib::Object::new(SoukPackage::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukPackage>()
-            .unwrap();
+        let package = glib::Object::new::<Self>(&[]).unwrap();
 
         package.setup_signals();
         package

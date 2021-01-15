@@ -52,7 +52,7 @@ impl ObjectSubclass for SoukTransactionStatePrivate {
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
@@ -100,19 +100,14 @@ impl ObjectImpl for SoukTransactionStatePrivate {
     }
 }
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukTransactionState(ObjectSubclass<SoukTransactionStatePrivate>);
 }
 
 #[allow(dead_code)]
 impl SoukTransactionState {
     pub fn new() -> Self {
-        let state = glib::Object::new(SoukTransactionState::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukTransactionState>()
-            .unwrap();
-
-        state
+        glib::Object::new(&[]).unwrap()
     }
 
     pub fn set_message(&self, message: &String) {

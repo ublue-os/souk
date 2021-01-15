@@ -51,7 +51,7 @@ impl ObjectSubclass for SoukTransactionPrivate {
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
@@ -91,17 +91,14 @@ impl ObjectImpl for SoukTransactionPrivate {
     }
 }
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukTransaction(ObjectSubclass<SoukTransactionPrivate>);
 }
 
 #[allow(dead_code)]
 impl SoukTransaction {
     pub fn new(package: SoukPackage, action: SoukPackageAction) -> Self {
-        let transaction = glib::Object::new(SoukTransaction::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukTransaction>()
-            .unwrap();
+        let transaction = glib::Object::new::<Self>(&[]).unwrap();
 
         let self_ = SoukTransactionPrivate::from_instance(&transaction);
         self_.package.set(package).unwrap();
@@ -133,11 +130,6 @@ impl SoukTransaction {
 
 impl Default for SoukTransaction {
     fn default() -> Self {
-        let transaction = glib::Object::new(SoukTransaction::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukTransaction>()
-            .unwrap();
-
-        transaction
+        glib::Object::new(&[]).unwrap()
     }
 }

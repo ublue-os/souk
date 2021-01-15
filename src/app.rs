@@ -51,7 +51,7 @@ impl ObjectSubclass for SoukApplicationPrivate {
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn new() -> Self {
         let (sender, r) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
@@ -125,7 +125,7 @@ impl ApplicationImpl for SoukApplicationPrivate {
 }
 
 // Wrap SoukApplicationPrivate into a usable gtk-rs object
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukApplication(ObjectSubclass<SoukApplicationPrivate>)
     @extends gio::Application, gtk::Application;
 }
@@ -142,15 +142,10 @@ impl SoukApplication {
         info!("Version: {} ({})", config::VERSION, config::PROFILE);
 
         // Create new GObject and downcast it into SoukApplication
-        let app = glib::Object::new(
-            SoukApplication::static_type(),
-            &[
-                ("application-id", &Some(config::APP_ID)),
-                ("flags", &ApplicationFlags::empty()),
-            ],
-        )
-        .unwrap()
-        .downcast::<SoukApplication>()
+        let app = glib::Object::new::<Self>(&[
+            ("application-id", &Some(config::APP_ID)),
+            ("flags", &ApplicationFlags::empty()),
+        ])
         .unwrap();
 
         app.set_default();

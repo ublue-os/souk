@@ -50,7 +50,7 @@ impl ObjectSubclass for SoukInstalledInfoPrivate {
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
@@ -74,17 +74,14 @@ impl ObjectImpl for SoukInstalledInfoPrivate {
     }
 }
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukInstalledInfo(ObjectSubclass<SoukInstalledInfoPrivate>);
 }
 
 #[allow(dead_code)]
 impl SoukInstalledInfo {
     pub fn new(installed_ref: &InstalledRef) -> Self {
-        let info = glib::Object::new(SoukInstalledInfo::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukInstalledInfo>()
-            .unwrap();
+        let info = glib::Object::new::<Self>(&[]).unwrap();
 
         let info_priv = SoukInstalledInfoPrivate::from_instance(&info);
         *info_priv.commit.borrow_mut() = installed_ref.get_commit().unwrap().to_string();

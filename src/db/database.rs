@@ -66,7 +66,7 @@ impl ObjectSubclass for SoukDatabasePrivate {
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
@@ -109,17 +109,14 @@ impl ObjectImpl for SoukDatabasePrivate {
     }
 }
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukDatabase(ObjectSubclass<SoukDatabasePrivate>);
 }
 
 #[allow(dead_code)]
 impl SoukDatabase {
     pub fn new() -> Self {
-        let database = glib::Object::new(SoukDatabase::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukDatabase>()
-            .unwrap();
+        let database = glib::Object::new::<Self>(&[]).unwrap();
 
         let self_ = SoukDatabasePrivate::from_instance(&database);
         let receiver = self_.receiver.borrow_mut().take().unwrap();

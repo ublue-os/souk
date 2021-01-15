@@ -54,7 +54,7 @@ impl ObjectSubclass for SoukApplicationWindowPrivate {
         Self::bind_template_children(klass);
     }
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn new() -> Self {
         let pages_stack = RefCell::new(Vec::new());
@@ -94,7 +94,7 @@ impl gtk::subclass::prelude::ApplicationWindowImpl for SoukApplicationWindowPriv
 impl libhandy::subclass::prelude::ApplicationWindowImpl for SoukApplicationWindowPrivate {}
 
 // Wrap SoukApplicationWindowPrivate into a usable gtk-rs object
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukApplicationWindow(ObjectSubclass<SoukApplicationWindowPrivate>)
     @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, libhandy::ApplicationWindow;
 }
@@ -102,14 +102,8 @@ glib_wrapper! {
 // SoukApplicationWindow implementation itself
 impl SoukApplicationWindow {
     pub fn new(app: SoukApplication) -> Self {
-        // Create new GObject and downcast it into SoukApplicationWindow
-        let window = glib::Object::new(
-            SoukApplicationWindow::static_type(),
-            &[("application", &app)],
-        )
-        .unwrap()
-        .downcast::<SoukApplicationWindow>()
-        .unwrap();
+        // Create new SoukApplicationWindow
+        let window = glib::Object::new::<Self>(&[("application", &app)]).unwrap();
 
         app.add_window(&window);
         window.setup_widgets();

@@ -56,7 +56,7 @@ impl ObjectSubclass for SoukPackageRowPrivate {
         Self::bind_template_children(klass);
     }
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn new() -> Self {
         let package = RefCell::new(None);
@@ -109,17 +109,14 @@ impl WidgetImpl for SoukPackageRowPrivate {}
 
 impl ListBoxRowImpl for SoukPackageRowPrivate {}
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukPackageRow(ObjectSubclass<SoukPackageRowPrivate>)
     @extends gtk::Widget, gtk::ListBoxRow;
 }
 
 impl SoukPackageRow {
     pub fn new(installed_view: bool) -> Self {
-        let row = glib::Object::new(SoukPackageRow::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukPackageRow>()
-            .unwrap();
+        let row = glib::Object::new::<Self>(&[]).unwrap();
 
         let self_ = SoukPackageRowPrivate::from_instance(&row);
         self_.installed_view.set(installed_view);

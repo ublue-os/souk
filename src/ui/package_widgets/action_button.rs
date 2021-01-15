@@ -43,7 +43,7 @@ impl ObjectSubclass for SoukActionButtonPrivate {
         Self::bind_template_children(klass);
     }
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn new() -> Self {
         Self {
@@ -72,7 +72,7 @@ impl WidgetImpl for SoukActionButtonPrivate {}
 
 impl BoxImpl for SoukActionButtonPrivate {}
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukActionButton(ObjectSubclass<SoukActionButtonPrivate>)
     @extends gtk::Widget, gtk::Box;
 }
@@ -164,10 +164,7 @@ impl SoukActionButton {
 
 impl PackageWidget for SoukActionButton {
     fn new() -> Self {
-        let button = glib::Object::new(SoukActionButton::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukActionButton>()
-            .unwrap();
+        let button = glib::Object::new::<Self>(&[]).unwrap();
 
         button.setup_signals();
         button

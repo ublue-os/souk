@@ -52,7 +52,7 @@ impl ObjectSubclass for SoukRemoteInfoPrivate {
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn class_init(klass: &mut Self::Class) {
         klass.install_properties(&PROPERTIES);
@@ -76,17 +76,14 @@ impl ObjectImpl for SoukRemoteInfoPrivate {
     }
 }
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukRemoteInfo(ObjectSubclass<SoukRemoteInfoPrivate>);
 }
 
 #[allow(dead_code)]
 impl SoukRemoteInfo {
     pub fn new(db_package: &DbPackage) -> Self {
-        let info = glib::Object::new(SoukRemoteInfo::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukRemoteInfo>()
-            .unwrap();
+        let info = glib::Object::new::<Self>(&[]).unwrap();
 
         let info_priv = SoukRemoteInfoPrivate::from_instance(&info);
         *info_priv.appdata.borrow_mut() = db_package.appdata.clone();
@@ -98,10 +95,7 @@ impl SoukRemoteInfo {
     }
 
     pub fn new_from_remote_ref(remote_ref: RemoteRef, appdata: String) -> Self {
-        let info = glib::Object::new(SoukRemoteInfo::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukRemoteInfo>()
-            .unwrap();
+        let info = glib::Object::new::<Self>(&[]).unwrap();
 
         let info_priv = SoukRemoteInfoPrivate::from_instance(&info);
         *info_priv.appdata.borrow_mut() = appdata;

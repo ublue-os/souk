@@ -44,7 +44,7 @@ impl ObjectSubclass for SoukPackageTilePrivate {
         Self::bind_template_children(klass);
     }
 
-    glib_object_subclass!();
+    glib::object_subclass!();
 
     fn new() -> Self {
         let package = RefCell::new(None);
@@ -89,17 +89,14 @@ impl WidgetImpl for SoukPackageTilePrivate {}
 
 impl FlowBoxChildImpl for SoukPackageTilePrivate {}
 
-glib_wrapper! {
+glib::wrapper! {
     pub struct SoukPackageTile(ObjectSubclass<SoukPackageTilePrivate>)
     @extends gtk::Widget, gtk::FlowBoxChild;
 }
 
 impl SoukPackageTile {
     pub fn new() -> Self {
-        let tile = glib::Object::new(SoukPackageTile::static_type(), &[])
-            .unwrap()
-            .downcast::<SoukPackageTile>()
-            .unwrap();
+        let tile = glib::Object::new::<Self>(&[]).unwrap();
 
         tile.setup_signals();
         tile
