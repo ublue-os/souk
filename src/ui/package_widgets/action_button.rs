@@ -83,7 +83,6 @@ impl SoukActionButton {
         // install
         self_
             .install_button
-            .get()
             .connect_clicked(clone!(@strong self as this => move |_|{
                 let self_ = SoukActionButtonPrivate::from_instance(&this);
                 self_.package.borrow().as_ref().unwrap().install();
@@ -92,7 +91,6 @@ impl SoukActionButton {
         // uninstall
         self_
             .uninstall_button
-            .get()
             .connect_clicked(clone!(@strong self as this => move |_|{
                 let self_ = SoukActionButtonPrivate::from_instance(&this);
                 self_.package.borrow().as_ref().unwrap().uninstall();
@@ -101,7 +99,6 @@ impl SoukActionButton {
         // open
         self_
             .open_button
-            .get()
             .connect_clicked(clone!(@strong self as this => move |_|{
                 let self_ = SoukActionButtonPrivate::from_instance(&this);
                 self_.package.borrow().as_ref().unwrap().launch();
@@ -110,7 +107,6 @@ impl SoukActionButton {
         // cancel
         self_
             .cancel_button
-            .get()
             .connect_clicked(clone!(@strong self as this => move |_|{
                 let self_ = SoukActionButtonPrivate::from_instance(&this);
                 self_.package.borrow().as_ref().unwrap().cancel_transaction();
@@ -131,17 +127,16 @@ impl SoukActionButton {
             } else {
                 "processing"
             };
-            self_.button_stack.get().set_visible_child_name(stack_name);
+            self_.button_stack.set_visible_child_name(stack_name);
 
             // Set progressbar fraction
             self_
                 .progressbar
-                .get()
                 .set_fraction(state.get_percentage().into());
 
             // Set transaction message
             if &state.get_message() != "" {
-                self_.status_label.get().set_text(&state.get_message());
+                self_.status_label.set_text(&state.get_message());
             }
         } else {
             // Transaction isn't running anymore -> check result
@@ -149,13 +144,13 @@ impl SoukActionButton {
                 utils::show_error_dialog("Someting went wrong");
                 // TODO: Show proper error message here
             }
-            self_.status_label.get().set_text("");
+            self_.status_label.set_text("");
 
             // ... and show (un)install button again!
             if self_.package.borrow().as_ref().unwrap().get_is_installed() {
-                self_.button_stack.get().set_visible_child_name("installed");
+                self_.button_stack.set_visible_child_name("installed");
             } else {
-                self_.button_stack.get().set_visible_child_name("install");
+                self_.button_stack.set_visible_child_name("install");
             }
         }
     }
@@ -194,7 +189,7 @@ impl PackageWidget for SoukActionButton {
 
         // Hide open button for runtimes and extensions
         if package.get_kind() != SoukPackageKind::App {
-            self_.open_button.get().set_visible(false);
+            self_.open_button.set_visible(false);
         }
     }
 

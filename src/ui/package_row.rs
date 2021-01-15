@@ -130,32 +130,32 @@ impl SoukPackageRow {
             let package = self_.package.borrow().as_ref().unwrap().clone();
 
             // Icon
-            utils::set_icon(&package, &self_.icon_image.get(), 64);
+            utils::set_icon(&package, &self_.icon_image, 64);
 
             match package.get_appdata() {
                 Some(appdata) => {
                     // Title
                     utils::set_label_translatable_string(
-                        &self_.title_label.get(),
+                        &self_.title_label,
                         Some(appdata.name.clone()),
                     );
                     // Summary
                     utils::set_label_translatable_string(
-                        &self_.summary_label.get(),
+                        &self_.summary_label,
                         appdata.summary.clone(),
                     );
                 }
                 None => {
                     // Fallback to basic information when no appdata available
-                    self_.title_label.get().set_text(&package.get_name());
-                    self_.summary_label.get().set_text(&package.get_branch());
+                    self_.title_label.set_text(&package.get_name());
+                    self_.summary_label.set_text(&package.get_branch());
                 }
             };
 
             // Installed indicator
             if !self_.installed_view.get() {
                 package
-                    .bind_property("is_installed", &self_.installed_check.get(), "visible")
+                    .bind_property("is_installed", &*self_.installed_check, "visible")
                     .flags(glib::BindingFlags::SYNC_CREATE)
                     .build()
                     .unwrap();
@@ -164,10 +164,10 @@ impl SoukPackageRow {
             // Branch label / tag
             let branch = package.get_branch();
             if branch != "stable" {
-                self_.branch_label.get().set_text(&branch.to_uppercase());
-                self_.branch_label.get().set_visible(true);
+                self_.branch_label.set_text(&branch.to_uppercase());
+                self_.branch_label.set_visible(true);
 
-                let ctx = self_.branch_label.get().get_style_context();
+                let ctx = self_.branch_label.get_style_context();
                 ctx.remove_class("branch-label-orange");
                 ctx.remove_class("branch-label-red");
 
@@ -179,13 +179,13 @@ impl SoukPackageRow {
                     ctx.add_class("branch-label-red");
                 }
             } else {
-                self_.branch_label.get().set_visible(false);
+                self_.branch_label.set_visible(false);
             }
 
             // Uninstall button
-            self_.uninstall_button.get().set_sensitive(true);
+            self_.uninstall_button.set_sensitive(true);
             if self_.installed_view.get() {
-                self_.uninstall_box.get().set_visible(true);
+                self_.uninstall_box.set_visible(true);
 
                 let bytes = package
                     .get_installed_info()
@@ -193,11 +193,10 @@ impl SoukPackageRow {
                     .unwrap()
                     .get_installed_size();
                 let size = glib::format_size(bytes);
-                self_.installed_size_label.get().set_text(&size);
+                self_.installed_size_label.set_text(&size);
 
                 self_
                     .uninstall_button
-                    .get()
                     .connect_clicked(clone!(@weak package => move|btn|{
                         btn.set_sensitive(false);
                         package.uninstall();

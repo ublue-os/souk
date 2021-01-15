@@ -107,25 +107,25 @@ impl SoukPackageTile {
             let package = self_.package.borrow().as_ref().unwrap().clone();
 
             // Icon
-            utils::set_icon(&package, &self_.icon_image.get(), 64);
+            utils::set_icon(&package, &self_.icon_image, 64);
 
             match package.get_appdata() {
                 Some(appdata) => {
                     // Title
                     utils::set_label_translatable_string(
-                        &self_.title_label.get(),
+                        &self_.title_label,
                         Some(appdata.name.clone()),
                     );
                     // Summary
                     utils::set_label_translatable_string(
-                        &self_.summary_label.get(),
+                        &self_.summary_label,
                         appdata.summary.clone(),
                     );
                 }
                 None => {
                     // Fallback to basic information when no appdata available
-                    self_.title_label.get().set_text(&package.get_name());
-                    self_.summary_label.get().set_text(&package.get_branch());
+                    self_.title_label.set_text(&package.get_name());
+                    self_.summary_label.set_text(&package.get_branch());
                 }
             };
         });

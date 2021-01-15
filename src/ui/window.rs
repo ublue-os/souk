@@ -120,32 +120,24 @@ impl SoukApplicationWindow {
         let app_private = SoukApplicationPrivate::from_instance(&app);
 
         // set title
-        self_
-            .view_switcher_title
-            .get()
-            .set_title(Some(config::NAME));
+        self_.view_switcher_title.set_title(Some(config::NAME));
         self.set_title(Some(config::NAME));
 
         // wire everything up
         self_
             .loading_box
-            .get()
             .append(&app_private.loading_page.get().unwrap().widget);
         self_
             .explore_box
-            .get()
             .append(&app_private.explore_page.get().unwrap().widget);
         self_
             .installed_box
-            .get()
             .append(&app_private.installed_page.get().unwrap().widget);
         self_
             .search_box
-            .get()
             .append(&app_private.search_page.get().unwrap().widget);
         self_
             .package_details_box
-            .get()
             .append(&app_private.package_details_page.get().unwrap().widget);
     }
 
@@ -153,21 +145,18 @@ impl SoukApplicationWindow {
         let self_ = SoukApplicationWindowPrivate::from_instance(self);
 
         // main stack
-        self_
-            .main_stack
-            .get()
-            .connect_property_visible_child_notify(
-                clone!(@weak self as this => move |main_stack| {
-                    let view = match main_stack.get_visible_child_name().unwrap().as_str(){
-                        "explore" => View::Explore,
-                        "installed" => View::Installed,
-                        "updates" => View::Updates,
-                        "search" => View::Search,
-                        _ => View::Explore,
-                    };
-                    this.set_view(view, false);
-                }),
-            );
+        self_.main_stack.connect_property_visible_child_notify(
+            clone!(@weak self as this => move |main_stack| {
+                let view = match main_stack.get_visible_child_name().unwrap().as_str(){
+                    "explore" => View::Explore,
+                    "installed" => View::Installed,
+                    "updates" => View::Updates,
+                    "search" => View::Search,
+                    _ => View::Explore,
+                };
+                this.set_view(view, false);
+            }),
+        );
 
         // TODO: back button (mouse)
         /* self.connect_button_press_event(clone!(@strong sender => move |_, event|{
@@ -206,8 +195,8 @@ impl SoukApplicationWindow {
             .unwrap();
         let app_private = SoukApplicationPrivate::from_instance(&app);
 
-        let main_stack = self_.main_stack.get();
-        let window_stack = self_.window_stack.get();
+        let main_stack = &*self_.main_stack;
+        let window_stack = &*self_.window_stack;
 
         // Show requested view / page
         match view.clone() {
