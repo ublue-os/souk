@@ -38,7 +38,7 @@ listview > row {
 }
 
 .package-tile:hover {
-	background-color: @theme_base_color;
+	background-color: @theme_hover_color;
 }
 
 .screenshots-box{

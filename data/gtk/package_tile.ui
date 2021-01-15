@@ -11,9 +11,9 @@
           <object class="GtkImage" id="icon_image">
             <property name="pixel_size">64</property>
             <property name="icon_name">application-x-executable-symbolic</property>
-            <property name="margin-top">6</property>
-            <property name="margin-bottom">6</property>
-            <property name="margin-start">6</property>
+            <property name="margin-top">12</property>
+            <property name="margin-bottom">12</property>
+            <property name="margin-start">12</property>
             <style>
               <class name="icon-dropshadow"/>
             </style>
@@ -24,7 +24,8 @@
             <property name="valign">center</property>
             <property name="orientation">vertical</property>
             <property name="spacing">6</property>
-            <property name="margin-end">6</property>
+            <property name="margin-end">24</property>
+            <property name="hexpand">True</property>
             <child>
               <object class="GtkLabel" id="title_label">
                 <property name="label">label</property>
