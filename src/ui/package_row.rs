@@ -75,6 +75,10 @@ impl ObjectSubclass for SoukPackageRowPrivate {
             installed_view,
         }
     }
+
+    fn instance_init(obj: &subclass::InitializingObject<Self::Type>) {
+        obj.init_template();
+    }
 }
 
 impl ObjectImpl for SoukPackageRowPrivate {
@@ -97,11 +101,6 @@ impl ObjectImpl for SoukPackageRowPrivate {
             subclass::Property("package", ..) => self.package.borrow().to_value(),
             _ => unimplemented!(),
         }
-    }
-
-    fn constructed(&self, obj: &Self::Type) {
-        obj.init_template();
-        self.parent_constructed(obj);
     }
 }
 

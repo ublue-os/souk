@@ -71,15 +71,14 @@ impl ObjectSubclass for SoukApplicationWindowPrivate {
             pages_stack,
         }
     }
+
+    fn instance_init(obj: &subclass::InitializingObject<Self::Type>) {
+        obj.init_template();
+    }
 }
 
 // Implement GLib.OBject for SoukApplicationWindow
-impl ObjectImpl for SoukApplicationWindowPrivate {
-    fn constructed(&self, obj: &Self::Type) {
-        obj.init_template();
-        self.parent_constructed(obj);
-    }
-}
+impl ObjectImpl for SoukApplicationWindowPrivate {}
 
 // Implement Gtk.Widget for SoukApplicationWindow
 impl WidgetImpl for SoukApplicationWindowPrivate {}

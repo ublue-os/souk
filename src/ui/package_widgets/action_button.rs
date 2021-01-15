@@ -59,14 +59,13 @@ impl ObjectSubclass for SoukActionButtonPrivate {
             installed_signal_id: RefCell::default(),
         }
     }
-}
 
-impl ObjectImpl for SoukActionButtonPrivate {
-    fn constructed(&self, obj: &Self::Type) {
+    fn instance_init(obj: &subclass::InitializingObject<Self::Type>) {
         obj.init_template();
-        self.parent_constructed(obj);
     }
 }
+
+impl ObjectImpl for SoukActionButtonPrivate {}
 
 impl WidgetImpl for SoukActionButtonPrivate {}
 
