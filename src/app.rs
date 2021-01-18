@@ -16,7 +16,7 @@ use crate::backend::SoukFlatpakBackend;
 use crate::config;
 use crate::db::SoukDatabase;
 use crate::ui::about_dialog;
-use crate::ui::pages::{ExplorePage, InstalledPage, LoadingPage, PackageDetailsPage, SearchPage};
+use crate::ui::pages::{ExplorePage, InstalledPage, LoadingPage, PackageDetailsPage};
 use crate::ui::{SoukApplicationWindow, View};
 
 #[derive(Debug, Clone)]
@@ -29,7 +29,7 @@ pub enum Action {
 }
 
 pub struct SoukApplicationPrivate {
-    sender: Sender<Action>,
+    pub sender: Sender<Action>,
     receiver: RefCell<Option<Receiver<Action>>>,
 
     flatpak_backend: SoukFlatpakBackend,
@@ -38,7 +38,6 @@ pub struct SoukApplicationPrivate {
     pub loading_page: OnceCell<Rc<LoadingPage>>,
     pub explore_page: OnceCell<Rc<ExplorePage>>,
     pub installed_page: OnceCell<Rc<InstalledPage>>,
-    pub search_page: OnceCell<Rc<SearchPage>>,
     pub package_details_page: OnceCell<Rc<PackageDetailsPage>>,
 
     window: OnceCell<WeakRef<SoukApplicationWindow>>,
@@ -62,7 +61,6 @@ impl ObjectSubclass for SoukApplicationPrivate {
 
         let loading_page = OnceCell::new();
         let explore_page = OnceCell::new();
-        let search_page = OnceCell::new();
         let installed_page = OnceCell::new();
         let package_details_page = OnceCell::new();
 
@@ -76,7 +74,6 @@ impl ObjectSubclass for SoukApplicationPrivate {
             loading_page,
             explore_page,
             installed_page,
-            search_page,
             package_details_page,
             window,
         }
@@ -165,9 +162,6 @@ impl SoukApplication {
 
         let explore_page = ExplorePage::new(sender.clone());
         let _ = self_.explore_page.set(explore_page);
-
-        let search_page = SearchPage::new(sender.clone());
-        let _ = self_.search_page.set(search_page);
 
         let installed_page = InstalledPage::new(sender.clone(), self_.flatpak_backend.clone());
         let _ = self_.installed_page.set(installed_page);

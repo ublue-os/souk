@@ -34,6 +34,9 @@ fn main() {
     // Initialize libhandy
     libhandy::init();
 
+    // Initialize custom widgets
+    crate::ui::pages::init();
+
     // Initialize paths
     path::init().expect("Unable to create paths.");
 

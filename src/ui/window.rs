@@ -9,6 +9,7 @@ use std::cell::RefCell;
 use crate::app::{SoukApplication, SoukApplicationPrivate};
 use crate::backend::SoukPackage;
 use crate::config;
+use crate::ui::pages::SoukSearchPage;
 
 #[derive(Debug, Clone)]
 pub enum View {
@@ -31,7 +32,7 @@ pub struct SoukApplicationWindowPrivate {
     #[template_child]
     pub installed_box: TemplateChild<gtk::Box>,
     #[template_child]
-    pub search_box: TemplateChild<gtk::Box>,
+    pub search_page: TemplateChild<SoukSearchPage>,
     #[template_child]
     pub package_details_box: TemplateChild<gtk::Box>,
     #[template_child]
@@ -64,7 +65,7 @@ impl ObjectSubclass for SoukApplicationWindowPrivate {
             loading_box: TemplateChild::default(),
             explore_box: TemplateChild::default(),
             installed_box: TemplateChild::default(),
-            search_box: TemplateChild::default(),
+            search_page: TemplateChild::default(),
             package_details_box: TemplateChild::default(),
             main_stack: TemplateChild::default(),
             window_stack: TemplateChild::default(),
@@ -133,9 +134,7 @@ impl SoukApplicationWindow {
         self_
             .installed_box
             .append(&app_private.installed_page.get().unwrap().widget);
-        self_
-            .search_box
-            .append(&app_private.search_page.get().unwrap().widget);
+        self_.search_page.init(app_private.sender.clone());
         self_
             .package_details_box
             .append(&app_private.package_details_page.get().unwrap().widget);

@@ -101,7 +101,7 @@
           <object class="GtkStackPage">
             <property name="name">search</property>
             <property name="child">
-              <object class="GtkBox" id="search_box"/>
+              <object class="SoukSearchPage" id="search_page"/>
             </property>
           </object>
         </child>
