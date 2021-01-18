@@ -1,152 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <requires lib="gtk+" version="3.22"/>
-  <requires lib="libhandy" version="0.0"/>
   <object class="GtkBox" id="project_urls_box">
     <property name="orientation">vertical</property>
     <child>
       <object class="GtkListBox" id="listbox">
         <property name="selection_mode">none</property>
         <child>
-          <object class="HdyActionRow" id="donation_row">
-            <property name="selectable">False</property>
+          <object class="SoukUrlRow" id="donation_row">
             <property name="title" translatable="yes">Donate</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <child type="prefix">
-              <object class="GtkImage">
-                <property name="icon_name">currency-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkImage">
-                <property name="icon_name">external-link-symbolic</property>
-                <style>
-                  <class name="dim-label"/>
-                </style>
-              </object>
-            </child>
+            <!-- FIXME: remove custom icon prop once ActionRow styling is fixed -->
+            <property name="icon">currency-symbolic</property>
           </object>
         </child>
         <child>
-          <object class="HdyActionRow" id="translate_row">
-            <property name="can_focus">True</property>
-            <property name="selectable">False</property>
+          <object class="SoukUrlRow" id="translate_row">
             <property name="title" translatable="yes">Contribute translations</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <child type="prefix">
-              <object class="GtkImage">
-                <property name="icon_name">keyboard-layout-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkImage">
-                <property name="icon_name">external-link-symbolic</property>
-                <style>
-                  <class name="dim-label"/>
-                </style>
-              </object>
-            </child>
+            <property name="icon">keyboard-layout-symbolic</property>
           </object>
         </child>
         <child>
-          <object class="HdyActionRow" id="homepage_row">
-            <property name="can_focus">True</property>
-            <property name="selectable">False</property>
+          <object class="SoukUrlRow" id="homepage_row">
             <property name="title" translatable="yes">Project Website</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <child type="prefix">
-              <object class="GtkImage">
-                <property name="icon_name">globe-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkImage">
-                <property name="icon_name">external-link-symbolic</property>
-                <style>
-                  <class name="dim-label"/>
-                </style>
-              </object>
-            </child>
+            <property name="icon">globe-symbolic</property>
           </object>
         </child>
         <child>
-          <object class="HdyActionRow" id="bugtracker_row">
-            <property name="selectable">False</property>
+          <object class="SoukUrlRow" id="bugtracker_row">
             <property name="title" translatable="yes">Report an issue</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <child type="prefix">
-              <object class="GtkImage">
-                <property name="icon_name">computer-fail-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkImage">
-                <property name="icon_name">external-link-symbolic</property>
-                <style>
-                  <class name="dim-label"/>
-                </style>
-              </object>
-            </child>
+            <property name="icon">computer-fail-symbolic</property>
           </object>
         </child>
         <child>
-          <object class="HdyActionRow" id="help_row">
-            <property name="selectable">False</property>
+          <object class="SoukUrlRow" id="help_row">
             <property name="title" translatable="yes">Help</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <child type="prefix">
-              <object class="GtkImage">
-                <property name="icon_name">help-page-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkImage">
-                <property name="icon_name">external-link-symbolic</property>
-                <style>
-                  <class name="dim-label"/>
-                </style>
-              </object>
-            </child>
+            <property name="icon">help-page-symbolic</property>
           </object>
         </child>
         <child>
-          <object class="HdyActionRow" id="faq_row">
-            <property name="selectable">False</property>
+          <object class="SoukUrlRow" id="faq_row">
             <property name="title" translatable="yes">Frequently Asked Questions</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <child type="prefix">
-              <object class="GtkImage">
-                <property name="icon_name">preferences-system-details-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkImage">
-                <property name="icon_name">external-link-symbolic</property>
-                <style>
-                  <class name="dim-label"/>
-                </style>
-              </object>
-            </child>
+            <property name="icon">preferences-system-details-symbolic</property>
           </object>
         </child>
         <child>
-          <object class="HdyActionRow" id="contact_url">
-            <property name="selectable">False</property>
+          <object class="SoukUrlRow" id="contact_url">
             <property name="title" translatable="yes">Contact</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <child type="prefix">
-              <object class="GtkImage">
-                <property name="icon_name">mail-unread-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkImage">
-                <property name="icon_name">external-link-symbolic</property>
-                <style>
-                  <class name="dim-label"/>
-                </style>
-              </object>
-            </child>
+            <property name="icon">mail-unread-symbolic</property>
           </object>
         </child>
         <style>

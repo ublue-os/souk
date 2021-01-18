@@ -50,6 +50,7 @@ sources = files(
   'ui/package_widgets/action_button.rs',
   'ui/package_widgets/project_urls_box.rs',
   'ui/package_widgets/screenshots_box.rs',
+  'ui/package_widgets/url_row.rs',
   'ui/package_widgets/versions_box.rs',
 
   'ui/pages/explore_page.rs',

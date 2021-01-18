@@ -36,6 +36,7 @@ fn main() {
 
     // Initialize custom widgets
     crate::ui::pages::init();
+    crate::ui::package_widgets::init();
 
     // Initialize paths
     path::init().expect("Unable to create paths.");

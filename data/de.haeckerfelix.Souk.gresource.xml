@@ -12,6 +12,7 @@
     <file>gtk/screenshots_box.ui</file>
     <file>gtk/project_urls_box.ui</file>
     <file>gtk/search_page.ui</file>
+    <file>gtk/url_row.ui</file>
     <file>gtk/version_row.ui</file>
     <file>gtk/versions_box.ui</file>
     <file>gtk/versions_window.ui</file>

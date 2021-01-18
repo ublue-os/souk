@@ -1,9 +1,9 @@
 use appstream::enums::ProjectUrl;
 use gtk::prelude::*;
-use libhandy::prelude::*;
 
 use crate::backend::SoukPackage;
 use crate::ui::package_widgets::PackageWidget;
+use crate::ui::package_widgets::SoukUrlRow;
 
 pub struct ProjectUrlsBox {
     pub widget: gtk::Box,
@@ -11,14 +11,10 @@ pub struct ProjectUrlsBox {
 }
 
 impl ProjectUrlsBox {
-    fn set_row(row: &libhandy::ActionRow, url: url::Url) {
+    fn set_row(row: &SoukUrlRow, url: url::Url) {
         row.set_visible(true);
         row.set_activatable(true);
-        row.set_subtitle(Some(&url.to_string()));
-
-        row.connect_activated(move |_| {
-            gtk::show_uri::<gtk::Window>(None, &url.to_string(), 0);
-        });
+        let _ = row.set_property("url", &Some(&url.to_string()));
     }
 }
 
@@ -40,13 +36,13 @@ impl PackageWidget for ProjectUrlsBox {
         let urls = package.get_appdata().expect("No appdata available").urls;
 
         get_widget!(self.builder, gtk::ListBox, listbox);
-        get_widget!(self.builder, libhandy::ActionRow, donation_row);
-        get_widget!(self.builder, libhandy::ActionRow, translate_row);
-        get_widget!(self.builder, libhandy::ActionRow, homepage_row);
-        get_widget!(self.builder, libhandy::ActionRow, bugtracker_row);
-        get_widget!(self.builder, libhandy::ActionRow, help_row);
-        get_widget!(self.builder, libhandy::ActionRow, faq_row);
-        get_widget!(self.builder, libhandy::ActionRow, contact_url);
+        get_widget!(self.builder, SoukUrlRow, donation_row);
+        get_widget!(self.builder, SoukUrlRow, translate_row);
+        get_widget!(self.builder, SoukUrlRow, homepage_row);
+        get_widget!(self.builder, SoukUrlRow, bugtracker_row);
+        get_widget!(self.builder, SoukUrlRow, help_row);
+        get_widget!(self.builder, SoukUrlRow, faq_row);
+        get_widget!(self.builder, SoukUrlRow, contact_url);
 
         for url in &urls {
             match url {
@@ -64,13 +60,13 @@ impl PackageWidget for ProjectUrlsBox {
 
     fn reset(&self) {
         get_widget!(self.builder, gtk::ListBox, listbox);
-        get_widget!(self.builder, libhandy::ActionRow, donation_row);
-        get_widget!(self.builder, libhandy::ActionRow, translate_row);
-        get_widget!(self.builder, libhandy::ActionRow, homepage_row);
-        get_widget!(self.builder, libhandy::ActionRow, bugtracker_row);
-        get_widget!(self.builder, libhandy::ActionRow, help_row);
-        get_widget!(self.builder, libhandy::ActionRow, faq_row);
-        get_widget!(self.builder, libhandy::ActionRow, contact_url);
+        get_widget!(self.builder, SoukUrlRow, donation_row);
+        get_widget!(self.builder, SoukUrlRow, translate_row);
+        get_widget!(self.builder, SoukUrlRow, homepage_row);
+        get_widget!(self.builder, SoukUrlRow, bugtracker_row);
+        get_widget!(self.builder, SoukUrlRow, help_row);
+        get_widget!(self.builder, SoukUrlRow, faq_row);
+        get_widget!(self.builder, SoukUrlRow, contact_url);
 
         donation_row.set_visible(false);
         translate_row.set_visible(false);
