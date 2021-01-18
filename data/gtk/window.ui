@@ -53,7 +53,7 @@
                         <property name="name">explore</property>
                         <property name="icon_name">star-outline-thick-symbolic</property>
                         <property name="child">
-                          <object class="GtkBox" id="explore_box"/>
+                          <object class="SoukExplorePage" id="explore_page"/>
                         </property>
                       </object>
                     </child>

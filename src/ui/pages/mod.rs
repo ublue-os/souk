@@ -1,7 +1,7 @@
 use glib::StaticType;
 
 mod explore_page;
-pub use explore_page::ExplorePage;
+pub use explore_page::SoukExplorePage;
 
 mod installed_page;
 pub use installed_page::InstalledPage;
@@ -18,5 +18,6 @@ pub use search_page::SoukSearchPage;
 //TODO: Wouldn't it make sense to add a trait for pages?
 
 pub fn init() {
+    SoukExplorePage::static_type();
     SoukSearchPage::static_type();
 }

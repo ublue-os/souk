@@ -1,7 +1,9 @@
 use glib::Sender;
 use gtk::prelude::*;
+use gtk::subclass::prelude::*;
+use gtk::CompositeTemplate;
 
-use std::rc::Rc;
+use once_cell::sync::OnceCell;
 
 use crate::app::Action;
 use crate::backend::SoukPackage;
@@ -20,72 +22,120 @@ static EDITOR_PICKS: [&str; 7] = [
     "com.google.AndroidStudio",
 ];
 
-pub struct ExplorePage {
-    pub widget: gtk::Box,
+mod imp {
+    use super::*;
+    use glib::subclass;
 
-    builder: gtk::Builder,
-    sender: Sender<Action>,
-}
+    #[derive(Debug, CompositeTemplate)]
+    pub struct SoukExplorePage {
+        #[template_child]
+        pub editors_picks_flowbox: TemplateChild<gtk::FlowBox>,
+        #[template_child]
+        pub recently_updated_flowbox: TemplateChild<gtk::FlowBox>,
 
-impl ExplorePage {
-    pub fn new(sender: Sender<Action>) -> Rc<Self> {
-        let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/explore_page.ui");
-        get_widget!(builder, gtk::Box, explore_page);
-
-        let explore_page = Rc::new(Self {
-            widget: explore_page,
-            builder,
-            sender,
-        });
-
-        explore_page.clone().setup_signals();
-        explore_page
+        pub sender: OnceCell<Sender<Action>>,
     }
 
-    pub fn load_data(self: Rc<Self>) {
+    impl ObjectSubclass for SoukExplorePage {
+        const NAME: &'static str = "SoukExplorePage";
+        type Type = super::SoukExplorePage;
+        type ParentType = gtk::Widget;
+        type Class = subclass::simple::ClassStruct<Self>;
+        type Instance = subclass::simple::InstanceStruct<Self>;
+
+        glib::object_subclass!();
+
+        fn new() -> Self {
+            Self {
+                editors_picks_flowbox: TemplateChild::default(),
+                recently_updated_flowbox: TemplateChild::default(),
+                sender: OnceCell::new(),
+            }
+        }
+
+        fn class_init(klass: &mut Self::Class) {
+            klass.set_template_from_resource("/de/haeckerfelix/Souk/gtk/explore_page.ui");
+            Self::bind_template_children(klass);
+        }
+
+        fn instance_init(obj: &subclass::InitializingObject<Self::Type>) {
+            obj.init_template();
+        }
+    }
+
+    impl ObjectImpl for SoukExplorePage {
+        fn constructed(&self, obj: &Self::Type) {
+            self.parent_constructed(obj);
+            obj.setup_signals();
+        }
+
+        fn dispose(&self, obj: &Self::Type) {
+            while let Some(child) = obj.get_first_child() {
+                child.unparent();
+            }
+        }
+    }
+
+    impl WidgetImpl for SoukExplorePage {}
+}
+
+glib::wrapper! {
+    pub struct SoukExplorePage(ObjectSubclass<imp::SoukExplorePage>) @extends gtk::Widget;
+}
+
+impl SoukExplorePage {
+    pub fn init(&self, sender: Sender<Action>) {
+        let imp = imp::SoukExplorePage::from_instance(self);
+        imp.sender.set(sender).unwrap();
+    }
+
+    pub fn load_data(&self) {
+        let imp = imp::SoukExplorePage::from_instance(self);
+
         // Reset old data
-        get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
-        get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
-        utils::clear_flowbox(&editors_picks_flowbox);
-        utils::clear_flowbox(&recently_updated_flowbox);
+        utils::clear_flowbox(&imp.editors_picks_flowbox);
+        utils::clear_flowbox(&imp.recently_updated_flowbox);
 
         // Editors pick flowbox
         for app in &EDITOR_PICKS {
-            self.clone().add_tile(app.to_string());
+            self.add_tile(app.to_string());
         }
 
         // Recently updated flowbox
         for package in queries::get_recently_updated_packages(10, DisplayLevel::Apps).unwrap() {
             let tile = SoukPackageTile::new();
             tile.set_package(&package);
-            recently_updated_flowbox.insert(&tile, -1);
+            imp.recently_updated_flowbox.insert(&tile, -1);
         }
     }
 
-    fn add_tile(self: Rc<Self>, app_id: String) {
-        get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
+    fn add_tile(&self, app_id: String) {
+        let imp = imp::SoukExplorePage::from_instance(self);
+
         if let Ok(pkg_option) =
             queries::get_package(app_id, "stable".to_string(), "flathub".to_string())
         {
             if let Some(package) = pkg_option {
                 let tile = SoukPackageTile::new();
                 tile.set_package(&package);
-                editors_picks_flowbox.insert(&tile, -1);
+                imp.editors_picks_flowbox.insert(&tile, -1);
             }
         }
     }
 
-    fn setup_signals(self: Rc<Self>) {
-        get_widget!(self.builder, gtk::FlowBox, editors_picks_flowbox);
-        get_widget!(self.builder, gtk::FlowBox, recently_updated_flowbox);
+    fn setup_signals(&self) {
+        let imp = imp::SoukExplorePage::from_instance(self);
 
-        let closure = clone!(@weak self as this => move|_: &gtk::FlowBox, flowbox_child: &gtk::FlowBoxChild|{
-            let tile = flowbox_child.clone().downcast::<SoukPackageTile>().unwrap();
+        let closure = clone!(@weak self as this => move |_: &gtk::FlowBox, flowbox_child: &gtk::FlowBoxChild|{
+            let imp = imp::SoukExplorePage::from_instance(&this);
+            let tile = flowbox_child.downcast_ref::<SoukPackageTile>().unwrap();
             let package: SoukPackage = tile.get_package().unwrap();
-            send!(this.sender, Action::ViewSet(View::PackageDetails(package)));
+            send!(imp.sender.get().unwrap(), Action::ViewSet(View::PackageDetails(package)));
         });
 
-        editors_picks_flowbox.connect_child_activated(closure.clone());
-        recently_updated_flowbox.connect_child_activated(closure.clone());
+        imp.editors_picks_flowbox
+            .connect_child_activated(closure.clone());
+        imp.recently_updated_flowbox
+            .connect_child_activated(closure.clone());
     }
 }

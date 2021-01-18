@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use crate::app::{SoukApplication, SoukApplicationPrivate};
 use crate::backend::SoukPackage;
 use crate::config;
-use crate::ui::pages::SoukSearchPage;
+use crate::ui::pages::{SoukExplorePage, SoukSearchPage};
 
 #[derive(Debug, Clone)]
 pub enum View {
@@ -28,7 +28,7 @@ pub struct SoukApplicationWindowPrivate {
     #[template_child]
     pub loading_box: TemplateChild<gtk::Box>,
     #[template_child]
-    pub explore_box: TemplateChild<gtk::Box>,
+    pub explore_page: TemplateChild<SoukExplorePage>,
     #[template_child]
     pub installed_box: TemplateChild<gtk::Box>,
     #[template_child]
@@ -63,7 +63,7 @@ impl ObjectSubclass for SoukApplicationWindowPrivate {
         Self {
             view_switcher_title: TemplateChild::default(),
             loading_box: TemplateChild::default(),
-            explore_box: TemplateChild::default(),
+            explore_page: TemplateChild::default(),
             installed_box: TemplateChild::default(),
             search_page: TemplateChild::default(),
             package_details_box: TemplateChild::default(),
@@ -128,9 +128,7 @@ impl SoukApplicationWindow {
         self_
             .loading_box
             .append(&app_private.loading_page.get().unwrap().widget);
-        self_
-            .explore_box
-            .append(&app_private.explore_page.get().unwrap().widget);
+        self_.explore_page.init(app_private.sender.clone());
         self_
             .installed_box
             .append(&app_private.installed_page.get().unwrap().widget);
@@ -242,5 +240,10 @@ impl SoukApplicationWindow {
             }
             _ => (),
         }
+    }
+
+    pub fn load_explore_data(&self) {
+        let self_ = SoukApplicationWindowPrivate::from_instance(self);
+        self_.explore_page.load_data();
     }
 }
