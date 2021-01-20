@@ -16,7 +16,7 @@ use crate::backend::SoukFlatpakBackend;
 use crate::config;
 use crate::db::SoukDatabase;
 use crate::ui::about_dialog;
-use crate::ui::pages::{InstalledPage, LoadingPage, PackageDetailsPage};
+use crate::ui::pages::{LoadingPage, PackageDetailsPage};
 use crate::ui::{SoukApplicationWindow, View};
 
 #[derive(Debug, Clone)]
@@ -36,7 +36,6 @@ pub struct SoukApplicationPrivate {
     database: SoukDatabase,
 
     pub loading_page: OnceCell<Rc<LoadingPage>>,
-    pub installed_page: OnceCell<Rc<InstalledPage>>,
     pub package_details_page: OnceCell<Rc<PackageDetailsPage>>,
 
     window: OnceCell<WeakRef<SoukApplicationWindow>>,
@@ -59,7 +58,6 @@ impl ObjectSubclass for SoukApplicationPrivate {
         let database = SoukDatabase::new();
 
         let loading_page = OnceCell::new();
-        let installed_page = OnceCell::new();
         let package_details_page = OnceCell::new();
 
         let window = OnceCell::new();
@@ -70,7 +68,6 @@ impl ObjectSubclass for SoukApplicationPrivate {
             flatpak_backend,
             database,
             loading_page,
-            installed_page,
             package_details_page,
             window,
         }
@@ -156,9 +153,6 @@ impl SoukApplication {
 
         let loading_page = LoadingPage::new(sender.clone(), self_.database.clone());
         let _ = self_.loading_page.set(loading_page);
-
-        let installed_page = InstalledPage::new(sender.clone(), self_.flatpak_backend.clone());
-        let _ = self_.installed_page.set(installed_page);
 
         let package_details_page = PackageDetailsPage::new(sender.clone());
         let _ = self_.package_details_page.set(package_details_page);

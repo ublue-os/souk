@@ -63,7 +63,7 @@
                         <property name="name">installed</property>
                         <property name="icon_name">view-list-symbolic</property>
                         <property name="child">
-                          <object class="GtkBox" id="installed_box"/>
+                          <object class="SoukInstalledPage" id="installed_page"/>
                         </property>
                       </object>
                     </child>

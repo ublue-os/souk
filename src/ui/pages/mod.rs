@@ -4,7 +4,7 @@ mod explore_page;
 pub use explore_page::SoukExplorePage;
 
 mod installed_page;
-pub use installed_page::InstalledPage;
+pub use installed_page::SoukInstalledPage;
 
 mod loading_page;
 pub use loading_page::LoadingPage;
@@ -19,5 +19,6 @@ pub use search_page::SoukSearchPage;
 
 pub fn init() {
     SoukExplorePage::static_type();
+    SoukInstalledPage::static_type();
     SoukSearchPage::static_type();
 }
