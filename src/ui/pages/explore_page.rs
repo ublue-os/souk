@@ -2,6 +2,7 @@ use glib::Sender;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
+use libadwaita::subclass::prelude::*;
 
 use once_cell::sync::OnceCell;
 
@@ -39,7 +40,7 @@ mod imp {
     impl ObjectSubclass for SoukExplorePage {
         const NAME: &'static str = "SoukExplorePage";
         type Type = super::SoukExplorePage;
-        type ParentType = gtk::Widget;
+        type ParentType = libadwaita::Bin;
         type Class = subclass::simple::ClassStruct<Self>;
         type Instance = subclass::simple::InstanceStruct<Self>;
 
@@ -68,19 +69,16 @@ mod imp {
             self.parent_constructed(obj);
             obj.setup_signals();
         }
-
-        fn dispose(&self, obj: &Self::Type) {
-            while let Some(child) = obj.get_first_child() {
-                child.unparent();
-            }
-        }
     }
 
     impl WidgetImpl for SoukExplorePage {}
+
+    impl BinImpl for SoukExplorePage {}
 }
 
 glib::wrapper! {
-    pub struct SoukExplorePage(ObjectSubclass<imp::SoukExplorePage>) @extends gtk::Widget;
+    pub struct SoukExplorePage(ObjectSubclass<imp::SoukExplorePage>)
+        @extends gtk::Widget, libadwaita::Bin;
 }
 
 impl SoukExplorePage {

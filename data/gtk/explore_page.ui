@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="SoukExplorePage" parent="GtkWidget">
+  <template class="SoukExplorePage" parent="AdwBin">
     <property name="hexpand">True</property>
     <property name="vexpand">True</property>
-    <property name="layout-manager">
-      <object class="GtkBinLayout"/>
-    </property>
-    <child>
+    <property name="child">
       <object class="GtkScrolledWindow">
         <property name="hscrollbar_policy">never</property>
         <property name="vexpand">true</property>
@@ -74,6 +71,6 @@
           </object>
         </child>
       </object>
-    </child>
+    </property>
   </template>
 </interface>
