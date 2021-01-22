@@ -47,9 +47,8 @@ features = ["v2_64"]
 git = "https://github.com/gtk-rs/gtk-rs/"
 features = ["v1_44"]
 
-[dependencies.libhandy]
-git = "https://gitlab.gnome.org/bilelmoussaoui/libhandy4-rs"
-package = "libhandy4"
+[dependencies.libadwaita]
+git = "https://gitlab.gnome.org/bilelmoussaoui/libadwaita-rs"
 
 [dependencies.flatpak]
 git = "https://gitlab.gnome.org/BrainBlasted/flatpak-rs"

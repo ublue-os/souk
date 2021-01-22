@@ -24,7 +24,7 @@ pub enum View {
 #[derive(Debug, CompositeTemplate)]
 pub struct SoukApplicationWindowPrivate {
     #[template_child]
-    pub view_switcher_title: TemplateChild<libhandy::ViewSwitcherTitle>,
+    pub view_switcher_title: TemplateChild<libadwaita::ViewSwitcherTitle>,
     #[template_child]
     pub loading_box: TemplateChild<gtk::Box>,
     #[template_child]
@@ -46,7 +46,7 @@ pub struct SoukApplicationWindowPrivate {
 impl ObjectSubclass for SoukApplicationWindowPrivate {
     const NAME: &'static str = "SoukApplicationWindow";
     type Type = SoukApplicationWindow;
-    type ParentType = libhandy::ApplicationWindow;
+    type ParentType = libadwaita::ApplicationWindow;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
@@ -90,13 +90,13 @@ impl WindowImpl for SoukApplicationWindowPrivate {}
 // Implement Gtk.ApplicationWindow for SoukApplicationWindow
 impl gtk::subclass::prelude::ApplicationWindowImpl for SoukApplicationWindowPrivate {}
 
-// Implement Hdy.ApplicationWindow for SoukApplicationWindow
-impl libhandy::subclass::prelude::ApplicationWindowImpl for SoukApplicationWindowPrivate {}
+// Implement Adw.ApplicationWindow for SoukApplicationWindow
+impl libadwaita::subclass::prelude::AdwApplicationWindowImpl for SoukApplicationWindowPrivate {}
 
 // Wrap SoukApplicationWindowPrivate into a usable gtk-rs object
 glib::wrapper! {
     pub struct SoukApplicationWindow(ObjectSubclass<SoukApplicationWindowPrivate>)
-    @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, libhandy::ApplicationWindow;
+    @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, libadwaita::ApplicationWindow;
 }
 
 // SoukApplicationWindow implementation itself

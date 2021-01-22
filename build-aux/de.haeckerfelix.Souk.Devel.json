@@ -192,14 +192,13 @@
             ]
         },
         {
-            "name" : "libhandy",
+            "name" : "libadwaita",
             "buildsystem" : "meson",
             "config-opts" : [
                 "-Dintrospection=enabled",
                 "-Dtests=false",
                 "-Dexamples=false",
-                "-Dvapi=false",
-                "-Dglade_catalog=disabled"
+                "-Dvapi=false"
             ],
             "cleanup" : [
                 "/include",
@@ -208,8 +207,8 @@
             "sources" : [
                 {
                     "type" : "git",
-                    "url" : "https://gitlab.gnome.org/exalm/libhandy",
-                    "branch" : "gtk4"
+                    "url" : "https://gitlab.gnome.org/exalm/libadwaita",
+                    "branch" : "main"
                 }
             ]
         },

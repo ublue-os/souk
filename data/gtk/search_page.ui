@@ -5,7 +5,7 @@
     <property name="vexpand">True</property>
     <property name="orientation">vertical</property>
     <child>
-      <object class="HdyHeaderBar">
+      <object class="AdwHeaderBar">
         <property name="centering_policy">strict</property>
         <child>
           <object class="GtkButton">
@@ -22,7 +22,7 @@
           <object class="GtkSearchBar">
             <property name="search_mode_enabled">True</property>
             <child>
-              <object class="HdyClamp">
+              <object class="AdwClamp">
                 <property name="maximum_size">900</property>
                 <property name="hexpand">True</property>
                 <child>
@@ -38,7 +38,7 @@
         <child>
           <object class="GtkScrolledWindow" id="scrolled_window">
             <child>
-              <object class="HdyClampScrollable">
+              <object class="AdwClampScrollable">
                 <property name="vexpand">True</property>
                 <property name="maximum_size">900</property>
                 <property name="hexpand">True</property>

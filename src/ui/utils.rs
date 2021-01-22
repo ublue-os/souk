@@ -140,7 +140,7 @@ pub fn clear_flowbox(flowbox: &gtk::FlowBox) {
     }
 }
 
-pub fn clear_carousel(carousel: &libhandy::Carousel) {
+pub fn clear_carousel(carousel: &libadwaita::Carousel) {
     for _ in 0..carousel.get_n_pages() {
         let page = carousel.get_nth_page(0).unwrap();
         carousel.remove(&page);

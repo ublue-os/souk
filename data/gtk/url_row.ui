@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="SoukUrlRow" parent="HdyActionRow">
+  <template class="SoukUrlRow" parent="AdwActionRow">
     <property name="activatable">True</property>
     <property name="selectable">False</property>
     <child type="prefix">

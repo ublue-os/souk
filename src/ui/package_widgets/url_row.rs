@@ -1,8 +1,8 @@
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::CompositeTemplate;
-use libhandy::prelude::*;
-use libhandy::subclass::prelude::*;
+use libadwaita::prelude::*;
+use libadwaita::subclass::prelude::*;
 
 use std::cell::RefCell;
 
@@ -43,7 +43,7 @@ mod imp {
     impl ObjectSubclass for SoukUrlRow {
         const NAME: &'static str = "SoukUrlRow";
         type Type = super::SoukUrlRow;
-        type ParentType = libhandy::ActionRow;
+        type ParentType = libadwaita::ActionRow;
         type Class = subclass::simple::ClassStruct<Self>;
         type Instance = subclass::simple::InstanceStruct<Self>;
 
@@ -124,5 +124,5 @@ mod imp {
 glib::wrapper! {
     pub struct SoukUrlRow(ObjectSubclass<imp::SoukUrlRow>)
         @extends gtk::Widget, gtk::ListBoxRow,
-        libhandy::PreferencesRow, libhandy::ActionRow;
+        libadwaita::PreferencesRow, libadwaita::ActionRow;
 }

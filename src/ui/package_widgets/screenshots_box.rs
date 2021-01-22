@@ -50,7 +50,7 @@ impl PackageWidget for ScreenshotsBox {
             .screenshots;
 
         get_widget!(self.builder, gtk::Box, screenshots_box);
-        get_widget!(self.builder, libhandy::Carousel, carousel);
+        get_widget!(self.builder, libadwaita::Carousel, carousel);
         utils::clear_carousel(&carousel);
         screenshots_box.set_visible(false);
 
@@ -79,7 +79,7 @@ impl PackageWidget for ScreenshotsBox {
 
     fn reset(&self) {
         get_widget!(self.builder, gtk::Box, screenshots_box);
-        get_widget!(self.builder, libhandy::Carousel, carousel);
+        get_widget!(self.builder, libadwaita::Carousel, carousel);
 
         screenshots_box.set_visible(false);
         utils::clear_carousel(&carousel);

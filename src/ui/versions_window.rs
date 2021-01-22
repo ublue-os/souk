@@ -5,7 +5,7 @@ use crate::ui::version_row::VersionRow;
 
 #[derive(Debug)]
 pub struct VersionsWindow {
-    pub widget: libhandy::Window,
+    pub widget: libadwaita::Window,
     builder: gtk::Builder,
     releases: Vec<Release>,
 }
@@ -13,7 +13,7 @@ pub struct VersionsWindow {
 impl VersionsWindow {
     pub fn new(releases: Vec<Release>) -> Self {
         let builder = gtk::Builder::from_resource("/de/haeckerfelix/Souk/gtk/versions_window.ui");
-        get_widget!(builder, libhandy::Window, versions_window);
+        get_widget!(builder, libadwaita::Window, versions_window);
 
         let versions_window = Self {
             widget: versions_window,

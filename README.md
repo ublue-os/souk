@@ -13,7 +13,7 @@ want to discuss design or simply hang out, please join us on our [#souk:gnome.or
 ## FAQ
 - What is the goal/scope of Souk?
 
-Souk just wants to do one thing well - provide a Flatpak-focused app store. Not more - not less. To achieve this we're using Rust and GTK4. We intend to support desktop and mobile devices, and use libhandy to build our adaptive interface.
+Souk just wants to do one thing well - provide a Flatpak-focused app store. Not more - not less. To achieve this we're using Rust and GTK4. We intend to support desktop and mobile devices, and use libadwaita to build our adaptive interface.
 
 - Is Souk going to replace GNOME Software?
 

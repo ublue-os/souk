@@ -31,8 +31,8 @@ fn main() {
     // Initialize GTK
     gtk::init().expect("Failed to initialize GTK.");
 
-    // Initialize libhandy
-    libhandy::init();
+    // Initialize libadwaita
+    libadwaita::init();
 
     // Initialize custom widgets
     crate::ui::pages::init();
