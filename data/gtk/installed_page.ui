@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <template class="SoukInstalledPage" parent="GtkWidget">
-    <property name="layout-manager">
-      <object class="GtkBinLayout"/>
-    </property>
-    <child>
+  <template class="SoukInstalledPage" parent="AdwBin">
+    <property name="child">
       <object class="GtkScrolledWindow">
         <child>
           <object class="AdwClamp">
@@ -62,6 +59,6 @@
           </object>
         </child>
       </object>
-    </child>
+    </property>
   </template>
 </interface>
