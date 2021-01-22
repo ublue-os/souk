@@ -10,49 +10,49 @@
             <property name="title" translatable="yes">Donate</property>
             <property name="subtitle" translatable="yes">subtitle</property>
             <!-- FIXME: remove custom icon prop once ActionRow styling is fixed -->
-            <property name="icon">currency-symbolic</property>
+            <property name="icon-name">currency-symbolic</property>
           </object>
         </child>
         <child>
           <object class="SoukUrlRow" id="translate_row">
             <property name="title" translatable="yes">Contribute translations</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <property name="icon">keyboard-layout-symbolic</property>
+            <property name="icon-name">keyboard-layout-symbolic</property>
           </object>
         </child>
         <child>
           <object class="SoukUrlRow" id="homepage_row">
             <property name="title" translatable="yes">Project Website</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <property name="icon">globe-symbolic</property>
+            <property name="icon-name">globe-symbolic</property>
           </object>
         </child>
         <child>
           <object class="SoukUrlRow" id="bugtracker_row">
             <property name="title" translatable="yes">Report an issue</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <property name="icon">computer-fail-symbolic</property>
+            <property name="icon-name">computer-fail-symbolic</property>
           </object>
         </child>
         <child>
           <object class="SoukUrlRow" id="help_row">
             <property name="title" translatable="yes">Help</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <property name="icon">help-page-symbolic</property>
+            <property name="icon-name">help-page-symbolic</property>
           </object>
         </child>
         <child>
           <object class="SoukUrlRow" id="faq_row">
             <property name="title" translatable="yes">Frequently Asked Questions</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <property name="icon">preferences-system-details-symbolic</property>
+            <property name="icon-name">preferences-system-details-symbolic</property>
           </object>
         </child>
         <child>
           <object class="SoukUrlRow" id="contact_url">
             <property name="title" translatable="yes">Contact</property>
             <property name="subtitle" translatable="yes">subtitle</property>
-            <property name="icon">mail-unread-symbolic</property>
+            <property name="icon-name">mail-unread-symbolic</property>
           </object>
         </child>
         <style>

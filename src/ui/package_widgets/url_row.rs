@@ -10,34 +10,19 @@ mod imp {
     use super::*;
     use glib::subclass;
 
-    static PROPERTIES: [glib::subclass::Property; 2] = [
-        glib::subclass::Property("url", |url| {
-            glib::ParamSpec::string(
-                url,
-                "Url",
-                "The current url for the row",
-                None, // Default value
-                glib::ParamFlags::READWRITE,
-            )
-        }),
-        glib::subclass::Property("icon", |icon| {
-            glib::ParamSpec::string(
-                icon,
-                "Icon",
-                "The icon for the row",
-                None,
-                glib::ParamFlags::READWRITE,
-            )
-        }),
-    ];
+    static PROPERTIES: [glib::subclass::Property; 1] = [glib::subclass::Property("url", |url| {
+        glib::ParamSpec::string(
+            url,
+            "Url",
+            "The current url for the row",
+            None, // Default value
+            glib::ParamFlags::READWRITE,
+        )
+    })];
 
     #[derive(Debug, CompositeTemplate)]
     pub struct SoukUrlRow {
-        #[template_child]
-        pub url_type_icon: TemplateChild<gtk::Image>,
-
         pub url: RefCell<Option<String>>,
-        pub icon: RefCell<Option<String>>,
     }
 
     impl ObjectSubclass for SoukUrlRow {
@@ -51,9 +36,7 @@ mod imp {
 
         fn new() -> Self {
             Self {
-                url_type_icon: TemplateChild::default(),
                 url: RefCell::default(),
-                icon: RefCell::default(),
             }
         }
 
@@ -82,7 +65,6 @@ mod imp {
 
             match *prop {
                 subclass::Property("url", ..) => self.url.borrow().to_value(),
-                subclass::Property("icon", ..) => self.icon.borrow().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -94,10 +76,6 @@ mod imp {
                 subclass::Property("url", ..) => {
                     let url: Option<String> = value.get().unwrap();
                     *self.url.borrow_mut() = url;
-                }
-                subclass::Property("icon", ..) => {
-                    self.url_type_icon
-                        .set_from_icon_name(Some(value.get().unwrap().unwrap()));
                 }
                 _ => unimplemented!(),
             }
