@@ -6,6 +6,7 @@
     <property name="spacing">2</property>
     <child>
       <object class="GtkStack" id="button_stack">
+        <property name="transition-type">crossfade</property>
         <property name="width_request">150</property>
         <child>
           <object class="GtkStackPage">

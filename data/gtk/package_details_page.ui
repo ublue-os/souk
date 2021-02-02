@@ -50,6 +50,7 @@
                         </child>
                         <child>
                           <object class="AdwSqueezer">
+                            <property name="transition-type">crossfade</property>
                             <child>
                               <object class="GtkBox">
                                 <property name="spacing">12</property>

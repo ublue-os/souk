@@ -9,6 +9,7 @@
     <property name="default_height">700</property>
     <child>
       <object class="GtkStack" id="window_stack">
+        <property name="transition-type">crossfade</property>
         <child>
           <object class="GtkStackPage">
             <property name="name">loading</property>
@@ -47,6 +48,7 @@
                 </child>
                 <child>
                   <object class="GtkStack" id="main_stack">
+                    <property name="transition-type">crossfade</property>
                     <child>
                       <object class="GtkStackPage">
                         <property name="title">Explore</property>
