@@ -4,6 +4,7 @@ use async_process::Stdio;
 use futures_util::io::BufReader;
 use futures_util::AsyncBufReadExt;
 use futures_util::StreamExt;
+use once_cell::sync::Lazy;
 use regex::Regex;
 
 use std::cell::RefCell;
@@ -16,6 +17,18 @@ use crate::backend::{
 };
 
 type Transactions = Rc<RefCell<HashMap<String, (SoukTransaction, Child)>>>;
+
+// Regex to get percentage value
+static RE_PERCENTAGE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\d{1,3})%").unwrap());
+
+// Regex to get which package `n` out of how many packages `big_n` is being installed.
+static RE_PACKAGE_NUMBER: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\d+)/(\d+)…").unwrap());
+
+// Regex to parse the download speed
+static RE_SPEED: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\d+.\d+)\u{a0}(\w+)/s").unwrap());
+
+// Regex to checks if it is updating or installing
+static RE_UPDATING: Lazy<Regex> = Lazy::new(|| Regex::new(r"^Updating \d+/\d+…").unwrap());
 
 pub struct SandboxBackend {
     // HashMap < app_id , ( SoukTransaction, Child ) >
@@ -181,20 +194,14 @@ impl SandboxBackend {
         let state = SoukTransactionState::new();
         state.set_mode(&SoukTransactionMode::Running);
 
-        // Regex to get percentage value
-        let regex = Regex::new(r"(\d{1,3})%").unwrap();
-
         let mut n: f64 = 1.0;
         let mut big_n: f64 = 1.0;
 
-        if let Some(percentage) = regex.captures(&line) {
+        if let Some(percentage) = RE_PERCENTAGE.captures(&line) {
             let value = percentage.get(1).unwrap().as_str();
             let percentage = value.parse::<f64>().unwrap() / 100.0;
 
-            // Regex to get which package `n` out of how many packages `big_n`
-            // is being installed.
-            let re_package_number = Regex::new(r"(\d+)/(\d+)…").unwrap();
-            if let Some(package_number) = re_package_number.captures(&line) {
+            if let Some(package_number) = RE_PACKAGE_NUMBER.captures(&line) {
                 n = package_number[1].parse().unwrap();
                 big_n = package_number[2].parse().unwrap();
                 let global_percentage = (n - 1.0 + percentage) / big_n;
@@ -204,26 +211,25 @@ impl SandboxBackend {
             }
         }
 
-        // When the number of packages is 1, this just means, if percentage
-        // is lower than 0.99.
         let mut message = String::new();
+
+        // In case the number of packages is 1 his condistion just checks,
+        // if the percentage is lower than 0.99.
         if state.get_percentage() < n / big_n - 0.01 {
-            let re = Regex::new(r"(\d+.\d+)\u{a0}(\w+)/s").unwrap();
-            if let Some(speed) = re.captures(&line) {
+            if let Some(speed) = RE_SPEED.captures(&line) {
                 message = format!(
                     "Downloading {} {}/s",
                     speed[1].to_string(),
                     speed[2].to_string()
                 );
             } else {
-                let re = Regex::new(r"^Looking for matches…$").unwrap();
+                let re = regex::Regex::new(r"^Looking for matches…$").unwrap();
                 if re.is_match(&line) {
                     message = "Preparing…".to_string();
                 }
             }
         } else {
-            let re = Regex::new(r"^Updating \d+/\d+…").unwrap();
-            if re.is_match(&line) {
+            if RE_UPDATING.is_match(&line) {
                 message = "Updating…".to_string();
             } else {
                 message = "Installing…".to_string();
