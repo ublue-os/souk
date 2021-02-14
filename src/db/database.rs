@@ -6,6 +6,7 @@ use flatpak::InstallationExt;
 use gio::prelude::*;
 use glib::subclass;
 use glib::subclass::prelude::*;
+use once_cell::sync::Lazy;
 
 use std::cell::Cell;
 use std::cell::RefCell;
@@ -18,12 +19,10 @@ use crate::backend::{SoukFlatpakBackend, SoukPackage};
 use crate::db::queries;
 use crate::db::DbInfo;
 
-lazy_static! {
-    pub static ref DB_VERSION: String = "1.1".to_string();
+pub static DB_VERSION: Lazy<String> = Lazy::new(|| "1.1".to_string());
 
-    // Database lifetime until it gets rebuilt
-    pub static ref DB_LIFETIME: Duration = Duration::hours(3);
-}
+// Database lifetime until it gets rebuilt
+pub static DB_LIFETIME: Lazy<Duration> = Lazy::new(|| Duration::hours(3));
 
 #[derive(Clone)]
 enum DbMessage {

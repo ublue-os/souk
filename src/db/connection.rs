@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use diesel::prelude::*;
 use diesel::r2d2;
 use diesel::r2d2::ConnectionManager;
+use once_cell::sync::Lazy;
 
 // Read database migrations
 embed_migrations!("./data/database/migrations/");
@@ -14,17 +15,15 @@ embed_migrations!("./data/database/migrations/");
 // Define 'Pool' type
 type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
-lazy_static! {
-    // Database path
-    pub static ref DB_PATH: PathBuf = {
-        let mut path = path::DATA.clone();
-        path.push(format!("{}.db",config::NAME));
-        path
-    };
+// Database path
+pub static DB_PATH: Lazy<PathBuf> = Lazy::new(|| {
+    let mut path = path::DATA.clone();
+    path.push(format!("{}.db", config::NAME));
+    path
+});
 
-    // Database R2D2 connection pool
-    static ref POOL: Pool = init_connection_pool(DB_PATH.to_str().unwrap());
-}
+// Database R2D2 connection pool
+static POOL: Lazy<Pool> = Lazy::new(|| init_connection_pool(DB_PATH.to_str().unwrap()));
 
 // Returns a R2D2 SqliteConnection
 pub fn get_connection() -> Pool {

@@ -6,8 +6,6 @@ extern crate glib;
 #[macro_use]
 extern crate gtk_macros;
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;

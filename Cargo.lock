@@ -1927,7 +1927,6 @@ dependencies = [
  "gtk4",
  "html2pango",
  "isahc",
- "lazy_static",
  "libadwaita",
  "log",
  "once_cell",
