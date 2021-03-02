@@ -223,7 +223,8 @@
             "sources": [
                 {
                     "type": "git",
-                    "url": "https://gitlab.gnome.org/haecker-felix/souk"
+                    "url": "https://gitlab.gnome.org/haecker-felix/souk",
+		    "branch": "main"
                 }
             ]
         }
