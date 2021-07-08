@@ -107,9 +107,11 @@ impl SoukInstalledPage {
 
         imp.listbox_runtimes
             .bind_model(Some(&runtimes_model), |package| {
-                let row = SoukPackageRow::new(true);
-                row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
-                row.upcast::<gtk::Widget>()
+                let package_row = SoukPackageRow::new(true);
+                package_row.set_package(&package.clone().downcast::<SoukPackage>().unwrap());
+                let list_box_row = gtk::ListBoxRow::new();
+                list_box_row.set_child(Some(&package_row));
+                list_box_row.upcast()
             });
     }
 
@@ -118,7 +120,7 @@ impl SoukInstalledPage {
 
         let closure = clone!(@weak self as this => move|_: &gtk::ListBox, listbox_row: &gtk::ListBoxRow|{
             let imp = imp::SoukInstalledPage::from_instance(&this);
-            let row = listbox_row.clone().downcast::<SoukPackageRow>().unwrap();
+            let row = listbox_row.get_child().unwrap().downcast::<SoukPackageRow>().unwrap();
             let package: SoukPackage = row.get_package().unwrap();
             send!(imp.sender.get().unwrap(), Action::ViewSet(View::PackageDetails(package)));
         });

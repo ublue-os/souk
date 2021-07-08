@@ -46,7 +46,7 @@ static PROPERTIES: [subclass::Property; 1] = [subclass::Property("package", |pac
 impl ObjectSubclass for SoukPackageRowPrivate {
     const NAME: &'static str = "SoukPackageRow";
     type Type = SoukPackageRow;
-    type ParentType = gtk::ListBoxRow;
+    type ParentType = gtk::Box;
     type Instance = subclass::simple::InstanceStruct<Self>;
     type Class = subclass::simple::ClassStruct<Self>;
 
@@ -106,11 +106,11 @@ impl ObjectImpl for SoukPackageRowPrivate {
 
 impl WidgetImpl for SoukPackageRowPrivate {}
 
-impl ListBoxRowImpl for SoukPackageRowPrivate {}
+impl BoxImpl for SoukPackageRowPrivate {}
 
 glib::wrapper! {
     pub struct SoukPackageRow(ObjectSubclass<SoukPackageRowPrivate>)
-    @extends gtk::Widget, gtk::ListBoxRow;
+    @extends gtk::Widget, gtk::Box;
 }
 
 impl SoukPackageRow {
