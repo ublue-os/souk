@@ -496,7 +496,7 @@ dependencies = [
 [[package]]
 name = "flatpak"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/BrainBlasted/flatpak-rs?branch=wip/cdavis/update-01-15-2021#14810a74786431980deff2bb247ce003ba4f1b59"
+source = "git+https://gitlab.gnome.org/haecker-felix/flatpak-rs#03d2f1fb1e658afe1b55b1db4d1badda7a95373c"
 dependencies = [
  "bitflags",
  "flatpak-sys",
@@ -510,7 +510,7 @@ dependencies = [
 [[package]]
 name = "flatpak-sys"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/BrainBlasted/flatpak-rs?branch=wip/cdavis/update-01-15-2021#14810a74786431980deff2bb247ce003ba4f1b59"
+source = "git+https://gitlab.gnome.org/haecker-felix/flatpak-rs#03d2f1fb1e658afe1b55b1db4d1badda7a95373c"
 dependencies = [
  "gio-sys",
  "glib-sys",

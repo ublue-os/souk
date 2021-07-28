@@ -50,5 +50,4 @@ features = ["v1_44"]
 git = "https://gitlab.gnome.org/bilelmoussaoui/libadwaita-rs"
 
 [dependencies.flatpak]
-git = "https://gitlab.gnome.org/BrainBlasted/flatpak-rs"
-branch = "wip/cdavis/update-01-15-2021"
+git = "https://gitlab.gnome.org/haecker-felix/flatpak-rs"
