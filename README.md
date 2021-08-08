@@ -1,3 +1,6 @@
+_Souk is currently no longer being actively developed due to [technical limitations](https://github.com/flatpak/flatpak/issues/4046). Many [design elements](https://gitlab.gnome.org/Teams/Design/software-mockups/-/tree/master/adaptive) of Souk are currently being implemented in GNOME Software 41._
+
+
 # Souk - An Independent Flatpak App Store
 
 Souk is a flatpak-based app store, written with GTK4 and Rust.
