@@ -1,4 +1,4 @@
-_Souk is currently no longer being actively developed due to [technical limitations](https://github.com/flatpak/flatpak/issues/4046). Many [design elements](https://gitlab.gnome.org/Teams/Design/software-mockups/-/tree/master/adaptive) of Souk are currently being implemented in GNOME Software 41._
+_Souk is currently no longer being actively developed due to [technical limitations](https://github.com/flatpak/flatpak/issues/4046). Many [design elements](https://gitlab.gnome.org/Teams/Design/software-mockups/-/tree/master/adaptive) of Souk are currently being implemented in GNOME Software 41. More details are explained in [this issue](https://gitlab.gnome.org/haecker-felix/souk/-/issues/61#note_1270615)._
 
 
 # Souk - An Independent Flatpak App Store
