@@ -1,4 +1,4 @@
-// Souk - main.rs
+// Souk - souk.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,32 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#[macro_use]
-extern crate log;
-extern crate pretty_env_logger;
-//#[macro_use]
-// extern crate serde_derive;
-//#[macro_use]
-// extern crate diesel;
-//#[macro_use]
-// extern crate diesel_migrations;
-//#[macro_use]
-// extern crate strum_macros;
-#[macro_use]
-extern crate gtk_macros;
-
-mod ui;
-
-mod app;
-#[rustfmt::skip]
-mod config;
-mod i18n;
-mod path;
-
 use gettextrs::*;
 use gtk::{gio, glib};
-
-use crate::app::SkApplication;
+use souk::{config, path, SkApplication};
 
 fn main() {
     // Initialize logger

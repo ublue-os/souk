@@ -23,8 +23,8 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use once_cell::sync::OnceCell;
 
-use crate::config;
 use crate::ui::{about_dialog, SkApplicationWindow};
+use crate::{config, worker};
 
 mod imp {
     use super::*;
@@ -67,6 +67,9 @@ mod imp {
 
             // Setup app level GActions
             app.setup_gactions();
+
+            // Spawn worker process
+            spawn!(worker::spawn_process());
         }
     }
 }

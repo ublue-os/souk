@@ -17,8 +17,8 @@
     	"--socket=fallback-x11",
     	"--socket=wayland",
     	"--device=dri",
-    	"--socket=pulseaudio",
-    	"--filesystem=xdg-music",
+    	"--filesystem=home",
+        "--talk-name=org.freedesktop.Flatpak",
     	"--env=RUST_LOG=souk=debug",
     	"--env=RUST_BACKTRACE=1"
     ],

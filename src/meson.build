@@ -37,20 +37,42 @@ else
   message('Building in debug mode')
 endif
 
-cargo_release = custom_target(
+cargo_build = custom_target(
   'cargo-build',
   build_by_default: true,
   build_always_stale: true,
-  output: meson.project_name(),
+  output: rust_target,
   console: true,
-  install: true,
-  install_dir: bindir,
   command: [
     'env',
     cargo_env,
     cargo, 'build',
     cargo_options,
-    '&&',
+  ]
+)
+
+copy_binary = custom_target(
+  'cp-binary',
+  depends: cargo_build,
+  build_by_default: true,
+  build_always_stale: true,
+  output: meson.project_name(),
+  install: true,
+  install_dir: bindir,
+  command: [
     'cp', 'target' / rust_target / meson.project_name(), '@OUTPUT@',
+  ]
+)
+
+copy_worker_binary = custom_target(
+  'cp-worker-binary',
+  depends: cargo_build,
+  build_by_default: true,
+  build_always_stale: true,
+  output: '@0@-worker'.format(meson.project_name()),
+  install: true,
+  install_dir: bindir,
+  command: [
+    'cp', 'target' / rust_target / '@0@-worker'.format(meson.project_name()), '@OUTPUT@',
   ]
 )

@@ -1,5 +1,5 @@
 // Souk - path.rs
-// Copyright (C) 2021  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,9 +40,17 @@ pub static CACHE: Lazy<PathBuf> = Lazy::new(|| {
     path
 });
 
+pub static BIN: Lazy<PathBuf> = Lazy::new(|| {
+    let mut path = glib::home_dir();
+    path.push(".local");
+    path.push("bin");
+    path
+});
+
 pub fn init() -> std::io::Result<()> {
     fs::create_dir_all(DATA.to_owned())?;
     fs::create_dir_all(CONFIG.to_owned())?;
     fs::create_dir_all(CACHE.to_owned())?;
+    fs::create_dir_all(BIN.to_owned())?;
     Ok(())
 }
