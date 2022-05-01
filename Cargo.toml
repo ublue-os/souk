@@ -1,0 +1,32 @@
+[package]
+name = "souk"
+version = "0.0.0"
+authors = ["Felix Häcker <haeckerfelix@gnome.org>"]
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+log = "0.4"
+pretty_env_logger = "0.4"
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+serde_urlencoded = "0.7"
+url = "2.2"
+uuid = { version = "0.8", features = ["v4"] }
+indexmap = "1.8"
+strum = "0.20"
+strum_macros = "0.20"
+diesel_migrations = "1.4"
+diesel = { version = "1.4", features = ["sqlite", "r2d2"] }
+futures = "0.3"
+futures-io = "0.3"
+futures-util = "0.3"
+async-std = "1.9"
+once_cell = "1.8"
+regex = "1.4"
+
+gettext-rs = { version = "0.7", features = ["gettext-system"] }
+adw = { version = "0.1.0-alpha", package = "libadwaita" }
+gtk = { version = "0.4", package = "gtk4" }
+gtk-macros = "0.3"

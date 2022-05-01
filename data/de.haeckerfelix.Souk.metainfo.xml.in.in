@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2020-2022 Felix Häcker -->
+<component type="desktop-application">
+  <id>@APP_ID@</id>
+  <name>@NAME@</name>
+  <summary>Flatpak App Store</summary>
+  <translation type="gettext">@PKGNAME@</translation>
+  <developer_name>Felix Häcker</developer_name>
+  <update_contact>haeckerfelix@gnome.org</update_contact>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <launchable type="desktop-id">@APP_ID@.desktop</launchable>
+  <content_rating type="oars-1.1"/>
+
+  <description>
+    <p>
+      Souk is an Flatpak App Store.
+    </p>
+  </description>
+
+  <screenshots>
+    <screenshot type="default" height="1072" width="772">
+      <image>https://gitlab.gnome.org/haecker-felix/souk/raw/main/data/screenshots/1.png</image>
+    </screenshot>
+    <screenshot height="1072" width="772">
+      <image>https://gitlab.gnome.org/haecker-felix/souk/raw/main/data/screenshots/2.png</image>
+    </screenshot>
+    <screenshot height="1072" width="772">
+      <image>https://gitlab.gnome.org/haecker-felix/souk/raw/main/data/screenshots/3.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://gitlab.gnome.org/haecker-felix/souk</url>
+  <url type="bugtracker">https://gitlab.gnome.org/haecker-felix/souk/issues</url>
+  <url type="donation">https://liberapay.com/haecker-felix</url>
+
+  <kudos>
+    <kudo>HiDpiIcon</kudo>
+    <kudo>ModernToolkit</kudo>
+    <kudo>Notifications</kudo>
+  </kudos>
+
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </recommends>
+
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+
+  <releases>
+  </releases>
+  <custom>
+    <value key="Purism::form_factor">workstation</value>
+    <value key="Purism::form_factor">mobile</value>
+  </custom>
+</component>

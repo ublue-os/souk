@@ -1,0 +1,10 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+
+data/gtk/help_overlay.ui
+data/gtk/window.ui
+
+src/ui/about_dialog.rs
+
+data/de.haeckerfelix.Souk.metainfo.xml.in.in
+data/de.haeckerfelix.Souk.desktop.in.in
