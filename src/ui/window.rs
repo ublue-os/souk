@@ -16,12 +16,13 @@
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::subclass;
+use glib::{clone, subclass};
 use gtk::subclass::prelude::*;
-use gtk::{gio, glib, CompositeTemplate};
+use gtk::{gio, glib, CompositeTemplate, FileChooserAction, FileChooserDialog, ResponseType};
 
 use crate::app::SkApplication;
 use crate::config;
+use crate::i18n::i18n;
 
 mod imp {
     use super::*;
@@ -38,6 +39,7 @@ mod imp {
 
         fn class_init(klass: &mut Self::Class) {
             Self::bind_template(klass);
+            Self::Type::bind_template_callbacks(klass);
         }
 
         fn instance_init(obj: &subclass::InitializingObject<Self>) {
@@ -63,6 +65,7 @@ glib::wrapper! {
         @implements gio::ActionMap, gio::ActionGroup;
 }
 
+#[gtk::template_callbacks]
 impl SkApplicationWindow {
     pub fn new() -> Self {
         let window = glib::Object::new::<Self>(&[]).unwrap();
@@ -84,6 +87,35 @@ impl SkApplicationWindow {
     fn setup_signals(&self) {}
 
     fn setup_gactions(&self) {}
+
+    #[template_callback]
+    fn select_flatpak_bundle(&self) {
+        let dialog = FileChooserDialog::new(
+            Some(&i18n("Install Flatpak Bundle")),
+            Some(self),
+            FileChooserAction::Open,
+            &[(&i18n("_Open"), gtk::ResponseType::Accept)],
+        );
+
+        dialog.set_modal(true);
+        dialog.connect_response(
+            clone!(@strong dialog, @weak self as this => move |dialog, resp| {
+                if resp == ResponseType::Accept {
+                    let file = dialog.file().unwrap();
+
+                    let install_fut = async move {
+                        let path = file.path().unwrap();
+                        SkApplication::default().worker().install_flatpak_bundle(path.to_str().unwrap()).await.expect("Unable to install bundle");
+                    };
+                    spawn!(install_fut);
+                }
+                dialog.hide();
+                dialog.close();
+            }),
+        );
+
+        dialog.show();
+    }
 }
 
 impl Default for SkApplicationWindow {

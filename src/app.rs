@@ -16,14 +16,15 @@
 
 use adw::subclass::prelude::*;
 use gio::subclass::prelude::ApplicationImpl;
-use glib::{clone, ObjectExt};
+use glib::{clone, ObjectExt, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib::WeakRef;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use once_cell::sync::OnceCell;
+use once_cell::sync::{Lazy, OnceCell};
 
 use crate::ui::{about_dialog, SkApplicationWindow};
+use crate::worker::SkWorker;
 use crate::{config, worker};
 
 mod imp {
@@ -32,6 +33,7 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkApplication {
         pub window: OnceCell<WeakRef<SkApplicationWindow>>,
+        pub worker: SkWorker,
     }
 
     #[glib::object_subclass]
@@ -41,7 +43,27 @@ mod imp {
         type Type = super::SkApplication;
     }
 
-    impl ObjectImpl for SkApplication {}
+    impl ObjectImpl for SkApplication {
+        fn properties() -> &'static [ParamSpec] {
+            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
+                vec![ParamSpecObject::new(
+                    "worker",
+                    "Worker",
+                    "Worker",
+                    SkWorker::static_type(),
+                    ParamFlags::READABLE,
+                )]
+            });
+            PROPERTIES.as_ref()
+        }
+
+        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+            match pspec.name() {
+                "worker" => obj.worker().to_value(),
+                _ => unimplemented!(),
+            }
+        }
+    }
 
     impl GtkApplicationImpl for SkApplication {}
 
@@ -74,14 +96,12 @@ mod imp {
     }
 }
 
-// Wrap SkApplication into a usable gtk-rs object
 glib::wrapper! {
     pub struct SkApplication(ObjectSubclass<imp::SkApplication>)
         @extends gio::Application, gtk::Application, adw::Application,
         @implements gio::ActionMap, gio::ActionGroup;
 }
 
-// SkApplication implementation itself
 impl SkApplication {
     pub fn run() {
         info!(
@@ -102,6 +122,10 @@ impl SkApplication {
 
         // Start running gtk::Application
         app.run();
+    }
+
+    pub fn worker(&self) -> SkWorker {
+        self.imp().worker.clone()
     }
 
     fn create_window(&self) -> SkApplicationWindow {

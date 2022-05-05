@@ -36,6 +36,16 @@
         </child>
         <child>
           <object class="AdwToastOverlay" id="toast_overlay">
+            <child>
+              <object class="GtkBox">
+                <child>
+                  <object class="GtkButton">
+                    <property name="label">Select Flatpak Bundle</property>
+                    <signal name="clicked" handler="select_flatpak_bundle" swapped="true"/>
+                  </object>
+                </child>
+              </object>
+            </child>
           </object>
         </child>
       </object>

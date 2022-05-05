@@ -15,19 +15,22 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod dbus;
+mod flatpak;
+mod worker;
 
 use std::fs;
 
-use async_process::{Child, Command, Stdio};
+use async_process::Command;
+pub use worker::SkWorker;
 use zbus::Result;
 
 use crate::path;
 
-pub async fn spawn_dbus_server() -> Result<()> {
-    dbus::start_server().await
-}
-
+/// Spawn souk-worker binary outside of the Flatpak sandbox
+/// This method gets called from the main `souk` binary.
 pub async fn spawn_process() {
+    debug!("Start souk-worker process...");
+
     // First copy worker binary outside of sandbox
     let mut destination = path::BIN.clone();
     destination.push("souk-worker");
@@ -43,4 +46,11 @@ pub async fn spawn_process() {
     args.push("souk-worker".into());
 
     let mut _child = Command::new("flatpak-spawn").args(&args).spawn().unwrap();
+}
+
+/// Spawn the DBus server for worker, so it can send/receive requests.
+/// This method gets called from the `souk-worker` binary.
+pub async fn spawn_dbus_server() -> Result<()> {
+    debug!("Start souk-worker dbus server...");
+    dbus::server::start().await
 }

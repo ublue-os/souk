@@ -1,4 +1,4 @@
-// Souk - souk-worker.rs
+// Souk - flatpak.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -13,19 +13,3 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-use std::env;
-
-use souk::worker;
-use zbus::Result;
-
-#[async_std::main]
-async fn main() -> Result<()> {
-    env::set_var("RUST_LOG", "souk=debug");
-    pretty_env_logger::init();
-    worker::spawn_dbus_server().await?;
-
-    loop {
-        std::thread::park();
-    }
-}

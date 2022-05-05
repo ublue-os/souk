@@ -450,6 +450,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fragile"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9d758e60b45e8d749c89c1b389ad8aee550f86aa12e2b9298b546dda7a82ab1"
+
+[[package]]
 name = "futures"
 version = "0.3.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1001,6 +1007,35 @@ name = "libc"
 version = "0.2.121"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "efaa7b300f3b5fe8eb6bf21ce3895e1751d9665086af2d64b42f19701015ff4f"
+
+[[package]]
+name = "libflatpak"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbc260026a6a7ac9e55d3f9a4604e8e34c799613307a78435d9566105ff4fb81"
+dependencies = [
+ "bitflags",
+ "fragile",
+ "gio",
+ "glib",
+ "lazy_static",
+ "libc",
+ "libflatpak-sys",
+]
+
+[[package]]
+name = "libflatpak-sys"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c07bb4a277241270804061ffa8080de932dae89e179ddbad732290a1bec68acb"
+dependencies = [
+ "gio-sys",
+ "glib-sys",
+ "gobject-sys",
+ "libc",
+ "pkg-config",
+ "system-deps",
+]
 
 [[package]]
 name = "libsqlite3-sys"
@@ -1589,6 +1624,7 @@ dependencies = [
  "gtk4",
  "indexmap",
  "libadwaita",
+ "libflatpak",
  "log",
  "once_cell",
  "pretty_env_logger",

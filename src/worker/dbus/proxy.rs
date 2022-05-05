@@ -1,4 +1,4 @@
-// Souk - dbus.rs
+// Souk - client.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,28 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use zbus::{dbus_interface, ConnectionBuilder, Result};
+use zbus::Result;
 
 use crate::config;
 
-struct Worker;
-
-#[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
-impl Worker {
-    async fn install_flatpak_bundle(&self, path: &str) {
-        info!("Installing Flatpak Bundle: {}", path);
-    }
+#[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
+trait Worker {
+    fn install_flatpak_bundle(&self, path: &str) -> Result<()>;
 }
 
-pub async fn start_server() -> Result<()> {
+async fn proxy() -> Result<WorkerProxy<'static>> {
+    let session = zbus::Connection::session().await?;
     let name = format!("{}.Worker", config::APP_ID);
-    let worker = Worker {};
 
-    let _ = ConnectionBuilder::session()?
-        .name(name)?
-        .serve_at("/de/haeckerfelix/Souk/Worker", worker)?
+    WorkerProxy::builder(&session)
+        .destination(name)?
+        .path("/de/haeckerfelix/Souk/Worker")?
         .build()
-        .await?;
+        .await
+}
 
-    Ok(())
+pub async fn install_flatpak_bundle(path: &str) -> Result<()> {
+    proxy().await?.install_flatpak_bundle(path).await
 }
