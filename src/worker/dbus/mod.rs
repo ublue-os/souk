@@ -17,4 +17,4 @@
 pub mod proxy;
 pub mod server;
 
-// pub use proxy::{Worker, WorkerProxy};
+pub use proxy::WorkerProxy;

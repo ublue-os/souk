@@ -21,19 +21,24 @@ use crate::config;
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
     fn install_flatpak_bundle(&self, path: &str) -> Result<()>;
+
+    #[dbus_proxy(signal)]
+    fn progress(&self, progress: i32) -> Result<()>;
 }
 
-async fn proxy() -> Result<WorkerProxy<'static>> {
-    let session = zbus::Connection::session().await?;
-    let name = format!("{}.Worker", config::APP_ID);
+impl Default for WorkerProxy<'static> {
+    fn default() -> Self {
+        let fut = async {
+            let session = zbus::Connection::session().await?;
+            let name = format!("{}.Worker", config::APP_ID);
 
-    WorkerProxy::builder(&session)
-        .destination(name)?
-        .path("/de/haeckerfelix/Souk/Worker")?
-        .build()
-        .await
-}
+            WorkerProxy::builder(&session)
+                .destination(name)?
+                .path("/de/haeckerfelix/Souk/Worker")?
+                .build()
+                .await
+        };
 
-pub async fn install_flatpak_bundle(path: &str) -> Result<()> {
-    proxy().await?.install_flatpak_bundle(path).await
+        async_std::task::block_on(fut).unwrap()
+    }
 }

@@ -14,65 +14,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::clone;
-use gtk::{gio, glib};
-use libflatpak::prelude::*;
-use libflatpak::{Installation, Transaction};
-use zbus::{dbus_interface, ConnectionBuilder, Result};
+use async_std::channel::{Receiver, Sender};
+use async_std::prelude::*;
+use zbus::{dbus_interface, ConnectionBuilder, SignalContext, Result};
 
 use crate::config;
+use crate::worker::flatpak::{Command, Response};
 
-struct Worker;
+#[derive(Debug)]
+struct Worker {
+    sender: Sender<Command>,
+}
 
 #[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
 impl Worker {
     async fn install_flatpak_bundle(&self, path: &str) {
-        info!("Installing Flatpak Bundle: {}", path);
-
-        let system_installation = Installation::new_system(gio::Cancellable::NONE).unwrap();
-
-        let transaction =
-            Transaction::for_installation(&system_installation, gio::Cancellable::NONE).unwrap();
-
-        let file = gio::File::for_parse_name(path);
-        transaction.add_install_bundle(&file, None).unwrap();
-
-        transaction.connect_new_operation(|_transaction, _operation, progress| {
-            info!("Transaction new operation");
-            progress.set_update_frequency(10);
-
-            let duration = std::time::Duration::from_secs(1);
-            glib::timeout_add_local(
-                duration,
-                clone!(@strong progress => @default-return glib::Continue(false), move ||{
-                    if progress.progress() == 100{
-                        glib::Continue(false)
-                    }else{
-                        debug!("Progress: {}", progress.progress());
-                        glib::Continue(true)
-                    }
-                }),
-            );
-        });
-
-        transaction.connect_add_new_remote(|_transaction, _reason, _s1, _s2, _s3| {
-            info!("Transaction add new remote");
-            true
-        });
-
-        transaction.run(gio::Cancellable::NONE).unwrap();
+        self.sender
+            .send(Command::InstallFlatpakBundle(path.to_string()))
+            .await
+            .unwrap();
     }
+
+    #[dbus_interface(signal)]
+    async fn progress(signal_ctxt: &SignalContext<'_>, progress: i32) -> zbus::Result<()>;
 }
 
-pub async fn start() -> Result<()> {
+pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Response>) -> Result<()> {
     let name = format!("{}.Worker", config::APP_ID);
-    let worker = Worker {};
+    let path = "/de/haeckerfelix/Souk/Worker";
+    let worker = Worker { sender };
 
-    let _ = ConnectionBuilder::session()?
+    let con = ConnectionBuilder::session()?
         .name(name)?
-        .serve_at("/de/haeckerfelix/Souk/Worker", worker)?
+        .serve_at(path, worker)?
         .build()
         .await?;
+
+    let signal_ctxt = SignalContext::new(&con, path).unwrap();
+    while let Some(response) = receiver.next().await {
+        Worker::progress(&signal_ctxt, response.progress).await.unwrap();
+    }
 
     Ok(())
 }

@@ -17,15 +17,12 @@
 use std::env;
 
 use souk::worker;
-use zbus::Result;
 
-#[async_std::main]
-async fn main() -> Result<()> {
+fn main() {
     env::set_var("RUST_LOG", "souk=debug");
     pretty_env_logger::init();
-    worker::spawn_dbus_server().await?;
 
-    loop {
-        std::thread::park();
-    }
+    async_std::task::block_on(async {
+        worker::spawn_server().await.unwrap();
+    });
 }

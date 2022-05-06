@@ -20,7 +20,8 @@ mod worker;
 
 use std::fs;
 
-use async_process::Command;
+use async_std::channel::unbounded;
+use async_std::process::{Command};
 pub use worker::SkWorker;
 use zbus::Result;
 
@@ -37,8 +38,7 @@ pub async fn spawn_process() {
     fs::copy("/app/bin/souk-worker", destination).expect("Unable to copy souk-worker binary");
 
     // If we kill flatpak-spawn, we also want to kill the child process too.
-    let mut args: Vec<String> = Vec::new();
-    args.push("--watch-bus".into());
+    let mut args: Vec<String> = vec!["--watch-bus".into()];
 
     // We cannot do stuff inside the Flatpak Sandbox,
     // so we have to spawn the worker process on host side
@@ -48,9 +48,17 @@ pub async fn spawn_process() {
     let mut _child = Command::new("flatpak-spawn").args(&args).spawn().unwrap();
 }
 
-/// Spawn the DBus server for worker, so it can send/receive requests.
-/// This method gets called from the `souk-worker` binary.
-pub async fn spawn_dbus_server() -> Result<()> {
+/// Start the DBus server and the Flatpak transaction handler.
+/// The Flatpak handler communicates with the dbus server via commands /
+/// responses. This method gets called from the `souk-worker` binary.
+pub async fn spawn_server() -> Result<()> {
     debug!("Start souk-worker dbus server...");
-    dbus::server::start().await
+
+    let (server_tx, server_rx) = unbounded();
+    let (flatak_tx, flatpak_rx) = unbounded();
+
+    flatpak::TransactionHandler::new(flatak_tx, server_rx);
+    dbus::server::start(server_tx, flatpak_rx).await?;
+
+    Ok(())
 }

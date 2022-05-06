@@ -1,4 +1,4 @@
-// Souk - client.rs
+// Souk - worker.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -17,14 +17,17 @@
 use gtk::glib;
 use gtk::subclass::prelude::*;
 use zbus::Result;
+use futures_util::stream::StreamExt;
 
-use crate::worker::dbus::proxy;
+use crate::worker::dbus::WorkerProxy;
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct SkWorker {}
+    pub struct SkWorker {
+        pub proxy: WorkerProxy<'static>,
+    }
 
     #[glib::object_subclass]
     impl ObjectSubclass for SkWorker {
@@ -42,7 +45,14 @@ glib::wrapper! {
 
 impl SkWorker {
     pub async fn install_flatpak_bundle(&self, path: &str) -> Result<()> {
-        proxy::install_flatpak_bundle(path).await
+        self.imp().proxy.install_flatpak_bundle(path).await?;
+
+        let mut progress = self.imp().proxy.receive_progress().await?;
+        while let Some(progress) = progress.next().await{
+            dbg!(progress.args().unwrap().progress);
+        }
+
+        Ok(())
     }
 }
 

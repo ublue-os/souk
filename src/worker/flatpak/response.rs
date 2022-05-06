@@ -1,4 +1,4 @@
-// Souk - flatpak.rs
+// Souk - action.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,10 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod command;
-mod response;
-mod transaction_handler;
-
-pub use command::Command;
-pub use response::Response;
-pub use transaction_handler::TransactionHandler;
+#[derive(Debug, Clone)]
+pub struct Response {
+    pub progress: i32,
+}
