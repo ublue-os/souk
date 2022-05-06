@@ -14,19 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod dbus;
+mod flatpak;
+pub mod process;
+
+use async_std::channel::unbounded;
+use flatpak::TransactionHandler;
 use futures_util::stream::StreamExt;
 use gtk::glib;
 use gtk::subclass::prelude::*;
 use zbus::Result;
-
-use crate::worker::dbus::WorkerProxy;
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
     pub struct SkWorker {
-        pub proxy: WorkerProxy<'static>,
+        pub proxy: dbus::WorkerProxy<'static>,
     }
 
     #[glib::object_subclass]
@@ -44,6 +48,20 @@ glib::wrapper! {
 }
 
 impl SkWorker {
+    /// Start DBus server and Flatpak transaction handler.
+    /// This method gets called from the `souk-worker` binary.
+    pub async fn spawn_dbus_server() -> Result<()> {
+        debug!("Start souk-worker dbus server...");
+
+        let (server_tx, server_rx) = unbounded();
+        let (flatak_tx, flatpak_rx) = unbounded();
+
+        TransactionHandler::start(flatak_tx, server_rx);
+        dbus::server::start(server_tx, flatpak_rx).await?;
+
+        Ok(())
+    }
+
     pub async fn install_flatpak_bundle(&self, path: &str) -> Result<()> {
         self.imp().proxy.install_flatpak_bundle(path).await?;
 
@@ -51,6 +69,8 @@ impl SkWorker {
         while let Some(progress) = progress.next().await {
             dbg!(progress.args().unwrap().progress);
         }
+
+        dbg!("bah");
 
         Ok(())
     }

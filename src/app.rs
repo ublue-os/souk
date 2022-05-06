@@ -91,7 +91,7 @@ mod imp {
             app.setup_gactions();
 
             // Spawn worker process
-            spawn!(worker::spawn_process());
+            spawn!(worker::process::spawn());
         }
     }
 }

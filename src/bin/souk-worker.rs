@@ -16,13 +16,13 @@
 
 use std::env;
 
-use souk::worker;
+use souk::worker::SkWorker;
 
 fn main() {
     env::set_var("RUST_LOG", "souk=debug");
     pretty_env_logger::init();
 
     async_std::task::block_on(async {
-        worker::spawn_server().await.unwrap();
+        SkWorker::spawn_dbus_server().await.unwrap();
     });
 }

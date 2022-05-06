@@ -33,7 +33,7 @@ pub struct TransactionHandler {
 }
 
 impl TransactionHandler {
-    pub fn new(sender: Sender<Response>, receiver: Receiver<Command>) -> Self {
+    pub fn start(sender: Sender<Response>, receiver: Receiver<Command>) {
         let handler = Self {
             sender: Arc::new(sender),
         };
@@ -49,8 +49,6 @@ impl TransactionHandler {
             };
             task::block_on(fut);
         }));
-
-        handler
     }
 
     fn process_command(&self, command: Command) -> glib::Continue {
@@ -64,7 +62,7 @@ impl TransactionHandler {
 
     fn install_flatpak_bundle(&self, path: &str) {
         info!("Installing Flatpak Bundle: {}", path);
-        let file = gio::File::for_parse_name(path);
+        let _file = gio::File::for_parse_name(path);
 
         let transaction = self.new_transaction();
         // transaction.add_install_bundle(&file, None).unwrap();
