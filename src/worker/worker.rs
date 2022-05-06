@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use futures_util::stream::StreamExt;
 use gtk::glib;
 use gtk::subclass::prelude::*;
 use zbus::Result;
-use futures_util::stream::StreamExt;
 
 use crate::worker::dbus::WorkerProxy;
 
@@ -48,7 +48,7 @@ impl SkWorker {
         self.imp().proxy.install_flatpak_bundle(path).await?;
 
         let mut progress = self.imp().proxy.receive_progress().await?;
-        while let Some(progress) = progress.next().await{
+        while let Some(progress) = progress.next().await {
             dbg!(progress.args().unwrap().progress);
         }
 

@@ -21,7 +21,7 @@ mod worker;
 use std::fs;
 
 use async_std::channel::unbounded;
-use async_std::process::{Command};
+use async_std::process::Command;
 pub use worker::SkWorker;
 use zbus::Result;
 

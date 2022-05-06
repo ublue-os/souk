@@ -16,7 +16,7 @@
 
 use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
-use zbus::{dbus_interface, ConnectionBuilder, SignalContext, Result};
+use zbus::{dbus_interface, ConnectionBuilder, Result, SignalContext};
 
 use crate::config;
 use crate::worker::flatpak::{Command, Response};
@@ -52,7 +52,9 @@ pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Response>) ->
 
     let signal_ctxt = SignalContext::new(&con, path).unwrap();
     while let Some(response) = receiver.next().await {
-        Worker::progress(&signal_ctxt, response.progress).await.unwrap();
+        Worker::progress(&signal_ctxt, response.progress)
+            .await
+            .unwrap();
     }
 
     Ok(())
