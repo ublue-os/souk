@@ -20,6 +20,7 @@ pub mod process;
 
 use async_std::channel::unbounded;
 use flatpak::TransactionHandler;
+use futures::future::join;
 use futures_util::stream::StreamExt;
 use glib::clone;
 use gtk::glib;
@@ -44,7 +45,9 @@ mod imp {
     impl ObjectImpl for SkWorker {
         fn constructed(&self, obj: &Self::Type) {
             let fut = clone!(@strong obj => async move {
-                obj.receive_progress().await;
+                let progress = obj.receive_progress();
+                let error = obj.receive_error();
+                join(progress, error).await;
             });
             gtk_macros::spawn!(fut);
         }
@@ -81,6 +84,17 @@ impl SkWorker {
         let mut progress = self.imp().proxy.receive_progress().await.unwrap();
         while let Some(progress) = progress.next().await {
             dbg!(progress.args().unwrap());
+        }
+    }
+
+    async fn receive_error(&self) {
+        let mut error = self.imp().proxy.receive_error().await.unwrap();
+        while let Some(error) = error.next().await {
+            let error = error.args().unwrap().error;
+            error!(
+                "Transaction {} failed: {}",
+                error.transaction_uuid, error.message
+            );
         }
     }
 }

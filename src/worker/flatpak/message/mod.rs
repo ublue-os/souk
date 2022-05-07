@@ -1,4 +1,4 @@
-// Souk - flatpak.rs
+// Souk - mod.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,10 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod command;
-mod message;
-mod transaction_handler;
+mod error;
+mod progress;
 
-pub use command::Command;
-pub use message::{Error, Message, Progress};
-pub use transaction_handler::TransactionHandler;
+pub use error::Error;
+pub use progress::Progress;
+
+pub enum Message {
+    Progress(Progress),
+    Error(Error),
+}

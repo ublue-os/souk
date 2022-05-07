@@ -25,6 +25,9 @@ trait Worker {
 
     #[dbus_proxy(signal)]
     fn progress(&self, progress: flatpak::Progress) -> Result<()>;
+
+    #[dbus_proxy(signal)]
+    fn error(&self, error: flatpak::Error) -> Result<()>;
 }
 
 impl Default for WorkerProxy<'static> {

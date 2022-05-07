@@ -19,7 +19,7 @@ use async_std::prelude::*;
 use zbus::{dbus_interface, ConnectionBuilder, Result, SignalContext};
 
 use crate::config;
-use crate::worker::flatpak::{Command, Progress};
+use crate::worker::flatpak::{Command, Error, Message, Progress};
 
 #[derive(Debug)]
 struct Worker {
@@ -40,9 +40,12 @@ impl Worker {
 
     #[dbus_interface(signal)]
     async fn progress(signal_ctxt: &SignalContext<'_>, progress: Progress) -> zbus::Result<()>;
+
+    #[dbus_interface(signal)]
+    async fn error(signal_ctxt: &SignalContext<'_>, error: Error) -> zbus::Result<()>;
 }
 
-pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Progress>) -> Result<()> {
+pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Message>) -> Result<()> {
     let name = format!("{}.Worker", config::APP_ID);
     let path = "/de/haeckerfelix/Souk/Worker";
     let worker = Worker { sender };
@@ -54,8 +57,11 @@ pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Progress>) ->
         .await?;
 
     let signal_ctxt = SignalContext::new(&con, path).unwrap();
-    while let Some(progress) = receiver.next().await {
-        Worker::progress(&signal_ctxt, progress).await.unwrap();
+    while let Some(message) = receiver.next().await {
+        match message {
+            Message::Progress(progress) => Worker::progress(&signal_ctxt, progress).await.unwrap(),
+            Message::Error(error) => Worker::error(&signal_ctxt, error).await.unwrap(),
+        }
     }
     debug!("Stopped.");
 

@@ -25,15 +25,15 @@ use gtk::{gio, glib};
 use libflatpak::prelude::*;
 use libflatpak::{Installation, Transaction, TransactionOperation, TransactionProgress};
 
-use crate::worker::flatpak::{Command, Progress};
+use crate::worker::flatpak::{Command, Error, Message, Progress};
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct TransactionHandler {
-    sender: Arc<Sender<Progress>>,
+    sender: Arc<Sender<Message>>,
 }
 
 impl TransactionHandler {
-    pub fn start(sender: Sender<Progress>, receiver: Receiver<Command>) {
+    pub fn start(sender: Sender<Message>, receiver: Receiver<Command>) {
         let handler = Self {
             sender: Arc::new(sender),
         };
@@ -73,28 +73,41 @@ impl TransactionHandler {
     }
 
     fn run_transaction(&self, transaction: Transaction) {
+        let transaction_uuid = uuid::Uuid::new_v4().to_string();
+
         transaction.connect_new_operation(
-            clone!(@weak self as this => move |transaction, operation, progress| {
-                this.handle_operation(transaction, operation, progress);
+            clone!(@weak self as this, @strong transaction_uuid => move |transaction, operation, progress| {
+                this.handle_operation(transaction_uuid.clone(), transaction, operation, progress);
             }),
         );
 
-        transaction.run(gio::Cancellable::NONE).unwrap();
+        if let Err(err) = transaction.run(gio::Cancellable::NONE) {
+            let error = Error::new(transaction_uuid, err.message().to_string());
+            self.sender.try_send(Message::Error(error)).unwrap();
+        }
     }
 
     fn handle_operation(
         &self,
+        transaction_uuid: String,
         transaction: &Transaction,
         transaction_operation: &TransactionOperation,
         transaction_progress: &TransactionProgress,
     ) {
-        let progress = Progress::new(transaction, transaction_operation, transaction_progress);
-        self.sender.try_send(progress.clone()).unwrap();
+        let progress = Progress::new(
+            transaction_uuid,
+            transaction,
+            transaction_operation,
+            transaction_progress,
+        );
+        self.sender
+            .try_send(Message::Progress(progress.clone()))
+            .unwrap();
 
         transaction_progress.connect_changed(
             clone!(@weak self.sender as sender, @strong progress => move |transaction_progress|{
                 let updated = progress.update(transaction_progress);
-                sender.try_send(updated).unwrap();
+                sender.try_send(Message::Progress(updated)).unwrap();
             }),
         );
     }

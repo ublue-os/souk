@@ -1,4 +1,4 @@
-// Souk - flatpak.rs
+// Souk - error.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,10 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod command;
-mod message;
-mod transaction_handler;
+use serde::{Deserialize, Serialize};
+use zbus::zvariant::Type;
 
-pub use command::Command;
-pub use message::{Error, Message, Progress};
-pub use transaction_handler::TransactionHandler;
+#[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
+pub struct Error {
+    pub transaction_uuid: String,
+    pub message: String,
+}
+
+impl Error {
+    pub fn new(transaction_uuid: String, message: String) -> Self {
+        Self {
+            transaction_uuid,
+            message,
+        }
+    }
+}

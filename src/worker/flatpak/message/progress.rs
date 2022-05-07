@@ -21,6 +21,8 @@ use zbus::zvariant::Type;
 
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
 pub struct Progress {
+    pub transaction_uuid: String,
+
     // The final ref is the last ref which gets handled in a set of operations in a transaction
     // and therefore usually the target/goal of a transaction.
     pub final_ref: String,
@@ -38,6 +40,7 @@ pub struct Progress {
 
 impl Progress {
     pub fn new(
+        transaction_uuid: String,
         transaction: &Transaction,
         operation: &TransactionOperation,
         operation_progress: &TransactionProgress,
@@ -57,6 +60,7 @@ impl Progress {
         let start_time = operation_progress.start_time();
 
         Self {
+            transaction_uuid,
             final_ref,
             current_ref,
             installation,
