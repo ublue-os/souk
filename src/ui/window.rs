@@ -105,7 +105,7 @@ impl SkApplicationWindow {
 
                     let install_fut = async move {
                         let path = file.path().unwrap();
-                        SkApplication::default().worker().install_flatpak_bundle(path.to_str().unwrap()).await.expect("Unable to install bundle");
+                        SkApplication::default().worker().install_flatpak_bundle(path.to_str().unwrap(), "default").await.expect("Unable to install bundle");
                     };
                     spawn!(install_fut);
                 }

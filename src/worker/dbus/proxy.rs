@@ -17,13 +17,14 @@
 use zbus::Result;
 
 use crate::config;
+use crate::worker::flatpak;
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
-    fn install_flatpak_bundle(&self, path: &str) -> Result<()>;
+    fn install_flatpak_bundle(&self, path: &str, installation: &str) -> Result<()>;
 
     #[dbus_proxy(signal)]
-    fn progress(&self, progress: i32) -> Result<()>;
+    fn progress(&self, progress: flatpak::Progress) -> Result<()>;
 }
 
 impl Default for WorkerProxy<'static> {

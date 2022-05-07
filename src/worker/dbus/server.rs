@@ -19,7 +19,7 @@ use async_std::prelude::*;
 use zbus::{dbus_interface, ConnectionBuilder, Result, SignalContext};
 
 use crate::config;
-use crate::worker::flatpak::{Command, Response};
+use crate::worker::flatpak::{Command, Progress};
 
 #[derive(Debug)]
 struct Worker {
@@ -28,18 +28,21 @@ struct Worker {
 
 #[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
 impl Worker {
-    async fn install_flatpak_bundle(&self, path: &str) {
+    async fn install_flatpak_bundle(&self, path: &str, installation: &str) {
         self.sender
-            .send(Command::InstallFlatpakBundle(path.to_string()))
+            .send(Command::InstallFlatpakBundle(
+                path.to_string(),
+                installation.to_string(),
+            ))
             .await
             .unwrap();
     }
 
     #[dbus_interface(signal)]
-    async fn progress(signal_ctxt: &SignalContext<'_>, progress: i32) -> zbus::Result<()>;
+    async fn progress(signal_ctxt: &SignalContext<'_>, progress: Progress) -> zbus::Result<()>;
 }
 
-pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Response>) -> Result<()> {
+pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Progress>) -> Result<()> {
     let name = format!("{}.Worker", config::APP_ID);
     let path = "/de/haeckerfelix/Souk/Worker";
     let worker = Worker { sender };
@@ -51,11 +54,10 @@ pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Response>) ->
         .await?;
 
     let signal_ctxt = SignalContext::new(&con, path).unwrap();
-    while let Some(response) = receiver.next().await {
-        Worker::progress(&signal_ctxt, response.progress)
-            .await
-            .unwrap();
+    while let Some(progress) = receiver.next().await {
+        Worker::progress(&signal_ctxt, progress).await.unwrap();
     }
+    debug!("Stopped.");
 
     Ok(())
 }

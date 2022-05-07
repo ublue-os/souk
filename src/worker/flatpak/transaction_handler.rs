@@ -25,15 +25,15 @@ use gtk::{gio, glib};
 use libflatpak::prelude::*;
 use libflatpak::{Installation, Transaction, TransactionOperation, TransactionProgress};
 
-use crate::worker::flatpak::{Command, Response};
+use crate::worker::flatpak::{Command, Progress};
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct TransactionHandler {
-    sender: Arc<Sender<Response>>,
+    sender: Arc<Sender<Progress>>,
 }
 
 impl TransactionHandler {
-    pub fn start(sender: Sender<Response>, receiver: Receiver<Command>) {
+    pub fn start(sender: Sender<Progress>, receiver: Receiver<Command>) {
         let handler = Self {
             sender: Arc::new(sender),
         };
@@ -41,7 +41,7 @@ impl TransactionHandler {
         thread::spawn(clone!(@strong handler, @strong receiver => move || {
             let mut receiver = receiver;
             let fut = async move {
-                if let Some(command) = receiver.next().await {
+                while let Some(command) = receiver.next().await {
                     task::spawn_blocking(clone!(@weak handler => move || {
                         handler.process_command(command);
                     })).await;
@@ -55,20 +55,19 @@ impl TransactionHandler {
         debug!("Process command: {:?}", command);
 
         match command {
-            Command::InstallFlatpakBundle(path) => self.install_flatpak_bundle(&path),
+            Command::InstallFlatpakBundle(path, installation) => {
+                self.install_flatpak_bundle(&path, &installation)
+            }
         }
         glib::Continue(true)
     }
 
-    fn install_flatpak_bundle(&self, path: &str) {
-        info!("Installing Flatpak Bundle: {}", path);
-        let _file = gio::File::for_parse_name(path);
+    fn install_flatpak_bundle(&self, path: &str, installation: &str) {
+        info!("Installing Flatpak bundle: {}", path);
+        let file = gio::File::for_parse_name(path);
 
-        let transaction = self.new_transaction();
-        // transaction.add_install_bundle(&file, None).unwrap();
-        transaction
-            .add_install("gnome-nightly", "app/org.gnome.Builder/x86_64/master", &[])
-            .unwrap();
+        let transaction = self.new_transaction(installation);
+        transaction.add_install_bundle(&file, None).unwrap();
 
         self.run_transaction(transaction);
     }
@@ -80,36 +79,32 @@ impl TransactionHandler {
             }),
         );
 
-        transaction.connect_add_new_remote(|_transaction, _reason, _s1, _s2, _s3| {
-            info!("Transaction add new remote");
-            true
-        });
-
         transaction.run(gio::Cancellable::NONE).unwrap();
     }
 
     fn handle_operation(
         &self,
-        _transaction: &Transaction,
-        operation: &TransactionOperation,
-        progress: &TransactionProgress,
+        transaction: &Transaction,
+        transaction_operation: &TransactionOperation,
+        transaction_progress: &TransactionProgress,
     ) {
-        debug!(
-            "Handle operation: {}",
-            operation.operation_type().to_str().unwrap()
-        );
+        let progress = Progress::new(transaction, transaction_operation, transaction_progress);
+        self.sender.try_send(progress.clone()).unwrap();
 
-        progress.connect_changed(clone!(@weak self.sender as sender => move |p|{
-            let r = Response {
-                progress: p.progress()
-            };
-            debug!("Sending response");
-            sender.try_send(r).unwrap();
-        }));
+        transaction_progress.connect_changed(
+            clone!(@weak self.sender as sender, @strong progress => move |transaction_progress|{
+                let updated = progress.update(transaction_progress);
+                sender.try_send(updated).unwrap();
+            }),
+        );
     }
 
-    fn new_transaction(&self) -> Transaction {
-        let installation = Installation::new_system(gio::Cancellable::NONE).unwrap();
+    fn new_transaction(&self, installation: &str) -> Transaction {
+        let installation = match installation {
+            "default" => Installation::new_system(gio::Cancellable::NONE).unwrap(),
+            _ => panic!("Unknown Flatpak installation: {}", installation),
+        };
+
         Transaction::for_installation(&installation, gio::Cancellable::NONE)
             .expect("Unable to create transaction")
     }

@@ -21,6 +21,7 @@ pub mod process;
 use async_std::channel::unbounded;
 use flatpak::TransactionHandler;
 use futures_util::stream::StreamExt;
+use glib::clone;
 use gtk::glib;
 use gtk::subclass::prelude::*;
 use zbus::Result;
@@ -40,7 +41,14 @@ mod imp {
         type Type = super::SkWorker;
     }
 
-    impl ObjectImpl for SkWorker {}
+    impl ObjectImpl for SkWorker {
+        fn constructed(&self, obj: &Self::Type) {
+            let fut = clone!(@strong obj => async move {
+                obj.receive_progress().await;
+            });
+            gtk_macros::spawn!(fut);
+        }
+    }
 }
 
 glib::wrapper! {
@@ -62,17 +70,18 @@ impl SkWorker {
         Ok(())
     }
 
-    pub async fn install_flatpak_bundle(&self, path: &str) -> Result<()> {
-        self.imp().proxy.install_flatpak_bundle(path).await?;
+    pub async fn install_flatpak_bundle(&self, path: &str, installation: &str) -> Result<()> {
+        self.imp()
+            .proxy
+            .install_flatpak_bundle(path, installation)
+            .await
+    }
 
-        let mut progress = self.imp().proxy.receive_progress().await?;
+    async fn receive_progress(&self) {
+        let mut progress = self.imp().proxy.receive_progress().await.unwrap();
         while let Some(progress) = progress.next().await {
-            dbg!(progress.args().unwrap().progress);
+            dbg!(progress.args().unwrap());
         }
-
-        dbg!("bah");
-
-        Ok(())
     }
 }
 

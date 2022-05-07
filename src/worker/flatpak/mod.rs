@@ -15,9 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod command;
-mod response;
+mod progress;
 mod transaction_handler;
 
 pub use command::Command;
-pub use response::Response;
+pub use progress::Progress;
 pub use transaction_handler::TransactionHandler;
