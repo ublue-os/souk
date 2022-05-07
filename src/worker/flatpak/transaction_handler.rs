@@ -20,12 +20,13 @@ use std::thread;
 use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
 use async_std::task;
-use glib::{clone, Downgrade};
+use glib::{clone, Downgrade, Error};
 use gtk::{gio, glib};
 use libflatpak::prelude::*;
 use libflatpak::{Installation, Transaction, TransactionOperation, TransactionProgress};
 
-use crate::worker::flatpak::{Command, Error, Message, Progress};
+use crate::worker::flatpak;
+use crate::worker::flatpak::{Command, Message, Progress};
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct TransactionHandler {
@@ -53,38 +54,69 @@ impl TransactionHandler {
 
     fn process_command(&self, command: Command) -> glib::Continue {
         debug!("Process command: {:?}", command);
+        let transaction_uuid = uuid::Uuid::new_v4().to_string();
 
-        match command {
-            Command::InstallFlatpakBundle(path, installation) => {
-                self.install_flatpak_bundle(&path, &installation)
+        let res = match command {
+            Command::InstallFlatpak(ref_, remote, installation) => {
+                self.install_flatpak(&transaction_uuid, &ref_, &remote, &installation)
             }
+            Command::InstallFlatpakBundle(path, installation) => {
+                self.install_flatpak_bundle(&transaction_uuid, &path, &installation)
+            }
+        };
+
+        if let Err(err) = res {
+            let error = flatpak::Error::new(transaction_uuid, err.message().to_string());
+            self.sender.try_send(Message::Error(error)).unwrap();
         }
+
         glib::Continue(true)
     }
 
-    fn install_flatpak_bundle(&self, path: &str, installation: &str) {
+    fn install_flatpak(
+        &self,
+        transaction_uuid: &str,
+        ref_: &str,
+        remote: &str,
+        installation: &str,
+    ) -> Result<(), Error> {
+        info!("Installing Flatpak: {}", ref_);
+
+        let transaction = self.new_transaction(installation);
+        transaction.add_install(remote, ref_, &[])?;
+        self.run_transaction(transaction_uuid.to_string(), transaction)?;
+
+        Ok(())
+    }
+
+    fn install_flatpak_bundle(
+        &self,
+        transaction_uuid: &str,
+        path: &str,
+        installation: &str,
+    ) -> Result<(), Error> {
         info!("Installing Flatpak bundle: {}", path);
         let file = gio::File::for_parse_name(path);
 
         let transaction = self.new_transaction(installation);
-        transaction.add_install_bundle(&file, None).unwrap();
+        transaction.add_install_bundle(&file, None)?;
+        self.run_transaction(transaction_uuid.to_string(), transaction)?;
 
-        self.run_transaction(transaction);
+        Ok(())
     }
 
-    fn run_transaction(&self, transaction: Transaction) {
-        let transaction_uuid = uuid::Uuid::new_v4().to_string();
-
+    fn run_transaction(
+        &self,
+        transaction_uuid: String,
+        transaction: Transaction,
+    ) -> Result<(), Error> {
         transaction.connect_new_operation(
             clone!(@weak self as this, @strong transaction_uuid => move |transaction, operation, progress| {
                 this.handle_operation(transaction_uuid.clone(), transaction, operation, progress);
             }),
         );
 
-        if let Err(err) = transaction.run(gio::Cancellable::NONE) {
-            let error = Error::new(transaction_uuid, err.message().to_string());
-            self.sender.try_send(Message::Error(error)).unwrap();
-        }
+        transaction.run(gio::Cancellable::NONE)
     }
 
     fn handle_operation(

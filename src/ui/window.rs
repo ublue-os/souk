@@ -29,7 +29,12 @@ mod imp {
 
     #[derive(Debug, Default, CompositeTemplate)]
     #[template(resource = "/de/haeckerfelix/Souk/gtk/window.ui")]
-    pub struct SkApplicationWindow {}
+    pub struct SkApplicationWindow {
+        #[template_child]
+        pub flatpak_entry: TemplateChild<gtk::Entry>,
+        #[template_child]
+        pub remote_entry: TemplateChild<gtk::Entry>,
+    }
 
     #[glib::object_subclass]
     impl ObjectSubclass for SkApplicationWindow {
@@ -87,6 +92,21 @@ impl SkApplicationWindow {
     fn setup_signals(&self) {}
 
     fn setup_gactions(&self) {}
+
+    #[template_callback]
+    fn install_flatpak(&self) {
+        let flatpak = self.imp().flatpak_entry.text();
+        let remote = self.imp().remote_entry.text();
+
+        let install_fut = async move {
+            SkApplication::default()
+                .worker()
+                .install_flatpak(&flatpak, &remote, "default")
+                .await
+                .expect("Unable to install flatpak");
+        };
+        spawn!(install_fut);
+    }
 
     #[template_callback]
     fn select_flatpak_bundle(&self) {

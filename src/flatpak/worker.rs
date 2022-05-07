@@ -16,11 +16,14 @@
 
 use futures::future::join;
 use futures_util::stream::StreamExt;
-use glib::clone;
+use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib;
+use gtk::prelude::*;
 use gtk::subclass::prelude::*;
+use once_cell::sync::Lazy;
 use zbus::Result;
 
+use crate::flatpak::{SkTransaction, SkTransactionModel};
 use crate::worker::WorkerProxy;
 
 mod imp {
@@ -28,6 +31,7 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkWorker {
+        pub transactions: SkTransactionModel,
         pub proxy: WorkerProxy<'static>,
     }
 
@@ -39,6 +43,26 @@ mod imp {
     }
 
     impl ObjectImpl for SkWorker {
+        fn properties() -> &'static [ParamSpec] {
+            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
+                vec![ParamSpecObject::new(
+                    "transactions",
+                    "Transactions",
+                    "Transactions",
+                    SkTransactionModel::static_type(),
+                    ParamFlags::READABLE,
+                )]
+            });
+            PROPERTIES.as_ref()
+        }
+
+        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+            match pspec.name() {
+                "transactions" => obj.transactions().to_value(),
+                _ => unimplemented!(),
+            }
+        }
+
         fn constructed(&self, obj: &Self::Type) {
             let fut = clone!(@strong obj => async move {
                 let progress = obj.receive_progress();
@@ -55,6 +79,22 @@ glib::wrapper! {
 }
 
 impl SkWorker {
+    pub fn transactions(&self) -> SkTransactionModel {
+        self.imp().transactions.clone()
+    }
+
+    pub async fn install_flatpak(
+        &self,
+        ref_: &str,
+        remote: &str,
+        installation: &str,
+    ) -> Result<()> {
+        self.imp()
+            .proxy
+            .install_flatpak(ref_, remote, installation)
+            .await
+    }
+
     pub async fn install_flatpak_bundle(&self, path: &str, installation: &str) -> Result<()> {
         self.imp()
             .proxy
@@ -65,7 +105,19 @@ impl SkWorker {
     async fn receive_progress(&self) {
         let mut progress = self.imp().proxy.receive_progress().await.unwrap();
         while let Some(progress) = progress.next().await {
-            dbg!(progress.args().unwrap());
+            let progress = progress.args().unwrap().progress;
+            debug!("Transaction progress: {:#?}", progress);
+
+            let uuid = progress.transaction_uuid.clone();
+
+            match self.transactions().transaction(&uuid) {
+                Some(transaction) => transaction.update(&progress),
+                None => {
+                    let transaction = SkTransaction::new(&uuid);
+                    transaction.update(&progress);
+                    self.transactions().add_transaction(&transaction);
+                }
+            }
         }
     }
 

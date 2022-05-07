@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod transaction;
+mod transaction_model;
 mod worker;
 
+pub use transaction::SkTransaction;
+pub use transaction_model::SkTransactionModel;
 pub use worker::SkWorker;

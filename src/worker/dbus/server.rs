@@ -28,6 +28,17 @@ struct Worker {
 
 #[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
 impl Worker {
+    async fn install_flatpak(&self, ref_: &str, remote: &str, installation: &str) {
+        self.sender
+            .send(Command::InstallFlatpak(
+                ref_.to_string(),
+                remote.to_string(),
+                installation.to_string(),
+            ))
+            .await
+            .unwrap();
+    }
+
     async fn install_flatpak_bundle(&self, path: &str, installation: &str) {
         self.sender
             .send(Command::InstallFlatpakBundle(
