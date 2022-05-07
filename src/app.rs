@@ -23,8 +23,8 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use once_cell::sync::{Lazy, OnceCell};
 
+use crate::flatpak::SkWorker;
 use crate::ui::{about_dialog, SkApplicationWindow};
-use crate::worker::SkWorker;
 use crate::{config, worker};
 
 mod imp {

@@ -28,6 +28,7 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate gtk_macros;
 
+pub mod flatpak;
 pub mod ui;
 pub mod worker;
 

@@ -1,4 +1,4 @@
-// Souk - souk-worker.rs
+// Souk - process.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,15 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::env;
+mod dbus;
+mod flatpak;
+pub mod process;
 
-use souk::worker;
+pub use dbus::WorkerProxy;
+pub use flatpak::TransactionHandler;
 
-fn main() {
-    env::set_var("RUST_LOG", "souk=debug");
-    pretty_env_logger::init();
+/// Start DBus server and Flatpak transaction handler.
+/// This method gets called from the `souk-worker` binary.
+pub async fn spawn_dbus_server() {
+    use async_std::channel::unbounded;
+    debug!("Start souk-worker dbus server...");
 
-    async_std::task::block_on(async {
-        worker::spawn_dbus_server().await;
-    });
+    let (server_tx, server_rx) = unbounded();
+    let (flatak_tx, flatpak_rx) = unbounded();
+
+    TransactionHandler::start(flatak_tx, server_rx);
+    dbus::server::start(server_tx, flatpak_rx).await.unwrap();
 }
