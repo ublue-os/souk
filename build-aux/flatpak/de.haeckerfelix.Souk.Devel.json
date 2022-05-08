@@ -20,7 +20,8 @@
     	"--filesystem=host",
         "--talk-name=org.freedesktop.Flatpak",
     	"--env=RUST_LOG=souk=debug",
-    	"--env=RUST_BACKTRACE=1"
+    	"--env=RUST_BACKTRACE=1",
+    	"--env=GOBJECT_DEBUG=instance-count"
     ],
     "build-options" : {
         "append-path" : "/usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm13/bin",
