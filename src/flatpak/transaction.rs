@@ -16,6 +16,7 @@
 
 use std::cell::{Cell, RefCell};
 
+use glib::subclass::Signal;
 use glib::{
     ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecInt, ParamSpecObject,
     ParamSpecString, ToValue,
@@ -28,7 +29,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::flatpak::SkTransactionType;
-use crate::worker::Progress;
+use crate::worker::{Error, Progress};
 
 mod imp {
     use super::*;
@@ -195,6 +196,21 @@ mod imp {
                 _ => unimplemented!(),
             }
         }
+
+        fn signals() -> &'static [Signal] {
+            static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
+                vec![
+                    Signal::builder("done", &[], glib::Type::UNIT.into()).build(),
+                    Signal::builder(
+                        "error",
+                        &[glib::Type::STRING.into()],
+                        glib::Type::UNIT.into(),
+                    )
+                    .build(),
+                ]
+            });
+            SIGNALS.as_ref()
+        }
     }
 }
 
@@ -264,8 +280,16 @@ impl SkTransaction {
         self.imp().operations_count.get()
     }
 
-    pub fn update(&self, progress: &Progress) {
+    pub(super) fn handle_progress(&self, progress: &Progress) {
         let imp = self.imp();
+
+        if progress.is_done {
+            imp.progress.set(1.0);
+            self.notify("progress");
+
+            self.emit_by_name::<()>("done", &[]);
+            return;
+        }
 
         let global_progress = (progress.current_operation as f32 - 1.0
             + (progress.progress as f32 / 100.0))
@@ -280,8 +304,8 @@ impl SkTransaction {
         *imp.current_operation_type.borrow_mut() = progress.type_.clone();
         self.notify("current-operation-type");
 
-        imp.current_operation_progress
-            .set(progress.progress as f32 / 100.0);
+        let p = progress.progress as f32 / 100.0;
+        imp.current_operation_progress.set(p);
         self.notify("current-operation-progress");
 
         imp.current_operation.set(progress.current_operation);
@@ -289,5 +313,9 @@ impl SkTransaction {
 
         imp.operations_count.set(progress.operations_count);
         self.notify("operations-count");
+    }
+
+    pub(super) fn handle_error(&self, error: &Error) {
+        self.emit_by_name::<()>("error", &[&error.message.to_value()]);
     }
 }

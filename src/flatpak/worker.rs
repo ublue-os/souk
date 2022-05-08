@@ -103,7 +103,7 @@ impl SkWorker {
 
         let type_ = SkTransactionType::Install;
         let transaction = SkTransaction::new(&transaction_uuid, ref_, &type_, remote, installation);
-        self.transactions().add_transaction(&transaction);
+        self.add_transaction(&transaction);
 
         Ok(transaction)
     }
@@ -132,9 +132,33 @@ impl SkWorker {
             filename_string,
             installation,
         );
-        self.transactions().add_transaction(&transaction);
+        self.add_transaction(&transaction);
 
         Ok(transaction)
+    }
+
+    fn add_transaction(&self, transaction: &SkTransaction) {
+        // Remove finished transactions from model
+        transaction.connect_local(
+            "done",
+            false,
+            clone!(@weak self as this => @default-return None, move |t|{
+                let transaction: SkTransaction = t[0].get().unwrap();
+                this.transactions().remove_transaction(&transaction);
+                None
+            }),
+        );
+        transaction.connect_local(
+            "error",
+            false,
+            clone!(@weak self as this => @default-return None, move |t|{
+                let transaction: SkTransaction = t[0].get().unwrap();
+                this.transactions().remove_transaction(&transaction);
+                None
+            }),
+        );
+
+        self.transactions().add_transaction(transaction);
     }
 
     async fn receive_progress(&self) {
@@ -146,7 +170,7 @@ impl SkWorker {
             let uuid = progress.transaction_uuid.clone();
 
             match self.transactions().transaction(&uuid) {
-                Some(transaction) => transaction.update(&progress),
+                Some(transaction) => transaction.handle_progress(&progress),
                 None => warn!("Received progress for unknown transaction!"),
             }
         }
@@ -156,10 +180,14 @@ impl SkWorker {
         let mut error = self.imp().proxy.receive_error().await.unwrap();
         while let Some(error) = error.next().await {
             let error = error.args().unwrap().error;
-            error!(
-                "Transaction {} failed: {}",
-                error.transaction_uuid, error.message
-            );
+            error!("Transaction error: {:#?}", error.message);
+
+            let uuid = error.transaction_uuid.clone();
+
+            match self.transactions().transaction(&uuid) {
+                Some(transaction) => transaction.handle_error(&error),
+                None => warn!("Received error for unknown transaction!"),
+            }
         }
     }
 }

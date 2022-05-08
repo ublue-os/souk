@@ -68,7 +68,7 @@ impl SkTransactionModel {
         glib::Object::new(&[]).unwrap()
     }
 
-    pub fn add_transaction(&self, transaction: &SkTransaction) {
+    pub(super) fn add_transaction(&self, transaction: &SkTransaction) {
         let pos = {
             let mut map = self.imp().map.borrow_mut();
             if map.contains_key(&transaction.uuid()) {
@@ -86,7 +86,7 @@ impl SkTransactionModel {
         self.items_changed(pos, 0, 1);
     }
 
-    pub fn remove_transaction(&self, transaction: &SkTransaction) {
+    pub(super) fn remove_transaction(&self, transaction: &SkTransaction) {
         let mut map = self.imp().map.borrow_mut();
 
         match map.get_index_of(&transaction.uuid()) {
@@ -98,7 +98,7 @@ impl SkTransactionModel {
         }
     }
 
-    pub fn transaction(&self, uuid: &str) -> Option<SkTransaction> {
+    pub(super) fn transaction(&self, uuid: &str) -> Option<SkTransaction> {
         self.imp().map.borrow().get(uuid).cloned()
     }
 }

@@ -118,6 +118,35 @@ impl TransactionHandler {
             }),
         );
 
+        transaction.connect_operation_done(
+            clone!(@weak self as this, @strong transaction_uuid => move |transaction, operation, _commit, _result| {
+                let mut progress = Progress::new(
+                    transaction_uuid.clone(),
+                    transaction,
+                    operation,
+                    None,
+                );
+
+                // Check if all operations are done
+                if progress.operations_count == progress.current_operation{
+                    progress = progress.done();
+                    this.sender.try_send(Message::Progress(progress)).unwrap();
+                }else{
+                    this.sender.try_send(Message::Progress(progress)).unwrap();
+                }
+            }),
+        );
+
+        // TODO: This might send doubled error messages
+        transaction.connect_operation_error(
+            clone!(@weak self as this, @strong transaction_uuid => @default-return false,  move |_transaction, _operation, error, _details| {
+                let error = flatpak::Error::new(transaction_uuid.clone(), error.message().to_string());
+                this.sender.try_send(Message::Error(error)).unwrap();
+
+                false
+            }),
+        );
+
         transaction.run(gio::Cancellable::NONE)
     }
 
@@ -132,7 +161,7 @@ impl TransactionHandler {
             transaction_uuid,
             transaction,
             transaction_operation,
-            transaction_progress,
+            Some(transaction_progress),
         );
         self.sender
             .try_send(Message::Progress(progress.clone()))

@@ -27,6 +27,7 @@ pub struct Progress {
     pub type_: String,
 
     pub progress: i32,
+    pub is_done: bool,
     pub bytes_transferred: u64,
     pub start_time: u64,
 
@@ -39,7 +40,7 @@ impl Progress {
         transaction_uuid: String,
         transaction: &Transaction,
         operation: &TransactionOperation,
-        operation_progress: &TransactionProgress,
+        operation_progress: Option<&TransactionProgress>,
     ) -> Self {
         let operations = transaction.operations();
         let op_index = operations.iter().position(|o| o == operation).unwrap();
@@ -47,22 +48,22 @@ impl Progress {
         let ref_ = operation.get_ref().unwrap().to_string();
         let type_ = operation.operation_type().to_str().unwrap().to_string();
 
-        let progress = operation_progress.progress();
-        let bytes_transferred = operation_progress.bytes_transferred();
-        let start_time = operation_progress.start_time();
-
         let current_operation = (op_index + 1).try_into().unwrap();
         let operations_count = operations.len().try_into().unwrap();
 
-        Self {
+        let progress = Self {
             transaction_uuid,
             ref_,
             type_,
-            progress,
-            bytes_transferred,
-            start_time,
             current_operation,
             operations_count,
+            ..Default::default()
+        };
+
+        if let Some(operation_progress) = operation_progress {
+            progress.update(operation_progress)
+        } else {
+            progress
         }
     }
 
@@ -70,6 +71,13 @@ impl Progress {
         let mut updated = self.clone();
         updated.progress = operation_progress.progress();
         updated.bytes_transferred = operation_progress.bytes_transferred();
+        updated.start_time = operation_progress.start_time();
         updated
+    }
+
+    pub fn done(&self) -> Self {
+        let mut done = self.clone();
+        done.is_done = true;
+        done
     }
 }
