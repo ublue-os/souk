@@ -19,10 +19,14 @@ use adw::subclass::prelude::*;
 use glib::{clone, subclass};
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate, FileChooserAction, FileChooserDialog, ResponseType};
+use libflatpak::prelude::*;
+use libflatpak::{BundleRef, Ref};
 
 use crate::app::SkApplication;
 use crate::config;
+use crate::flatpak::SkTransaction;
 use crate::i18n::i18n;
+use crate::ui::SkTransactionRow;
 
 mod imp {
     use super::*;
@@ -34,6 +38,8 @@ mod imp {
         pub flatpak_entry: TemplateChild<gtk::Entry>,
         #[template_child]
         pub remote_entry: TemplateChild<gtk::Entry>,
+        #[template_child]
+        pub transactions_listbox: TemplateChild<gtk::ListBox>,
     }
 
     #[glib::object_subclass]
@@ -83,10 +89,20 @@ impl SkApplicationWindow {
     }
 
     pub fn setup_widgets(&self) {
+        let imp = self.imp();
+        let app = SkApplication::default();
+
         // Add devel style class for development or beta builds
         if config::PROFILE == "development" || config::PROFILE == "beta" {
             self.add_css_class("devel");
         }
+
+        let model = app.worker().transactions();
+        imp.transactions_listbox
+            .bind_model(Some(&model), |transaction| {
+                let transaction: SkTransaction = transaction.clone().downcast().unwrap();
+                SkTransactionRow::new(&transaction).upcast()
+            });
     }
 
     fn setup_signals(&self) {}
@@ -96,12 +112,13 @@ impl SkApplicationWindow {
     #[template_callback]
     fn install_flatpak(&self) {
         let flatpak = self.imp().flatpak_entry.text();
+        let ref_ = Ref::parse(&flatpak).unwrap();
         let remote = self.imp().remote_entry.text();
 
         let install_fut = async move {
             SkApplication::default()
                 .worker()
-                .install_flatpak(&flatpak, &remote, "default")
+                .install_flatpak(&ref_, &remote, "default")
                 .await
                 .expect("Unable to install flatpak");
         };
@@ -122,10 +139,12 @@ impl SkApplicationWindow {
             clone!(@strong dialog, @weak self as this => move |dialog, resp| {
                 if resp == ResponseType::Accept {
                     let file = dialog.file().unwrap();
+                    let bundle_ref = BundleRef::new(&file).unwrap();
+
+                    dbg!(bundle_ref.origin());
 
                     let install_fut = async move {
-                        let path = file.path().unwrap();
-                        SkApplication::default().worker().install_flatpak_bundle(path.to_str().unwrap(), "default").await.expect("Unable to install bundle");
+                        SkApplication::default().worker().install_flatpak_bundle(&bundle_ref, "default").await.expect("Unable to install bundle");
                     };
                     spawn!(install_fut);
                 }

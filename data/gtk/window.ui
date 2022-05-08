@@ -37,32 +37,43 @@
         <child>
           <object class="AdwToastOverlay" id="toast_overlay">
             <child>
-              <object class="GtkBox">
-                <property name="orientation">vertical</property>
-                <property name="spacing">12</property>
-                <child>
-                  <object class="GtkButton">
-                    <property name="label">Select Flatpak Bundle</property>
-                    <signal name="clicked" handler="select_flatpak_bundle" swapped="true"/>
-                  </object>
-                </child>
+              <object class="AdwClamp">
                 <child>
                   <object class="GtkBox">
-                    <property name="spacing">6</property>
-                    <child>
-                      <object class="GtkEntry" id="flatpak_entry">
-                        <property name="text">app/org.gnome.NautilusDevel/x86_64/master</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkEntry" id="remote_entry">
-                        <property name="text">gnome-nightly</property>
-                      </object>
-                    </child>
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">12</property>
                     <child>
                       <object class="GtkButton">
-                        <property name="label">Install Flatpak</property>
-                        <signal name="clicked" handler="install_flatpak" swapped="true"/>
+                        <property name="label">Select Flatpak Bundle</property>
+                        <signal name="clicked" handler="select_flatpak_bundle" swapped="true"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="spacing">6</property>
+                        <child>
+                          <object class="GtkEntry" id="flatpak_entry">
+                            <property name="text">app/org.gnome.NautilusDevel/x86_64/master</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkEntry" id="remote_entry">
+                            <property name="text">gnome-nightly</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton">
+                            <property name="label">Install Flatpak</property>
+                            <signal name="clicked" handler="install_flatpak" swapped="true"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkListBox" id="transactions_listbox">
+                        <style>
+                          <class name="content"/>
+                        </style>
                       </object>
                     </child>
                   </object>

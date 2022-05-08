@@ -23,19 +23,15 @@ use zbus::zvariant::Type;
 pub struct Progress {
     pub transaction_uuid: String,
 
-    // The final ref is the last ref which gets handled in a set of operations in a transaction
-    // and therefore usually the target/goal of a transaction.
-    pub final_ref: String,
-    pub current_ref: String,
-    pub installation: String,
-
-    pub current_stage: i32,
-    pub total_stages: i32,
-    pub operation_type: String,
+    pub ref_: String,
+    pub type_: String,
 
     pub progress: i32,
     pub bytes_transferred: u64,
     pub start_time: u64,
+
+    pub current_operation: i32,
+    pub operations_count: i32,
 }
 
 impl Progress {
@@ -46,30 +42,27 @@ impl Progress {
         operation_progress: &TransactionProgress,
     ) -> Self {
         let operations = transaction.operations();
-        let installation = transaction.installation().unwrap();
         let op_index = operations.iter().position(|o| o == operation).unwrap();
 
-        let final_ref = operations.last().unwrap().get_ref().unwrap().to_string();
-        let current_ref = operation.get_ref().unwrap().to_string();
-        let installation = installation.id().unwrap().to_string();
-        let current_stage = (op_index + 1).try_into().unwrap();
-        let total_stages = operations.len().try_into().unwrap();
-        let operation_type = operation.operation_type().to_str().unwrap().to_string();
+        let ref_ = operation.get_ref().unwrap().to_string();
+        let type_ = operation.operation_type().to_str().unwrap().to_string();
+
         let progress = operation_progress.progress();
         let bytes_transferred = operation_progress.bytes_transferred();
         let start_time = operation_progress.start_time();
 
+        let current_operation = (op_index + 1).try_into().unwrap();
+        let operations_count = operations.len().try_into().unwrap();
+
         Self {
             transaction_uuid,
-            final_ref,
-            current_ref,
-            installation,
-            total_stages,
-            current_stage,
-            operation_type,
+            ref_,
+            type_,
             progress,
             bytes_transferred,
             start_time,
+            current_operation,
+            operations_count,
         }
     }
 

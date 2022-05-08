@@ -43,9 +43,10 @@ impl TransactionHandler {
             let mut receiver = receiver;
             let fut = async move {
                 while let Some(command) = receiver.next().await {
-                    task::spawn_blocking(clone!(@weak handler => move || {
+                    // TODO: Don't work with raw threads here, but us a scheduler / pool or sth
+                    thread::spawn(clone!(@weak handler => move || {
                         handler.process_command(command);
-                    })).await;
+                    }));
                 }
             };
             task::block_on(fut);
@@ -54,18 +55,19 @@ impl TransactionHandler {
 
     fn process_command(&self, command: Command) -> glib::Continue {
         debug!("Process command: {:?}", command);
-        let transaction_uuid = uuid::Uuid::new_v4().to_string();
 
-        let res = match command {
-            Command::InstallFlatpak(ref_, remote, installation) => {
-                self.install_flatpak(&transaction_uuid, &ref_, &remote, &installation)
-            }
-            Command::InstallFlatpakBundle(path, installation) => {
-                self.install_flatpak_bundle(&transaction_uuid, &path, &installation)
-            }
+        let (result, transaction_uuid) = match command {
+            Command::InstallFlatpak(uuid, ref_, remote, installation) => (
+                self.install_flatpak(&uuid, &ref_, &remote, &installation),
+                uuid,
+            ),
+            Command::InstallFlatpakBundle(uuid, path, installation) => (
+                self.install_flatpak_bundle(&uuid, &path, &installation),
+                uuid,
+            ),
         };
 
-        if let Err(err) = res {
+        if let Err(err) = result {
             let error = flatpak::Error::new(transaction_uuid, err.message().to_string());
             self.sender.try_send(Message::Error(error)).unwrap();
         }

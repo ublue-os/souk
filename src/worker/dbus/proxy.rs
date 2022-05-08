@@ -21,9 +21,9 @@ use crate::worker::flatpak;
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
-    fn install_flatpak(&self, ref_: &str, remote: &str, installation: &str) -> Result<()>;
+    fn install_flatpak(&self, ref_: &str, remote: &str, installation: &str) -> Result<String>;
 
-    fn install_flatpak_bundle(&self, path: &str, installation: &str) -> Result<()>;
+    fn install_flatpak_bundle(&self, path: &str, installation: &str) -> Result<String>;
 
     #[dbus_proxy(signal)]
     fn progress(&self, progress: flatpak::Progress) -> Result<()>;

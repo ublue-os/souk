@@ -1,4 +1,4 @@
-// Souk - mod.rs
+// Souk - transaction_type.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,9 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod about_dialog;
-mod transaction_row;
-mod window;
+use glib::Enum;
+use gtk::glib;
 
-pub use transaction_row::SkTransactionRow;
-pub use window::SkApplicationWindow;
+#[derive(Copy, Debug, Clone, PartialEq, Enum)]
+#[repr(u32)]
+#[enum_type(name = "SkOperation")]
+pub enum SkTransactionType {
+    Install,
+    Update,
+    Uninstall,
+    None,
+}

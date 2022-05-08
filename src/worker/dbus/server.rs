@@ -16,6 +16,7 @@
 
 use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
+use uuid::Uuid;
 use zbus::{dbus_interface, ConnectionBuilder, Result, SignalContext};
 
 use crate::config;
@@ -28,25 +29,33 @@ struct Worker {
 
 #[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
 impl Worker {
-    async fn install_flatpak(&self, ref_: &str, remote: &str, installation: &str) {
+    async fn install_flatpak(&self, ref_: &str, remote: &str, installation: &str) -> String {
+        let uuid = Uuid::new_v4().to_string();
         self.sender
             .send(Command::InstallFlatpak(
+                uuid.clone(),
                 ref_.to_string(),
                 remote.to_string(),
                 installation.to_string(),
             ))
             .await
             .unwrap();
+
+        uuid
     }
 
-    async fn install_flatpak_bundle(&self, path: &str, installation: &str) {
+    async fn install_flatpak_bundle(&self, path: &str, installation: &str) -> String {
+        let uuid = Uuid::new_v4().to_string();
         self.sender
             .send(Command::InstallFlatpakBundle(
+                uuid.clone(),
                 path.to_string(),
                 installation.to_string(),
             ))
             .await
             .unwrap();
+
+        uuid
     }
 
     #[dbus_interface(signal)]

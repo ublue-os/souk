@@ -20,10 +20,12 @@ use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
+use libflatpak::prelude::*;
+use libflatpak::{BundleRef, Ref};
 use once_cell::sync::Lazy;
 use zbus::Result;
 
-use crate::flatpak::{SkTransaction, SkTransactionModel};
+use crate::flatpak::{SkTransaction, SkTransactionModel, SkTransactionType};
 use crate::worker::WorkerProxy;
 
 mod imp {
@@ -70,6 +72,8 @@ mod imp {
                 join(progress, error).await;
             });
             gtk_macros::spawn!(fut);
+
+            self.parent_constructed(obj);
         }
     }
 }
@@ -85,21 +89,52 @@ impl SkWorker {
 
     pub async fn install_flatpak(
         &self,
-        ref_: &str,
+        ref_: &Ref,
         remote: &str,
         installation: &str,
-    ) -> Result<()> {
-        self.imp()
+    ) -> Result<SkTransaction> {
+        let ref_string = ref_.format_ref().unwrap().to_string();
+
+        let transaction_uuid = self
+            .imp()
             .proxy
-            .install_flatpak(ref_, remote, installation)
-            .await
+            .install_flatpak(&ref_string, remote, installation)
+            .await?;
+
+        let type_ = SkTransactionType::Install;
+        let transaction = SkTransaction::new(&transaction_uuid, ref_, &type_, remote, installation);
+        self.transactions().add_transaction(&transaction);
+
+        Ok(transaction)
     }
 
-    pub async fn install_flatpak_bundle(&self, path: &str, installation: &str) -> Result<()> {
-        self.imp()
+    pub async fn install_flatpak_bundle(
+        &self,
+        ref_: &BundleRef,
+        installation: &str,
+    ) -> Result<SkTransaction> {
+        let path = ref_.file().unwrap().path().unwrap();
+        let filename_string = path.file_name().unwrap().to_str().unwrap();
+        let path_string = path.to_str().unwrap().to_string();
+        let ref_: Ref = ref_.clone().upcast();
+
+        let transaction_uuid = self
+            .imp()
             .proxy
-            .install_flatpak_bundle(path, installation)
-            .await
+            .install_flatpak_bundle(&path_string, installation)
+            .await?;
+
+        let type_ = SkTransactionType::Install;
+        let transaction = SkTransaction::new(
+            &transaction_uuid,
+            &ref_,
+            &type_,
+            filename_string,
+            installation,
+        );
+        self.transactions().add_transaction(&transaction);
+
+        Ok(transaction)
     }
 
     async fn receive_progress(&self) {
@@ -112,11 +147,7 @@ impl SkWorker {
 
             match self.transactions().transaction(&uuid) {
                 Some(transaction) => transaction.update(&progress),
-                None => {
-                    let transaction = SkTransaction::new(&uuid);
-                    transaction.update(&progress);
-                    self.transactions().add_transaction(&transaction);
-                }
+                None => warn!("Received progress for unknown transaction!"),
             }
         }
     }

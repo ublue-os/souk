@@ -16,6 +16,8 @@
 
 #[derive(Debug, Clone)]
 pub enum Command {
-    InstallFlatpak(String, String, String),
-    InstallFlatpakBundle(String, String),
+    // uuid, ref_, remote, installation
+    InstallFlatpak(String, String, String, String),
+    // uuid, path, installation
+    InstallFlatpakBundle(String, String, String),
 }
