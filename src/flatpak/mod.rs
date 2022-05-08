@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+pub mod sideload;
+
 mod transaction;
 mod transaction_model;
 mod transaction_type;

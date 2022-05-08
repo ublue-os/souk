@@ -58,7 +58,15 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for SkApplicationWindow {}
+    impl ObjectImpl for SkApplicationWindow {
+        fn constructed(&self, obj: &Self::Type) {
+            self.parent_constructed(obj);
+
+            obj.setup_widgets();
+            obj.setup_signals();
+            obj.setup_gactions();
+        }
+    }
 
     impl WidgetImpl for SkApplicationWindow {}
 
@@ -79,16 +87,10 @@ glib::wrapper! {
 #[gtk::template_callbacks]
 impl SkApplicationWindow {
     pub fn new() -> Self {
-        let window = glib::Object::new::<Self>(&[]).unwrap();
-
-        window.setup_widgets();
-        window.setup_signals();
-        window.setup_gactions();
-
-        window
+        glib::Object::new::<Self>(&[]).unwrap()
     }
 
-    pub fn setup_widgets(&self) {
+    fn setup_widgets(&self) {
         let imp = self.imp();
         let app = SkApplication::default();
 
@@ -154,15 +156,5 @@ impl SkApplicationWindow {
         );
 
         dialog.show();
-    }
-}
-
-impl Default for SkApplicationWindow {
-    fn default() -> Self {
-        SkApplication::default()
-            .active_window()
-            .unwrap()
-            .downcast()
-            .unwrap()
     }
 }

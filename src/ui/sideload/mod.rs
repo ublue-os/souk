@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod sideload;
+mod sideload_window;
 
-pub mod about_dialog;
-mod transaction_row;
-mod window;
-
-pub use transaction_row::SkTransactionRow;
-pub use window::SkApplicationWindow;
+pub use sideload_window::SkSideloadWindow;

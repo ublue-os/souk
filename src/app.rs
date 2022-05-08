@@ -16,14 +16,16 @@
 
 use adw::subclass::prelude::*;
 use gio::subclass::prelude::ApplicationImpl;
-use glib::{clone, ObjectExt, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{ObjectExt, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib::WeakRef;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use once_cell::sync::{Lazy, OnceCell};
 
+use crate::flatpak::sideload::SkSideloadType;
 use crate::flatpak::SkWorker;
+use crate::ui::sideload::SkSideloadWindow;
 use crate::ui::{about_dialog, SkApplicationWindow};
 use crate::{config, worker};
 
@@ -70,12 +72,26 @@ mod imp {
     impl AdwApplicationImpl for SkApplication {}
 
     impl ApplicationImpl for SkApplication {
-        fn activate(&self, app: &Self::Type) {
-            debug!("gio::Application -> activate()");
+        fn startup(&self, app: &Self::Type) {
+            self.parent_startup(app);
+
+            debug!("Application -> startup");
             let app = app.downcast_ref::<super::SkApplication>().unwrap();
 
-            // If the window already exists,
-            // present it instead creating a new one again.
+            // Setup `app` level GActions
+            app.setup_gactions();
+
+            // Spawn worker process
+            spawn!(worker::process::spawn());
+        }
+
+        fn activate(&self, app: &Self::Type) {
+            self.parent_activate(app);
+
+            debug!("Application -> activate");
+            let app = app.downcast_ref::<super::SkApplication>().unwrap();
+
+            // If the window already exists, present it instead creating a new one again.
             if let Some(weak_window) = self.window.get() {
                 weak_window.upgrade().unwrap().present();
                 info!("Application window presented.");
@@ -86,12 +102,29 @@ mod imp {
             let window = app.create_window();
             let _ = self.window.set(window.downgrade());
             info!("Created application window.");
+        }
 
-            // Setup app level GActions
-            app.setup_gactions();
+        fn open(&self, app: &Self::Type, files: &[gio::File], hint: &str) {
+            self.parent_open(app, files, hint);
 
-            // Spawn worker process
-            spawn!(worker::process::spawn());
+            debug!("Application -> open");
+            let app = app.downcast_ref::<super::SkApplication>().unwrap();
+
+            for file in files {
+                let sideload_type = SkSideloadType::determine_type(file);
+
+                if sideload_type == SkSideloadType::Ref {
+                    // TODO: Check if the FlatpakRef file is for a already added remote
+                    let is_known_remote = false;
+                    if is_known_remote {
+                        app.activate();
+                        // TODO: Open app details page for flatpak ref
+                        return;
+                    }
+                }
+
+                let _ = app.create_sideload_window(file);
+            }
         }
     }
 }
@@ -115,7 +148,7 @@ impl SkApplication {
         // Create new GObject and downcast it into SkApplication
         let app = glib::Object::new::<SkApplication>(&[
             ("application-id", &Some(config::APP_ID)),
-            ("flags", &gio::ApplicationFlags::empty()),
+            ("flags", &gio::ApplicationFlags::HANDLES_OPEN),
             ("resource-base-path", &Some("/de/haeckerfelix/Souk/")),
         ])
         .unwrap();
@@ -128,6 +161,14 @@ impl SkApplication {
         self.imp().worker.clone()
     }
 
+    pub fn app_window(&self) -> Option<SkApplicationWindow> {
+        if let Some(window) = self.imp().window.get() {
+            window.upgrade()
+        } else {
+            None
+        }
+    }
+
     fn create_window(&self) -> SkApplicationWindow {
         let window = SkApplicationWindow::new();
         self.add_window(&window);
@@ -136,27 +177,31 @@ impl SkApplication {
         window
     }
 
-    fn setup_gactions(&self) {
-        let window = SkApplicationWindow::default();
+    fn create_sideload_window(&self, file: &gio::File) -> SkSideloadWindow {
+        let window = SkSideloadWindow::new(file);
+        self.add_window(&window);
 
+        window.present();
+        window
+    }
+
+    fn setup_gactions(&self) {
         // app.quit
-        action!(
-            self,
-            "quit",
-            clone!(@weak window => move |_, _| {
+        action!(self, "quit", move |_, _| {
+            let app = SkApplication::default();
+            for window in app.windows() {
                 window.close();
-            })
-        );
+            }
+        });
         self.set_accels_for_action("app.quit", &["<primary>q"]);
 
         // app.about
-        action!(
-            self,
-            "about",
-            clone!(@weak window => move |_, _| {
+        action!(self, "about", move |_, _| {
+            let app = SkApplication::default();
+            if let Some(window) = app.app_window() {
                 about_dialog::show_about_dialog(&window);
-            })
-        );
+            }
+        });
     }
 }
 

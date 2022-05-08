@@ -25,8 +25,9 @@ fn main() {
     // Initialize paths
     path::init().expect("Unable to create paths.");
 
-    // Initialize GTK
+    // Initialize GTK + Adwaita
     gtk::init().unwrap_or_else(|_| panic!("Failed to initialize GTK."));
+    adw::init();
 
     // Initialize variables
     glib::set_application_name(config::NAME);
