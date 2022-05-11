@@ -14,29 +14,47 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::RefCell;
 use std::fs;
 
-use async_std::process::Command;
+use async_std::process::{Child, Command};
 
 use crate::path;
 
-/// Spawn `souk-worker` binary outside of the Flatpak sandbox.
-/// This method gets called from the `souk` binary.
-pub async fn spawn() {
-    debug!("Start souk-worker process...");
+#[derive(Debug, Default)]
+pub struct Process {
+    child: RefCell<Option<Child>>,
+}
 
-    // First copy worker binary outside of sandbox
-    let mut destination = path::BIN.clone();
-    destination.push("souk-worker");
-    fs::copy("/app/bin/souk-worker", destination).expect("Unable to copy souk-worker binary");
+impl Process {
+    /// Spawn `souk-worker` binary outside of the Flatpak sandbox.
+    /// This method gets called from the `souk` binary.
+    pub fn spawn(&self) {
+        debug!("Start souk-worker process...");
 
-    // If we kill flatpak-spawn, we also want to kill the child process too.
-    let mut args: Vec<String> = vec!["--watch-bus".into()];
+        // First copy worker binary outside of sandbox
+        let mut destination = path::BIN.clone();
+        destination.push("souk-worker");
+        fs::copy("/app/bin/souk-worker", destination).expect("Unable to copy souk-worker binary");
 
-    // We cannot do stuff inside the Flatpak Sandbox,
-    // so we have to spawn the worker process on host side
-    args.push("--host".into());
-    args.push("souk-worker".into());
+        // If we kill flatpak-spawn, we also want to kill the child process too.
+        let mut args: Vec<String> = vec!["--watch-bus".into()];
 
-    let mut _child = Command::new("flatpak-spawn").args(&args).spawn().unwrap();
+        // We cannot do stuff inside the Flatpak Sandbox,
+        // so we have to spawn the worker process on host side
+        args.push("--host".into());
+        args.push("souk-worker".into());
+
+        let child = Command::new("flatpak-spawn").args(&args).spawn().unwrap();
+        *self.child.borrow_mut() = Some(child);
+    }
+
+    pub fn kill(&self) {
+        debug!("Kill souk-worker process...");
+        if let Some(mut child) = self.child.borrow_mut().take() {
+            child.kill().expect("Unable to kill souk-worker process");
+        } else {
+            debug!("souk-worker is not running!");
+        }
+    }
 }

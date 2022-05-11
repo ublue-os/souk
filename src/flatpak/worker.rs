@@ -26,7 +26,7 @@ use once_cell::sync::Lazy;
 use zbus::Result;
 
 use crate::flatpak::{SkTransaction, SkTransactionModel, SkTransactionType};
-use crate::worker::WorkerProxy;
+use crate::worker::{Process, WorkerProxy};
 
 mod imp {
     use super::*;
@@ -35,6 +35,7 @@ mod imp {
     pub struct SkWorker {
         pub transactions: SkTransactionModel,
         pub proxy: WorkerProxy<'static>,
+        pub process: Process,
     }
 
     #[glib::object_subclass]
@@ -66,14 +67,14 @@ mod imp {
         }
 
         fn constructed(&self, obj: &Self::Type) {
-            let fut = clone!(@strong obj => async move {
+            self.parent_constructed(obj);
+
+            let fut = clone!(@weak obj => async move {
                 let progress = obj.receive_progress();
                 let error = obj.receive_error();
                 join(progress, error).await;
             });
             gtk_macros::spawn!(fut);
-
-            self.parent_constructed(obj);
         }
     }
 }
@@ -85,6 +86,14 @@ glib::wrapper! {
 impl SkWorker {
     pub fn transactions(&self) -> SkTransactionModel {
         self.imp().transactions.clone()
+    }
+
+    pub fn start_process(&self) {
+        self.imp().process.spawn();
+    }
+
+    pub fn stop_process(&self) {
+        self.imp().process.kill();
     }
 
     pub async fn install_flatpak(

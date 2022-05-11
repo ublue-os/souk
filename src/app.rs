@@ -23,11 +23,11 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use once_cell::sync::{Lazy, OnceCell};
 
+use crate::config;
 use crate::flatpak::sideload::SkSideloadType;
 use crate::flatpak::SkWorker;
 use crate::ui::sideload::SkSideloadWindow;
 use crate::ui::{about_dialog, SkApplicationWindow};
-use crate::{config, worker};
 
 mod imp {
     use super::*;
@@ -81,8 +81,7 @@ mod imp {
             // Setup `app` level GActions
             app.setup_gactions();
 
-            // Spawn worker process
-            spawn!(worker::process::spawn());
+            self.worker.start_process();
         }
 
         fn activate(&self, app: &Self::Type) {
@@ -125,6 +124,11 @@ mod imp {
 
                 let _ = app.create_sideload_window(file);
             }
+        }
+
+        fn shutdown(&self, app: &Self::Type) {
+            self.parent_shutdown(app);
+            self.worker.stop_process();
         }
     }
 }

@@ -16,10 +16,11 @@
 
 mod dbus;
 mod flatpak;
-pub mod process;
+mod process;
 
 pub use dbus::WorkerProxy;
 pub use flatpak::{Error, Progress, TransactionHandler};
+pub use process::Process;
 
 /// Start DBus server and Flatpak transaction handler.
 /// This method gets called from the `souk-worker` binary.
