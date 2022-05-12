@@ -18,13 +18,12 @@
               </object>
             </child>
             <child type="title">
-              <object class="AdwWindowTitle">
-                <property name="title" translatable="yes">Sideload</property>
+              <object class="AdwWindowTitle" id="window_title">
+                <property name="title">Souk</property>
               </object>
             </child>
             <child type="end">
-              <object class="GtkButton" id="install_button">
-                <property name="label" translatable="yes">Install</property>
+              <object class="GtkButton" id="start_button">
                 <style>
                   <class name="suggested-action"/>
                 </style>
@@ -33,16 +32,81 @@
           </object>
         </child>
         <child>
-          <object class="AdwClamp">
+          <object class="GtkStack" id="sideload_stack">
             <child>
-              <object class="GtkBox">
-                <property name="orientation">vertical</property>
-                <property name="spacing">12</property>
-                <child>
-                  <object class="GtkBox">
-                    <property name="spacing">6</property>
+              <object class="GtkStackPage">
+                <property name="name">package-details</property>
+                <property name="child">
+                  <object class="AdwClamp">
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">12</property>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="spacing">6</property>
+                            <child>
+                              <object class="GtkImage" id="icon_image">
+                                <property name="pixel_size">64</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkBox">
+                                <child>
+                                  <object class="GtkLabel" id="name_label">
+                                    <style>
+                                      <class name="title-2"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="author_label"/>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="version_label"/>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
-                </child>
+                </property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkStackPage">
+                <property name="name">loading</property>
+                <property name="child">
+                  <object class="GtkSpinner">
+                    <property name="spinning">True</property>
+                    <property name="halign">center</property>
+                    <property name="valign">center</property>
+                  </object>
+                </property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkStackPage">
+                <property name="name">error</property>
+                <property name="child">
+                  <object class="AdwStatusPage" id="error_status_page">
+                    <property name="vexpand">True</property>
+                    <property name="icon_name">dialog-warning-symbolic</property>
+                    <property name="title" translatable="yes">A problem has occurred</property>
+                    <child>
+                      <object class="GtkButton">
+                        <property name="halign">center</property>
+                        <property name="label" translatable="yes">Close</property>
+                        <property name="action-name">window.close</property>
+                        <style>
+                          <class name="pill"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                </property>
               </object>
             </child>
           </object>
@@ -51,3 +115,4 @@
     </child>
   </template>
 </interface>
+

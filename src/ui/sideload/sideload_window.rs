@@ -23,6 +23,8 @@ use gtk::{gio, glib, CompositeTemplate};
 use once_cell::sync::{Lazy, OnceCell};
 
 use crate::config;
+use crate::flatpak::sideload::SkSideloadType;
+use crate::i18n::i18n;
 
 mod imp {
     use super::*;
@@ -30,6 +32,18 @@ mod imp {
     #[derive(Debug, Default, CompositeTemplate)]
     #[template(resource = "/de/haeckerfelix/Souk/gtk/sideload_window.ui")]
     pub struct SkSideloadWindow {
+        #[template_child]
+        pub window_title: TemplateChild<adw::WindowTitle>,
+        #[template_child]
+        pub sideload_stack: TemplateChild<gtk::Stack>,
+        #[template_child]
+        pub start_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub cancel_button: TemplateChild<gtk::Button>,
+
+        #[template_child]
+        pub error_status_page: TemplateChild<adw::StatusPage>,
+
         pub file: OnceCell<File>,
     }
 
@@ -89,6 +103,7 @@ mod imp {
             obj.setup_widgets();
             obj.setup_signals();
             obj.setup_gactions();
+            obj.handle_file();
         }
     }
 
@@ -126,4 +141,40 @@ impl SkSideloadWindow {
     fn setup_signals(&self) {}
 
     fn setup_gactions(&self) {}
+
+    fn handle_file(&self) {
+        let imp = self.imp();
+        let sideload_type = SkSideloadType::determine_type(&self.file());
+
+        let package_button_text = i18n("Install");
+        let repo_button_text = i18n("Add");
+
+        let package_title_text = i18n("Install App");
+        let repo_title_text = i18n("Add Software Source");
+
+        match sideload_type {
+            SkSideloadType::Bundle | SkSideloadType::Ref => {
+                imp.start_button.set_label(&package_button_text);
+                imp.window_title.set_title(&package_title_text);
+            }
+            SkSideloadType::Repo => {
+                imp.start_button.set_label(&repo_button_text);
+                imp.window_title.set_title(&repo_title_text);
+            }
+            _ => {
+                let msg = i18n("Unknown or unsupported file format.");
+                self.show_error_message(&msg);
+            }
+        }
+    }
+
+    fn show_error_message(&self, message: &str) {
+        let imp = self.imp();
+
+        imp.start_button.set_visible(false);
+        imp.cancel_button.set_visible(false);
+
+        imp.sideload_stack.set_visible_child_name("error");
+        imp.error_status_page.set_description(Some(message));
+    }
 }
