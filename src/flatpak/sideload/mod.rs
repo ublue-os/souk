@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod bundle;
 mod sideload_type;
 
+pub use bundle::SkBundle;
 pub use sideload_type::SkSideloadType;

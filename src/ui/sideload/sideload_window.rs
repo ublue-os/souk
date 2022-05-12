@@ -17,13 +17,15 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gio::File;
-use glib::{subclass, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{subclass, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject};
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
+use libflatpak::prelude::*;
+use libflatpak::BundleRef;
 use once_cell::sync::{Lazy, OnceCell};
 
 use crate::config;
-use crate::flatpak::sideload::SkSideloadType;
+use crate::flatpak::sideload::{SkBundle, SkSideloadType};
 use crate::i18n::i18n;
 
 mod imp {
@@ -44,7 +46,11 @@ mod imp {
         #[template_child]
         pub error_status_page: TemplateChild<adw::StatusPage>,
 
+        #[template_child]
+        pub name_label: TemplateChild<gtk::Label>,
+
         pub file: OnceCell<File>,
+        pub type_: OnceCell<SkSideloadType>,
     }
 
     #[glib::object_subclass]
@@ -66,13 +72,23 @@ mod imp {
     impl ObjectImpl for SkSideloadWindow {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![ParamSpecObject::new(
-                    "file",
-                    "File",
-                    "File",
-                    File::static_type(),
-                    ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                )]
+                vec![
+                    ParamSpecObject::new(
+                        "file",
+                        "File",
+                        "File",
+                        File::static_type(),
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
+                    ParamSpecEnum::new(
+                        "type",
+                        "Type",
+                        "Type",
+                        SkSideloadType::static_type(),
+                        SkSideloadType::None as i32,
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
+                ]
             });
             PROPERTIES.as_ref()
         }
@@ -80,6 +96,7 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "file" => obj.file().to_value(),
+                "type" => obj.type_().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -93,6 +110,7 @@ mod imp {
         ) {
             match pspec.name() {
                 "file" => self.file.set(value.get().unwrap()).unwrap(),
+                "type" => self.type_.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
             }
         }
@@ -123,12 +141,16 @@ glib::wrapper! {
 
 #[gtk::template_callbacks]
 impl SkSideloadWindow {
-    pub fn new(file: &File) -> Self {
-        glib::Object::new::<Self>(&[("file", file)]).unwrap()
+    pub fn new(file: &File, type_: &SkSideloadType) -> Self {
+        glib::Object::new::<Self>(&[("file", file), ("type", type_)]).unwrap()
     }
 
     pub fn file(&self) -> File {
         self.imp().file.get().unwrap().clone()
+    }
+
+    pub fn type_(&self) -> SkSideloadType {
+        *self.imp().type_.get().unwrap()
     }
 
     fn setup_widgets(&self) {
@@ -144,7 +166,6 @@ impl SkSideloadWindow {
 
     fn handle_file(&self) {
         let imp = self.imp();
-        let sideload_type = SkSideloadType::determine_type(&self.file());
 
         let package_button_text = i18n("Install");
         let repo_button_text = i18n("Add");
@@ -152,7 +173,8 @@ impl SkSideloadWindow {
         let package_title_text = i18n("Install App");
         let repo_title_text = i18n("Add Software Source");
 
-        match sideload_type {
+        // Adjust window for different sideload types
+        match self.type_() {
             SkSideloadType::Bundle | SkSideloadType::Ref => {
                 imp.start_button.set_label(&package_button_text);
                 imp.window_title.set_title(&package_title_text);
@@ -164,7 +186,22 @@ impl SkSideloadWindow {
             _ => {
                 let msg = i18n("Unknown or unsupported file format.");
                 self.show_error_message(&msg);
+                return;
             }
+        }
+
+        match self.type_() {
+            SkSideloadType::Bundle => {
+                let bundle = BundleRef::new(&self.file()).unwrap();
+                let bundle = SkBundle::new(&bundle);
+
+                self.imp()
+                    .name_label
+                    .set_text(&bundle.ref_().name().unwrap());
+            }
+            SkSideloadType::Ref => {}
+            SkSideloadType::Repo => {}
+            _ => (),
         }
     }
 
