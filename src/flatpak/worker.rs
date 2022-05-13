@@ -162,6 +162,15 @@ impl SkWorker {
             }),
         );
         transaction.connect_local(
+            "cancelled",
+            false,
+            clone!(@weak self as this => @default-return None, move |t|{
+                let transaction: SkTransaction = t[0].get().unwrap();
+                this.transactions().remove_transaction(&transaction);
+                None
+            }),
+        );
+        transaction.connect_local(
             "error",
             false,
             clone!(@weak self as this => @default-return None, move |t|{
