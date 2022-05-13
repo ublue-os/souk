@@ -146,6 +146,10 @@ impl SkWorker {
         Ok(transaction)
     }
 
+    pub async fn cancel_transaction(&self, uuid: &str) -> Result<()> {
+        self.imp().proxy.cancel_transaction(uuid).await
+    }
+
     fn add_transaction(&self, transaction: &SkTransaction) {
         // Remove finished transactions from model
         transaction.connect_local(

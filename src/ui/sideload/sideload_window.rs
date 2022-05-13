@@ -27,6 +27,7 @@ use once_cell::sync::{Lazy, OnceCell};
 use crate::app::SkApplication;
 use crate::config;
 use crate::flatpak::sideload::{Sideloadable, SkBundle, SkSideloadType};
+use crate::flatpak::SkTransaction;
 use crate::i18n::i18n;
 
 mod imp {
@@ -44,6 +45,8 @@ mod imp {
         pub package_name_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub start_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub cancel_sideload_button: TemplateChild<gtk::Button>,
 
         #[template_child]
         pub progress_title: TemplateChild<adw::WindowTitle>,
@@ -64,6 +67,7 @@ mod imp {
         pub type_: OnceCell<SkSideloadType>,
 
         pub sideloadable: OnceCell<Box<dyn Sideloadable>>,
+        pub transaction: OnceCell<SkTransaction>,
     }
 
     #[glib::object_subclass]
@@ -241,6 +245,8 @@ impl SkSideloadWindow {
         let sideloadable = imp.sideloadable.get().unwrap();
         let worker = SkApplication::default().worker();
 
+        imp.sideload_stack.set_visible_child_name("progress");
+
         // TODO: Allow selecting installation
         let transaction = match sideloadable.sideload(&worker, "default").await {
             Ok(transaction) => transaction,
@@ -249,8 +255,6 @@ impl SkSideloadWindow {
                 return;
             }
         };
-
-        imp.sideload_stack.set_visible_child_name("progress");
 
         transaction
             .bind_property("progress", &imp.progress_bar.get(), "fraction")
@@ -277,6 +281,24 @@ impl SkSideloadWindow {
         );
 
         transaction.connect_local(
+            "done",
+            false,
+            clone!(@weak self as this => @default-return None, move |_|{
+                this.imp().sideload_stack.set_visible_child_name("done");
+                None
+            }),
+        );
+
+        transaction.connect_local(
+            "cancelled",
+            false,
+            clone!(@weak self as this => @default-return None, move |_|{
+                this.close();
+                None
+            }),
+        );
+
+        transaction.connect_local(
             "error",
             false,
             clone!(@weak self as this => @default-return None, move |error|{
@@ -286,15 +308,26 @@ impl SkSideloadWindow {
             }),
         );
 
-        transaction.connect_local(
-            "done",
-            false,
-            clone!(@weak self as this => @default-return None, move |_|{
-                let imp = this.imp();
-                imp.sideload_stack.set_visible_child_name("summary");
-                None
-            }),
-        );
+        imp.transaction.set(transaction).unwrap();
+    }
+
+    #[template_callback]
+    fn cancel_sideload(&self) {
+        let fut = clone!(@weak self as this => async move{
+            this.cancel_transaction().await;
+        });
+        spawn!(fut);
+    }
+
+    async fn cancel_transaction(&self) {
+        let imp = self.imp();
+        let uuid = imp.transaction.get().unwrap().uuid();
+        let worker = SkApplication::default().worker();
+
+        imp.cancel_sideload_button.set_sensitive(false);
+        if let Err(err) = worker.cancel_transaction(&uuid).await {
+            self.show_error_message(&err.to_string());
+        }
     }
 
     fn show_error_message(&self, message: &str) {

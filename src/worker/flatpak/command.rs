@@ -20,4 +20,6 @@ pub enum Command {
     InstallFlatpak(String, String, String, String),
     // uuid, path, installation
     InstallFlatpakBundle(String, String, String),
+    // uuid,
+    CancelTransaction(String),
 }

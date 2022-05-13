@@ -14,12 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
 use async_std::task;
+use gio::prelude::*;
+use gio::{Cancellable, IOErrorEnum};
 use glib::{clone, Downgrade, Error};
 use gtk::{gio, glib};
 use libflatpak::prelude::*;
@@ -30,12 +33,14 @@ use crate::worker::flatpak::{Command, Message, Progress};
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct TransactionHandler {
+    transactions: Arc<Mutex<HashMap<String, Cancellable>>>,
     sender: Arc<Sender<Message>>,
 }
 
 impl TransactionHandler {
     pub fn start(sender: Sender<Message>, receiver: Receiver<Command>) {
         let handler = Self {
+            transactions: Arc::default(),
             sender: Arc::new(sender),
         };
 
@@ -53,7 +58,7 @@ impl TransactionHandler {
         }));
     }
 
-    fn process_command(&self, command: Command) -> glib::Continue {
+    fn process_command(&self, command: Command) {
         debug!("Process command: {:?}", command);
 
         let (result, transaction_uuid) = match command {
@@ -65,14 +70,27 @@ impl TransactionHandler {
                 self.install_flatpak_bundle(&uuid, &path, &installation),
                 uuid,
             ),
+            Command::CancelTransaction(uuid) => {
+                let transactions = self.transactions.lock().unwrap();
+                if let Some(cancellable) = transactions.get(&uuid) {
+                    cancellable.cancel();
+                } else {
+                    warn!("Unable to cancel transaction: {}", uuid);
+                }
+                return;
+            }
         };
 
         if let Err(err) = result {
-            let error = flatpak::Error::new(transaction_uuid, err.message().to_string());
-            self.sender.try_send(Message::Error(error)).unwrap();
+            if err.kind::<IOErrorEnum>() == Some(IOErrorEnum::Cancelled) {
+                let progress = Progress::new(transaction_uuid.clone(), None, None, None);
+                let progress = progress.cancelled();
+                self.sender.try_send(Message::Progress(progress)).unwrap();
+            } else {
+                let error = flatpak::Error::new(transaction_uuid, err.message().to_string());
+                self.sender.try_send(Message::Error(error)).unwrap();
+            }
         }
-
-        glib::Continue(true)
     }
 
     fn install_flatpak(
@@ -122,8 +140,8 @@ impl TransactionHandler {
             clone!(@weak self as this, @strong transaction_uuid => move |transaction, operation, _commit, _result| {
                 let mut progress = Progress::new(
                     transaction_uuid.clone(),
-                    transaction,
-                    operation,
+                    Some(transaction),
+                    Some(operation),
                     None,
                 );
 
@@ -137,17 +155,22 @@ impl TransactionHandler {
             }),
         );
 
-        // TODO: This might send doubled error messages
-        transaction.connect_operation_error(
-            clone!(@weak self as this, @strong transaction_uuid => @default-return false,  move |_transaction, _operation, error, _details| {
-                let error = flatpak::Error::new(transaction_uuid.clone(), error.message().to_string());
-                this.sender.try_send(Message::Error(error)).unwrap();
+        let cancellable = gio::Cancellable::new();
+        // Own scope so that the mutex gets unlocked again
+        {
+            let mut transactions = self.transactions.lock().unwrap();
+            transactions.insert(transaction_uuid.clone(), cancellable.clone());
+        }
 
-                false
-            }),
-        );
+        // Start the actual Flatpak transaction
+        // This is going to block the thread till completion
+        transaction.run(Some(&cancellable))?;
 
-        transaction.run(gio::Cancellable::NONE)
+        // Transaction finished -> Remove cancellable again
+        let mut transactions = self.transactions.lock().unwrap();
+        transactions.remove(&transaction_uuid);
+
+        Ok(())
     }
 
     fn handle_operation(
@@ -159,8 +182,8 @@ impl TransactionHandler {
     ) {
         let progress = Progress::new(
             transaction_uuid,
-            transaction,
-            transaction_operation,
+            Some(transaction),
+            Some(transaction_operation),
             Some(transaction_progress),
         );
         self.sender

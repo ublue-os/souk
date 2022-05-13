@@ -120,9 +120,9 @@
                       <object class="GtkHeaderBar">
                         <property name="show_title_buttons">False</property>
                         <child>
-                          <object class="GtkButton">
+                          <object class="GtkButton" id="cancel_sideload_button">
                             <property name="label" translatable="yes">Cancel</property>
-                            <property name="action-name">window.close</property>
+                            <signal name="clicked" handler="cancel_sideload" swapped="true"/>
                           </object>
                         </child>
                         <child type="title">

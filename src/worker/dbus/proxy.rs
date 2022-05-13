@@ -25,6 +25,8 @@ trait Worker {
 
     fn install_flatpak_bundle(&self, path: &str, installation: &str) -> Result<String>;
 
+    fn cancel_transaction(&self, uuid: &str) -> Result<()>;
+
     #[dbus_proxy(signal)]
     fn progress(&self, progress: flatpak::Progress) -> Result<()>;
 

@@ -58,6 +58,13 @@ impl Worker {
         uuid
     }
 
+    async fn cancel_transaction(&self, uuid: &str) {
+        self.sender
+            .send(Command::CancelTransaction(uuid.to_string()))
+            .await
+            .unwrap();
+    }
+
     #[dbus_interface(signal)]
     async fn progress(signal_ctxt: &SignalContext<'_>, progress: Progress) -> zbus::Result<()>;
 

@@ -201,6 +201,7 @@ mod imp {
             static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
                 vec![
                     Signal::builder("done", &[], glib::Type::UNIT.into()).build(),
+                    Signal::builder("cancelled", &[], glib::Type::UNIT.into()).build(),
                     Signal::builder(
                         "error",
                         &[glib::Type::STRING.into()],
@@ -288,6 +289,11 @@ impl SkTransaction {
             self.notify("progress");
 
             self.emit_by_name::<()>("done", &[]);
+            return;
+        }
+
+        if progress.is_cancelled {
+            self.emit_by_name::<()>("cancelled", &[]);
             return;
         }
 

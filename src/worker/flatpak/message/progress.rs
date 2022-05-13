@@ -19,6 +19,10 @@ use libflatpak::{Transaction, TransactionOperation, TransactionProgress};
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
+/// The `Progress` struct gets used to send progress information about a Flatpak
+/// transaction over DBus to the main Souk process (and then the information is
+/// getting used for `SkTransaction`s)
+
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
 pub struct Progress {
     pub transaction_uuid: String,
@@ -28,6 +32,7 @@ pub struct Progress {
 
     pub progress: i32,
     pub is_done: bool,
+    pub is_cancelled: bool,
     pub bytes_transferred: u64,
     pub start_time: u64,
 
@@ -38,33 +43,39 @@ pub struct Progress {
 impl Progress {
     pub fn new(
         transaction_uuid: String,
-        transaction: &Transaction,
-        operation: &TransactionOperation,
+        transaction: Option<&Transaction>,
+        operation: Option<&TransactionOperation>,
         operation_progress: Option<&TransactionProgress>,
     ) -> Self {
-        let operations = transaction.operations();
-        let op_index = operations.iter().position(|o| o == operation).unwrap();
-
-        let ref_ = operation.get_ref().unwrap().to_string();
-        let type_ = operation.operation_type().to_str().unwrap().to_string();
-
-        let current_operation = (op_index + 1).try_into().unwrap();
-        let operations_count = operations.len().try_into().unwrap();
-
-        let progress = Self {
+        let mut progress = Self {
             transaction_uuid,
-            ref_,
-            type_,
-            current_operation,
-            operations_count,
             ..Default::default()
         };
 
-        if let Some(operation_progress) = operation_progress {
-            progress.update(operation_progress)
-        } else {
-            progress
+        if transaction.is_some() && operation.is_some() {
+            let transaction = transaction.unwrap();
+            let operation = operation.unwrap();
+
+            let operations = transaction.operations();
+            let op_index = operations.iter().position(|o| o == operation).unwrap();
+
+            let ref_ = operation.get_ref().unwrap().to_string();
+            let type_ = operation.operation_type().to_str().unwrap().to_string();
+
+            let current_operation = (op_index + 1).try_into().unwrap();
+            let operations_count = operations.len().try_into().unwrap();
+
+            progress.ref_ = ref_;
+            progress.type_ = type_;
+            progress.current_operation = current_operation;
+            progress.operations_count = operations_count;
         }
+
+        if let Some(operation_progress) = operation_progress {
+            return progress.update(operation_progress);
+        }
+
+        progress
     }
 
     pub fn update(&self, operation_progress: &TransactionProgress) -> Self {
@@ -79,5 +90,11 @@ impl Progress {
         let mut done = self.clone();
         done.is_done = true;
         done
+    }
+
+    pub fn cancelled(&self) -> Self {
+        let mut cancelled = self.clone();
+        cancelled.is_cancelled = true;
+        cancelled
     }
 }
