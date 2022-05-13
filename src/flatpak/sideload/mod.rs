@@ -16,6 +16,8 @@
 
 mod bundle;
 mod sideload_type;
+mod sideloadable;
 
 pub use bundle::SkBundle;
 pub use sideload_type::SkSideloadType;
+pub use sideloadable::Sideloadable;

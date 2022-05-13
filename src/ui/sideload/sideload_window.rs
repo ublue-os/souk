@@ -17,15 +17,16 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gio::File;
-use glib::{subclass, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject};
+use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject};
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 use libflatpak::prelude::*;
 use libflatpak::BundleRef;
 use once_cell::sync::{Lazy, OnceCell};
 
+use crate::app::SkApplication;
 use crate::config;
-use crate::flatpak::sideload::{SkBundle, SkSideloadType};
+use crate::flatpak::sideload::{Sideloadable, SkBundle, SkSideloadType};
 use crate::i18n::i18n;
 
 mod imp {
@@ -35,22 +36,34 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/sideload_window.ui")]
     pub struct SkSideloadWindow {
         #[template_child]
-        pub window_title: TemplateChild<adw::WindowTitle>,
-        #[template_child]
         pub sideload_stack: TemplateChild<gtk::Stack>,
+
+        #[template_child]
+        pub details_title: TemplateChild<adw::WindowTitle>,
+        #[template_child]
+        pub package_name_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub start_button: TemplateChild<gtk::Button>,
-        #[template_child]
-        pub cancel_button: TemplateChild<gtk::Button>,
 
+        #[template_child]
+        pub progress_title: TemplateChild<adw::WindowTitle>,
+        #[template_child]
+        pub progress_bar: TemplateChild<gtk::ProgressBar>,
+        #[template_child]
+        pub progress_label: TemplateChild<gtk::Label>,
+
+        #[template_child]
+        pub done_title: TemplateChild<adw::WindowTitle>,
+
+        #[template_child]
+        pub error_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
         pub error_status_page: TemplateChild<adw::StatusPage>,
 
-        #[template_child]
-        pub name_label: TemplateChild<gtk::Label>,
-
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
+
+        pub sideloadable: OnceCell<Box<dyn Sideloadable>>,
     }
 
     #[glib::object_subclass]
@@ -118,9 +131,6 @@ mod imp {
         fn constructed(&self, obj: &Self::Type) {
             self.parent_constructed(obj);
 
-            obj.setup_widgets();
-            obj.setup_signals();
-            obj.setup_gactions();
             obj.handle_file();
         }
     }
@@ -153,63 +163,142 @@ impl SkSideloadWindow {
         *self.imp().type_.get().unwrap()
     }
 
-    fn setup_widgets(&self) {
-        // Add devel style class for development or beta builds
-        if config::PROFILE == "development" || config::PROFILE == "beta" {
-            self.add_css_class("devel");
-        }
-    }
-
-    fn setup_signals(&self) {}
-
-    fn setup_gactions(&self) {}
-
     fn handle_file(&self) {
         let imp = self.imp();
+        debug!(
+            "Sideload file: {:?} ({:?})",
+            self.file().path().unwrap(),
+            self.type_()
+        );
 
-        let package_button_text = i18n("Install");
-        let repo_button_text = i18n("Add");
+        imp.sideload_stack.set_visible_child_name("loading");
 
-        let package_title_text = i18n("Install App");
-        let repo_title_text = i18n("Add Software Source");
-
-        // Adjust window for different sideload types
-        match self.type_() {
-            SkSideloadType::Bundle | SkSideloadType::Ref => {
-                imp.start_button.set_label(&package_button_text);
-                imp.window_title.set_title(&package_title_text);
-            }
-            SkSideloadType::Repo => {
-                imp.start_button.set_label(&repo_button_text);
-                imp.window_title.set_title(&repo_title_text);
+        let sideloadable = match self.type_() {
+            SkSideloadType::Bundle => {
+                let bundle = BundleRef::new(&self.file()).unwrap();
+                SkBundle::new(&bundle)
             }
             _ => {
                 let msg = i18n("Unknown or unsupported file format.");
                 self.show_error_message(&msg);
                 return;
             }
+        };
+
+        imp.sideloadable.set(Box::new(sideloadable)).unwrap();
+        self.setup_widgets();
+    }
+
+    fn setup_widgets(&self) {
+        let imp = self.imp();
+        let sideloadable = imp.sideloadable.get().unwrap();
+
+        // Add devel style class for development or beta builds
+        if config::PROFILE == "development" || config::PROFILE == "beta" {
+            self.add_css_class("devel");
         }
 
-        match self.type_() {
-            SkSideloadType::Bundle => {
-                let bundle = BundleRef::new(&self.file()).unwrap();
-                let bundle = SkBundle::new(&bundle);
+        imp.sideload_stack.set_visible_child_name("details");
 
-                self.imp()
-                    .name_label
-                    .set_text(&bundle.ref_().name().unwrap());
+        let app_start_button = i18n("Install");
+        let repo_start_button = i18n("Add");
+        let app_details_title = i18n("Install Package");
+        let repo_details_title = i18n("Add Software Source");
+        let app_progress_title = i18n("Installing Package");
+        let repo_progress_title = i18n("Adding Software Source");
+        let app_done_title = i18n("Installation Complete");
+        let repo_done_title = i18n("Added Software Source");
+        let app_error_title = i18n("Installation Failed");
+        let repo_error_title = i18n("Adding Source Failed");
+
+        if sideloadable.contains_package() {
+            imp.start_button.set_label(&app_start_button);
+            imp.details_title.set_title(&app_details_title);
+            imp.progress_title.set_title(&app_progress_title);
+            imp.done_title.set_title(&app_done_title);
+            imp.error_title.set_title(&app_error_title);
+        }
+
+        if sideloadable.contains_repository() && !sideloadable.contains_package() {
+            imp.start_button.set_label(&repo_start_button);
+            imp.details_title.set_title(&repo_details_title);
+            imp.progress_title.set_title(&repo_progress_title);
+            imp.done_title.set_title(&repo_done_title);
+            imp.error_title.set_title(&repo_error_title);
+        }
+    }
+
+    #[template_callback]
+    fn start_sideload(&self) {
+        let fut = clone!(@weak self as this => async move{
+            this.start_transaction().await;
+        });
+        spawn!(fut);
+    }
+
+    async fn start_transaction(&self) {
+        let imp = self.imp();
+        let sideloadable = imp.sideloadable.get().unwrap();
+        let worker = SkApplication::default().worker();
+
+        // TODO: Allow selecting installation
+        let transaction = match sideloadable.sideload(&worker, "default").await {
+            Ok(transaction) => transaction,
+            Err(err) => {
+                self.show_error_message(&err.to_string());
+                return;
             }
-            SkSideloadType::Ref => {}
-            SkSideloadType::Repo => {}
-            _ => (),
-        }
+        };
+
+        imp.sideload_stack.set_visible_child_name("progress");
+
+        transaction
+            .bind_property("progress", &imp.progress_bar.get(), "fraction")
+            .flags(glib::BindingFlags::SYNC_CREATE)
+            .build();
+
+        transaction.connect_local(
+            "notify::current-operation",
+            false,
+            clone!(@weak self as this, @weak transaction => @default-return None, move |_|{
+                let imp = this.imp();
+
+                let msg = format!(
+                    "{} {} ({}/{})",
+                    transaction.current_operation_type(),
+                    transaction.current_operation_ref().unwrap().name().unwrap(),
+                    transaction.current_operation(),
+                    transaction.operations_count()
+                );
+
+                imp.progress_label.set_text(&msg);
+                None
+            }),
+        );
+
+        transaction.connect_local(
+            "error",
+            false,
+            clone!(@weak self as this => @default-return None, move |error|{
+                let msg: String = error[1].get().unwrap();
+                this.show_error_message(&msg);
+                None
+            }),
+        );
+
+        transaction.connect_local(
+            "done",
+            false,
+            clone!(@weak self as this => @default-return None, move |_|{
+                let imp = this.imp();
+                imp.sideload_stack.set_visible_child_name("summary");
+                None
+            }),
+        );
     }
 
     fn show_error_message(&self, message: &str) {
         let imp = self.imp();
-
-        imp.start_button.set_visible(false);
-        imp.cancel_button.set_visible(false);
 
         imp.sideload_stack.set_visible_child_name("error");
         imp.error_status_page.set_description(Some(message));

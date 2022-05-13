@@ -14,24 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use gio::File;
-use glib::{ParamFlags, ParamSpec, ParamSpecObject, ParamSpecUInt64, ToValue};
+use async_trait::async_trait;
+use glib::{ParamFlags, ParamSpec, ParamSpecObject, ToValue};
+use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
 use libflatpak::prelude::*;
 use libflatpak::{BundleRef, Ref};
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
+use zbus::Result;
+
+use crate::flatpak::sideload::{Sideloadable, SkSideloadType};
+use crate::flatpak::{SkTransaction, SkWorker};
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
     pub struct SkBundle {
-        pub ref_: OnceCell<Ref>,
-        pub file: OnceCell<File>,
-        pub installed_size: OnceCell<u64>,
+        pub ref_: OnceCell<BundleRef>,
     }
 
     #[glib::object_subclass]
@@ -44,31 +46,13 @@ mod imp {
     impl ObjectImpl for SkBundle {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new(
-                        "ref",
-                        "Flatpak Ref",
-                        "Flatpak Ref",
-                        Ref::static_type(),
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecObject::new(
-                        "file",
-                        "File",
-                        "File",
-                        File::static_type(),
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecUInt64::new(
-                        "installed-size",
-                        "Installed Size",
-                        "Installed Size",
-                        0,
-                        u64::MAX,
-                        0,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                ]
+                vec![ParamSpecObject::new(
+                    "ref",
+                    "Flatpak Ref",
+                    "Flatpak Ref",
+                    Ref::static_type(),
+                    ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                )]
             });
             PROPERTIES.as_ref()
         }
@@ -76,8 +60,6 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "ref" => obj.ref_().to_value(),
-                "file" => obj.file().to_value(),
-                "installed-size" => obj.installed_size().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -91,8 +73,6 @@ mod imp {
         ) {
             match pspec.name() {
                 "ref" => self.ref_.set(value.get().unwrap()).unwrap(),
-                "file" => self.file.set(value.get().unwrap()).unwrap(),
-                "installed-size" => self.installed_size.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
             }
         }
@@ -104,28 +84,38 @@ glib::wrapper! {
 }
 
 impl SkBundle {
-    pub fn new(bundle: &BundleRef) -> Self {
-        let ref_: Ref = bundle.clone().upcast();
-        let file = bundle.file().unwrap();
-        let installed_size = bundle.installed_size();
+    pub fn new(ref_: &BundleRef) -> Self {
+        glib::Object::new(&[("ref", &ref_)]).unwrap()
+    }
+}
 
-        glib::Object::new(&[
-            ("ref", &ref_),
-            ("file", &file),
-            ("installed-size", &installed_size),
-        ])
-        .unwrap()
+#[async_trait(?Send)]
+impl Sideloadable for SkBundle {
+    fn type_(&self) -> SkSideloadType {
+        SkSideloadType::Bundle
     }
 
-    pub fn ref_(&self) -> Ref {
-        self.imp().ref_.get().unwrap().clone()
+    fn contains_package(&self) -> bool {
+        true
     }
 
-    pub fn file(&self) -> File {
-        self.imp().file.get().unwrap().clone()
+    fn contains_repository(&self) -> bool {
+        false // TODO: Bundles may include a repo
     }
 
-    pub fn installed_size(&self) -> u64 {
-        *self.imp().installed_size.get().unwrap()
+    fn ref_(&self) -> Ref {
+        self.imp().ref_.get().unwrap().clone().upcast()
+    }
+
+    fn installed_size(&self) -> u64 {
+        self.imp().ref_.get().unwrap().installed_size()
+    }
+
+    async fn sideload(&self, worker: &SkWorker, installation: &str) -> Result<SkTransaction> {
+        let imp = self.imp();
+        let bundle_ref = imp.ref_.get().unwrap();
+        worker
+            .install_flatpak_bundle(bundle_ref, installation)
+            .await
     }
 }

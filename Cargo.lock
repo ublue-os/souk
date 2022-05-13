@@ -1655,6 +1655,7 @@ name = "souk"
 version = "0.0.0"
 dependencies = [
  "async-std",
+ "async-trait",
  "diesel",
  "diesel_migrations",
  "futures",
