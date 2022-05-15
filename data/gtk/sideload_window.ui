@@ -20,6 +20,12 @@
                     <child>
                       <object class="GtkHeaderBar">
                         <property name="show_title_buttons">False</property>
+                        <child>
+                          <object class="GtkButton">
+                            <property name="label" translatable="yes">Cancel</property>
+                            <property name="action-name"> </property>
+                          </object>
+                        </child>
                         <child type="title">
                           <object class="AdwWindowTitle" id="loading_title">
                             <property name="title" translatable="yes">Loading Information…</property>
@@ -30,6 +36,7 @@
                     <child>
                       <object class="GtkSpinner">
                         <property name="spinning">True</property>
+                        <property name="vexpand">True</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                       </object>
@@ -87,6 +94,7 @@
                                   <object class="GtkBox">
                                     <child>
                                       <object class="GtkLabel" id="package_name_label">
+                                        <property name="ellipsize">end</property>
                                         <style>
                                           <class name="title-2"/>
                                         </style>
@@ -98,6 +106,20 @@
                                     <child>
                                       <object class="GtkLabel" id="package_version_label"/>
                                     </child>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwPreferencesGroup" id="package_group">
+                                <child>
+                                  <object class="AdwActionRow" id="package_download_size_row">
+                                    <property name="icon_name">folder-download-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="AdwActionRow" id="package_installed_size_row">
+                                    <property name="icon_name">drive-harddisk-symbolic</property>
                                   </object>
                                 </child>
                               </object>
@@ -156,6 +178,41 @@
             </child>
             <child>
               <object class="GtkStackPage">
+                <property name="name">already-done</property>
+                <property name="child">
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkHeaderBar">
+                        <property name="show_title_buttons">False</property>
+                        <child type="title">
+                          <object class="AdwWindowTitle" id="already_done_title"/>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwStatusPage" id="already_done_status_page">
+                        <property name="vexpand">True</property>
+                        <property name="icon_name">checkbox-checked-symbolic</property>
+                        <property name="description" translatable="yes">Already installed</property>
+                        <child>
+                          <object class="GtkButton">
+                            <property name="halign">center</property>
+                            <property name="label" translatable="yes">Close</property>
+                            <property name="action-name">window.close</property>
+                            <style>
+                              <class name="pill"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkStackPage">
                 <property name="name">done</property>
                 <property name="child">
                   <object class="GtkBox">
@@ -169,7 +226,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="AdwStatusPage" id="package_summary_status_page">
+                      <object class="AdwStatusPage" id="done_status_page">
                         <property name="vexpand">True</property>
                         <property name="icon_name">checkbox-checked-symbolic</property>
                         <property name="description" translatable="yes">Successfully Installed</property>

@@ -16,15 +16,17 @@
 
 use futures::future::join;
 use futures_util::stream::StreamExt;
+use gio::File;
 use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
-use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
+use gtk::{gio, glib};
 use libflatpak::prelude::*;
 use libflatpak::{BundleRef, Ref};
 use once_cell::sync::Lazy;
-use zbus::Result;
 
+use crate::error::Error;
+use crate::flatpak::sideload::{Sideloadable, SkBundle, SkSideloadType};
 use crate::flatpak::{SkTransaction, SkTransactionModel, SkTransactionType};
 use crate::worker::{Process, WorkerProxy};
 
@@ -101,7 +103,7 @@ impl SkWorker {
         ref_: &Ref,
         remote: &str,
         installation: &str,
-    ) -> Result<SkTransaction> {
+    ) -> Result<SkTransaction, Error> {
         let ref_string = ref_.format_ref().unwrap().to_string();
 
         let transaction_uuid = self
@@ -121,7 +123,7 @@ impl SkWorker {
         &self,
         ref_: &BundleRef,
         installation: &str,
-    ) -> Result<SkTransaction> {
+    ) -> Result<SkTransaction, Error> {
         let path = ref_.file().unwrap().path().unwrap();
         let filename_string = path.file_name().unwrap().to_str().unwrap();
         let path_string = path.to_str().unwrap().to_string();
@@ -146,8 +148,39 @@ impl SkWorker {
         Ok(transaction)
     }
 
-    pub async fn cancel_transaction(&self, uuid: &str) -> Result<()> {
-        self.imp().proxy.cancel_transaction(uuid).await
+    pub async fn load_sideloadable(
+        &self,
+        file: &File,
+        type_: &SkSideloadType,
+    ) -> Result<impl Sideloadable, Error> {
+        let proxy = &self.imp().proxy;
+        let path = file.path().unwrap();
+        let path_string = path.to_str().unwrap().to_string();
+
+        let dry_run = match type_ {
+            SkSideloadType::Bundle => proxy.install_flatpak_bundle_dry_run(&path_string).await?,
+            _ => return Err(Error::UnsupportedSideloadType),
+        };
+
+        debug!("Dry run results: {:#?}", dry_run);
+        if dry_run.is_error {
+            return Err(Error::DryRunError(dry_run.error_message));
+        }
+
+        let sideloadable = match type_ {
+            SkSideloadType::Bundle => {
+                let bundle = BundleRef::new(file).unwrap();
+                SkBundle::new(&bundle, dry_run.download_size(), dry_run.installed_size())
+            }
+            _ => return Err(Error::UnsupportedSideloadType),
+        };
+
+        Ok(sideloadable)
+    }
+
+    pub async fn cancel_transaction(&self, uuid: &str) -> Result<(), Error> {
+        self.imp().proxy.cancel_transaction(uuid).await?;
+        Ok(())
     }
 
     fn add_transaction(&self, transaction: &SkTransaction) {

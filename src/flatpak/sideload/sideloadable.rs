@@ -19,8 +19,8 @@ use core::fmt::Debug;
 use async_trait::async_trait;
 use libflatpak::prelude::*;
 use libflatpak::Ref;
-use zbus::Result;
 
+use crate::error::Error;
 use crate::flatpak::sideload::SkSideloadType;
 use crate::flatpak::{SkTransaction, SkWorker};
 
@@ -34,9 +34,14 @@ pub trait Sideloadable {
 
     fn ref_(&self) -> Ref;
 
+    fn already_done(&self) -> bool;
+
+    fn download_size(&self) -> u64;
+
     fn installed_size(&self) -> u64;
 
-    async fn sideload(&self, worker: &SkWorker, installation: &str) -> Result<SkTransaction>;
+    async fn sideload(&self, worker: &SkWorker, installation: &str)
+        -> Result<SkTransaction, Error>;
 }
 
 impl Debug for dyn Sideloadable {

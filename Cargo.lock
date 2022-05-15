@@ -1008,7 +1008,7 @@ checksum = "5916d2ae698f6de9bfb891ad7a8d65c09d232dc58cc4ac433c7da3b2fd84bc2b"
 [[package]]
 name = "libflatpak"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/haecker-felix/libflatpak-rs?branch=wip/haeckerfelix/update1-v1#59bd0b0aa4b5b572ddea430dbab5f2d502fb3ca0"
+source = "git+https://gitlab.gnome.org/haecker-felix/libflatpak-rs?branch=wip/haeckerfelix/gir-update-regen-test-v1#4073d93eb04154173d44249b2a7240550ffaacae"
 dependencies = [
  "bitflags",
  "fragile",
@@ -1022,7 +1022,7 @@ dependencies = [
 [[package]]
 name = "libflatpak-sys"
 version = "0.1.0"
-source = "git+https://gitlab.gnome.org/haecker-felix/libflatpak-rs?branch=wip/haeckerfelix/update1-v1#59bd0b0aa4b5b572ddea430dbab5f2d502fb3ca0"
+source = "git+https://gitlab.gnome.org/haecker-felix/libflatpak-rs?branch=wip/haeckerfelix/gir-update-regen-test-v1#4073d93eb04154173d44249b2a7240550ffaacae"
 dependencies = [
  "gio-sys",
  "glib-sys",
@@ -1677,6 +1677,7 @@ dependencies = [
  "serde_urlencoded",
  "strum",
  "strum_macros",
+ "thiserror",
  "url",
  "uuid",
  "zbus",

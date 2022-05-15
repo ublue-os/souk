@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use async_std::channel::{Receiver, Sender};
+use async_std::channel::{unbounded, Receiver, Sender};
 use async_std::prelude::*;
 use uuid::Uuid;
 use zbus::{dbus_interface, ConnectionBuilder, Result, SignalContext};
 
 use crate::config;
-use crate::worker::flatpak::{Command, Error, Message, Progress};
+use crate::worker::flatpak::{Command, DryRunResults, Error, Message, Progress};
 
 #[derive(Debug)]
 struct Worker {
@@ -56,6 +56,20 @@ impl Worker {
             .unwrap();
 
         uuid
+    }
+
+    async fn install_flatpak_bundle_dry_run(&self, path: &str) -> DryRunResults {
+        let (sender, mut receiver) = unbounded();
+
+        self.sender
+            .send(Command::InstallFlatpakBundleDryRun(
+                path.to_string(),
+                sender,
+            ))
+            .await
+            .unwrap();
+
+        receiver.next().await.unwrap()
     }
 
     async fn cancel_transaction(&self, uuid: &str) {

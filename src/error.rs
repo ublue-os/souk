@@ -1,5 +1,5 @@
-// Souk - mod.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - error.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,12 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod command;
-mod dry_run_results;
-mod message;
-mod transaction_handler;
+use thiserror::Error;
 
-pub use command::Command;
-pub use dry_run_results::{DryRunRemote, DryRunResults, DryRunRuntime};
-pub use message::{Error, Message, Progress};
-pub use transaction_handler::TransactionHandler;
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("DBus error")]
+    DbusError(#[from] zbus::Error),
+
+    #[error("Dry run error")]
+    DryRunError(String),
+
+    #[error("Unsupported sideload type")]
+    UnsupportedSideloadType,
+}

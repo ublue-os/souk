@@ -14,12 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use async_std::channel::Sender;
+
+use crate::worker::flatpak::DryRunResults;
+
 #[derive(Debug, Clone)]
 pub enum Command {
     // uuid, ref_, remote, installation
     InstallFlatpak(String, String, String, String),
     // uuid, path, installation
     InstallFlatpakBundle(String, String, String),
+    // path, sender
+    InstallFlatpakBundleDryRun(String, Sender<DryRunResults>),
     // uuid,
     CancelTransaction(String),
 }

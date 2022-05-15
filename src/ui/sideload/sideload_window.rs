@@ -21,14 +21,13 @@ use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObjec
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 use libflatpak::prelude::*;
-use libflatpak::BundleRef;
 use once_cell::sync::{Lazy, OnceCell};
 
 use crate::app::SkApplication;
 use crate::config;
-use crate::flatpak::sideload::{Sideloadable, SkBundle, SkSideloadType};
+use crate::flatpak::sideload::{Sideloadable, SkSideloadType};
 use crate::flatpak::SkTransaction;
-use crate::i18n::i18n;
+use crate::i18n::{i18n, i18n_f};
 
 mod imp {
     use super::*;
@@ -40,13 +39,17 @@ mod imp {
         pub sideload_stack: TemplateChild<gtk::Stack>,
 
         #[template_child]
+        pub start_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub cancel_sideload_button: TemplateChild<gtk::Button>,
+        #[template_child]
         pub details_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
         pub package_name_label: TemplateChild<gtk::Label>,
         #[template_child]
-        pub start_button: TemplateChild<gtk::Button>,
+        pub package_download_size_row: TemplateChild<adw::ActionRow>,
         #[template_child]
-        pub cancel_sideload_button: TemplateChild<gtk::Button>,
+        pub package_installed_size_row: TemplateChild<adw::ActionRow>,
 
         #[template_child]
         pub progress_title: TemplateChild<adw::WindowTitle>,
@@ -54,6 +57,9 @@ mod imp {
         pub progress_bar: TemplateChild<gtk::ProgressBar>,
         #[template_child]
         pub progress_label: TemplateChild<gtk::Label>,
+
+        #[template_child]
+        pub already_done_title: TemplateChild<adw::WindowTitle>,
 
         #[template_child]
         pub done_title: TemplateChild<adw::WindowTitle>,
@@ -135,7 +141,10 @@ mod imp {
         fn constructed(&self, obj: &Self::Type) {
             self.parent_constructed(obj);
 
-            obj.handle_file();
+            let fut = clone!(@weak obj => async move {
+                obj.handle_file().await;
+            });
+            spawn!(fut);
         }
     }
 
@@ -167,8 +176,10 @@ impl SkSideloadWindow {
         *self.imp().type_.get().unwrap()
     }
 
-    fn handle_file(&self) {
+    async fn handle_file(&self) {
         let imp = self.imp();
+        let worker = SkApplication::default().worker();
+
         debug!(
             "Sideload file: {:?} ({:?})",
             self.file().path().unwrap(),
@@ -177,20 +188,19 @@ impl SkSideloadWindow {
 
         imp.sideload_stack.set_visible_child_name("loading");
 
-        let sideloadable = match self.type_() {
-            SkSideloadType::Bundle => {
-                let bundle = BundleRef::new(&self.file()).unwrap();
-                SkBundle::new(&bundle)
-            }
-            _ => {
-                let msg = i18n("Unknown or unsupported file format.");
-                self.show_error_message(&msg);
-                return;
-            }
-        };
+        if self.type_() == SkSideloadType::None {
+            let msg = i18n("Unknown or unsupported file format.");
+            self.show_error_message(&msg);
+            return;
+        }
 
-        imp.sideloadable.set(Box::new(sideloadable)).unwrap();
-        self.setup_widgets();
+        match worker.load_sideloadable(&self.file(), &self.type_()).await {
+            Ok(sideloadable) => {
+                imp.sideloadable.set(Box::new(sideloadable)).unwrap();
+                self.setup_widgets();
+            }
+            Err(err) => self.show_error_message(&err.to_string()),
+        }
     }
 
     fn setup_widgets(&self) {
@@ -202,24 +212,26 @@ impl SkSideloadWindow {
             self.add_css_class("devel");
         }
 
-        imp.sideload_stack.set_visible_child_name("details");
-
         let app_start_button = i18n("Install");
         let repo_start_button = i18n("Add");
         let app_details_title = i18n("Install Package");
         let repo_details_title = i18n("Add Software Source");
         let app_progress_title = i18n("Installing Package");
         let repo_progress_title = i18n("Adding Software Source");
+        let app_already_done_title = i18n("Already Installed");
+        let repo_already_done_title = i18n("Already Added Source");
         let app_done_title = i18n("Installation Complete");
         let repo_done_title = i18n("Added Software Source");
         let app_error_title = i18n("Installation Failed");
         let repo_error_title = i18n("Adding Source Failed");
 
+        // Setup window titles and headerbar buttons
         if sideloadable.contains_package() {
             imp.start_button.set_label(&app_start_button);
             imp.details_title.set_title(&app_details_title);
             imp.progress_title.set_title(&app_progress_title);
             imp.done_title.set_title(&app_done_title);
+            imp.already_done_title.set_title(&app_already_done_title);
             imp.error_title.set_title(&app_error_title);
         }
 
@@ -228,7 +240,29 @@ impl SkSideloadWindow {
             imp.details_title.set_title(&repo_details_title);
             imp.progress_title.set_title(&repo_progress_title);
             imp.done_title.set_title(&repo_done_title);
+            imp.already_done_title.set_title(&repo_already_done_title);
             imp.error_title.set_title(&repo_error_title);
+        }
+
+        if sideloadable.already_done() {
+            imp.sideload_stack.set_visible_child_name("already-done");
+            return;
+        }
+
+        imp.sideload_stack.set_visible_child_name("details");
+
+        // Setup details page
+        if sideloadable.contains_package() {
+            imp.package_name_label
+                .set_text(&sideloadable.ref_().format_ref().unwrap());
+
+            let size = glib::format_size(sideloadable.download_size());
+            let download_string = i18n_f("Up to {} download", &[&size]);
+            imp.package_download_size_row.set_title(&download_string);
+
+            let size = glib::format_size(sideloadable.installed_size());
+            let installed_string = i18n_f("Up to {} installed size", &[&size]);
+            imp.package_installed_size_row.set_title(&installed_string);
         }
     }
 

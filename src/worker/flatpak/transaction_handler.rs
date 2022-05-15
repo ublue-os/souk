@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -26,10 +28,15 @@ use gio::{Cancellable, IOErrorEnum};
 use glib::{clone, Downgrade, Error};
 use gtk::{gio, glib};
 use libflatpak::prelude::*;
-use libflatpak::{Installation, Transaction, TransactionOperation, TransactionProgress};
+use libflatpak::{
+    BundleRef, Installation, Ref, Transaction, TransactionOperation, TransactionProgress,
+    TransactionRemoteReason,
+};
 
 use crate::worker::flatpak;
-use crate::worker::flatpak::{Command, Message, Progress};
+use crate::worker::flatpak::{
+    Command, DryRunRemote, DryRunResults, DryRunRuntime, Message, Progress,
+};
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct TransactionHandler {
@@ -70,6 +77,10 @@ impl TransactionHandler {
                 self.install_flatpak_bundle(&uuid, &path, &installation),
                 uuid,
             ),
+            Command::InstallFlatpakBundleDryRun(path, sender) => (
+                self.install_flatpak_bundle_dry_run(&path, sender),
+                String::new(), // We don't have an uuid for dry runs
+            ),
             Command::CancelTransaction(uuid) => {
                 let transactions = self.transactions.lock().unwrap();
                 if let Some(cancellable) = transactions.get(&uuid) {
@@ -82,6 +93,12 @@ impl TransactionHandler {
         };
 
         if let Err(err) = result {
+            // No uuid -> dry run transaction -> we don't care about errors
+            if transaction_uuid.is_empty() {
+                error!("Error during transaction dry run: {}", err.message());
+                return;
+            }
+
             if err.kind::<IOErrorEnum>() == Some(IOErrorEnum::Cancelled) {
                 let progress = Progress::new(transaction_uuid.clone(), None, None, None);
                 let progress = progress.cancelled();
@@ -100,7 +117,7 @@ impl TransactionHandler {
         remote: &str,
         installation: &str,
     ) -> Result<(), Error> {
-        info!("Installing Flatpak: {}", ref_);
+        info!("Install Flatpak: {}", ref_);
 
         let transaction = self.new_transaction(installation);
         transaction.add_install(remote, ref_, &[])?;
@@ -115,12 +132,34 @@ impl TransactionHandler {
         path: &str,
         installation: &str,
     ) -> Result<(), Error> {
-        info!("Installing Flatpak bundle: {}", path);
+        info!("Install Flatpak bundle: {}", path);
         let file = gio::File::for_parse_name(path);
 
         let transaction = self.new_transaction(installation);
         transaction.add_install_bundle(&file, None)?;
         self.run_transaction(transaction_uuid.to_string(), transaction)?;
+
+        Ok(())
+    }
+
+    fn install_flatpak_bundle_dry_run(
+        &self,
+        path: &str,
+        sender: Sender<DryRunResults>,
+    ) -> Result<(), Error> {
+        info!("Install Flatpak bundle (dry run): {}", path);
+        let file = gio::File::for_parse_name(path);
+
+        let transaction = self.new_transaction("souk-dry-run");
+        transaction.add_install_bundle(&file, None)?;
+
+        let bundle = BundleRef::new(&file)?;
+        let ref_ = bundle.clone().upcast::<Ref>();
+
+        let mut results = self.run_dry_run_transaction(transaction, &ref_);
+        results.installed_size = bundle.installed_size();
+
+        sender.try_send(results).unwrap();
 
         Ok(())
     }
@@ -198,9 +237,90 @@ impl TransactionHandler {
         );
     }
 
+    fn run_dry_run_transaction(&self, transaction: Transaction, ref_: &Ref) -> DryRunResults {
+        let download_size = Rc::new(RefCell::new(0));
+        let installed_size = Rc::new(RefCell::new(0));
+        let runtimes = Rc::new(RefCell::new(Vec::new()));
+        let remotes = Rc::new(RefCell::new(Vec::new()));
+        let mut is_error = false;
+        let mut error_message = String::new();
+
+        let cancellable = Cancellable::new();
+
+        // Check if new remotes are added during the transaction
+        transaction.connect_add_new_remote(
+            clone!(@weak remotes => @default-return false, move |_, reason, _, name, url|{
+                if reason == TransactionRemoteReason::RuntimeDeps{
+                    let remote = DryRunRemote{
+                        suggested_remote_name: name.to_string(),
+                        url: url.to_string(),
+                    };
+
+                    remotes.borrow_mut().push(remote);
+                    return true;
+                }
+
+                false
+            }),
+        );
+
+        // Ready -> Everything got resolved, so we can check the transaction operations
+        transaction.connect_ready_pre_auth(
+            clone!(@weak runtimes, @weak download_size, @weak installed_size, @weak ref_ => @default-return false, move |transaction|{
+                for operation in transaction.operations(){
+                    let ref_ = ref_.format_ref().unwrap().to_string();
+                    let operation_ref = operation.get_ref().unwrap().to_string();
+
+                    // Check if it's the ref which we want to install
+                    if operation_ref == ref_ {
+                        *download_size.borrow_mut() = operation.download_size();
+                        *installed_size.borrow_mut() = operation.installed_size();
+                    }else{
+                        let runtime = DryRunRuntime{
+                            ref_: operation_ref.to_string(),
+                            type_: operation.operation_type().to_str().unwrap().to_string(),
+                            download_size: operation.download_size(),
+                            installed_size: operation.installed_size(),
+                        };
+                        runtimes.borrow_mut().push(runtime);
+                    }
+                }
+
+                // Do not allow the install to start, since it's a dry run
+                false
+            }),
+        );
+
+        if let Err(err) = transaction.run(Some(&cancellable)) {
+            if err.kind::<libflatpak::Error>() != Some(libflatpak::Error::Aborted) {
+                error!("Error during transaction dry run: {}", err.message());
+                is_error = true;
+                error_message = err.message().to_string();
+            }
+        }
+
+        // Clean up dry run installation again
+        std::fs::remove_dir_all("/tmp/repo").expect("Unable to remove dry run installation");
+
+        let r = DryRunResults {
+            download_size: 0,
+            installed_size: 0,
+            runtimes: runtimes.borrow().clone(),
+            remotes: remotes.borrow().clone(),
+            is_error,
+            error_message,
+        };
+        r
+    }
+
     fn new_transaction(&self, installation: &str) -> Transaction {
+        let dry_run_path = gio::File::for_parse_name("/tmp");
+
         let installation = match installation {
-            "default" => Installation::new_system(gio::Cancellable::NONE).unwrap(),
+            "default" => Installation::new_system(Cancellable::NONE).unwrap(),
+            "souk-dry-run" => {
+                Installation::for_path(&dry_run_path, true, Cancellable::NONE).unwrap()
+            }
             _ => panic!("Unknown Flatpak installation: {}", installation),
         };
 

@@ -18,12 +18,15 @@ use zbus::Result;
 
 use crate::config;
 use crate::worker::flatpak;
+use crate::worker::flatpak::DryRunResults;
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
     fn install_flatpak(&self, ref_: &str, remote: &str, installation: &str) -> Result<String>;
 
     fn install_flatpak_bundle(&self, path: &str, installation: &str) -> Result<String>;
+
+    fn install_flatpak_bundle_dry_run(&self, path: &str) -> Result<DryRunResults>;
 
     fn cancel_transaction(&self, uuid: &str) -> Result<()>;
 

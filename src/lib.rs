@@ -33,6 +33,7 @@ pub mod ui;
 pub mod worker;
 
 mod app;
+mod error;
 #[rustfmt::skip]
 pub mod config;
 pub mod i18n;

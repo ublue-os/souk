@@ -15,16 +15,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use async_trait::async_trait;
-use glib::{ParamFlags, ParamSpec, ParamSpecObject, ToValue};
+use glib::{ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject, ParamSpecUInt64, ToValue};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use libflatpak::prelude::*;
 use libflatpak::{BundleRef, Ref};
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
-use zbus::Result;
 
+use crate::error::Error;
 use crate::flatpak::sideload::{Sideloadable, SkSideloadType};
 use crate::flatpak::{SkTransaction, SkWorker};
 
@@ -34,6 +33,9 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkBundle {
         pub ref_: OnceCell<BundleRef>,
+        pub already_done: OnceCell<bool>,
+        pub download_size: OnceCell<u64>,
+        pub installed_size: OnceCell<u64>,
     }
 
     #[glib::object_subclass]
@@ -46,13 +48,40 @@ mod imp {
     impl ObjectImpl for SkBundle {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![ParamSpecObject::new(
-                    "ref",
-                    "Flatpak Ref",
-                    "Flatpak Ref",
-                    Ref::static_type(),
-                    ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                )]
+                vec![
+                    ParamSpecObject::new(
+                        "ref",
+                        "Flatpak Ref",
+                        "Flatpak Ref",
+                        Ref::static_type(),
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
+                    ParamSpecBoolean::new(
+                        "already-done",
+                        "Already Done",
+                        "Already Done",
+                        false,
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
+                    ParamSpecUInt64::new(
+                        "download-size",
+                        "Download Size",
+                        "Download Size",
+                        0,
+                        u64::MAX,
+                        0,
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
+                    ParamSpecUInt64::new(
+                        "installed-size",
+                        "Installed Size",
+                        "Installed Size",
+                        0,
+                        u64::MAX,
+                        0,
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
+                ]
             });
             PROPERTIES.as_ref()
         }
@@ -60,6 +89,9 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "ref" => obj.ref_().to_value(),
+                "already-done" => obj.already_done().to_value(),
+                "download-size" => obj.download_size().to_value(),
+                "installed-size" => obj.installed_size().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -73,6 +105,9 @@ mod imp {
         ) {
             match pspec.name() {
                 "ref" => self.ref_.set(value.get().unwrap()).unwrap(),
+                "already-done" => self.already_done.set(value.get().unwrap()).unwrap(),
+                "download-size" => self.download_size.set(value.get().unwrap()).unwrap(),
+                "installed-size" => self.installed_size.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
             }
         }
@@ -84,8 +119,13 @@ glib::wrapper! {
 }
 
 impl SkBundle {
-    pub fn new(ref_: &BundleRef) -> Self {
-        glib::Object::new(&[("ref", &ref_)]).unwrap()
+    pub fn new(ref_: &BundleRef, download_size: u64, installed_size: u64) -> Self {
+        glib::Object::new(&[
+            ("ref", &ref_),
+            ("download-size", &download_size),
+            ("installed-size", &installed_size),
+        ])
+        .unwrap()
     }
 }
 
@@ -107,15 +147,28 @@ impl Sideloadable for SkBundle {
         self.imp().ref_.get().unwrap().clone().upcast()
     }
 
-    fn installed_size(&self) -> u64 {
-        self.imp().ref_.get().unwrap().installed_size()
+    fn already_done(&self) -> bool {
+        *self.imp().already_done.get().unwrap()
     }
 
-    async fn sideload(&self, worker: &SkWorker, installation: &str) -> Result<SkTransaction> {
+    fn download_size(&self) -> u64 {
+        *self.imp().download_size.get().unwrap()
+    }
+
+    fn installed_size(&self) -> u64 {
+        *self.imp().installed_size.get().unwrap()
+    }
+
+    async fn sideload(
+        &self,
+        worker: &SkWorker,
+        installation: &str,
+    ) -> Result<SkTransaction, Error> {
         let imp = self.imp();
         let bundle_ref = imp.ref_.get().unwrap();
-        worker
+        let transaction = worker
             .install_flatpak_bundle(bundle_ref, installation)
-            .await
+            .await?;
+        Ok(transaction)
     }
 }
