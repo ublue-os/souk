@@ -24,8 +24,8 @@ pub enum Command {
     InstallFlatpak(String, String, String, String),
     // uuid, path, installation
     InstallFlatpakBundle(String, String, String),
-    // path, sender
-    InstallFlatpakBundleDryRun(String, Sender<Result<DryRunResults, DryRunError>>),
+    // path, installation, sender
+    InstallFlatpakBundleDryRun(String, String, Sender<Result<DryRunResults, DryRunError>>),
     // uuid,
     CancelTransaction(String),
 }

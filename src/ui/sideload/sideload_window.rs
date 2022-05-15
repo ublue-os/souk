@@ -198,7 +198,10 @@ impl SkSideloadWindow {
             return;
         }
 
-        match worker.load_sideloadable(&self.file(), &self.type_()).await {
+        match worker
+            .load_sideloadable(&self.file(), &self.type_(), "default")
+            .await
+        {
             Ok(sideloadable) => {
                 imp.sideloadable.set(Box::new(sideloadable)).unwrap();
                 self.setup_widgets();

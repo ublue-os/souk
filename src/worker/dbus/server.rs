@@ -61,12 +61,14 @@ impl Worker {
     async fn install_flatpak_bundle_dry_run(
         &self,
         path: &str,
+        installation: &str,
     ) -> Result<DryRunResults, DryRunError> {
         let (sender, mut receiver) = unbounded();
 
         self.sender
             .send(Command::InstallFlatpakBundleDryRun(
                 path.to_string(),
+                installation.to_string(),
                 sender,
             ))
             .await

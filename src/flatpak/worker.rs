@@ -152,13 +152,18 @@ impl SkWorker {
         &self,
         file: &File,
         type_: &SkSideloadType,
+        installation: &str,
     ) -> Result<impl Sideloadable, Error> {
         let proxy = &self.imp().proxy;
         let path = file.path().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
         let dry_run = match type_ {
-            SkSideloadType::Bundle => proxy.install_flatpak_bundle_dry_run(&path_string).await,
+            SkSideloadType::Bundle => {
+                proxy
+                    .install_flatpak_bundle_dry_run(&path_string, installation)
+                    .await
+            }
             _ => return Err(Error::UnsupportedSideloadType),
         };
 

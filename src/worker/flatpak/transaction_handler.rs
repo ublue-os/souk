@@ -77,8 +77,8 @@ impl TransactionHandler {
                 self.install_flatpak_bundle(&uuid, &path, &installation),
                 uuid,
             ),
-            Command::InstallFlatpakBundleDryRun(path, sender) => (
-                self.install_flatpak_bundle_dry_run(&path, sender),
+            Command::InstallFlatpakBundleDryRun(path, installation, sender) => (
+                self.install_flatpak_bundle_dry_run(&path, &installation, sender),
                 String::new(), // We don't have an uuid for dry runs
             ),
             Command::CancelTransaction(uuid) => {
@@ -119,7 +119,7 @@ impl TransactionHandler {
     ) -> Result<(), Error> {
         info!("Install Flatpak: {}", ref_);
 
-        let transaction = self.new_transaction(installation);
+        let transaction = self.new_transaction(installation, false);
         transaction.add_install(remote, ref_, &[])?;
         self.run_transaction(transaction_uuid.to_string(), transaction)?;
 
@@ -135,7 +135,7 @@ impl TransactionHandler {
         info!("Install Flatpak bundle: {}", path);
         let file = gio::File::for_parse_name(path);
 
-        let transaction = self.new_transaction(installation);
+        let transaction = self.new_transaction(installation, false);
         transaction.add_install_bundle(&file, None)?;
         self.run_transaction(transaction_uuid.to_string(), transaction)?;
 
@@ -145,13 +145,13 @@ impl TransactionHandler {
     fn install_flatpak_bundle_dry_run(
         &self,
         path: &str,
+        installation: &str,
         sender: Sender<Result<DryRunResults, DryRunError>>,
     ) -> Result<(), Error> {
         info!("Install Flatpak bundle (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
 
-        let transaction = self.new_transaction("souk-dry-run");
-        // TODO: set transaction.add_default_dependency_sources();
+        let transaction = self.new_transaction(installation, true);
         transaction.add_install_bundle(&file, None)?;
 
         let bundle = BundleRef::new(&file)?;
@@ -331,18 +331,25 @@ impl TransactionHandler {
         Ok(r)
     }
 
-    fn new_transaction(&self, installation: &str) -> Transaction {
+    fn new_transaction(&self, installation: &str, dry_run: bool) -> Transaction {
         let dry_run_path = gio::File::for_parse_name("/tmp");
 
         let installation = match installation {
             "default" => Installation::new_system(Cancellable::NONE).unwrap(),
-            "souk-dry-run" => {
-                Installation::for_path(&dry_run_path, true, Cancellable::NONE).unwrap()
-            }
             _ => panic!("Unknown Flatpak installation: {}", installation),
         };
 
-        Transaction::for_installation(&installation, gio::Cancellable::NONE)
-            .expect("Unable to create transaction")
+        // Setup a own installation for dry run transactions, and add the specified
+        // installation as dependency source. This way the dry run transaction
+        // doesn't touch the specified installation, but has nevertheless the same local
+        // runtimes available.
+        if dry_run {
+            let dry_run = Installation::for_path(&dry_run_path, true, Cancellable::NONE).unwrap();
+            let t = Transaction::for_installation(&dry_run, gio::Cancellable::NONE).unwrap();
+            t.add_dependency_source(&installation);
+            t
+        } else {
+            Transaction::for_installation(&installation, gio::Cancellable::NONE).unwrap()
+        }
     }
 }
