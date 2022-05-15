@@ -21,6 +21,9 @@ pub enum Error {
     #[error("DBus error")]
     DbusError(#[from] zbus::Error),
 
+    #[error("Required runtime not found")]
+    DryRunRuntimeNotFound(String),
+
     #[error("Dry run error")]
     DryRunError(String),
 

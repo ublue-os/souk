@@ -35,7 +35,7 @@ use libflatpak::{
 
 use crate::worker::flatpak;
 use crate::worker::flatpak::{
-    Command, DryRunRemote, DryRunResults, DryRunRuntime, Message, Progress,
+    Command, DryRunError, DryRunRemote, DryRunResults, DryRunRuntime, Message, Progress,
 };
 
 #[derive(Debug, Clone, Downgrade)]
@@ -100,7 +100,7 @@ impl TransactionHandler {
             }
 
             if err.kind::<IOErrorEnum>() == Some(IOErrorEnum::Cancelled) {
-                let progress = Progress::new(transaction_uuid.clone(), None, None, None);
+                let progress = Progress::new(transaction_uuid, None, None, None);
                 let progress = progress.cancelled();
                 self.sender.try_send(Message::Progress(progress)).unwrap();
             } else {
@@ -145,21 +145,26 @@ impl TransactionHandler {
     fn install_flatpak_bundle_dry_run(
         &self,
         path: &str,
-        sender: Sender<DryRunResults>,
+        sender: Sender<Result<DryRunResults, DryRunError>>,
     ) -> Result<(), Error> {
         info!("Install Flatpak bundle (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
 
         let transaction = self.new_transaction("souk-dry-run");
+        // TODO: set transaction.add_default_dependency_sources();
         transaction.add_install_bundle(&file, None)?;
 
         let bundle = BundleRef::new(&file)?;
         let ref_ = bundle.clone().upcast::<Ref>();
 
-        let mut results = self.run_dry_run_transaction(transaction, &ref_);
-        results.installed_size = bundle.installed_size();
+        let results = self.run_dry_run_transaction(transaction, &ref_);
 
-        sender.try_send(results).unwrap();
+        if let Ok(mut results) = results {
+            results.installed_size = bundle.installed_size();
+            sender.try_send(Ok(results)).unwrap()
+        } else {
+            sender.try_send(results).unwrap()
+        }
 
         Ok(())
     }
@@ -237,13 +242,15 @@ impl TransactionHandler {
         );
     }
 
-    fn run_dry_run_transaction(&self, transaction: Transaction, ref_: &Ref) -> DryRunResults {
+    fn run_dry_run_transaction(
+        &self,
+        transaction: Transaction,
+        ref_: &Ref,
+    ) -> Result<DryRunResults, DryRunError> {
         let download_size = Rc::new(RefCell::new(0));
         let installed_size = Rc::new(RefCell::new(0));
         let runtimes = Rc::new(RefCell::new(Vec::new()));
         let remotes = Rc::new(RefCell::new(Vec::new()));
-        let mut is_error = false;
-        let mut error_message = String::new();
 
         let cancellable = Cancellable::new();
 
@@ -292,10 +299,23 @@ impl TransactionHandler {
         );
 
         if let Err(err) = transaction.run(Some(&cancellable)) {
-            if err.kind::<libflatpak::Error>() != Some(libflatpak::Error::Aborted) {
+            if err.kind::<libflatpak::Error>() == Some(libflatpak::Error::RuntimeNotFound) {
+                // Unfortunately there's no clean way to find out which runtime is missing
+                // so we have to parse the error message to find the runtime ref.
+                let regex = regex::Regex::new(r".+ (.+/.+/[^ ]+) .+ (.+/.+/[^ ]+) .+").unwrap();
+                let error = if let Some(runtimes) = regex.captures(err.message()) {
+                    let runtime = runtimes[2].parse().unwrap();
+                    DryRunError::RuntimeNotFound(runtime)
+                } else {
+                    DryRunError::RuntimeNotFound("unknown-runtime".to_string())
+                };
+
+                return Err(error);
+            } else if err.kind::<libflatpak::Error>() != Some(libflatpak::Error::Aborted) {
                 error!("Error during transaction dry run: {}", err.message());
-                is_error = true;
-                error_message = err.message().to_string();
+                let message = err.message().to_string();
+                let error = DryRunError::Other(message);
+                return Err(error);
             }
         }
 
@@ -307,10 +327,8 @@ impl TransactionHandler {
             installed_size: 0,
             runtimes: runtimes.borrow().clone(),
             remotes: remotes.borrow().clone(),
-            is_error,
-            error_message,
         };
-        r
+        Ok(r)
     }
 
     fn new_transaction(&self, installation: &str) -> Transaction {

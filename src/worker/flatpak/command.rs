@@ -16,7 +16,7 @@
 
 use async_std::channel::Sender;
 
-use crate::worker::flatpak::DryRunResults;
+use crate::worker::flatpak::{DryRunError, DryRunResults};
 
 #[derive(Debug, Clone)]
 pub enum Command {
@@ -25,7 +25,7 @@ pub enum Command {
     // uuid, path, installation
     InstallFlatpakBundle(String, String, String),
     // path, sender
-    InstallFlatpakBundleDryRun(String, Sender<DryRunResults>),
+    InstallFlatpakBundleDryRun(String, Sender<Result<DryRunResults, DryRunError>>),
     // uuid,
     CancelTransaction(String),
 }

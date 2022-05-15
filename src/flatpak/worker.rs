@@ -28,7 +28,7 @@ use once_cell::sync::Lazy;
 use crate::error::Error;
 use crate::flatpak::sideload::{Sideloadable, SkBundle, SkSideloadType};
 use crate::flatpak::{SkTransaction, SkTransactionModel, SkTransactionType};
-use crate::worker::{Process, WorkerProxy};
+use crate::worker::{DryRunError, Process, WorkerProxy};
 
 mod imp {
     use super::*;
@@ -158,14 +158,21 @@ impl SkWorker {
         let path_string = path.to_str().unwrap().to_string();
 
         let dry_run = match type_ {
-            SkSideloadType::Bundle => proxy.install_flatpak_bundle_dry_run(&path_string).await?,
+            SkSideloadType::Bundle => proxy.install_flatpak_bundle_dry_run(&path_string).await,
             _ => return Err(Error::UnsupportedSideloadType),
         };
 
         debug!("Dry run results: {:#?}", dry_run);
-        if dry_run.is_error {
-            return Err(Error::DryRunError(dry_run.error_message));
-        }
+        let dry_run = match dry_run {
+            Ok(sideloadable) => sideloadable,
+            Err(err) => match err {
+                DryRunError::RuntimeNotFound(runtime) => {
+                    return Err(Error::DryRunRuntimeNotFound(runtime))
+                }
+                DryRunError::Other(message) => return Err(Error::DryRunError(message)),
+                DryRunError::ZBus(err) => return Err(Error::DbusError(err)),
+            },
+        };
 
         let sideloadable = match type_ {
             SkSideloadType::Bundle => {

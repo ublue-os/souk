@@ -19,7 +19,7 @@ mod flatpak;
 mod process;
 
 pub use dbus::WorkerProxy;
-pub use flatpak::{DryRunResults, Error, Progress, TransactionHandler};
+pub use flatpak::{DryRunError, DryRunResults, Error, Progress, TransactionHandler};
 pub use process::Process;
 
 /// Start DBus server and Flatpak transaction handler.

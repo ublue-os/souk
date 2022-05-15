@@ -25,6 +25,7 @@ use once_cell::sync::{Lazy, OnceCell};
 
 use crate::app::SkApplication;
 use crate::config;
+use crate::error::Error;
 use crate::flatpak::sideload::{Sideloadable, SkSideloadType};
 use crate::flatpak::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
@@ -68,6 +69,9 @@ mod imp {
         pub error_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
         pub error_status_page: TemplateChild<adw::StatusPage>,
+
+        #[template_child]
+        pub missing_runtime_status_page: TemplateChild<adw::StatusPage>,
 
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
@@ -199,7 +203,13 @@ impl SkSideloadWindow {
                 imp.sideloadable.set(Box::new(sideloadable)).unwrap();
                 self.setup_widgets();
             }
-            Err(err) => self.show_error_message(&err.to_string()),
+            Err(err) => match err {
+                Error::DryRunRuntimeNotFound(runtime) => {
+                    self.show_missing_runtime_message(&runtime)
+                }
+                Error::DryRunError(message) => self.show_error_message(&message),
+                _ => (),
+            },
         }
     }
 
@@ -369,5 +379,19 @@ impl SkSideloadWindow {
 
         imp.sideload_stack.set_visible_child_name("error");
         imp.error_status_page.set_description(Some(message));
+    }
+
+    fn show_missing_runtime_message(&self, runtime: &str) {
+        let imp = self.imp();
+
+        imp.sideload_stack.set_visible_child_name("missing-runtime");
+        let message = i18n_f(
+            "The required runtime <tt>{}</tt> could not be found.",
+            &[runtime],
+        );
+        imp.missing_runtime_status_page
+            .set_description(Some(&message));
+        // TODO: Allow selecting a different installation, which may have the
+        // required runtime
     }
 }

@@ -17,10 +17,10 @@
 use async_std::channel::{unbounded, Receiver, Sender};
 use async_std::prelude::*;
 use uuid::Uuid;
-use zbus::{dbus_interface, ConnectionBuilder, Result, SignalContext};
+use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
 
 use crate::config;
-use crate::worker::flatpak::{Command, DryRunResults, Error, Message, Progress};
+use crate::worker::flatpak::{Command, DryRunError, DryRunResults, Error, Message, Progress};
 
 #[derive(Debug)]
 struct Worker {
@@ -58,7 +58,10 @@ impl Worker {
         uuid
     }
 
-    async fn install_flatpak_bundle_dry_run(&self, path: &str) -> DryRunResults {
+    async fn install_flatpak_bundle_dry_run(
+        &self,
+        path: &str,
+    ) -> Result<DryRunResults, DryRunError> {
         let (sender, mut receiver) = unbounded();
 
         self.sender
@@ -86,7 +89,7 @@ impl Worker {
     async fn error(signal_ctxt: &SignalContext<'_>, error: Error) -> zbus::Result<()>;
 }
 
-pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Message>) -> Result<()> {
+pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Message>) -> zbus::Result<()> {
     let name = format!("{}.Worker", config::APP_ID);
     let path = "/de/haeckerfelix/Souk/Worker";
     let worker = Worker { sender };

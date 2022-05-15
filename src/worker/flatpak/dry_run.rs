@@ -16,6 +16,16 @@
 
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
+use zbus::DBusError;
+
+#[derive(DBusError, Debug)]
+pub enum DryRunError {
+    #[dbus_error(zbus_error)]
+    ZBus(zbus::Error),
+
+    RuntimeNotFound(String),
+    Other(String),
+}
 
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
 pub struct DryRunResults {
@@ -23,9 +33,6 @@ pub struct DryRunResults {
     pub installed_size: u64,
     pub runtimes: Vec<DryRunRuntime>,
     pub remotes: Vec<DryRunRemote>,
-
-    pub is_error: bool,
-    pub error_message: String,
 }
 
 impl DryRunResults {

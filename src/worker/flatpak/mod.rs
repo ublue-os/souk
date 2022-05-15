@@ -15,11 +15,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod command;
-mod dry_run_results;
+mod dry_run;
 mod message;
 mod transaction_handler;
 
 pub use command::Command;
-pub use dry_run_results::{DryRunRemote, DryRunResults, DryRunRuntime};
+pub use dry_run::{DryRunError, DryRunRemote, DryRunResults, DryRunRuntime};
 pub use message::{Error, Message, Progress};
 pub use transaction_handler::TransactionHandler;
