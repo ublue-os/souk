@@ -336,6 +336,12 @@ impl TransactionHandler {
 
         let installation = match installation {
             "default" => Installation::new_system(Cancellable::NONE).unwrap(),
+            "user" => {
+                let mut user_path = glib::home_dir();
+                user_path.push(".local/share/flatpak");
+                let file = gio::File::for_path(&user_path);
+                Installation::for_path(&file, true, gio::Cancellable::NONE).unwrap()
+            }
             _ => panic!("Unknown Flatpak installation: {}", installation),
         };
 

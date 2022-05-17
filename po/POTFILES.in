@@ -6,6 +6,7 @@ data/gtk/help_overlay.ui
 data/gtk/window.ui
 
 src/ui/about_dialog.rs
+src/ui/installation_row.rs
 src/ui/window.rs
 src/ui/sideload/sideload_window.rs
 

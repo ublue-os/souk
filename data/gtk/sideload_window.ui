@@ -122,6 +122,38 @@
                                     <property name="icon_name">drive-harddisk-symbolic</property>
                                   </object>
                                 </child>
+                                <style>
+                                  <class name="large-rows"/>
+                                </style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwPreferencesGroup" id="installation_group">
+                                <child>
+                                  <object class="AdwActionRow" id="installation_row">
+                                    <property name="icon_name">document-save-as-symbolic</property>
+                                    <property name="title" translatable="yes">Installation Target</property>
+                                    <property name="subtitle" translatable="yes">Flatpak Installation</property>
+                                    <property name="activatable_widget">installation_menubutton</property>
+                                    <child>
+                                      <object class="GtkMenuButton" id="installation_menubutton">
+                                        <property name="label">Default</property>
+                                        <property name="popover">installation_popover</property>
+                                        <property name="always_show_arrow">True</property>
+                                        <property name="valign">center</property>
+                                        <binding name="label">
+                                          <lookup name="selected_installation_title" type="SkInstallationPopover">installation_popover</lookup>
+                                        </binding>
+                                        <style>
+                                          <class name="flat"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                                <style>
+                                  <class name="large-rows"/>
+                                </style>
                               </object>
                             </child>
                           </object>
@@ -323,5 +355,6 @@
       </object>
     </child>
   </template>
+  <object class="SkInstallationPopover" id="installation_popover"/>
 </interface>
 

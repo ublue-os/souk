@@ -17,8 +17,12 @@
 pub mod sideload;
 
 pub mod about_dialog;
+mod installation_popover;
+mod installation_row;
 mod transaction_row;
 mod window;
 
+pub use installation_popover::SkInstallationPopover;
+pub use installation_row::SkInstallationRow;
 pub use transaction_row::SkTransactionRow;
 pub use window::SkApplicationWindow;

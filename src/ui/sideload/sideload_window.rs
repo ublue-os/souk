@@ -29,6 +29,7 @@ use crate::error::Error;
 use crate::flatpak::sideload::{Sideloadable, SkSideloadType};
 use crate::flatpak::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
+use crate::ui::SkInstallationPopover;
 
 mod imp {
     use super::*;
@@ -40,9 +41,11 @@ mod imp {
         pub sideload_stack: TemplateChild<gtk::Stack>,
 
         #[template_child]
-        pub start_button: TemplateChild<gtk::Button>,
-        #[template_child]
         pub cancel_sideload_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub installation_popover: TemplateChild<SkInstallationPopover>,
+        #[template_child]
+        pub start_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub details_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
@@ -199,7 +202,7 @@ impl SkSideloadWindow {
         }
 
         match worker
-            .load_sideloadable(&self.file(), &self.type_(), "default")
+            .load_sideloadable(&self.file(), &self.type_(), "user")
             .await
         {
             Ok(sideloadable) => {

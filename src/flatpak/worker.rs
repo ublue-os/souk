@@ -16,13 +16,13 @@
 
 use futures::future::join;
 use futures_util::stream::StreamExt;
-use gio::File;
+use gio::{Cancellable, File, ListStore};
 use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use libflatpak::prelude::*;
-use libflatpak::{BundleRef, Ref};
+use libflatpak::{BundleRef, Installation, Ref};
 use once_cell::sync::Lazy;
 
 use crate::error::Error;
@@ -36,6 +36,7 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkWorker {
         pub transactions: SkTransactionModel,
+        pub installations: ListStore,
         pub proxy: WorkerProxy<'static>,
         pub process: Process,
     }
@@ -50,13 +51,22 @@ mod imp {
     impl ObjectImpl for SkWorker {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![ParamSpecObject::new(
-                    "transactions",
-                    "Transactions",
-                    "Transactions",
-                    SkTransactionModel::static_type(),
-                    ParamFlags::READABLE,
-                )]
+                vec![
+                    ParamSpecObject::new(
+                        "transactions",
+                        "Transactions",
+                        "Transactions",
+                        SkTransactionModel::static_type(),
+                        ParamFlags::READABLE,
+                    ),
+                    ParamSpecObject::new(
+                        "installations",
+                        "Installations",
+                        "Installations",
+                        ListStore::static_type(),
+                        ParamFlags::READABLE,
+                    ),
+                ]
             });
             PROPERTIES.as_ref()
         }
@@ -64,6 +74,7 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "transactions" => obj.transactions().to_value(),
+                "installations" => obj.installations().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -77,6 +88,8 @@ mod imp {
                 join(progress, error).await;
             });
             gtk_macros::spawn!(fut);
+
+            obj.load_installations();
         }
     }
 }
@@ -86,18 +99,27 @@ glib::wrapper! {
 }
 
 impl SkWorker {
+    /// Returns all current active Flatpak transactions
     pub fn transactions(&self) -> SkTransactionModel {
         self.imp().transactions.clone()
     }
 
+    /// Returns all available Flatpak installations
+    pub fn installations(&self) -> ListStore {
+        self.imp().installations.clone()
+    }
+
+    /// Starts the `souk-worker` process
     pub fn start_process(&self) {
         self.imp().process.spawn();
     }
 
+    /// Stops the `souk-worker` process
     pub fn stop_process(&self) {
         self.imp().process.kill();
     }
 
+    /// Install new Flatpak by ref name
     pub async fn install_flatpak(
         &self,
         ref_: &Ref,
@@ -119,6 +141,7 @@ impl SkWorker {
         Ok(transaction)
     }
 
+    /// Install new Flatpak by bundle file
     pub async fn install_flatpak_bundle(
         &self,
         ref_: &BundleRef,
@@ -148,6 +171,8 @@ impl SkWorker {
         Ok(transaction)
     }
 
+    /// Opens a sideloadable Flatpak file and load it into a `Sideloadable`
+    /// which can be processed in a `SkSideloadWindow`
     pub async fn load_sideloadable(
         &self,
         file: &File,
@@ -190,6 +215,7 @@ impl SkWorker {
         Ok(sideloadable)
     }
 
+    /// Cancel a Flatpak transaction
     pub async fn cancel_transaction(&self, uuid: &str) -> Result<(), Error> {
         self.imp().proxy.cancel_transaction(uuid).await?;
         Ok(())
@@ -228,6 +254,23 @@ impl SkWorker {
         self.transactions().add_transaction(transaction);
     }
 
+    /// Loads available Flatpak installations
+    fn load_installations(&self) {
+        let imp = self.imp();
+
+        // system
+        let system = Installation::new_system(Cancellable::NONE).unwrap();
+        imp.installations.append(&system);
+
+        // user
+        let mut user_path = glib::home_dir();
+        user_path.push(".local/share/flatpak");
+        let file = gio::File::for_path(&user_path);
+        let user = Installation::for_path(&file, true, gio::Cancellable::NONE).unwrap();
+        imp.installations.append(&user);
+    }
+
+    /// Handle incoming progress messages from worker process
     async fn receive_progress(&self) {
         let mut progress = self.imp().proxy.receive_progress().await.unwrap();
         while let Some(progress) = progress.next().await {
@@ -243,6 +286,7 @@ impl SkWorker {
         }
     }
 
+    /// Handle incoming error messages from worker process
     async fn receive_error(&self) {
         let mut error = self.imp().proxy.receive_error().await.unwrap();
         while let Some(error) = error.next().await {

@@ -1,0 +1,14 @@
+.large-rows box > list > row{
+  min-height: 60px;
+}
+
+.large-rows .icon {
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 99999px;
+  padding: 9px 11px;
+  min-width: 18px;
+  min-height: 22px;
+  color: alpha(@window_fg_color, .75);
+  background-color: alpha(@window_fg_color, .15);
+}
