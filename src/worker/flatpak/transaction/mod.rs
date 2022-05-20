@@ -1,5 +1,5 @@
-// Souk - action.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - mod.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,18 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use async_std::channel::Sender;
+mod command;
+mod dry_run;
+mod message;
+mod transaction_handler;
 
-use crate::worker::flatpak::{DryRunError, DryRunResults};
-
-#[derive(Debug, Clone)]
-pub enum Command {
-    // uuid, ref_, remote, installation
-    InstallFlatpak(String, String, String, String),
-    // uuid, path, installation
-    InstallFlatpakBundle(String, String, String),
-    // path, installation, sender
-    InstallFlatpakBundleDryRun(String, String, Sender<Result<DryRunResults, DryRunError>>),
-    // uuid,
-    CancelTransaction(String),
-}
+pub use command::TransactionCommand;
+pub use dry_run::{DryRunError, DryRunRemote, DryRunResults, DryRunRuntime};
+pub use message::{TransactionError, TransactionMessage, TransactionProgress};
+pub use transaction_handler::TransactionHandler;

@@ -1,4 +1,4 @@
-// Souk - error.rs
+// Souk - action.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,20 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use serde::{Deserialize, Serialize};
-use zbus::zvariant::Type;
+use async_std::channel::Sender;
 
-#[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
-pub struct Error {
-    pub transaction_uuid: String,
-    pub message: String,
-}
+use crate::worker::flatpak::transaction::{DryRunError, DryRunResults};
 
-impl Error {
-    pub fn new(transaction_uuid: String, message: String) -> Self {
-        Self {
-            transaction_uuid,
-            message,
-        }
-    }
+#[derive(Debug, Clone)]
+pub enum TransactionCommand {
+    // uuid, ref_, remote, installation
+    InstallFlatpak(String, String, String, String),
+    // uuid, path, installation
+    InstallFlatpakBundle(String, String, String),
+    // path, installation, sender
+    InstallFlatpakBundleDryRun(String, String, Sender<Result<DryRunResults, DryRunError>>),
+    // uuid,
+    CancelTransaction(String),
 }

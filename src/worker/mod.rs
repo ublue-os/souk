@@ -19,7 +19,9 @@ mod flatpak;
 mod process;
 
 pub use dbus::WorkerProxy;
-pub use flatpak::{DryRunError, DryRunResults, Error, Progress, TransactionHandler};
+pub use flatpak::transaction::{
+    DryRunError, DryRunResults, TransactionError, TransactionHandler, TransactionProgress,
+};
 pub use process::Process;
 
 /// Start DBus server and Flatpak transaction handler.
@@ -29,8 +31,10 @@ pub async fn spawn_dbus_server() {
     debug!("Start souk-worker dbus server...");
 
     let (server_tx, server_rx) = unbounded();
-    let (flatak_tx, flatpak_rx) = unbounded();
+    let (transaction_sender, transaction_handler_receiver) = unbounded();
 
-    TransactionHandler::start(flatak_tx, server_rx);
-    dbus::server::start(server_tx, flatpak_rx).await.unwrap();
+    TransactionHandler::start(transaction_sender, server_rx);
+    dbus::server::start(server_tx, transaction_handler_receiver)
+        .await
+        .unwrap();
 }

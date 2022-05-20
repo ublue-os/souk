@@ -17,10 +17,10 @@
 mod error;
 mod progress;
 
-pub use error::Error;
-pub use progress::Progress;
+pub use error::TransactionError;
+pub use progress::TransactionProgress;
 
-pub enum Message {
-    Progress(Progress),
-    Error(Error),
+pub enum TransactionMessage {
+    Progress(TransactionProgress),
+    Error(TransactionError),
 }

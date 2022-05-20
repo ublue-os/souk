@@ -29,23 +29,22 @@ use glib::{clone, Downgrade, Error};
 use gtk::{gio, glib};
 use libflatpak::prelude::*;
 use libflatpak::{
-    BundleRef, Installation, Ref, Transaction, TransactionOperation, TransactionProgress,
-    TransactionRemoteReason,
+    BundleRef, Installation, Ref, Transaction, TransactionOperation, TransactionRemoteReason,
 };
 
-use crate::worker::flatpak;
-use crate::worker::flatpak::{
-    Command, DryRunError, DryRunRemote, DryRunResults, DryRunRuntime, Message, Progress,
+use super::{
+    DryRunError, DryRunRemote, DryRunResults, DryRunRuntime, TransactionCommand,
+    TransactionMessage, TransactionProgress,
 };
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct TransactionHandler {
     transactions: Arc<Mutex<HashMap<String, Cancellable>>>,
-    sender: Arc<Sender<Message>>,
+    sender: Arc<Sender<TransactionMessage>>,
 }
 
 impl TransactionHandler {
-    pub fn start(sender: Sender<Message>, receiver: Receiver<Command>) {
+    pub fn start(sender: Sender<TransactionMessage>, receiver: Receiver<TransactionCommand>) {
         let handler = Self {
             transactions: Arc::default(),
             sender: Arc::new(sender),
@@ -65,23 +64,23 @@ impl TransactionHandler {
         }));
     }
 
-    fn process_command(&self, command: Command) {
+    fn process_command(&self, command: TransactionCommand) {
         debug!("Process command: {:?}", command);
 
         let (result, transaction_uuid) = match command {
-            Command::InstallFlatpak(uuid, ref_, remote, installation) => (
+            TransactionCommand::InstallFlatpak(uuid, ref_, remote, installation) => (
                 self.install_flatpak(&uuid, &ref_, &remote, &installation),
                 uuid,
             ),
-            Command::InstallFlatpakBundle(uuid, path, installation) => (
+            TransactionCommand::InstallFlatpakBundle(uuid, path, installation) => (
                 self.install_flatpak_bundle(&uuid, &path, &installation),
                 uuid,
             ),
-            Command::InstallFlatpakBundleDryRun(path, installation, sender) => (
+            TransactionCommand::InstallFlatpakBundleDryRun(path, installation, sender) => (
                 self.install_flatpak_bundle_dry_run(&path, &installation, sender),
                 String::new(), // We don't have an uuid for dry runs
             ),
-            Command::CancelTransaction(uuid) => {
+            TransactionCommand::CancelTransaction(uuid) => {
                 let transactions = self.transactions.lock().unwrap();
                 if let Some(cancellable) = transactions.get(&uuid) {
                     cancellable.cancel();
@@ -100,12 +99,17 @@ impl TransactionHandler {
             }
 
             if err.kind::<IOErrorEnum>() == Some(IOErrorEnum::Cancelled) {
-                let progress = Progress::new(transaction_uuid, None, None, None);
+                let progress = TransactionProgress::new(transaction_uuid, None, None, None);
                 let progress = progress.cancelled();
-                self.sender.try_send(Message::Progress(progress)).unwrap();
+                self.sender
+                    .try_send(TransactionMessage::Progress(progress))
+                    .unwrap();
             } else {
-                let error = flatpak::Error::new(transaction_uuid, err.message().to_string());
-                self.sender.try_send(Message::Error(error)).unwrap();
+                let error =
+                    super::TransactionError::new(transaction_uuid, err.message().to_string());
+                self.sender
+                    .try_send(TransactionMessage::Error(error))
+                    .unwrap();
             }
         }
     }
@@ -182,7 +186,7 @@ impl TransactionHandler {
 
         transaction.connect_operation_done(
             clone!(@weak self as this, @strong transaction_uuid => move |transaction, operation, _commit, _result| {
-                let mut progress = Progress::new(
+                let mut progress = TransactionProgress::new(
                     transaction_uuid.clone(),
                     Some(transaction),
                     Some(operation),
@@ -192,9 +196,9 @@ impl TransactionHandler {
                 // Check if all operations are done
                 if progress.operations_count == progress.current_operation{
                     progress = progress.done();
-                    this.sender.try_send(Message::Progress(progress)).unwrap();
+                    this.sender.try_send(TransactionMessage::Progress(progress)).unwrap();
                 }else{
-                    this.sender.try_send(Message::Progress(progress)).unwrap();
+                    this.sender.try_send(TransactionMessage::Progress(progress)).unwrap();
                 }
             }),
         );
@@ -222,22 +226,22 @@ impl TransactionHandler {
         transaction_uuid: String,
         transaction: &Transaction,
         transaction_operation: &TransactionOperation,
-        transaction_progress: &TransactionProgress,
+        transaction_progress: &libflatpak::TransactionProgress,
     ) {
-        let progress = Progress::new(
+        let progress = TransactionProgress::new(
             transaction_uuid,
             Some(transaction),
             Some(transaction_operation),
             Some(transaction_progress),
         );
         self.sender
-            .try_send(Message::Progress(progress.clone()))
+            .try_send(TransactionMessage::Progress(progress.clone()))
             .unwrap();
 
         transaction_progress.connect_changed(
             clone!(@weak self.sender as sender, @strong progress => move |transaction_progress|{
                 let updated = progress.update(transaction_progress);
-                sender.try_send(Message::Progress(updated)).unwrap();
+                sender.try_send(TransactionMessage::Progress(updated)).unwrap();
             }),
         );
     }

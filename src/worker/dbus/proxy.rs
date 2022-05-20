@@ -18,7 +18,10 @@ use zbus::Result;
 
 use crate::config;
 use crate::worker::flatpak;
-use crate::worker::flatpak::{DryRunError, DryRunResults};
+use crate::worker::flatpak::transaction;
+use crate::worker::flatpak::transaction::{
+    DryRunError, DryRunResults, TransactionError, TransactionProgress,
+};
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
@@ -35,10 +38,10 @@ trait Worker {
     fn cancel_transaction(&self, uuid: &str) -> Result<()>;
 
     #[dbus_proxy(signal)]
-    fn progress(&self, progress: flatpak::Progress) -> Result<()>;
+    fn progress(&self, progress: TransactionProgress) -> Result<()>;
 
     #[dbus_proxy(signal)]
-    fn error(&self, error: flatpak::Error) -> Result<()>;
+    fn error(&self, error: TransactionError) -> Result<()>;
 }
 
 impl Default for WorkerProxy<'static> {

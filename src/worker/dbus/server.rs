@@ -20,11 +20,14 @@ use uuid::Uuid;
 use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
 
 use crate::config;
-use crate::worker::flatpak::{Command, DryRunError, DryRunResults, Error, Message, Progress};
+use crate::worker::flatpak::transaction::{
+    DryRunError, DryRunResults, TransactionCommand, TransactionError, TransactionMessage,
+    TransactionProgress,
+};
 
 #[derive(Debug)]
 struct Worker {
-    sender: Sender<Command>,
+    sender: Sender<TransactionCommand>,
 }
 
 #[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
@@ -32,7 +35,7 @@ impl Worker {
     async fn install_flatpak(&self, ref_: &str, remote: &str, installation: &str) -> String {
         let uuid = Uuid::new_v4().to_string();
         self.sender
-            .send(Command::InstallFlatpak(
+            .send(TransactionCommand::InstallFlatpak(
                 uuid.clone(),
                 ref_.to_string(),
                 remote.to_string(),
@@ -47,7 +50,7 @@ impl Worker {
     async fn install_flatpak_bundle(&self, path: &str, installation: &str) -> String {
         let uuid = Uuid::new_v4().to_string();
         self.sender
-            .send(Command::InstallFlatpakBundle(
+            .send(TransactionCommand::InstallFlatpakBundle(
                 uuid.clone(),
                 path.to_string(),
                 installation.to_string(),
@@ -66,7 +69,7 @@ impl Worker {
         let (sender, mut receiver) = unbounded();
 
         self.sender
-            .send(Command::InstallFlatpakBundleDryRun(
+            .send(TransactionCommand::InstallFlatpakBundleDryRun(
                 path.to_string(),
                 installation.to_string(),
                 sender,
@@ -79,19 +82,25 @@ impl Worker {
 
     async fn cancel_transaction(&self, uuid: &str) {
         self.sender
-            .send(Command::CancelTransaction(uuid.to_string()))
+            .send(TransactionCommand::CancelTransaction(uuid.to_string()))
             .await
             .unwrap();
     }
 
     #[dbus_interface(signal)]
-    async fn progress(signal_ctxt: &SignalContext<'_>, progress: Progress) -> zbus::Result<()>;
+    async fn progress(
+        signal_ctxt: &SignalContext<'_>,
+        progress: TransactionProgress,
+    ) -> zbus::Result<()>;
 
     #[dbus_interface(signal)]
-    async fn error(signal_ctxt: &SignalContext<'_>, error: Error) -> zbus::Result<()>;
+    async fn error(signal_ctxt: &SignalContext<'_>, error: TransactionError) -> zbus::Result<()>;
 }
 
-pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Message>) -> zbus::Result<()> {
+pub async fn start(
+    sender: Sender<TransactionCommand>,
+    mut receiver: Receiver<TransactionMessage>,
+) -> zbus::Result<()> {
     let name = format!("{}.Worker", config::APP_ID);
     let path = "/de/haeckerfelix/Souk/Worker";
     let worker = Worker { sender };
@@ -105,8 +114,10 @@ pub async fn start(sender: Sender<Command>, mut receiver: Receiver<Message>) -> 
     let signal_ctxt = SignalContext::new(&con, path).unwrap();
     while let Some(message) = receiver.next().await {
         match message {
-            Message::Progress(progress) => Worker::progress(&signal_ctxt, progress).await.unwrap(),
-            Message::Error(error) => Worker::error(&signal_ctxt, error).await.unwrap(),
+            TransactionMessage::Progress(progress) => {
+                Worker::progress(&signal_ctxt, progress).await.unwrap()
+            }
+            TransactionMessage::Error(error) => Worker::error(&signal_ctxt, error).await.unwrap(),
         }
     }
     debug!("Stopped.");

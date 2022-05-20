@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use libflatpak::prelude::*;
-use libflatpak::{Transaction, TransactionOperation, TransactionProgress};
+use libflatpak::{Transaction, TransactionOperation};
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
@@ -24,7 +24,7 @@ use zbus::zvariant::Type;
 /// getting used for `SkTransaction`s)
 
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
-pub struct Progress {
+pub struct TransactionProgress {
     pub transaction_uuid: String,
 
     pub ref_: String,
@@ -40,12 +40,12 @@ pub struct Progress {
     pub operations_count: i32,
 }
 
-impl Progress {
+impl TransactionProgress {
     pub fn new(
         transaction_uuid: String,
         transaction: Option<&Transaction>,
         operation: Option<&TransactionOperation>,
-        operation_progress: Option<&TransactionProgress>,
+        operation_progress: Option<&libflatpak::TransactionProgress>,
     ) -> Self {
         let mut progress = Self {
             transaction_uuid,
@@ -78,7 +78,7 @@ impl Progress {
         progress
     }
 
-    pub fn update(&self, operation_progress: &TransactionProgress) -> Self {
+    pub fn update(&self, operation_progress: &libflatpak::TransactionProgress) -> Self {
         let mut updated = self.clone();
         updated.progress = operation_progress.progress();
         updated.bytes_transferred = operation_progress.bytes_transferred();

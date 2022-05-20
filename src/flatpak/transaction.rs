@@ -29,7 +29,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::flatpak::SkTransactionType;
-use crate::worker::{Error, Progress};
+use crate::worker::{TransactionError, TransactionProgress};
 
 mod imp {
     use super::*;
@@ -281,7 +281,7 @@ impl SkTransaction {
         self.imp().operations_count.get()
     }
 
-    pub(super) fn handle_progress(&self, progress: &Progress) {
+    pub(super) fn handle_progress(&self, progress: &TransactionProgress) {
         let imp = self.imp();
 
         if progress.is_done {
@@ -321,7 +321,7 @@ impl SkTransaction {
         self.notify("operations-count");
     }
 
-    pub(super) fn handle_error(&self, error: &Error) {
+    pub(super) fn handle_error(&self, error: &TransactionError) {
         self.emit_by_name::<()>("error", &[&error.message.to_value()]);
     }
 }
