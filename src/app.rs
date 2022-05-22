@@ -122,7 +122,7 @@ mod imp {
                     }
                 }
 
-                let _ = app.create_sideload_window(file, &sideload_type);
+                let _ = app.create_sideload_window(file);
             }
         }
 
@@ -181,8 +181,8 @@ impl SkApplication {
         window
     }
 
-    fn create_sideload_window(&self, file: &gio::File, type_: &SkSideloadType) -> SkSideloadWindow {
-        let window = SkSideloadWindow::new(file, type_);
+    fn create_sideload_window(&self, file: &gio::File) -> SkSideloadWindow {
+        let window = SkSideloadWindow::new(file);
         self.add_window(&window);
 
         window.present();

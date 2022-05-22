@@ -19,7 +19,7 @@ use std::cell::RefCell;
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gio::File;
-use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject};
+use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 use libflatpak::prelude::*;
@@ -28,7 +28,7 @@ use once_cell::sync::{Lazy, OnceCell};
 use crate::app::SkApplication;
 use crate::config;
 use crate::error::Error;
-use crate::flatpak::sideload::{Sideloadable, SkSideloadType};
+use crate::flatpak::sideload::SkSideloadable;
 use crate::flatpak::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
 use crate::ui::SkInstallationPopover;
@@ -79,9 +79,8 @@ mod imp {
         pub missing_runtime_status_page: TemplateChild<adw::StatusPage>,
 
         pub file: OnceCell<File>,
-        pub type_: OnceCell<SkSideloadType>,
+        pub sideloadable: RefCell<Option<SkSideloadable>>,
 
-        pub sideloadable: RefCell<Option<Box<dyn Sideloadable>>>,
         pub transaction: OnceCell<SkTransaction>,
     }
 
@@ -112,13 +111,12 @@ mod imp {
                         File::static_type(),
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
-                    ParamSpecEnum::new(
-                        "type",
-                        "Type",
-                        "Type",
-                        SkSideloadType::static_type(),
-                        SkSideloadType::None as i32,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ParamSpecObject::new(
+                        "sideloadable",
+                        "Sideloadable",
+                        "Sideloadable",
+                        SkSideloadable::static_type(),
+                        ParamFlags::READABLE,
                     ),
                 ]
             });
@@ -128,7 +126,7 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "file" => obj.file().to_value(),
-                "type" => obj.type_().to_value(),
+                "sideloadable" => obj.sideloadable().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -142,7 +140,6 @@ mod imp {
         ) {
             match pspec.name() {
                 "file" => self.file.set(value.get().unwrap()).unwrap(),
-                "type" => self.type_.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
             }
         }
@@ -157,7 +154,7 @@ mod imp {
             obj.setup_widgets();
 
             let fut = clone!(@weak obj => async move {
-                obj.handle_file().await;
+                obj.update_sideloadable().await;
             });
             spawn!(fut);
         }
@@ -179,16 +176,16 @@ glib::wrapper! {
 
 #[gtk::template_callbacks]
 impl SkSideloadWindow {
-    pub fn new(file: &File, type_: &SkSideloadType) -> Self {
-        glib::Object::new::<Self>(&[("file", file), ("type", type_)]).unwrap()
+    pub fn new(file: &File) -> Self {
+        glib::Object::new::<Self>(&[("file", file)]).unwrap()
     }
 
     pub fn file(&self) -> File {
         self.imp().file.get().unwrap().clone()
     }
 
-    pub fn type_(&self) -> SkSideloadType {
-        *self.imp().type_.get().unwrap()
+    pub fn sideloadable(&self) -> Option<SkSideloadable> {
+        self.imp().sideloadable.borrow().clone()
     }
 
     fn setup_widgets(&self) {
@@ -199,6 +196,8 @@ impl SkSideloadWindow {
             self.add_css_class("devel");
         }
 
+        // When the installation changes, we also have to update the sideloadable,
+        // since it depends on the installation
         imp.installation_popover.connect_local(
             "notify::selected-installation",
             false,
@@ -212,47 +211,44 @@ impl SkSideloadWindow {
         );
     }
 
-    async fn handle_file(&self) {
-        debug!("Sideload file: {:?}", self.file().path().unwrap());
-
-        if self.type_() == SkSideloadType::None {
-            let msg = i18n("Unknown or unsupported file format.");
-            self.show_error_message(&msg);
-            return;
-        }
-
-        self.update_sideloadable().await;
-    }
-
     async fn update_sideloadable(&self) {
         let imp = self.imp();
         imp.sideload_stack.set_visible_child_name("loading");
 
         let installation = imp.installation_popover.selected_installation().unwrap();
-        let uuid = installation.uuid();
+        let installation_uuid = installation.uuid();
+        let file = self.file();
 
         let worker = SkApplication::default().worker();
-        let sideloadable = worker
-            .load_sideloadable(&self.file(), &self.type_(), &uuid)
-            .await;
+        let sideloadable = worker.load_sideloadable(&file, &installation_uuid).await;
 
         match sideloadable {
             Ok(sideloadable) => {
-                self.update_widgets(&sideloadable);
-                *imp.sideloadable.borrow_mut() = Some(Box::new(sideloadable));
+                *imp.sideloadable.borrow_mut() = Some(sideloadable);
+                self.notify("sideloadable");
+
+                self.update_widgets();
             }
             Err(err) => match err {
                 Error::DryRunRuntimeNotFound(runtime) => {
                     self.show_missing_runtime_message(&runtime)
                 }
                 Error::DryRunError(message) => self.show_error_message(&message),
-                _ => (),
+                Error::UnsupportedSideloadType => {
+                    let message = i18n("Unknown or unsupported file format.");
+                    self.show_error_message(&message);
+                }
+                Error::DbusError(_) => {
+                    let message = i18n("Unable to communicate with worker process.");
+                    self.show_error_message(&message);
+                }
             },
         }
     }
 
-    fn update_widgets(&self, sideloadable: &dyn Sideloadable) {
+    fn update_widgets(&self) {
         let imp = self.imp();
+        let sideloadable = self.sideloadable().unwrap();
 
         if sideloadable.is_already_done() {
             imp.sideload_stack.set_visible_child_name("already-done");
@@ -337,12 +333,11 @@ impl SkSideloadWindow {
     async fn start_transaction(&self) {
         let imp = self.imp();
         let sideloadable = imp.sideloadable.borrow_mut().take().unwrap();
-        let worker = SkApplication::default().worker();
 
         imp.sideload_stack.set_visible_child_name("progress");
 
         // Start sideloading the sideloadable, and track the transaction
-        let transaction = match sideloadable.sideload(&worker).await {
+        let transaction = match sideloadable.sideload().await {
             Ok(transaction) => transaction,
             Err(err) => {
                 self.show_error_message(&err.to_string());

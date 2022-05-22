@@ -76,6 +76,7 @@ impl TransactionHandler {
 
     fn process_command(&self, command: TransactionCommand) {
         debug!("Process command: {:?}", command);
+        let mut dry_run_sender = None;
 
         let (result, transaction_uuid) = match command {
             TransactionCommand::InstallFlatpak(uuid, ref_, remote, installation_uuid) => (
@@ -86,10 +87,13 @@ impl TransactionHandler {
                 self.install_flatpak_bundle(&uuid, &path, &installation_uuid),
                 uuid,
             ),
-            TransactionCommand::InstallFlatpakBundleDryRun(path, installation_uuid, sender) => (
-                self.install_flatpak_bundle_dry_run(&path, &installation_uuid, sender),
-                String::new(), // We don't have an uuid for dry runs
-            ),
+            TransactionCommand::InstallFlatpakBundleDryRun(path, installation_uuid, sender) => {
+                dry_run_sender = Some(sender.clone());
+                (
+                    self.install_flatpak_bundle_dry_run(&path, &installation_uuid, sender),
+                    String::new(), // We don't have an uuid for dry runs
+                )
+            }
             TransactionCommand::CancelTransaction(uuid) => {
                 let transactions = self.transactions.lock().unwrap();
                 if let Some(cancellable) = transactions.get(&uuid) {
@@ -102,6 +106,13 @@ impl TransactionHandler {
         };
 
         if let Err(err) = result {
+            if let Some(dry_run_sender) = dry_run_sender {
+                let message = err.message().to_string();
+                let dry_run_error = DryRunError::Other(message);
+                dry_run_sender.try_send(Err(dry_run_error)).unwrap();
+                return;
+            }
+
             // No uuid -> dry run transaction -> we don't care about errors
             if transaction_uuid.is_empty() {
                 error!("Error during transaction dry run: {}", err.message());
@@ -227,7 +238,6 @@ impl TransactionHandler {
         // This is going to block the thread till completion
         transaction.run(Some(&cancellable))?;
 
-        // Transaction finished -> Remove cancellable again
         let mut transactions = self.transactions.lock().unwrap();
         transactions.remove(&transaction_uuid);
 
@@ -268,7 +278,6 @@ impl TransactionHandler {
         real_installation: &Installation,
     ) -> Result<DryRunResults, DryRunError> {
         let dry_run_results = Rc::new(RefCell::new(DryRunResults::default()));
-        let cancellable = Cancellable::new();
 
         // Check if new remotes are added during the transaction
         transaction.connect_add_new_remote(
@@ -334,7 +343,7 @@ impl TransactionHandler {
             }),
         );
 
-        if let Err(err) = transaction.run(Some(&cancellable)) {
+        if let Err(err) = transaction.run(Cancellable::NONE) {
             if err.kind::<libflatpak::Error>() == Some(libflatpak::Error::RuntimeNotFound) {
                 // Unfortunately there's no clean way to find out which runtime is missing
                 // so we have to parse the error message to find the runtime ref.
@@ -355,9 +364,6 @@ impl TransactionHandler {
             }
         }
 
-        // Clean up dry run installation again
-        std::fs::remove_dir_all("/tmp/repo").expect("Unable to remove dry run installation");
-
         let results = dry_run_results.borrow().clone();
         Ok(results)
     }
@@ -373,6 +379,9 @@ impl TransactionHandler {
         // runtimes available.
         if dry_run {
             let remotes = installation.list_remotes(Cancellable::NONE).unwrap();
+
+            // Remove previous dry run installation
+            std::fs::remove_dir_all("/tmp/repo").expect("Unable to remove dry run installation");
 
             // New temporary dry run installation
             let dry_run_path = gio::File::for_parse_name("/tmp");

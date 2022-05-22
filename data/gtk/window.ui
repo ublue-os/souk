@@ -45,7 +45,6 @@
                     <child>
                       <object class="GtkButton">
                         <property name="label">Select Flatpak Bundle</property>
-                        <signal name="clicked" handler="select_flatpak_bundle" swapped="true"/>
                       </object>
                     </child>
                     <child>
@@ -64,7 +63,6 @@
                         <child>
                           <object class="GtkButton">
                             <property name="label">Install Flatpak</property>
-                            <signal name="clicked" handler="install_flatpak" swapped="true"/>
                           </object>
                         </child>
                       </object>

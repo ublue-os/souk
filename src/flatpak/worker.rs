@@ -24,11 +24,11 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use libflatpak::prelude::*;
-use libflatpak::{BundleRef, Ref};
+use libflatpak::Ref;
 use once_cell::sync::Lazy;
 
 use crate::error::Error;
-use crate::flatpak::sideload::{Sideloadable, SkBundle, SkSideloadType};
+use crate::flatpak::sideload::{BundleSideloadable, SkSideloadType, SkSideloadable};
 use crate::flatpak::{SkInstallation, SkTransaction, SkTransactionModel, SkTransactionType};
 use crate::worker::{DryRunError, Process, WorkerProxy};
 
@@ -176,13 +176,13 @@ impl SkWorker {
     /// Install new Flatpak by bundle file
     pub async fn install_flatpak_bundle(
         &self,
-        ref_: &BundleRef,
+        ref_: &Ref,
+        file: &File,
         installation: &str,
     ) -> Result<SkTransaction, Error> {
-        let path = ref_.file().unwrap().path().unwrap();
+        let path = file.path().unwrap();
         let filename_string = path.file_name().unwrap().to_str().unwrap();
         let path_string = path.to_str().unwrap().to_string();
-        let ref_: Ref = ref_.clone().upcast();
 
         let transaction_uuid = self
             .imp()
@@ -209,18 +209,18 @@ impl SkWorker {
         Ok(())
     }
 
-    /// Opens a sideloadable Flatpak file and load it into a `Sideloadable`
-    /// which can be processed in a `SkSideloadWindow`
+    /// Opens a sideloadable Flatpak file and load it into a `SkSideloadable`
+    /// which can be viewed / installed in a `SkSideloadWindow`
     pub async fn load_sideloadable(
         &self,
         file: &File,
-        type_: &SkSideloadType,
         installation_uuid: &str,
-    ) -> Result<impl Sideloadable, Error> {
+    ) -> Result<SkSideloadable, Error> {
         let proxy = &self.imp().proxy;
         let path = file.path().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
+        let type_ = SkSideloadType::determine_type(&file);
         let dry_run_results = match type_ {
             SkSideloadType::Bundle => {
                 proxy
@@ -244,12 +244,12 @@ impl SkWorker {
 
         let sideloadable = match type_ {
             SkSideloadType::Bundle => {
-                let bundle = BundleRef::new(file).unwrap();
-                SkBundle::new(&bundle, dry_run_results, installation_uuid)
+                BundleSideloadable::new(&file, dry_run_results, installation_uuid)
             }
             _ => return Err(Error::UnsupportedSideloadType),
         };
 
+        let sideloadable = SkSideloadable::new(Box::new(sideloadable));
         Ok(sideloadable)
     }
 

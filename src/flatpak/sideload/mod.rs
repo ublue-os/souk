@@ -18,6 +18,6 @@ mod bundle;
 mod sideload_type;
 mod sideloadable;
 
-pub use bundle::SkBundle;
+pub use bundle::BundleSideloadable;
 pub use sideload_type::SkSideloadType;
-pub use sideloadable::Sideloadable;
+pub use sideloadable::{Sideloadable, SkSideloadable};

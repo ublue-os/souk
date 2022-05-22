@@ -29,6 +29,7 @@ pub enum DryRunError {
 
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
 pub struct DryRunResults {
+    pub ref_: String,
     pub is_already_done: bool,
     pub is_update: bool,
     pub download_size: u64,
