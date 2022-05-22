@@ -171,7 +171,10 @@ impl TransactionHandler {
         let bundle = BundleRef::new(&file)?;
         let ref_ = bundle.clone().upcast::<Ref>();
 
-        let results = self.run_dry_run_transaction(transaction, &ref_);
+        let installation = self
+            .installation_manager
+            .flatpak_installation_by_uuid(installation_uuid);
+        let results = self.run_dry_run_transaction(transaction, &ref_, &installation);
 
         if let Ok(mut results) = results {
             results.installed_size = bundle.installed_size();
@@ -260,24 +263,23 @@ impl TransactionHandler {
         &self,
         transaction: Transaction,
         ref_: &Ref,
+        // We need the *real* intallation (and not the dry-run clone) to check what's already
+        // installed
+        real_installation: &Installation,
     ) -> Result<DryRunResults, DryRunError> {
-        let download_size = Rc::new(RefCell::new(0));
-        let installed_size = Rc::new(RefCell::new(0));
-        let runtimes = Rc::new(RefCell::new(Vec::new()));
-        let remotes = Rc::new(RefCell::new(Vec::new()));
-
+        let dry_run_results = Rc::new(RefCell::new(DryRunResults::default()));
         let cancellable = Cancellable::new();
 
         // Check if new remotes are added during the transaction
         transaction.connect_add_new_remote(
-            clone!(@weak remotes => @default-return false, move |_, reason, _, name, url|{
+            clone!(@weak dry_run_results => @default-return false, move |_, reason, _, name, url|{
                 if reason == TransactionRemoteReason::RuntimeDeps{
                     let remote = DryRunRemote{
                         suggested_remote_name: name.to_string(),
                         url: url.to_string(),
                     };
 
-                    remotes.borrow_mut().push(remote);
+                    dry_run_results.borrow_mut().remotes.push(remote);
                     return true;
                 }
 
@@ -287,23 +289,43 @@ impl TransactionHandler {
 
         // Ready -> Everything got resolved, so we can check the transaction operations
         transaction.connect_ready(
-            clone!(@weak runtimes, @weak download_size, @weak installed_size, @weak ref_ => @default-return false, move |transaction|{
+            clone!(@weak dry_run_results, @weak ref_, @weak real_installation => @default-return false, move |transaction|{
                 for operation in transaction.operations(){
-                    let ref_ = ref_.format_ref().unwrap().to_string();
-                    let operation_ref = operation.get_ref().unwrap().to_string();
+                    let ref_string = ref_.format_ref().unwrap().to_string();
+                    let operation_ref_string = operation.get_ref().unwrap().to_string();
+                    let operation_commit = operation.commit().unwrap();
 
                     // Check if it's the ref which we want to install
-                    if operation_ref == ref_ {
-                        *download_size.borrow_mut() = operation.download_size();
-                        *installed_size.borrow_mut() = operation.installed_size();
+                    if operation_ref_string == ref_string {
+                        dry_run_results.borrow_mut().download_size = operation.download_size();
+                        dry_run_results.borrow_mut().installed_size = operation.installed_size();
+
+                        // Check if the ref is already installed
+                        let installed = real_installation.installed_ref(
+                            ref_.kind(),
+                            &ref_.name().unwrap(),
+                            Some(&ref_.arch().unwrap()),
+                            Some(&ref_.branch().unwrap()),
+                            Cancellable::NONE
+                        );
+
+                        if let Ok(installed) = installed {
+                            if installed.commit().unwrap() == operation_commit {
+                                // Commit is the same -> ref is already installed
+                                dry_run_results.borrow_mut().is_already_done = true;
+                            }else{
+                                // Commit differs -> is update
+                                dry_run_results.borrow_mut().is_update = true;
+                            }
+                        }
                     }else{
                         let runtime = DryRunRuntime{
-                            ref_: operation_ref.to_string(),
+                            ref_: operation_ref_string.to_string(),
                             type_: operation.operation_type().to_str().unwrap().to_string(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
                         };
-                        runtimes.borrow_mut().push(runtime);
+                        dry_run_results.borrow_mut().runtimes.push(runtime);
                     }
                 }
 
@@ -336,13 +358,8 @@ impl TransactionHandler {
         // Clean up dry run installation again
         std::fs::remove_dir_all("/tmp/repo").expect("Unable to remove dry run installation");
 
-        let r = DryRunResults {
-            download_size: 0,
-            installed_size: 0,
-            runtimes: runtimes.borrow().clone(),
-            remotes: remotes.borrow().clone(),
-        };
-        Ok(r)
+        let results = dry_run_results.borrow().clone();
+        Ok(results)
     }
 
     fn new_transaction(&self, installation_uuid: &str, dry_run: bool) -> Transaction {

@@ -26,6 +26,7 @@ use once_cell::unsync::OnceCell;
 use crate::error::Error;
 use crate::flatpak::sideload::{Sideloadable, SkSideloadType};
 use crate::flatpak::{SkTransaction, SkWorker};
+use crate::worker::DryRunResults;
 
 mod imp {
     use super::*;
@@ -33,10 +34,7 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkBundle {
         pub ref_: OnceCell<BundleRef>,
-        pub already_done: OnceCell<bool>,
-        pub download_size: OnceCell<u64>,
-        pub installed_size: OnceCell<u64>,
-
+        pub dry_run_results: OnceCell<DryRunResults>,
         pub installation_uuid: OnceCell<String>,
     }
 
@@ -47,73 +45,7 @@ mod imp {
         type Type = super::SkBundle;
     }
 
-    impl ObjectImpl for SkBundle {
-        fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new(
-                        "ref",
-                        "Flatpak Ref",
-                        "Flatpak Ref",
-                        Ref::static_type(),
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecBoolean::new(
-                        "already-done",
-                        "Already Done",
-                        "Already Done",
-                        false,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecUInt64::new(
-                        "download-size",
-                        "Download Size",
-                        "Download Size",
-                        0,
-                        u64::MAX,
-                        0,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecUInt64::new(
-                        "installed-size",
-                        "Installed Size",
-                        "Installed Size",
-                        0,
-                        u64::MAX,
-                        0,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
-        }
-
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "ref" => obj.ref_().to_value(),
-                "already-done" => obj.already_done().to_value(),
-                "download-size" => obj.download_size().to_value(),
-                "installed-size" => obj.installed_size().to_value(),
-                _ => unimplemented!(),
-            }
-        }
-
-        fn set_property(
-            &self,
-            _obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
-            match pspec.name() {
-                "ref" => self.ref_.set(value.get().unwrap()).unwrap(),
-                "already-done" => self.already_done.set(value.get().unwrap()).unwrap(),
-                "download-size" => self.download_size.set(value.get().unwrap()).unwrap(),
-                "installed-size" => self.installed_size.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
-        }
-    }
+    impl ObjectImpl for SkBundle {}
 }
 
 glib::wrapper! {
@@ -121,20 +53,12 @@ glib::wrapper! {
 }
 
 impl SkBundle {
-    pub fn new(
-        ref_: &BundleRef,
-        download_size: u64,
-        installed_size: u64,
-        installation_uuid: &str,
-    ) -> Self {
-        let bundle: Self = glib::Object::new(&[
-            ("ref", &ref_),
-            ("download-size", &download_size),
-            ("installed-size", &installed_size),
-        ])
-        .unwrap();
+    pub fn new(ref_: &BundleRef, dry_run_results: DryRunResults, installation_uuid: &str) -> Self {
+        let bundle: Self = glib::Object::new(&[]).unwrap();
 
         let imp = bundle.imp();
+        imp.ref_.set(ref_.clone()).unwrap();
+        imp.dry_run_results.set(dry_run_results).unwrap();
         imp.installation_uuid.set(installation_uuid.into()).unwrap();
 
         bundle
@@ -159,16 +83,20 @@ impl Sideloadable for SkBundle {
         self.imp().ref_.get().unwrap().clone().upcast()
     }
 
-    fn already_done(&self) -> bool {
-        *self.imp().already_done.get().unwrap()
+    fn is_already_done(&self) -> bool {
+        self.imp().dry_run_results.get().unwrap().is_already_done
+    }
+
+    fn is_update(&self) -> bool {
+        self.imp().dry_run_results.get().unwrap().is_update
     }
 
     fn download_size(&self) -> u64 {
-        *self.imp().download_size.get().unwrap()
+        self.imp().dry_run_results.get().unwrap().download_size
     }
 
     fn installed_size(&self) -> u64 {
-        *self.imp().installed_size.get().unwrap()
+        self.imp().dry_run_results.get().unwrap().installed_size
     }
 
     async fn sideload(&self, worker: &SkWorker) -> Result<SkTransaction, Error> {

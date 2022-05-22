@@ -253,29 +253,53 @@ impl SkSideloadWindow {
 
     fn update_widgets(&self, sideloadable: &dyn Sideloadable) {
         let imp = self.imp();
-        imp.sideload_stack.set_visible_child_name("details");
+
+        if sideloadable.is_already_done() {
+            imp.sideload_stack.set_visible_child_name("already-done");
+            return;
+        } else {
+            imp.sideload_stack.set_visible_child_name("details");
+        }
 
         let app_start_button = i18n("Install");
+        let update_start_button = i18n("Update");
         let repo_start_button = i18n("Add");
+
         let app_details_title = i18n("Install Package");
+        let update_details_title = i18n("Update Package");
         let repo_details_title = i18n("Add Software Source");
+
         let app_progress_title = i18n("Installing Package");
+        let update_progress_title = i18n("Updating Package");
         let repo_progress_title = i18n("Adding Software Source");
+
         let app_already_done_title = i18n("Already Installed");
         let repo_already_done_title = i18n("Already Added Source");
+
         let app_done_title = i18n("Installation Complete");
+        let update_done_title = i18n("Update Complete");
         let repo_done_title = i18n("Added Software Source");
+
         let app_error_title = i18n("Installation Failed");
+        let update_error_title = i18n("Update Failed");
         let repo_error_title = i18n("Adding Source Failed");
 
         // Setup window titles and headerbar buttons
         if sideloadable.contains_package() {
-            imp.start_button.set_label(&app_start_button);
-            imp.details_title.set_title(&app_details_title);
-            imp.progress_title.set_title(&app_progress_title);
-            imp.done_title.set_title(&app_done_title);
+            if sideloadable.is_update() {
+                imp.start_button.set_label(&update_start_button);
+                imp.details_title.set_title(&update_details_title);
+                imp.progress_title.set_title(&update_progress_title);
+                imp.done_title.set_title(&update_done_title);
+                imp.error_title.set_title(&update_error_title);
+            } else {
+                imp.start_button.set_label(&app_start_button);
+                imp.details_title.set_title(&app_details_title);
+                imp.progress_title.set_title(&app_progress_title);
+                imp.done_title.set_title(&app_done_title);
+                imp.error_title.set_title(&app_error_title);
+            }
             imp.already_done_title.set_title(&app_already_done_title);
-            imp.error_title.set_title(&app_error_title);
         }
 
         if sideloadable.contains_repository() && !sideloadable.contains_package() {
@@ -285,11 +309,6 @@ impl SkSideloadWindow {
             imp.done_title.set_title(&repo_done_title);
             imp.already_done_title.set_title(&repo_already_done_title);
             imp.error_title.set_title(&repo_error_title);
-        }
-
-        if sideloadable.already_done() {
-            imp.sideload_stack.set_visible_child_name("already-done");
-            return;
         }
 
         // Setup details page

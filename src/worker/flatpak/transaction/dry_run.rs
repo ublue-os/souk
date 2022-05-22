@@ -29,6 +29,8 @@ pub enum DryRunError {
 
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
 pub struct DryRunResults {
+    pub is_already_done: bool,
+    pub is_update: bool,
     pub download_size: u64,
     pub installed_size: u64,
     pub runtimes: Vec<DryRunRuntime>,

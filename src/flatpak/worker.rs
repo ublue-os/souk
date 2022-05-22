@@ -221,7 +221,7 @@ impl SkWorker {
         let path = file.path().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
-        let dry_run = match type_ {
+        let dry_run_results = match type_ {
             SkSideloadType::Bundle => {
                 proxy
                     .install_flatpak_bundle_dry_run(&path_string, installation_uuid)
@@ -230,8 +230,8 @@ impl SkWorker {
             _ => return Err(Error::UnsupportedSideloadType),
         };
 
-        debug!("Dry run results: {:#?}", dry_run);
-        let dry_run = match dry_run {
+        debug!("Dry run results: {:#?}", dry_run_results);
+        let dry_run_results = match dry_run_results {
             Ok(sideloadable) => sideloadable,
             Err(err) => match err {
                 DryRunError::RuntimeNotFound(runtime) => {
@@ -245,12 +245,7 @@ impl SkWorker {
         let sideloadable = match type_ {
             SkSideloadType::Bundle => {
                 let bundle = BundleRef::new(file).unwrap();
-                SkBundle::new(
-                    &bundle,
-                    dry_run.download_size(),
-                    dry_run.installed_size(),
-                    installation_uuid,
-                )
+                SkBundle::new(&bundle, dry_run_results, installation_uuid)
             }
             _ => return Err(Error::UnsupportedSideloadType),
         };

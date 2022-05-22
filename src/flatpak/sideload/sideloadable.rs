@@ -34,7 +34,9 @@ pub trait Sideloadable {
 
     fn ref_(&self) -> Ref;
 
-    fn already_done(&self) -> bool;
+    fn is_already_done(&self) -> bool;
+
+    fn is_update(&self) -> bool;
 
     fn download_size(&self) -> u64;
 
