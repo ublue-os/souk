@@ -29,24 +29,34 @@ use glib::{clone, Downgrade, Error};
 use gtk::{gio, glib};
 use libflatpak::prelude::*;
 use libflatpak::{
-    BundleRef, Installation, Ref, Transaction, TransactionOperation, TransactionRemoteReason,
+    BundleRef, Installation, Ref, Remote, Transaction, TransactionOperation,
+    TransactionRemoteReason,
 };
 
 use super::{
     DryRunError, DryRunRemote, DryRunResults, DryRunRuntime, TransactionCommand,
     TransactionMessage, TransactionProgress,
 };
+use crate::worker::flatpak::installation::InstallationManager;
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct TransactionHandler {
     transactions: Arc<Mutex<HashMap<String, Cancellable>>>,
+    installation_manager: Arc<InstallationManager>,
     sender: Arc<Sender<TransactionMessage>>,
 }
 
 impl TransactionHandler {
-    pub fn start(sender: Sender<TransactionMessage>, receiver: Receiver<TransactionCommand>) {
+    pub fn start(
+        installation_manager: InstallationManager,
+        sender: Sender<TransactionMessage>,
+        receiver: Receiver<TransactionCommand>,
+    ) {
+        let installation_manager = Arc::new(installation_manager);
+
         let handler = Self {
             transactions: Arc::default(),
+            installation_manager,
             sender: Arc::new(sender),
         };
 
@@ -68,16 +78,16 @@ impl TransactionHandler {
         debug!("Process command: {:?}", command);
 
         let (result, transaction_uuid) = match command {
-            TransactionCommand::InstallFlatpak(uuid, ref_, remote, installation) => (
-                self.install_flatpak(&uuid, &ref_, &remote, &installation),
+            TransactionCommand::InstallFlatpak(uuid, ref_, remote, installation_uuid) => (
+                self.install_flatpak(&uuid, &ref_, &remote, &installation_uuid),
                 uuid,
             ),
-            TransactionCommand::InstallFlatpakBundle(uuid, path, installation) => (
-                self.install_flatpak_bundle(&uuid, &path, &installation),
+            TransactionCommand::InstallFlatpakBundle(uuid, path, installation_uuid) => (
+                self.install_flatpak_bundle(&uuid, &path, &installation_uuid),
                 uuid,
             ),
-            TransactionCommand::InstallFlatpakBundleDryRun(path, installation, sender) => (
-                self.install_flatpak_bundle_dry_run(&path, &installation, sender),
+            TransactionCommand::InstallFlatpakBundleDryRun(path, installation_uuid, sender) => (
+                self.install_flatpak_bundle_dry_run(&path, &installation_uuid, sender),
                 String::new(), // We don't have an uuid for dry runs
             ),
             TransactionCommand::CancelTransaction(uuid) => {
@@ -119,11 +129,11 @@ impl TransactionHandler {
         transaction_uuid: &str,
         ref_: &str,
         remote: &str,
-        installation: &str,
+        installation_uuid: &str,
     ) -> Result<(), Error> {
         info!("Install Flatpak: {}", ref_);
 
-        let transaction = self.new_transaction(installation, false);
+        let transaction = self.new_transaction(installation_uuid, false);
         transaction.add_install(remote, ref_, &[])?;
         self.run_transaction(transaction_uuid.to_string(), transaction)?;
 
@@ -134,12 +144,12 @@ impl TransactionHandler {
         &self,
         transaction_uuid: &str,
         path: &str,
-        installation: &str,
+        installation_uuid: &str,
     ) -> Result<(), Error> {
         info!("Install Flatpak bundle: {}", path);
         let file = gio::File::for_parse_name(path);
 
-        let transaction = self.new_transaction(installation, false);
+        let transaction = self.new_transaction(installation_uuid, false);
         transaction.add_install_bundle(&file, None)?;
         self.run_transaction(transaction_uuid.to_string(), transaction)?;
 
@@ -149,13 +159,13 @@ impl TransactionHandler {
     fn install_flatpak_bundle_dry_run(
         &self,
         path: &str,
-        installation: &str,
+        installation_uuid: &str,
         sender: Sender<Result<DryRunResults, DryRunError>>,
     ) -> Result<(), Error> {
         info!("Install Flatpak bundle (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
 
-        let transaction = self.new_transaction(installation, true);
+        let transaction = self.new_transaction(installation_uuid, true);
         transaction.add_install_bundle(&file, None)?;
 
         let bundle = BundleRef::new(&file)?;
@@ -276,7 +286,7 @@ impl TransactionHandler {
         );
 
         // Ready -> Everything got resolved, so we can check the transaction operations
-        transaction.connect_ready_pre_auth(
+        transaction.connect_ready(
             clone!(@weak runtimes, @weak download_size, @weak installed_size, @weak ref_ => @default-return false, move |transaction|{
                 for operation in transaction.operations(){
                     let ref_ = ref_.format_ref().unwrap().to_string();
@@ -335,31 +345,47 @@ impl TransactionHandler {
         Ok(r)
     }
 
-    fn new_transaction(&self, installation: &str, dry_run: bool) -> Transaction {
-        let dry_run_path = gio::File::for_parse_name("/tmp");
-
-        let installation = match installation {
-            "default" => Installation::new_system(Cancellable::NONE).unwrap(),
-            "user" => {
-                let mut user_path = glib::home_dir();
-                user_path.push(".local/share/flatpak");
-                let file = gio::File::for_path(&user_path);
-                Installation::for_path(&file, true, gio::Cancellable::NONE).unwrap()
-            }
-            _ => panic!("Unknown Flatpak installation: {}", installation),
-        };
+    fn new_transaction(&self, installation_uuid: &str, dry_run: bool) -> Transaction {
+        let installation = self
+            .installation_manager
+            .flatpak_installation_by_uuid(installation_uuid);
 
         // Setup a own installation for dry run transactions, and add the specified
         // installation as dependency source. This way the dry run transaction
         // doesn't touch the specified installation, but has nevertheless the same local
         // runtimes available.
         if dry_run {
+            let remotes = installation.list_remotes(Cancellable::NONE).unwrap();
+
+            // New temporary dry run installation
+            let dry_run_path = gio::File::for_parse_name("/tmp");
             let dry_run = Installation::for_path(&dry_run_path, true, Cancellable::NONE).unwrap();
-            let t = Transaction::for_installation(&dry_run, gio::Cancellable::NONE).unwrap();
+
+            // Add the same remotes to the dry run installation
+            for remote in remotes {
+                if remote.url().unwrap().is_empty() || remote.is_disabled() {
+                    debug!(
+                        "Skip remote {} for dry run installation, no url or disabled.",
+                        remote.name().unwrap()
+                    );
+                    continue;
+                }
+
+                // For whatever reason we have to create a new remote object
+                let remote_to_add = Remote::new(&remote.name().unwrap());
+                remote_to_add.set_url(&remote.url().unwrap());
+                dry_run
+                    .add_remote(&remote_to_add, true, Cancellable::NONE)
+                    .unwrap();
+            }
+
+            // Create new transaction, and add the "real" installation as dependency source
+            let t = Transaction::for_installation(&dry_run, Cancellable::NONE).unwrap();
             t.add_dependency_source(&installation);
+
             t
         } else {
-            Transaction::for_installation(&installation, gio::Cancellable::NONE).unwrap()
+            Transaction::for_installation(&installation, Cancellable::NONE).unwrap()
         }
     }
 }

@@ -17,17 +17,17 @@
 use zbus::Result;
 
 use crate::config;
-use crate::worker::flatpak;
+use crate::worker::flatpak::installation::InstallationInfo;
 use crate::worker::flatpak::transaction;
-use crate::worker::flatpak::transaction::{
-    DryRunError, DryRunResults, TransactionError, TransactionProgress,
-};
+use crate::worker::flatpak::transaction::{DryRunError, DryRunResults};
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
-    fn install_flatpak(&self, ref_: &str, remote: &str, installation: &str) -> Result<String>;
+    // Transaction
 
-    fn install_flatpak_bundle(&self, path: &str, installation: &str) -> Result<String>;
+    fn install_flatpak(&self, ref_: &str, remote: &str, installation_uuid: &str) -> Result<String>;
+
+    fn install_flatpak_bundle(&self, path: &str, installation_uuid: &str) -> Result<String>;
 
     fn install_flatpak_bundle_dry_run(
         &self,
@@ -38,10 +38,16 @@ trait Worker {
     fn cancel_transaction(&self, uuid: &str) -> Result<()>;
 
     #[dbus_proxy(signal)]
-    fn progress(&self, progress: TransactionProgress) -> Result<()>;
+    fn transaction_progress(&self, progress: transaction::TransactionProgress) -> Result<()>;
 
     #[dbus_proxy(signal)]
-    fn error(&self, error: TransactionError) -> Result<()>;
+    fn transaction_error(&self, error: transaction::TransactionError) -> Result<()>;
+
+    // Installation
+
+    fn installations(&self) -> Result<Vec<InstallationInfo>>;
+
+    fn preferred_installation(&self) -> Result<InstallationInfo>;
 }
 
 impl Default for WorkerProxy<'static> {
