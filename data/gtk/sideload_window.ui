@@ -142,7 +142,9 @@
                                         <property name="always_show_arrow">True</property>
                                         <property name="valign">center</property>
                                         <binding name="label">
-                                          <lookup name="selected_installation_title" type="SkInstallationPopover">installation_popover</lookup>
+                                          <lookup name="display_name" type="SkInstallation">
+                                            <lookup name="selected_installation" type="SkInstallationPopover">installation_popover</lookup>
+                                          </lookup>
                                         </binding>
                                         <style>
                                           <class name="flat"/>

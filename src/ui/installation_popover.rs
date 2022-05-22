@@ -16,14 +16,14 @@
 
 use std::cell::RefCell;
 
-use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject, ParamSpecString};
+use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
-use libflatpak::Installation;
 use once_cell::sync::Lazy;
 
 use crate::app::SkApplication;
+use crate::flatpak::SkInstallation;
 use crate::ui::SkInstallationRow;
 
 mod imp {
@@ -35,8 +35,7 @@ mod imp {
         #[template_child]
         pub listbox: TemplateChild<gtk::ListBox>,
 
-        pub selected_installation: RefCell<Option<Installation>>,
-        pub selected_installation_title: RefCell<String>,
+        pub selected_installation: RefCell<Option<SkInstallation>>,
     }
 
     #[glib::object_subclass]
@@ -57,22 +56,13 @@ mod imp {
     impl ObjectImpl for SkInstallationPopover {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new(
-                        "selected-installation",
-                        "Selected Installation",
-                        "Selected Installation",
-                        Installation::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecString::new(
-                        "selected-installation-title",
-                        "Selected Installation Title",
-                        "Selected Installation Title",
-                        None,
-                        ParamFlags::READABLE,
-                    ),
-                ]
+                vec![ParamSpecObject::new(
+                    "selected-installation",
+                    "Selected Installation",
+                    "Selected Installation",
+                    SkInstallation::static_type(),
+                    ParamFlags::READABLE,
+                )]
             });
             PROPERTIES.as_ref()
         }
@@ -80,7 +70,6 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "selected-installation" => obj.selected_installation().to_value(),
-                "selected-installation-title" => obj.selected_installation_title().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -115,26 +104,27 @@ impl SkInstallationPopover {
                 row.set_selected(true);
 
                 *this.imp().selected_installation.borrow_mut() = Some(row.installation());
-                *this.imp().selected_installation_title.borrow_mut() = row.installation_title();
                 this.notify("selected-installation");
-                this.notify("selected-installation-title");
 
                 this.hide();
             }));
 
         imp.listbox
             .bind_model(Some(&worker.installations()), |installation| {
-                SkInstallationRow::new(installation.downcast_ref::<Installation>().unwrap())
-                    .upcast()
+                let installation = installation.downcast_ref::<SkInstallation>().unwrap();
+                SkInstallationRow::new(installation).upcast()
             });
     }
 
-    pub fn set_installation(&self, installation: &Installation) {
+    pub fn set_installation(&self, installation: &SkInstallation) {
         let mut index = 0;
         while let Some(row) = self.imp().listbox.row_at_index(index) {
             let row = row.downcast_ref::<SkInstallationRow>().unwrap();
-            if &row.installation() == installation {
+            if row.installation().uuid() == installation.uuid() {
                 row.set_selected(true);
+
+                *self.imp().selected_installation.borrow_mut() = Some(row.installation());
+                self.notify("selected-installation");
                 return;
             }
 
@@ -142,12 +132,8 @@ impl SkInstallationPopover {
         }
     }
 
-    pub fn selected_installation(&self) -> Option<Installation> {
+    pub fn selected_installation(&self) -> Option<SkInstallation> {
         self.imp().selected_installation.borrow().clone()
-    }
-
-    pub fn selected_installation_title(&self) -> String {
-        self.imp().selected_installation_title.borrow().clone()
     }
 
     fn unselect_all(&self) {

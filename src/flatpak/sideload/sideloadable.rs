@@ -40,8 +40,7 @@ pub trait Sideloadable {
 
     fn installed_size(&self) -> u64;
 
-    async fn sideload(&self, worker: &SkWorker, installation: &str)
-        -> Result<SkTransaction, Error>;
+    async fn sideload(&self, worker: &SkWorker) -> Result<SkTransaction, Error>;
 }
 
 impl Debug for dyn Sideloadable {

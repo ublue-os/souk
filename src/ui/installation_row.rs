@@ -16,16 +16,14 @@
 
 use std::cell::Cell;
 
-use glib::{subclass, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject, ParamSpecString};
+use glib::{subclass, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
-use libflatpak::prelude::*;
-use libflatpak::Installation;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::i18n::i18n;
+use crate::flatpak::SkInstallation;
 
 mod imp {
     use super::*;
@@ -42,8 +40,7 @@ mod imp {
         #[template_child]
         pub checkmark: TemplateChild<gtk::Image>,
 
-        pub installation: OnceCell<Installation>,
-        pub installation_title: OnceCell<String>,
+        pub installation: OnceCell<SkInstallation>,
         pub selected: Cell<bool>,
     }
 
@@ -70,15 +67,8 @@ mod imp {
                         "installation",
                         "Installation",
                         "Installation",
-                        Installation::static_type(),
+                        SkInstallation::static_type(),
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecString::new(
-                        "installation-title",
-                        "Installation Title",
-                        "Installation Title",
-                        None,
-                        ParamFlags::READABLE,
                     ),
                     ParamSpecBoolean::new(
                         "selected",
@@ -95,7 +85,6 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "installation" => obj.installation().to_value(),
-                "installation-title" => obj.installation_title().to_value(),
                 "selected" => obj.selected().to_value(),
                 _ => unimplemented!(),
             }
@@ -134,7 +123,7 @@ glib::wrapper! {
 }
 
 impl SkInstallationRow {
-    pub fn new(installation: &Installation) -> Self {
+    pub fn new(installation: &SkInstallation) -> Self {
         glib::Object::new(&[("installation", installation)]).unwrap()
     }
 
@@ -142,38 +131,16 @@ impl SkInstallationRow {
         let imp = self.imp();
         let installation = self.installation();
 
-        // Overwrites for known Flatpak installations
-        let title = match installation.id().unwrap().as_str() {
-            "default" => {
-                imp.icon.set_icon_name(Some("people-symbolic"));
-                imp.subtitle.set_label(&i18n("Available for all users"));
-                i18n("System")
-            }
-            "user" => {
-                imp.icon.set_icon_name(Some("person-symbolic"));
-                imp.subtitle.set_label(&i18n("Only for the current user"));
-                i18n("User")
-            }
-            _ => {
-                imp.subtitle.set_label(&i18n("No description available"));
-                installation.id().unwrap().to_string()
-            }
-        };
-
-        imp.title.set_label(&title);
-        imp.installation_title.set(title).unwrap();
-        self.notify("installation-title");
+        imp.title.set_label(&installation.display_name());
+        imp.subtitle.set_label(&installation.description());
+        imp.icon.set_icon_name(Some(&installation.icon_name()));
 
         self.bind_property("selected", &imp.checkmark.get(), "visible")
             .build();
     }
 
-    pub fn installation(&self) -> Installation {
+    pub fn installation(&self) -> SkInstallation {
         self.imp().installation.get().unwrap().clone()
-    }
-
-    pub fn installation_title(&self) -> String {
-        self.imp().installation_title.get().unwrap().clone()
     }
 
     pub fn set_selected(&self, selected: bool) {

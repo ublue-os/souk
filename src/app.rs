@@ -81,7 +81,7 @@ mod imp {
             // Setup `app` level GActions
             app.setup_gactions();
 
-            self.worker.start_process();
+            async_std::task::block_on(self.worker.start_process());
         }
 
         fn activate(&self, app: &Self::Type) {

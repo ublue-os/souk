@@ -36,6 +36,8 @@ mod imp {
         pub already_done: OnceCell<bool>,
         pub download_size: OnceCell<u64>,
         pub installed_size: OnceCell<u64>,
+
+        pub installation_uuid: OnceCell<String>,
     }
 
     #[glib::object_subclass]
@@ -119,13 +121,23 @@ glib::wrapper! {
 }
 
 impl SkBundle {
-    pub fn new(ref_: &BundleRef, download_size: u64, installed_size: u64) -> Self {
-        glib::Object::new(&[
+    pub fn new(
+        ref_: &BundleRef,
+        download_size: u64,
+        installed_size: u64,
+        installation_uuid: &str,
+    ) -> Self {
+        let bundle: Self = glib::Object::new(&[
             ("ref", &ref_),
             ("download-size", &download_size),
             ("installed-size", &installed_size),
         ])
-        .unwrap()
+        .unwrap();
+
+        let imp = bundle.imp();
+        imp.installation_uuid.set(installation_uuid.into()).unwrap();
+
+        bundle
     }
 }
 
@@ -159,15 +171,14 @@ impl Sideloadable for SkBundle {
         *self.imp().installed_size.get().unwrap()
     }
 
-    async fn sideload(
-        &self,
-        worker: &SkWorker,
-        installation: &str,
-    ) -> Result<SkTransaction, Error> {
+    async fn sideload(&self, worker: &SkWorker) -> Result<SkTransaction, Error> {
         let imp = self.imp();
+
         let bundle_ref = imp.ref_.get().unwrap();
+        let installation_uuid = imp.installation_uuid.get().unwrap();
+
         let transaction = worker
-            .install_flatpak_bundle(bundle_ref, installation)
+            .install_flatpak_bundle(bundle_ref, installation_uuid)
             .await?;
         Ok(transaction)
     }

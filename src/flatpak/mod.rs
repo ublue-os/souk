@@ -16,11 +16,13 @@
 
 pub mod sideload;
 
+mod installation;
 mod transaction;
 mod transaction_model;
 mod transaction_type;
 mod worker;
 
+pub use installation::SkInstallation;
 pub use transaction::SkTransaction;
 pub use transaction_model::SkTransactionModel;
 pub use transaction_type::SkTransactionType;

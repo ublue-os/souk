@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::RefCell;
+
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gio::File;
@@ -79,7 +81,7 @@ mod imp {
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
 
-        pub sideloadable: OnceCell<Box<dyn Sideloadable>>,
+        pub sideloadable: RefCell<Option<Box<dyn Sideloadable>>>,
         pub transaction: OnceCell<SkTransaction>,
     }
 
@@ -148,6 +150,12 @@ mod imp {
         fn constructed(&self, obj: &Self::Type) {
             self.parent_constructed(obj);
 
+            let worker = SkApplication::default().worker();
+            let preferred = worker.preferred_installation();
+            self.installation_popover.set_installation(&preferred);
+
+            obj.setup_widgets();
+
             let fut = clone!(@weak obj => async move {
                 obj.handle_file().await;
             });
@@ -183,17 +191,29 @@ impl SkSideloadWindow {
         *self.imp().type_.get().unwrap()
     }
 
-    async fn handle_file(&self) {
+    fn setup_widgets(&self) {
         let imp = self.imp();
-        let worker = SkApplication::default().worker();
 
-        debug!(
-            "Sideload file: {:?} ({:?})",
-            self.file().path().unwrap(),
-            self.type_()
+        // Add devel style class for development or beta builds
+        if config::PROFILE == "development" || config::PROFILE == "beta" {
+            self.add_css_class("devel");
+        }
+
+        imp.installation_popover.connect_local(
+            "notify::selected-installation",
+            false,
+            clone!(@weak self as this => @default-return None, move |_|{
+                let fut = async move {
+                    this.update_sideloadable().await;
+                };
+                spawn!(fut);
+                None
+            }),
         );
+    }
 
-        imp.sideload_stack.set_visible_child_name("loading");
+    async fn handle_file(&self) {
+        debug!("Sideload file: {:?}", self.file().path().unwrap());
 
         if self.type_() == SkSideloadType::None {
             let msg = i18n("Unknown or unsupported file format.");
@@ -201,13 +221,25 @@ impl SkSideloadWindow {
             return;
         }
 
-        match worker
-            .load_sideloadable(&self.file(), &self.type_(), "user")
-            .await
-        {
+        self.update_sideloadable().await;
+    }
+
+    async fn update_sideloadable(&self) {
+        let imp = self.imp();
+        imp.sideload_stack.set_visible_child_name("loading");
+
+        let installation = imp.installation_popover.selected_installation().unwrap();
+        let uuid = installation.uuid();
+
+        let worker = SkApplication::default().worker();
+        let sideloadable = worker
+            .load_sideloadable(&self.file(), &self.type_(), &uuid)
+            .await;
+
+        match sideloadable {
             Ok(sideloadable) => {
-                imp.sideloadable.set(Box::new(sideloadable)).unwrap();
-                self.setup_widgets();
+                self.update_widgets(&sideloadable);
+                *imp.sideloadable.borrow_mut() = Some(Box::new(sideloadable));
             }
             Err(err) => match err {
                 Error::DryRunRuntimeNotFound(runtime) => {
@@ -219,14 +251,9 @@ impl SkSideloadWindow {
         }
     }
 
-    fn setup_widgets(&self) {
+    fn update_widgets(&self, sideloadable: &dyn Sideloadable) {
         let imp = self.imp();
-        let sideloadable = imp.sideloadable.get().unwrap();
-
-        // Add devel style class for development or beta builds
-        if config::PROFILE == "development" || config::PROFILE == "beta" {
-            self.add_css_class("devel");
-        }
+        imp.sideload_stack.set_visible_child_name("details");
 
         let app_start_button = i18n("Install");
         let repo_start_button = i18n("Add");
@@ -265,8 +292,6 @@ impl SkSideloadWindow {
             return;
         }
 
-        imp.sideload_stack.set_visible_child_name("details");
-
         // Setup details page
         if sideloadable.contains_package() {
             imp.package_name_label
@@ -292,13 +317,13 @@ impl SkSideloadWindow {
 
     async fn start_transaction(&self) {
         let imp = self.imp();
-        let sideloadable = imp.sideloadable.get().unwrap();
+        let sideloadable = imp.sideloadable.borrow_mut().take().unwrap();
         let worker = SkApplication::default().worker();
 
         imp.sideload_stack.set_visible_child_name("progress");
 
-        // TODO: Allow selecting installation
-        let transaction = match sideloadable.sideload(&worker, "default").await {
+        // Start sideloading the sideloadable, and track the transaction
+        let transaction = match sideloadable.sideload(&worker).await {
             Ok(transaction) => transaction,
             Err(err) => {
                 self.show_error_message(&err.to_string());
