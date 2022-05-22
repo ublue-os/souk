@@ -153,6 +153,14 @@ impl SkSideloadable {
         self.imp().sideloadable.get().unwrap().type_()
     }
 
+    pub fn commit(&self) -> String {
+        self.imp().sideloadable.get().unwrap().commit()
+    }
+
+    pub fn installation_uuid(&self) -> String {
+        self.imp().sideloadable.get().unwrap().installation_uuid()
+    }
+
     pub fn contains_package(&self) -> bool {
         self.imp().sideloadable.get().unwrap().contains_package()
     }
@@ -195,6 +203,10 @@ impl SkSideloadable {
 #[async_trait(?Send)]
 pub trait Sideloadable {
     fn type_(&self) -> SkSideloadType;
+
+    fn commit(&self) -> String;
+
+    fn installation_uuid(&self) -> String;
 
     fn contains_package(&self) -> bool;
 

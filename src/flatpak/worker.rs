@@ -151,6 +151,22 @@ impl SkWorker {
         self.imp().process.kill();
     }
 
+    pub async fn launch_app(
+        &self,
+        installation_uuid: &str,
+        ref_: &Ref,
+        commit: &str,
+    ) -> Result<(), Error> {
+        let ref_string = ref_.format_ref().unwrap().to_string();
+
+        self.imp()
+            .proxy
+            .launch_app(installation_uuid, &ref_string, commit)
+            .await?;
+
+        Ok(())
+    }
+
     /// Install new Flatpak by ref name
     pub async fn install_flatpak(
         &self,

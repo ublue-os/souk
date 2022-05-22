@@ -107,6 +107,11 @@ impl Worker {
 
     // Installation
 
+    async fn launch_app(&self, installation_uuid: &str, ref_: &str, commit: &str) {
+        self.installation_manager
+            .launch_app(installation_uuid, ref_, commit);
+    }
+
     async fn installations(&self) -> Vec<InstallationInfo> {
         self.installation_manager.installations()
     }

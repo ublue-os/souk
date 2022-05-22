@@ -23,6 +23,7 @@ use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 use libflatpak::prelude::*;
+use libflatpak::RefKind;
 use once_cell::sync::{Lazy, OnceCell};
 
 use crate::app::SkApplication;
@@ -69,6 +70,8 @@ mod imp {
 
         #[template_child]
         pub done_title: TemplateChild<adw::WindowTitle>,
+        #[template_child]
+        pub launch_button: TemplateChild<gtk::Button>,
 
         #[template_child]
         pub error_title: TemplateChild<adw::WindowTitle>,
@@ -280,6 +283,11 @@ impl SkSideloadWindow {
         let update_error_title = i18n("Update Failed");
         let repo_error_title = i18n("Adding Source Failed");
 
+        // Hide launch button if sideload content is not an app
+        if sideloadable.ref_().kind() != RefKind::App {
+            imp.launch_button.set_visible(false);
+        }
+
         // Setup window titles and headerbar buttons
         if sideloadable.contains_package() {
             if sideloadable.is_update() {
@@ -403,20 +411,29 @@ impl SkSideloadWindow {
     #[template_callback]
     fn cancel_sideload(&self) {
         let fut = clone!(@weak self as this => async move{
-            this.cancel_transaction().await;
+            let imp = this.imp();
+            let uuid = imp.transaction.get().unwrap().uuid();
+            let worker = SkApplication::default().worker();
+
+            imp.cancel_sideload_button.set_sensitive(false);
+            if let Err(err) = worker.cancel_transaction(&uuid).await {
+                this.show_error_message(&err.to_string());
+            }
         });
         spawn!(fut);
     }
 
-    async fn cancel_transaction(&self) {
-        let imp = self.imp();
-        let uuid = imp.transaction.get().unwrap().uuid();
-        let worker = SkApplication::default().worker();
+    #[template_callback]
+    fn launch_app(&self) {
+        let fut = clone!(@weak self as this => async move{
+            let worker = SkApplication::default().worker();
+            let sideloadable = this.sideloadable().unwrap();
+            let installation_uuid = sideloadable.installation_uuid();
 
-        imp.cancel_sideload_button.set_sensitive(false);
-        if let Err(err) = worker.cancel_transaction(&uuid).await {
-            self.show_error_message(&err.to_string());
-        }
+            let _ = worker.launch_app(&installation_uuid, &sideloadable.ref_(), &sideloadable.commit()).await;
+            this.close();
+        });
+        spawn!(fut);
     }
 
     fn show_error_message(&self, message: &str) {

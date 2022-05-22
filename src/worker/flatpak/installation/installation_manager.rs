@@ -20,7 +20,7 @@ use std::sync::{Arc, Mutex};
 use gio::{Cancellable, File};
 use gtk::gio;
 use libflatpak::prelude::*;
-use libflatpak::Installation;
+use libflatpak::{Installation, Ref};
 
 use super::InstallationInfo;
 
@@ -44,6 +44,19 @@ impl InstallationManager {
         Self {
             installations: Arc::new(Mutex::new(installations)),
         }
+    }
+
+    pub fn launch_app(&self, installation_uuid: &str, ref_: &str, commit: &str) {
+        let installation = self.flatpak_installation_by_uuid(installation_uuid);
+        let ref_ = Ref::parse(ref_).unwrap();
+
+        let _ = installation.launch(
+            &ref_.name().unwrap(),
+            Some(&ref_.arch().unwrap()),
+            Some(&ref_.branch().unwrap()),
+            Some(commit),
+            Cancellable::NONE,
+        );
     }
 
     pub fn installations(&self) -> Vec<InstallationInfo> {

@@ -46,6 +46,14 @@ impl Sideloadable for BundleSideloadable {
         SkSideloadType::Bundle
     }
 
+    fn commit(&self) -> String {
+        self.dry_run_results.commit.clone()
+    }
+
+    fn installation_uuid(&self) -> String {
+        self.installation_uuid.clone()
+    }
+
     fn contains_package(&self) -> bool {
         true
     }
@@ -55,6 +63,7 @@ impl Sideloadable for BundleSideloadable {
     }
 
     fn ref_(&self) -> Ref {
+        dbg!(&self.dry_run_results.ref_);
         Ref::parse(&self.dry_run_results.ref_).unwrap()
     }
 

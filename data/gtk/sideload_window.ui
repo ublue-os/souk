@@ -230,13 +230,19 @@
                         <property name="icon_name">checkbox-checked-symbolic</property>
                         <property name="description" translatable="yes">Already installed</property>
                         <child>
-                          <object class="GtkButton">
-                            <property name="halign">center</property>
-                            <property name="label" translatable="yes">Close</property>
-                            <property name="action-name">window.close</property>
-                            <style>
-                              <class name="pill"/>
-                            </style>
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">12</property>
+                            <child>
+                              <object class="GtkButton">
+                                <property name="halign">center</property>
+                                <property name="label" translatable="yes">Close</property>
+                                <property name="action-name">window.close</property>
+                                <style>
+                                  <class name="pill"/>
+                                </style>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>
@@ -265,13 +271,30 @@
                         <property name="icon_name">checkbox-checked-symbolic</property>
                         <property name="description" translatable="yes">Successfully Installed</property>
                         <child>
-                          <object class="GtkButton">
-                            <property name="halign">center</property>
-                            <property name="label" translatable="yes">Close</property>
-                            <property name="action-name">window.close</property>
-                            <style>
-                              <class name="pill"/>
-                            </style>
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">12</property>
+                            <child>
+                              <object class="GtkButton">
+                                <property name="halign">center</property>
+                                <property name="label" translatable="yes">Open</property>
+                                <signal name="clicked" handler="launch_app" swapped="true"/>
+                                <style>
+                                  <class name="suggested-action"/>
+                                  <class name="pill"/>
+                                </style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="launch_button">
+                                <property name="halign">center</property>
+                                <property name="label" translatable="yes">Close</property>
+                                <property name="action-name">window.close</property>
+                                <style>
+                                  <class name="pill"/>
+                                </style>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>

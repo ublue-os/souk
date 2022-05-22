@@ -45,6 +45,8 @@ trait Worker {
 
     // Installation
 
+    fn launch_app(&self, installation_uuid: &str, ref_: &str, commit: &str) -> Result<()>;
+
     fn installations(&self) -> Result<Vec<InstallationInfo>>;
 
     fn preferred_installation(&self) -> Result<InstallationInfo>;

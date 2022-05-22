@@ -278,6 +278,7 @@ impl TransactionHandler {
         real_installation: &Installation,
     ) -> Result<DryRunResults, DryRunError> {
         let dry_run_results = Rc::new(RefCell::new(DryRunResults::default()));
+        dry_run_results.borrow_mut().ref_ = ref_.format_ref().unwrap().to_string();
 
         // Check if new remotes are added during the transaction
         transaction.connect_add_new_remote(
@@ -306,6 +307,7 @@ impl TransactionHandler {
 
                     // Check if it's the ref which we want to install
                     if operation_ref_string == ref_string {
+                        dry_run_results.borrow_mut().commit = operation_commit.to_string();
                         dry_run_results.borrow_mut().download_size = operation.download_size();
                         dry_run_results.borrow_mut().installed_size = operation.installed_size();
 
