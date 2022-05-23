@@ -233,16 +233,16 @@ impl SkSideloadWindow {
             let current = imp.sideload_leaflet.visible_child_name().unwrap().to_string();
             let select_installation = imp.sideload_leaflet.child_by_name("select-installation").unwrap();
 
-            match current.as_str() {
-                "details" => {
-                    let page = imp.sideload_leaflet.child_by_name("details").unwrap();
-                    imp.sideload_leaflet.reorder_child_after(&select_installation, Some(&page));
-                }
-                "missing-runtime" => {
-                    let page = imp.sideload_leaflet.child_by_name("missing-runtime").unwrap();
-                    imp.sideload_leaflet.reorder_child_after(&select_installation, Some(&page));
-                }
-                _ => (),
+            let page = match current.as_str() {
+                "details" => Some(imp.sideload_leaflet.child_by_name("details").unwrap()),
+                "missing-runtime" => Some(imp.sideload_leaflet.child_by_name("missing-runtime").unwrap()),
+                "already-done" => Some(imp.sideload_leaflet.child_by_name("already-done").unwrap()),
+                _ => None,
+            };
+
+            // Reorder select-installation to the correct position, so that "navigate-back" works properly
+            if let Some(page) = page {
+                imp.sideload_leaflet.reorder_child_after(&select_installation, Some(&page));
             }
 
             imp.sideload_leaflet.set_visible_child_name("select-installation");
@@ -267,6 +267,7 @@ impl SkSideloadWindow {
                 self.notify("sideloadable");
 
                 self.update_widgets();
+                imp.sideload_stack.set_visible_child_name("leaflet");
             }
             Err(err) => match err {
                 Error::DryRunRuntimeNotFound(runtime) => {
@@ -295,7 +296,6 @@ impl SkSideloadWindow {
         } else {
             imp.sideload_leaflet.set_visible_child_name("details");
         }
-        imp.sideload_stack.set_visible_child_name("leaflet");
 
         let app_start_button = i18n("Install");
         let update_start_button = i18n("Update");

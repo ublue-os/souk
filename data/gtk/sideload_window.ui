@@ -57,6 +57,7 @@
                                 <child>
                                   <object class="GtkButton">
                                     <property name="label" translatable="yes">Cancel</property>
+                                    <property name="action-name">window.close</property>
                                   </object>
                                 </child>
                                 <child type="title">
@@ -358,7 +359,7 @@
                               <object class="AdwStatusPage" id="already_done_status_page">
                                 <property name="vexpand">True</property>
                                 <property name="icon_name">checkbox-checked-symbolic</property>
-                                <property name="description" translatable="yes">The package is already installed. Do you want to install it for a another installation?</property>
+                                <property name="description" translatable="yes">The package is already installed. Do you want to install it for a different installation?</property>
                                 <child>
                                   <object class="GtkBox">
                                     <property name="orientation">vertical</property>
