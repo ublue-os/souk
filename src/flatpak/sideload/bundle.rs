@@ -63,7 +63,6 @@ impl Sideloadable for BundleSideloadable {
     }
 
     fn ref_(&self) -> Ref {
-        dbg!(&self.dry_run_results.ref_);
         Ref::parse(&self.dry_run_results.ref_).unwrap()
     }
 

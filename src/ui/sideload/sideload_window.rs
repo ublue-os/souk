@@ -42,6 +42,8 @@ mod imp {
     pub struct SkSideloadWindow {
         #[template_child]
         pub sideload_stack: TemplateChild<gtk::Stack>,
+        #[template_child]
+        pub sideload_leaflet: TemplateChild<adw::Leaflet>,
 
         #[template_child]
         pub cancel_sideload_button: TemplateChild<gtk::Button>,
@@ -66,9 +68,6 @@ mod imp {
         pub progress_label: TemplateChild<gtk::Label>,
 
         #[template_child]
-        pub already_done_title: TemplateChild<adw::WindowTitle>,
-
-        #[template_child]
         pub done_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
         pub launch_button: TemplateChild<gtk::Button>,
@@ -77,6 +76,9 @@ mod imp {
         pub error_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
         pub error_status_page: TemplateChild<adw::StatusPage>,
+
+        #[template_child]
+        pub already_done_title: TemplateChild<adw::WindowTitle>,
 
         #[template_child]
         pub missing_runtime_status_page: TemplateChild<adw::StatusPage>,
@@ -96,6 +98,10 @@ mod imp {
         fn class_init(klass: &mut Self::Class) {
             Self::bind_template(klass);
             Self::Type::bind_template_callbacks(klass);
+            klass.install_action("window.go-back", None, move |w, _, _| w.go_back());
+            klass.install_action("window.select-installation", None, move |w, _, _| {
+                w.go_back()
+            });
         }
 
         fn instance_init(obj: &subclass::InitializingObject<Self>) {
@@ -155,6 +161,7 @@ mod imp {
             self.installation_popover.set_installation(&preferred);
 
             obj.setup_widgets();
+            obj.setup_actions();
 
             let fut = clone!(@weak obj => async move {
                 obj.update_sideloadable().await;
@@ -214,6 +221,35 @@ impl SkSideloadWindow {
         );
     }
 
+    fn setup_actions(&self) {
+        let actions = gio::SimpleActionGroup::new();
+        self.insert_action_group("sideload", Some(&actions));
+
+        // sideload.select-installation
+        let action = gio::SimpleAction::new("select-installation", None);
+        action.connect_activate(clone!(@weak self as this => move |_, _| {
+            let imp = this.imp();
+
+            let current = imp.sideload_leaflet.visible_child_name().unwrap().to_string();
+            let select_installation = imp.sideload_leaflet.child_by_name("select-installation").unwrap();
+
+            match current.as_str() {
+                "details" => {
+                    let page = imp.sideload_leaflet.child_by_name("details").unwrap();
+                    imp.sideload_leaflet.reorder_child_after(&select_installation, Some(&page));
+                }
+                "missing-runtime" => {
+                    let page = imp.sideload_leaflet.child_by_name("missing-runtime").unwrap();
+                    imp.sideload_leaflet.reorder_child_after(&select_installation, Some(&page));
+                }
+                _ => (),
+            }
+
+            imp.sideload_leaflet.set_visible_child_name("select-installation");
+        }));
+        actions.add_action(&action);
+    }
+
     async fn update_sideloadable(&self) {
         let imp = self.imp();
         imp.sideload_stack.set_visible_child_name("loading");
@@ -254,11 +290,12 @@ impl SkSideloadWindow {
         let sideloadable = self.sideloadable().unwrap();
 
         if sideloadable.is_already_done() {
-            imp.sideload_stack.set_visible_child_name("already-done");
+            imp.sideload_leaflet.set_visible_child_name("already-done");
             return;
         } else {
-            imp.sideload_stack.set_visible_child_name("details");
+            imp.sideload_leaflet.set_visible_child_name("details");
         }
+        imp.sideload_stack.set_visible_child_name("leaflet");
 
         let app_start_button = i18n("Install");
         let update_start_button = i18n("Update");
@@ -330,6 +367,12 @@ impl SkSideloadWindow {
         }
     }
 
+    fn go_back(&self) {
+        self.imp()
+            .sideload_leaflet
+            .navigate(adw::NavigationDirection::Back);
+    }
+
     #[template_callback]
     fn start_sideload(&self) {
         let fut = clone!(@weak self as this => async move{
@@ -340,9 +383,9 @@ impl SkSideloadWindow {
 
     async fn start_transaction(&self) {
         let imp = self.imp();
-        let sideloadable = imp.sideloadable.borrow_mut().take().unwrap();
+        let sideloadable = self.sideloadable().unwrap();
 
-        imp.sideload_stack.set_visible_child_name("progress");
+        imp.sideload_leaflet.set_visible_child_name("progress");
 
         // Start sideloading the sideloadable, and track the transaction
         let transaction = match sideloadable.sideload().await {
@@ -381,7 +424,7 @@ impl SkSideloadWindow {
             "done",
             false,
             clone!(@weak self as this => @default-return None, move |_|{
-                this.imp().sideload_stack.set_visible_child_name("done");
+                this.imp().sideload_leaflet.set_visible_child_name("done");
                 None
             }),
         );
@@ -439,16 +482,21 @@ impl SkSideloadWindow {
     fn show_error_message(&self, message: &str) {
         let imp = self.imp();
 
-        imp.sideload_stack.set_visible_child_name("error");
+        imp.sideload_leaflet.set_visible_child_name("error");
+        imp.sideload_stack.set_visible_child_name("leaflet");
+
         imp.error_status_page.set_description(Some(message));
     }
 
     fn show_missing_runtime_message(&self, runtime: &str) {
         let imp = self.imp();
 
-        imp.sideload_stack.set_visible_child_name("missing-runtime");
+        imp.sideload_leaflet
+            .set_visible_child_name("missing-runtime");
+        imp.sideload_stack.set_visible_child_name("leaflet");
+
         let message = i18n_f(
-            "The required runtime <tt>{}</tt> could not be found.",
+            "The required runtime <tt>{}</tt> could not be found. Possibly the runtime is available in a different installation.",
             &[runtime],
         );
         imp.missing_runtime_status_page
