@@ -16,8 +16,9 @@
 
 use std::cell::Cell;
 
+use adw::prelude::*;
+use adw::subclass::prelude::*;
 use glib::{subclass, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject};
-use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::Lazy;
@@ -32,12 +33,6 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/installation_row.ui")]
     pub struct SkInstallationRow {
         #[template_child]
-        pub icon: TemplateChild<gtk::Image>,
-        #[template_child]
-        pub title: TemplateChild<gtk::Label>,
-        #[template_child]
-        pub subtitle: TemplateChild<gtk::Label>,
-        #[template_child]
         pub checkmark: TemplateChild<gtk::Image>,
 
         pub installation: OnceCell<SkInstallation>,
@@ -47,7 +42,7 @@ mod imp {
     #[glib::object_subclass]
     impl ObjectSubclass for SkInstallationRow {
         const NAME: &'static str = "SkInstallationRow";
-        type ParentType = gtk::ListBoxRow;
+        type ParentType = adw::ActionRow;
         type Type = super::SkInstallationRow;
 
         fn class_init(klass: &mut Self::Class) {
@@ -113,12 +108,16 @@ mod imp {
     impl WidgetImpl for SkInstallationRow {}
 
     impl ListBoxRowImpl for SkInstallationRow {}
+
+    impl PreferencesRowImpl for SkInstallationRow {}
+
+    impl ActionRowImpl for SkInstallationRow {}
 }
 
 glib::wrapper! {
     pub struct SkInstallationRow(
         ObjectSubclass<imp::SkInstallationRow>)
-        @extends gtk::Widget, gtk::ListBoxRow;
+        @extends gtk::Widget, gtk::ListBoxRow, adw::PreferencesRow, adw::ActionRow;
 
 }
 
@@ -131,9 +130,9 @@ impl SkInstallationRow {
         let imp = self.imp();
         let installation = self.installation();
 
-        imp.title.set_label(&installation.display_name());
-        imp.subtitle.set_label(&installation.description());
-        imp.icon.set_icon_name(Some(&installation.icon_name()));
+        self.set_icon_name(Some(&installation.icon_name()));
+        self.set_title(&installation.display_name());
+        self.set_subtitle(&installation.description());
 
         self.bind_property("selected", &imp.checkmark.get(), "visible")
             .build();

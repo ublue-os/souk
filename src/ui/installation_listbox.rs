@@ -1,4 +1,4 @@
-// Souk - installation_popover.rs
+// Souk - installation_listbox.rs
 // Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,11 @@
 
 use std::cell::RefCell;
 
-use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
-use gtk::prelude::*;
+use adw::prelude::*;
+use adw::subclass::prelude::*;
+use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
+use gtk::glib;
 use gtk::subclass::prelude::*;
-use gtk::{glib, CompositeTemplate};
 use once_cell::sync::Lazy;
 
 use crate::app::SkApplication;
@@ -29,31 +30,20 @@ use crate::ui::SkInstallationRow;
 mod imp {
     use super::*;
 
-    #[derive(Debug, CompositeTemplate, Default)]
-    #[template(resource = "/de/haeckerfelix/Souk/gtk/installation_popover.ui")]
-    pub struct SkInstallationPopover {
-        #[template_child]
-        pub listbox: TemplateChild<gtk::ListBox>,
-
+    #[derive(Debug, Default)]
+    pub struct SkInstallationListBox {
+        pub listbox: gtk::ListBox,
         pub selected_installation: RefCell<Option<SkInstallation>>,
     }
 
     #[glib::object_subclass]
-    impl ObjectSubclass for SkInstallationPopover {
-        const NAME: &'static str = "SkInstallationPopover";
-        type ParentType = gtk::Popover;
-        type Type = super::SkInstallationPopover;
-
-        fn class_init(klass: &mut Self::Class) {
-            Self::bind_template(klass);
-        }
-
-        fn instance_init(obj: &subclass::InitializingObject<Self>) {
-            obj.init_template();
-        }
+    impl ObjectSubclass for SkInstallationListBox {
+        const NAME: &'static str = "SkInstallationListBox";
+        type ParentType = adw::Bin;
+        type Type = super::SkInstallationListBox;
     }
 
-    impl ObjectImpl for SkInstallationPopover {
+    impl ObjectImpl for SkInstallationListBox {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![ParamSpecObject::new(
@@ -76,22 +66,27 @@ mod imp {
 
         fn constructed(&self, obj: &Self::Type) {
             self.parent_constructed(obj);
+            obj.set_child(Some(&obj.imp().listbox));
+
+            self.listbox.set_selection_mode(gtk::SelectionMode::None);
+            self.listbox.add_css_class("boxed-list");
+
             obj.setup_signals();
         }
     }
 
-    impl WidgetImpl for SkInstallationPopover {}
+    impl WidgetImpl for SkInstallationListBox {}
 
-    impl PopoverImpl for SkInstallationPopover {}
+    impl BinImpl for SkInstallationListBox {}
 }
 
 glib::wrapper! {
-    pub struct SkInstallationPopover(
-        ObjectSubclass<imp::SkInstallationPopover>)
-        @extends gtk::Widget, gtk::Popover;
+    pub struct SkInstallationListBox(
+        ObjectSubclass<imp::SkInstallationListBox>)
+        @extends gtk::Widget, adw::Bin;
 }
 
-impl SkInstallationPopover {
+impl SkInstallationListBox {
     fn setup_signals(&self) {
         let imp = self.imp();
         let worker = SkApplication::default().worker();
@@ -105,8 +100,6 @@ impl SkInstallationPopover {
 
                 *this.imp().selected_installation.borrow_mut() = Some(row.installation());
                 this.notify("selected-installation");
-
-                this.hide();
             }));
 
         imp.listbox
@@ -147,7 +140,7 @@ impl SkInstallationPopover {
     }
 }
 
-impl Default for SkInstallationPopover {
+impl Default for SkInstallationListBox {
     fn default() -> Self {
         glib::Object::new(&[]).unwrap()
     }

@@ -137,7 +137,7 @@ impl SkInstallation {
             let display_name = i18n("System");
             imp.display_name.set(display_name).unwrap();
 
-            let description = i18n("All Users");
+            let description = i18n("All users on this computer");
             imp.description.set(description).unwrap();
 
             imp.icon_name.set("people-symbolic".into()).unwrap();
@@ -146,10 +146,10 @@ impl SkInstallation {
             let display_name = i18n("User");
             imp.display_name.set(display_name).unwrap();
 
-            let description = i18n("Only current user");
+            let description = i18n("Only currently logged in user");
             imp.description.set(description).unwrap();
 
-            imp.icon_name.set("people-symbolic".into()).unwrap();
+            imp.icon_name.set("person-symbolic".into()).unwrap();
         } else {
             // Custom installations
             imp.display_name.set(info.display_name.clone()).unwrap();

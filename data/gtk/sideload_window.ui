@@ -45,6 +45,7 @@
                   <object class="AdwLeaflet" id="sideload_leaflet">
                     <property name="transition_type">over</property>
                     <property name="can_unfold">False</property>
+                    <property name="can_navigate_back">True</property>
                     <child>
                       <object class="AdwLeafletPage">
                         <property name="name">details</property>
@@ -138,7 +139,7 @@
                                               <object class="GtkLabel">
                                                 <binding name="label">
                                                   <lookup name="display_name" type="SkInstallation">
-                                                    <lookup name="selected_installation" type="SkInstallationPopover">installation_popover</lookup>
+                                                    <lookup name="selected_installation" type="SkInstallationListBox">installation_listbox</lookup>
                                                   </lookup>
                                                 </binding>
                                               </object>
@@ -166,6 +167,7 @@
                     <child>
                       <object class="AdwLeafletPage">
                         <property name="name">select-installation</property>
+                        <property name="navigatable">False</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
@@ -194,31 +196,12 @@
                                   <object class="AdwPreferencesGroup">
                                     <property name="description" translatable="yes">A Flatpak installation is a location in which packages can be installed. It depends on the installation whether an application is visible only to the currently logged-in user or to all users on this computer.</property>
                                     <child>
-                                      <object class="AdwActionRow">
-                                        <property name="icon_name">document-save-as-symbolic</property>
-                                        <property name="title" translatable="yes">Installation</property>
-                                        <property name="activatable_widget">installation_menubutton</property>
-                                        <child>
-                                          <object class="GtkMenuButton" id="installation_menubutton">
-                                            <property name="label">Default</property>
-                                            <property name="popover">installation_popover</property>
-                                            <property name="always_show_arrow">True</property>
-                                            <property name="valign">center</property>
-                                            <binding name="label">
-                                              <lookup name="display_name" type="SkInstallation">
-                                                <lookup name="selected_installation" type="SkInstallationPopover">installation_popover</lookup>
-                                              </lookup>
-                                            </binding>
-                                            <style>
-                                              <class name="flat"/>
-                                            </style>
-                                          </object>
-                                        </child>
+                                      <object class="SkInstallationListBox" id="installation_listbox">
+                                        <style>
+                                          <class name="content-bin"/>
+                                        </style>
                                       </object>
                                     </child>
-                                    <style>
-                                      <class name="large-rows"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -230,6 +213,7 @@
                     <child>
                       <object class="AdwLeafletPage">
                         <property name="name">progress</property>
+                        <property name="navigatable">False</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
@@ -274,6 +258,7 @@
                     <child>
                       <object class="AdwLeafletPage">
                         <property name="name">done</property>
+                        <property name="navigatable">False</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
@@ -309,6 +294,7 @@
                     <child>
                       <object class="AdwLeafletPage">
                         <property name="name">error</property>
+                        <property name="navigatable">False</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
@@ -427,6 +413,4 @@
       </object>
     </child>
   </template>
-  <object class="SkInstallationPopover" id="installation_popover"/>
 </interface>
-

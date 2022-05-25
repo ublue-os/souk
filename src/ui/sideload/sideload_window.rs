@@ -32,7 +32,7 @@ use crate::error::Error;
 use crate::flatpak::sideload::SkSideloadable;
 use crate::flatpak::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
-use crate::ui::SkInstallationPopover;
+use crate::ui::SkInstallationListBox;
 
 mod imp {
     use super::*;
@@ -48,8 +48,6 @@ mod imp {
         #[template_child]
         pub cancel_sideload_button: TemplateChild<gtk::Button>,
         #[template_child]
-        pub installation_popover: TemplateChild<SkInstallationPopover>,
-        #[template_child]
         pub start_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub details_title: TemplateChild<adw::WindowTitle>,
@@ -59,6 +57,9 @@ mod imp {
         pub package_download_size_row: TemplateChild<adw::ActionRow>,
         #[template_child]
         pub package_installed_size_row: TemplateChild<adw::ActionRow>,
+
+        #[template_child]
+        pub installation_listbox: TemplateChild<SkInstallationListBox>,
 
         #[template_child]
         pub progress_title: TemplateChild<adw::WindowTitle>,
@@ -158,7 +159,7 @@ mod imp {
 
             let worker = SkApplication::default().worker();
             let preferred = worker.preferred_installation();
-            self.installation_popover.set_installation(&preferred);
+            self.installation_listbox.set_installation(&preferred);
 
             obj.setup_widgets();
             obj.setup_actions();
@@ -208,7 +209,7 @@ impl SkSideloadWindow {
 
         // When the installation changes, we also have to update the sideloadable,
         // since it depends on the installation
-        imp.installation_popover.connect_local(
+        imp.installation_listbox.connect_local(
             "notify::selected-installation",
             false,
             clone!(@weak self as this => @default-return None, move |_|{
@@ -254,7 +255,7 @@ impl SkSideloadWindow {
         let imp = self.imp();
         imp.sideload_stack.set_visible_child_name("loading");
 
-        let installation = imp.installation_popover.selected_installation().unwrap();
+        let installation = imp.installation_listbox.selected_installation().unwrap();
         let installation_uuid = installation.uuid();
         let file = self.file();
 
@@ -290,13 +291,6 @@ impl SkSideloadWindow {
         let imp = self.imp();
         let sideloadable = self.sideloadable().unwrap();
 
-        if sideloadable.is_already_done() {
-            imp.sideload_leaflet.set_visible_child_name("already-done");
-            return;
-        } else {
-            imp.sideload_leaflet.set_visible_child_name("details");
-        }
-
         let app_start_button = i18n("Install");
         let update_start_button = i18n("Update");
         let repo_start_button = i18n("Add");
@@ -319,11 +313,6 @@ impl SkSideloadWindow {
         let app_error_title = i18n("Installation Failed");
         let update_error_title = i18n("Update Failed");
         let repo_error_title = i18n("Adding Source Failed");
-
-        // Hide launch button if sideload content is not an app
-        if sideloadable.ref_().kind() != RefKind::App {
-            imp.launch_button.set_visible(false);
-        }
 
         // Setup window titles and headerbar buttons
         if sideloadable.contains_package() {
@@ -350,6 +339,18 @@ impl SkSideloadWindow {
             imp.done_title.set_title(&repo_done_title);
             imp.already_done_title.set_title(&repo_already_done_title);
             imp.error_title.set_title(&repo_error_title);
+        }
+
+        if sideloadable.is_already_done() {
+            imp.sideload_leaflet.set_visible_child_name("already-done");
+            return;
+        } else {
+            imp.sideload_leaflet.set_visible_child_name("details");
+        }
+
+        // Hide launch button if sideload content is not an app
+        if sideloadable.ref_().kind() != RefKind::App {
+            imp.launch_button.set_visible(false);
         }
 
         // Setup details page
@@ -501,7 +502,5 @@ impl SkSideloadWindow {
         );
         imp.missing_runtime_status_page
             .set_description(Some(&message));
-        // TODO: Allow selecting a different installation, which may have the
-        // required runtime
     }
 }

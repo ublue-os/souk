@@ -2,7 +2,6 @@
 <gresources>
   <gresource prefix="/de/haeckerfelix/Souk">
     <file compressed="true" preprocess="xml-stripblanks" alias="gtk/help-overlay.ui">gtk/help_overlay.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks">gtk/installation_popover.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/installation_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/sideload_window.ui</file>
     <file compressed="true" alias="style.css">gtk/style.css</file>
