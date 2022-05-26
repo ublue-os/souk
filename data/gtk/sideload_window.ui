@@ -156,6 +156,27 @@
                                         </style>
                                       </object>
                                     </child>
+                                    <child>
+                                      <object class="AdwPreferencesGroup">
+                                        <child>
+                                          <object class="AdwActionRow" id="no_update_source_row">
+                                            <property name="title" translatable="yes">No Update Source</property>
+                                            <property name="subtitle" translatable="yes">This package does not include a source for updates, and will not receive any updates or security fixes</property>
+                                            <style>
+                                              <class name="warning-row"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                        <child>
+                                          <object class="AdwActionRow" id="replacing_remote_row">
+                                            <property name="title" translatable="yes">Different Source</property>
+                                            <style>
+                                              <class name="warning-row"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                      </object>
+                                    </child>
                                   </object>
                                 </child>
                               </object>
@@ -414,3 +435,4 @@
     </child>
   </template>
 </interface>
+

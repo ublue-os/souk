@@ -36,7 +36,13 @@ struct Worker {
 impl Worker {
     // Transaction
 
-    async fn install_flatpak(&self, ref_: &str, remote: &str, installation_uuid: &str) -> String {
+    async fn install_flatpak(
+        &self,
+        ref_: &str,
+        remote: &str,
+        installation_uuid: &str,
+        no_update: bool,
+    ) -> String {
         let uuid = Uuid::new_v4().to_string();
         self.transaction_sender
             .send(TransactionCommand::InstallFlatpak(
@@ -44,6 +50,7 @@ impl Worker {
                 ref_.to_string(),
                 remote.to_string(),
                 installation_uuid.to_string(),
+                no_update,
             ))
             .await
             .unwrap();
@@ -51,13 +58,19 @@ impl Worker {
         uuid
     }
 
-    async fn install_flatpak_bundle(&self, path: &str, installation_uuid: &str) -> String {
+    async fn install_flatpak_bundle(
+        &self,
+        path: &str,
+        installation_uuid: &str,
+        no_update: bool,
+    ) -> String {
         let uuid = Uuid::new_v4().to_string();
         self.transaction_sender
             .send(TransactionCommand::InstallFlatpakBundle(
                 uuid.clone(),
                 path.to_string(),
                 installation_uuid.to_string(),
+                no_update,
             ))
             .await
             .unwrap();

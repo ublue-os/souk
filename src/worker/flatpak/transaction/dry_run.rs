@@ -31,8 +31,16 @@ pub enum DryRunError {
 pub struct DryRunResults {
     pub ref_: String,
     pub commit: String,
+    /// Whether the package with the exact commit is already installed
     pub is_already_done: bool,
+    /// The same ref is already installed, but the commit differs
     pub is_update: bool,
+    /// Whether the package has an source for future app updates
+    pub has_update_source: bool,
+    /// Whether the package is already installed from a different remote, and
+    /// the old app needs to get uninstalled first
+    pub is_replacing_remote: String,
+
     pub download_size: u64,
     pub installed_size: u64,
     pub runtimes: Vec<DryRunRuntime>,

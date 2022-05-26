@@ -25,9 +25,20 @@ use crate::worker::flatpak::transaction::{DryRunError, DryRunResults};
 trait Worker {
     // Transaction
 
-    fn install_flatpak(&self, ref_: &str, remote: &str, installation_uuid: &str) -> Result<String>;
+    fn install_flatpak(
+        &self,
+        ref_: &str,
+        remote: &str,
+        installation_uuid: &str,
+        no_update: bool,
+    ) -> Result<String>;
 
-    fn install_flatpak_bundle(&self, path: &str, installation_uuid: &str) -> Result<String>;
+    fn install_flatpak_bundle(
+        &self,
+        path: &str,
+        installation_uuid: &str,
+        no_update: bool,
+    ) -> Result<String>;
 
     fn install_flatpak_bundle_dry_run(
         &self,

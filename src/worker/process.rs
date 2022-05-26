@@ -39,6 +39,7 @@ impl Process {
 
         // If we kill flatpak-spawn, we also want to kill the child process too.
         let mut args: Vec<String> = vec!["--watch-bus".into()];
+        args.push("--env=RUST_BACKTRACE=1".into());
 
         // We cannot do stuff inside the Flatpak Sandbox,
         // so we have to spawn the worker process on host side

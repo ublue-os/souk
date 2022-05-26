@@ -173,13 +173,14 @@ impl SkWorker {
         ref_: &Ref,
         remote: &str,
         installation: &str,
+        no_update: bool,
     ) -> Result<SkTransaction, Error> {
         let ref_string = ref_.format_ref().unwrap().to_string();
 
         let transaction_uuid = self
             .imp()
             .proxy
-            .install_flatpak(&ref_string, remote, installation)
+            .install_flatpak(&ref_string, remote, installation, no_update)
             .await?;
 
         let type_ = SkTransactionType::Install;
@@ -195,6 +196,7 @@ impl SkWorker {
         ref_: &Ref,
         file: &File,
         installation: &str,
+        no_update: bool,
     ) -> Result<SkTransaction, Error> {
         let path = file.path().unwrap();
         let filename_string = path.file_name().unwrap().to_str().unwrap();
@@ -203,7 +205,7 @@ impl SkWorker {
         let transaction_uuid = self
             .imp()
             .proxy
-            .install_flatpak_bundle(&path_string, installation)
+            .install_flatpak_bundle(&path_string, installation, no_update)
             .await?;
 
         let type_ = SkTransactionType::Install;

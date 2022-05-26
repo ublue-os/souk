@@ -20,10 +20,10 @@ use crate::worker::flatpak::transaction::{DryRunError, DryRunResults};
 
 #[derive(Debug, Clone)]
 pub enum TransactionCommand {
-    // uuid, ref_, remote, installation_uuid
-    InstallFlatpak(String, String, String, String),
-    // uuid, path, installation_uuid
-    InstallFlatpakBundle(String, String, String),
+    // uuid, ref_, remote, installation_uuid, no_update
+    InstallFlatpak(String, String, String, String, bool),
+    // uuid, path, installation_uuid, no_update
+    InstallFlatpakBundle(String, String, String, bool),
     // path, installation_uuid, sender
     InstallFlatpakBundleDryRun(String, String, Sender<Result<DryRunResults, DryRunError>>),
     // uuid,

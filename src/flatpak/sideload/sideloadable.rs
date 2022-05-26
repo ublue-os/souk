@@ -161,6 +161,14 @@ impl SkSideloadable {
         self.imp().sideloadable.get().unwrap().installation_uuid()
     }
 
+    pub fn has_update_source(&self) -> bool {
+        self.imp().sideloadable.get().unwrap().has_update_source()
+    }
+
+    pub fn is_replacing_remote(&self) -> String {
+        self.imp().sideloadable.get().unwrap().is_replacing_remote()
+    }
+
     pub fn contains_package(&self) -> bool {
         self.imp().sideloadable.get().unwrap().contains_package()
     }
@@ -207,6 +215,10 @@ pub trait Sideloadable {
     fn commit(&self) -> String;
 
     fn installation_uuid(&self) -> String;
+
+    fn has_update_source(&self) -> bool;
+
+    fn is_replacing_remote(&self) -> String;
 
     fn contains_package(&self) -> bool;
 

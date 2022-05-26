@@ -30,7 +30,7 @@ use gtk::{gio, glib};
 use libflatpak::prelude::*;
 use libflatpak::{
     BundleRef, Installation, Ref, Remote, Transaction, TransactionOperation,
-    TransactionRemoteReason,
+    TransactionOperationType, TransactionRemoteReason,
 };
 
 use super::{
@@ -79,12 +79,18 @@ impl TransactionHandler {
         let mut dry_run_sender = None;
 
         let (result, transaction_uuid) = match command {
-            TransactionCommand::InstallFlatpak(uuid, ref_, remote, installation_uuid) => (
-                self.install_flatpak(&uuid, &ref_, &remote, &installation_uuid),
+            TransactionCommand::InstallFlatpak(
+                uuid,
+                ref_,
+                remote,
+                installation_uuid,
+                no_update,
+            ) => (
+                self.install_flatpak(&uuid, &ref_, &remote, &installation_uuid, no_update),
                 uuid,
             ),
-            TransactionCommand::InstallFlatpakBundle(uuid, path, installation_uuid) => (
-                self.install_flatpak_bundle(&uuid, &path, &installation_uuid),
+            TransactionCommand::InstallFlatpakBundle(uuid, path, installation_uuid, no_update) => (
+                self.install_flatpak_bundle(&uuid, &path, &installation_uuid, no_update),
                 uuid,
             ),
             TransactionCommand::InstallFlatpakBundleDryRun(path, installation_uuid, sender) => {
@@ -141,11 +147,21 @@ impl TransactionHandler {
         ref_: &str,
         remote: &str,
         installation_uuid: &str,
+        no_update: bool,
     ) -> Result<(), Error> {
         info!("Install Flatpak: {}", ref_);
 
         let transaction = self.new_transaction(installation_uuid, false);
         transaction.add_install(remote, ref_, &[])?;
+
+        // There are situations where we can't directly upgrade an already installed
+        // ref, and we have to uninstall the old version first, before we
+        // install the new version. (for example installing a ref from a
+        // different remote, and the gpg signature wouldn't match)
+        if no_update {
+            self.uninstall_ref(ref_, installation_uuid)?;
+        }
+
         self.run_transaction(transaction_uuid.to_string(), transaction)?;
 
         Ok(())
@@ -156,12 +172,24 @@ impl TransactionHandler {
         transaction_uuid: &str,
         path: &str,
         installation_uuid: &str,
+        no_update: bool,
     ) -> Result<(), Error> {
         info!("Install Flatpak bundle: {}", path);
         let file = gio::File::for_parse_name(path);
 
         let transaction = self.new_transaction(installation_uuid, false);
         transaction.add_install_bundle(&file, None)?;
+
+        // There are situations where we can't directly upgrade an already installed
+        // ref, and we have to uninstall the old version first, before we
+        // install the new version. (for example installing a ref from a
+        // different remote, and the gpg signature wouldn't match)
+        if no_update {
+            let bundle = BundleRef::new(&file)?;
+            let ref_ = bundle.format_ref().unwrap();
+            self.uninstall_ref(&ref_, installation_uuid)?;
+        }
+
         self.run_transaction(transaction_uuid.to_string(), transaction)?;
 
         Ok(())
@@ -202,6 +230,10 @@ impl TransactionHandler {
         transaction_uuid: String,
         transaction: Transaction,
     ) -> Result<(), Error> {
+        transaction.connect_add_new_remote(move |_, reason, _, _, _| {
+            reason == TransactionRemoteReason::RuntimeDeps
+        });
+
         transaction.connect_new_operation(
             clone!(@weak self as this, @strong transaction_uuid => move |transaction, operation, progress| {
                 this.handle_operation(transaction_uuid.clone(), transaction, operation, progress);
@@ -320,7 +352,22 @@ impl TransactionHandler {
                             Cancellable::NONE
                         );
 
+                        // Yep -> it's installed
                         if let Ok(installed) = installed {
+                            if operation.operation_type() == TransactionOperationType::InstallBundle{
+                                dry_run_results.borrow_mut().has_update_source = false;
+                            }
+
+                            let installed_origin = installed.origin().unwrap();
+                            let operation_remote = operation.remote().unwrap();
+
+                            // Check if the ref is already installed, but from a different remote
+                            // If yes, it the already installed ref needs to get uninstalled first,
+                            // before the new one can get installed.
+                            if installed_origin != operation_remote {
+                                dry_run_results.borrow_mut().is_replacing_remote = installed_origin.to_string();
+                            }
+
                             if installed.commit().unwrap() == operation_commit {
                                 // Commit is the same -> ref is already installed
                                 dry_run_results.borrow_mut().is_already_done = true;
@@ -415,5 +462,14 @@ impl TransactionHandler {
         } else {
             Transaction::for_installation(&installation, Cancellable::NONE).unwrap()
         }
+    }
+
+    fn uninstall_ref(&self, ref_: &str, installation_uuid: &str) -> Result<(), Error> {
+        debug!("Uninstall: {}", ref_);
+
+        let transaction = self.new_transaction(installation_uuid, false);
+        transaction.add_uninstall(ref_)?;
+        transaction.run(Cancellable::NONE)?;
+        Ok(())
     }
 }

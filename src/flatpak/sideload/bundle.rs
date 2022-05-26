@@ -54,6 +54,14 @@ impl Sideloadable for BundleSideloadable {
         self.installation_uuid.clone()
     }
 
+    fn has_update_source(&self) -> bool {
+        self.dry_run_results.has_update_source
+    }
+
+    fn is_replacing_remote(&self) -> String {
+        self.dry_run_results.is_replacing_remote.clone()
+    }
+
     fn contains_package(&self) -> bool {
         true
     }
@@ -83,8 +91,10 @@ impl Sideloadable for BundleSideloadable {
     }
 
     async fn sideload(&self, worker: &SkWorker) -> Result<SkTransaction, Error> {
+        let no_update = !self.is_replacing_remote().is_empty();
+
         let transaction = worker
-            .install_flatpak_bundle(&self.ref_(), &self.file, &self.installation_uuid)
+            .install_flatpak_bundle(&self.ref_(), &self.file, &self.installation_uuid, no_update)
             .await?;
         Ok(transaction)
     }
