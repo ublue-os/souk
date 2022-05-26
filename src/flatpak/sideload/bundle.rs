@@ -14,8 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use appstream::Component;
 use async_trait::async_trait;
 use gtk::gio::File;
+use gtk::glib::Bytes;
+use gtk::prelude::*;
 use libflatpak::Ref;
 
 use crate::error::Error;
@@ -48,6 +51,19 @@ impl Sideloadable for BundleSideloadable {
 
     fn commit(&self) -> String {
         self.dry_run_results.commit.clone()
+    }
+
+    fn icon(&self) -> Option<gdk::Paintable> {
+        let bytes = Bytes::from_owned(self.dry_run_results.icon.clone());
+        if let Ok(paintable) = gdk::Texture::from_bytes(&bytes) {
+            Some(paintable.upcast())
+        } else {
+            None
+        }
+    }
+
+    fn appstream_component(&self) -> Option<Component> {
+        serde_json::from_str(&self.dry_run_results.appstream_component).ok()
     }
 
     fn installation_uuid(&self) -> String {

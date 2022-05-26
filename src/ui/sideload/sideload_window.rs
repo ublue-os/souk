@@ -52,7 +52,13 @@ mod imp {
         #[template_child]
         pub details_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
+        pub package_icon_image: TemplateChild<gtk::Image>,
+        #[template_child]
         pub package_name_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub package_developer_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub package_version_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub package_download_size_row: TemplateChild<adw::ActionRow>,
         #[template_child]
@@ -345,23 +351,66 @@ impl SkSideloadWindow {
             imp.error_title.set_title(&repo_error_title);
         }
 
-        if sideloadable.is_already_done() {
-            imp.sideload_leaflet.set_visible_child_name("already-done");
-            return;
-        } else {
-            imp.sideload_leaflet.set_visible_child_name("details");
-        }
+        // Setup general package appstream metadata
+        if let Some(component) = sideloadable.appstream_component() {
+            let name = component.name.get_default().unwrap();
+            imp.package_name_label.set_text(name);
 
-        // Hide launch button if sideload content is not an app
-        if sideloadable.ref_().kind() != RefKind::App {
-            imp.launch_button.set_visible(false);
+            if let Some(paintable) = sideloadable.icon() {
+                imp.package_icon_image.set_paintable(Some(&paintable));
+            } else {
+                let it = gtk::IconTheme::new();
+                let paintable = it.lookup_icon(
+                    "dialog-question",
+                    &[],
+                    128,
+                    self.scale_factor(),
+                    gtk::TextDirection::None,
+                    gtk::IconLookupFlags::FORCE_SYMBOLIC,
+                );
+                imp.package_icon_image.set_paintable(Some(&paintable));
+            }
+
+            let developer = if let Some(developer_name) = component.developer_name {
+                developer_name.get_default().unwrap().clone()
+            } else {
+                i18n("Unknown Developer")
+            };
+            imp.package_developer_label.set_text(&developer);
+
+            let mut releases = component.releases;
+            releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
+            let version = if let Some(release) = releases.get(0) {
+                i18n_f("Version {}", &[&release.version.clone()])
+            } else {
+                i18n("Unknown Version")
+            };
+            imp.package_version_label.set_text(&version);
+        } else {
+            // Fallback if there's no appstream metadata
+            let name = sideloadable.ref_().name().unwrap();
+            imp.package_name_label.set_text(&name);
+
+            let it = gtk::IconTheme::new();
+            let paintable = it.lookup_icon(
+                "dialog-question",
+                &[],
+                128,
+                self.scale_factor(),
+                gtk::TextDirection::None,
+                gtk::IconLookupFlags::FORCE_SYMBOLIC,
+            );
+            imp.package_icon_image.set_paintable(Some(&paintable));
+
+            let developer = i18n("Unknown Developer");
+            imp.package_developer_label.set_text(&developer);
+
+            let version = i18n("Unknown Version");
+            imp.package_version_label.set_text(&version);
         }
 
         // Setup details page
         if sideloadable.contains_package() {
-            imp.package_name_label
-                .set_text(&sideloadable.ref_().format_ref().unwrap());
-
             let size = glib::format_size(sideloadable.download_size());
             let download_string = i18n_f("Up to {} download", &[&size]);
             imp.package_download_size_row.set_title(&download_string);
@@ -379,6 +428,18 @@ impl SkSideloadWindow {
                 let msg = i18n_f("This package is already installed from \"{}\", during the installation the old version will be uninstalled first", &[&sideloadable.is_replacing_remote()]);
                 imp.replacing_remote_row.set_subtitle(&msg);
             }
+        }
+
+        if sideloadable.is_already_done() {
+            imp.sideload_leaflet.set_visible_child_name("already-done");
+            return;
+        } else {
+            imp.sideload_leaflet.set_visible_child_name("details");
+        }
+
+        // Hide launch button if sideload content is not an app
+        if sideloadable.ref_().kind() != RefKind::App {
+            imp.launch_button.set_visible(false);
         }
     }
 

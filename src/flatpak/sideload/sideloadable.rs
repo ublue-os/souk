@@ -16,17 +16,13 @@
 
 use core::fmt::Debug;
 
+use appstream::Component;
 use async_trait::async_trait;
-use glib::{
-    ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecEnum, ParamSpecObject, ParamSpecUInt64,
-    ToValue,
-};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use libflatpak::prelude::*;
 use libflatpak::Ref;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::app::SkApplication;
@@ -49,90 +45,7 @@ mod imp {
         type Type = super::SkSideloadable;
     }
 
-    impl ObjectImpl for SkSideloadable {
-        fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecEnum::new(
-                        "type",
-                        "Type",
-                        "Type",
-                        SkSideloadType::static_type(),
-                        SkSideloadType::None as i32,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecBoolean::new(
-                        "contains-package",
-                        "Contains Package",
-                        "Contains Package",
-                        false,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecBoolean::new(
-                        "contains-repository",
-                        "Contains Repository",
-                        "Contains Repository",
-                        false,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "ref",
-                        "Ref",
-                        "Ref",
-                        Ref::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecBoolean::new(
-                        "is-already-done",
-                        "Is Already Done",
-                        "Is Already Done",
-                        false,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecBoolean::new(
-                        "is-update",
-                        "Is Update",
-                        "Is Update",
-                        false,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecUInt64::new(
-                        "download-size",
-                        "Download Size",
-                        "Download Size",
-                        0,
-                        u64::MAX,
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecUInt64::new(
-                        "installed-size",
-                        "Installed Size",
-                        "Installed Size",
-                        0,
-                        u64::MAX,
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
-        }
-
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "type" => obj.type_().to_value(),
-                "contains-package" => obj.contains_package().to_value(),
-                "contains-repository" => obj.contains_repository().to_value(),
-                "ref" => obj.ref_().to_value(),
-                "is-already-done" => obj.is_already_done().to_value(),
-                "is-update" => obj.is_update().to_value(),
-                "download-size" => obj.download_size().to_value(),
-                "installed-size" => obj.installed_size().to_value(),
-                _ => unimplemented!(),
-            }
-        }
-    }
+    impl ObjectImpl for SkSideloadable {}
 }
 
 glib::wrapper! {
@@ -155,6 +68,14 @@ impl SkSideloadable {
 
     pub fn commit(&self) -> String {
         self.imp().sideloadable.get().unwrap().commit()
+    }
+
+    pub fn icon(&self) -> Option<gdk::Paintable> {
+        self.imp().sideloadable.get().unwrap().icon()
+    }
+
+    pub fn appstream_component(&self) -> Option<Component> {
+        self.imp().sideloadable.get().unwrap().appstream_component()
     }
 
     pub fn installation_uuid(&self) -> String {
@@ -213,6 +134,10 @@ pub trait Sideloadable {
     fn type_(&self) -> SkSideloadType;
 
     fn commit(&self) -> String;
+
+    fn icon(&self) -> Option<gdk::Paintable>;
+
+    fn appstream_component(&self) -> Option<Component>;
 
     fn installation_uuid(&self) -> String;
 

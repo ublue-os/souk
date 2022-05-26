@@ -20,6 +20,7 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
+use appstream::Collection;
 use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
 use async_std::task;
@@ -216,7 +217,23 @@ impl TransactionHandler {
         let results = self.run_dry_run_transaction(transaction, &ref_, &installation);
 
         if let Ok(mut results) = results {
+            // Installed bundle size
             results.installed_size = bundle.installed_size();
+
+            // Icon
+            if let Some(bytes) = bundle.icon(128) {
+                results.icon = bytes.to_vec();
+            }
+
+            // Appstream metadata
+            if let Some(compressed) = bundle.appstream() {
+                let collection = Collection::from_gzipped_bytes(&compressed.to_vec()).unwrap();
+                let component = &collection.components[0];
+
+                let json = serde_json::to_string(component).unwrap();
+                results.appstream_component = json;
+            }
+
             sender.try_send(Ok(results)).unwrap()
         } else {
             sender.try_send(results).unwrap()

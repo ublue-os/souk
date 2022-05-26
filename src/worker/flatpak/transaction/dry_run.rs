@@ -31,6 +31,9 @@ pub enum DryRunError {
 pub struct DryRunResults {
     pub ref_: String,
     pub commit: String,
+    pub icon: Vec<u8>,
+    /// Json serialized appstream component
+    pub appstream_component: String,
     /// Whether the package with the exact commit is already installed
     pub is_already_done: bool,
     /// The same ref is already installed, but the commit differs

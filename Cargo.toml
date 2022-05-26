@@ -7,6 +7,7 @@ license = "GPL-3.0-or-later"
 default-run = "souk"
 
 [dependencies]
+appstream = { version = "0.2", features = ["gzip"] }
 log = "0.4"
 pretty_env_logger = "0.4"
 serde = "1.0"
@@ -34,4 +35,5 @@ thiserror = "1.0.31"
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
 adw = { version = "0.1.0-alpha", package = "libadwaita" }
 gtk = { version = "0.4", package = "gtk4" }
+gdk = { version = "0.4", package = "gdk4", features = ["v4_6"] }
 gtk-macros = "0.3"

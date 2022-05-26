@@ -84,27 +84,39 @@
                                     <property name="spacing">12</property>
                                     <child>
                                       <object class="GtkBox">
-                                        <property name="spacing">6</property>
+                                        <property name="spacing">24</property>
+                                        <property name="margin_top">18</property>
+                                        <property name="margin_bottom">12</property>
                                         <child>
-                                          <object class="GtkImage" id="icon_image">
-                                            <property name="pixel_size">64</property>
+                                          <object class="GtkImage" id="package_icon_image">
+                                            <property name="pixel_size">128</property>
                                           </object>
                                         </child>
                                         <child>
                                           <object class="GtkBox">
+                                            <property name="orientation">vertical</property>
+                                            <property name="valign">center</property>
+                                            <property name="spacing">6</property>
                                             <child>
                                               <object class="GtkLabel" id="package_name_label">
                                                 <property name="ellipsize">end</property>
+                                                <property name="xalign">0</property>
                                                 <style>
                                                   <class name="title-2"/>
                                                 </style>
                                               </object>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="package_author_label"/>
+                                              <object class="GtkLabel" id="package_developer_label">
+                                                <property name="ellipsize">end</property>
+                                                <property name="xalign">0</property>
+                                              </object>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="package_version_label"/>
+                                              <object class="GtkLabel" id="package_version_label">
+                                                <property name="ellipsize">end</property>
+                                                <property name="xalign">0</property>
+                                              </object>
                                             </child>
                                           </object>
                                         </child>
@@ -253,20 +265,25 @@
                               </object>
                             </child>
                             <child>
-                              <object class="AdwClamp">
-                                <property name="margin_start">12</property>
-                                <property name="margin_end">12</property>
+                              <object class="AdwStatusPage" id="progress_status_page">
+                                <property name="vexpand">True</property>
+                                <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
+                                <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
                                 <child>
-                                  <object class="GtkBox">
-                                    <property name="orientation">vertical</property>
-                                    <property name="spacing">12</property>
-                                    <property name="vexpand">True</property>
-                                    <property name="valign">center</property>
+                                  <object class="AdwClamp">
                                     <child>
-                                      <object class="GtkProgressBar" id="progress_bar"/>
-                                    </child>
-                                    <child>
-                                      <object class="GtkLabel" id="progress_label"/>
+                                      <object class="GtkBox">
+                                        <property name="orientation">vertical</property>
+                                        <property name="spacing">12</property>
+                                        <property name="vexpand">True</property>
+                                        <property name="valign">center</property>
+                                        <child>
+                                          <object class="GtkProgressBar" id="progress_bar"/>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="progress_label"/>
+                                        </child>
+                                      </object>
                                     </child>
                                   </object>
                                 </child>
@@ -293,7 +310,8 @@
                             <child>
                               <object class="AdwStatusPage" id="done_status_page">
                                 <property name="vexpand">True</property>
-                                <property name="icon_name">checkbox-checked-symbolic</property>
+                                <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
+                                <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
                                 <property name="description" translatable="yes">Successfully Installed</property>
                                 <child>
                                   <object class="GtkButton" id="launch_button">
@@ -365,7 +383,8 @@
                             <child>
                               <object class="AdwStatusPage" id="already_done_status_page">
                                 <property name="vexpand">True</property>
-                                <property name="icon_name">checkbox-checked-symbolic</property>
+                                <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
+                                <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
                                 <property name="description" translatable="yes">The package is already installed. Do you want to install it for a different installation?</property>
                                 <child>
                                   <object class="GtkBox">
