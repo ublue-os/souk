@@ -32,10 +32,6 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/window.ui")]
     pub struct SkApplicationWindow {
         #[template_child]
-        pub flatpak_entry: TemplateChild<gtk::Entry>,
-        #[template_child]
-        pub remote_entry: TemplateChild<gtk::Entry>,
-        #[template_child]
         pub transactions_listbox: TemplateChild<gtk::ListBox>,
     }
 
