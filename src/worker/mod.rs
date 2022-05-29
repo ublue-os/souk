@@ -21,7 +21,8 @@ mod process;
 pub use dbus::WorkerProxy;
 pub use flatpak::installation::{InstallationInfo, InstallationManager};
 pub use flatpak::transaction::{
-    DryRunError, DryRunResults, TransactionError, TransactionHandler, TransactionProgress,
+    TransactionDryRun, TransactionDryRunError, TransactionError, TransactionHandler,
+    TransactionProgress,
 };
 pub use process::Process;
 

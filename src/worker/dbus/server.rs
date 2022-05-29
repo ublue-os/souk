@@ -22,8 +22,8 @@ use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
 use crate::config;
 use crate::worker::flatpak::installation::{InstallationInfo, InstallationManager};
 use crate::worker::flatpak::transaction::{
-    DryRunError, DryRunResults, TransactionCommand, TransactionError, TransactionMessage,
-    TransactionProgress,
+    TransactionCommand, TransactionDryRun, TransactionDryRunError, TransactionError,
+    TransactionMessage, TransactionProgress,
 };
 
 #[derive(Debug)]
@@ -82,7 +82,7 @@ impl Worker {
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> Result<DryRunResults, DryRunError> {
+    ) -> Result<TransactionDryRun, TransactionDryRunError> {
         let (transaction_sender, mut receiver) = unbounded();
 
         self.transaction_sender

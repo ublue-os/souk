@@ -1,4 +1,4 @@
-// Souk - dry_run_results.rs
+// Souk - transaction_dry_run.rs
 // Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@ use zbus::zvariant::Type;
 use zbus::DBusError;
 
 #[derive(DBusError, Debug)]
-pub enum DryRunError {
+pub enum TransactionDryRunError {
     #[dbus_error(zbus_error)]
     ZBus(zbus::Error),
 
@@ -28,14 +28,14 @@ pub enum DryRunError {
 }
 
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
-pub struct DryRunResults {
+pub struct TransactionDryRun {
     pub ref_: String,
     pub commit: String,
     pub icon: Vec<u8>,
     /// Json serialized appstream component
     pub appstream_component: String,
     /// Whether the package with the exact commit is already installed
-    pub is_already_done: bool,
+    pub is_already_installed: bool,
     /// The same ref is already installed, but the commit differs
     pub is_update: bool,
     /// Whether the package has an source for future app updates
@@ -46,11 +46,12 @@ pub struct DryRunResults {
 
     pub download_size: u64,
     pub installed_size: u64,
-    pub runtimes: Vec<DryRunRuntime>,
-    pub remotes: Vec<DryRunRemote>,
+
+    pub runtimes: Vec<TransactionDryRunRuntime>,
+    pub remotes: Vec<TransactionDryRunRemote>,
 }
 
-impl DryRunResults {
+impl TransactionDryRun {
     pub fn download_size(&self) -> u64 {
         let mut size = self.download_size;
         for runtime in &self.runtimes {
@@ -69,7 +70,7 @@ impl DryRunResults {
 }
 
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
-pub struct DryRunRuntime {
+pub struct TransactionDryRunRuntime {
     pub ref_: String,
     pub type_: String,
     pub download_size: u64,
@@ -77,7 +78,7 @@ pub struct DryRunRuntime {
 }
 
 #[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
-pub struct DryRunRemote {
+pub struct TransactionDryRunRemote {
     pub suggested_remote_name: String,
     pub url: String,
 }

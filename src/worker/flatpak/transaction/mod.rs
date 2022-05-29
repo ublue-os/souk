@@ -20,6 +20,8 @@ mod message;
 mod transaction_handler;
 
 pub use command::TransactionCommand;
-pub use dry_run::{DryRunError, DryRunRemote, DryRunResults, DryRunRuntime};
+pub use dry_run::{
+    TransactionDryRun, TransactionDryRunError, TransactionDryRunRemote, TransactionDryRunRuntime,
+};
 pub use message::{TransactionError, TransactionMessage, TransactionProgress};
 pub use transaction_handler::TransactionHandler;

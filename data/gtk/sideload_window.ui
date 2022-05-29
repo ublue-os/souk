@@ -66,7 +66,7 @@
                                 </child>
                                 <child type="end">
                                   <object class="GtkButton" id="start_button">
-                                    <signal name="clicked" handler="start_sideload" swapped="true"/>
+                                    <signal name="clicked" handler="start_sideload_clicked" swapped="true"/>
                                     <style>
                                       <class name="suggested-action"/>
                                     </style>
@@ -256,7 +256,7 @@
                                 <child>
                                   <object class="GtkButton" id="cancel_sideload_button">
                                     <property name="label" translatable="yes">Cancel</property>
-                                    <signal name="clicked" handler="cancel_sideload" swapped="true"/>
+                                    <signal name="clicked" handler="cancel_sideload_clicked" swapped="true"/>
                                   </object>
                                 </child>
                                 <child type="title">
@@ -317,7 +317,7 @@
                                   <object class="GtkButton" id="launch_button">
                                     <property name="halign">center</property>
                                     <property name="label" translatable="yes">Open</property>
-                                    <signal name="clicked" handler="launch_app" swapped="true"/>
+                                    <signal name="clicked" handler="launch_app_clicked" swapped="true"/>
                                     <style>
                                       <class name="suggested-action"/>
                                       <class name="pill"/>

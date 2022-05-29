@@ -35,8 +35,8 @@ use libflatpak::{
 };
 
 use super::{
-    DryRunError, DryRunRemote, DryRunResults, DryRunRuntime, TransactionCommand,
-    TransactionMessage, TransactionProgress,
+    TransactionCommand, TransactionDryRun, TransactionDryRunError, TransactionDryRunRemote,
+    TransactionDryRunRuntime, TransactionMessage, TransactionProgress,
 };
 use crate::worker::flatpak::installation::InstallationManager;
 
@@ -115,7 +115,7 @@ impl TransactionHandler {
         if let Err(err) = result {
             if let Some(dry_run_sender) = dry_run_sender {
                 let message = err.message().to_string();
-                let dry_run_error = DryRunError::Other(message);
+                let dry_run_error = TransactionDryRunError::Other(message);
                 dry_run_sender.try_send(Err(dry_run_error)).unwrap();
                 return;
             }
@@ -200,7 +200,7 @@ impl TransactionHandler {
         &self,
         path: &str,
         installation_uuid: &str,
-        sender: Sender<Result<DryRunResults, DryRunError>>,
+        sender: Sender<Result<TransactionDryRun, TransactionDryRunError>>,
     ) -> Result<(), Error> {
         info!("Install Flatpak bundle (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
@@ -210,6 +210,7 @@ impl TransactionHandler {
 
         let bundle = BundleRef::new(&file)?;
         let ref_ = bundle.clone().upcast::<Ref>();
+        dbg!(bundle.runtime_repo_url().unwrap().to_string());
 
         let installation = self
             .installation_manager
@@ -325,20 +326,20 @@ impl TransactionHandler {
         // We need the *real* intallation (and not the dry-run clone) to check what's already
         // installed
         real_installation: &Installation,
-    ) -> Result<DryRunResults, DryRunError> {
-        let dry_run_results = Rc::new(RefCell::new(DryRunResults::default()));
-        dry_run_results.borrow_mut().ref_ = ref_.format_ref().unwrap().to_string();
+    ) -> Result<TransactionDryRun, TransactionDryRunError> {
+        let transaction_dry_run = Rc::new(RefCell::new(TransactionDryRun::default()));
+        transaction_dry_run.borrow_mut().ref_ = ref_.format_ref().unwrap().to_string();
 
         // Check if new remotes are added during the transaction
         transaction.connect_add_new_remote(
-            clone!(@weak dry_run_results => @default-return false, move |_, reason, _, name, url|{
+            clone!(@weak transaction_dry_run => @default-return false, move |_, reason, _, name, url|{
                 if reason == TransactionRemoteReason::RuntimeDeps{
-                    let remote = DryRunRemote{
+                    let remote = TransactionDryRunRemote{
                         suggested_remote_name: name.to_string(),
                         url: url.to_string(),
                     };
 
-                    dry_run_results.borrow_mut().remotes.push(remote);
+                    transaction_dry_run.borrow_mut().remotes.push(remote);
                     return true;
                 }
 
@@ -348,7 +349,7 @@ impl TransactionHandler {
 
         // Ready -> Everything got resolved, so we can check the transaction operations
         transaction.connect_ready(
-            clone!(@weak dry_run_results, @weak ref_, @weak real_installation => @default-return false, move |transaction|{
+            clone!(@weak transaction_dry_run, @weak ref_, @weak real_installation => @default-return false, move |transaction|{
                 for operation in transaction.operations(){
                     let ref_string = ref_.format_ref().unwrap().to_string();
                     let operation_ref_string = operation.get_ref().unwrap().to_string();
@@ -356,9 +357,9 @@ impl TransactionHandler {
 
                     // Check if it's the ref which we want to install
                     if operation_ref_string == ref_string {
-                        dry_run_results.borrow_mut().commit = operation_commit.to_string();
-                        dry_run_results.borrow_mut().download_size = operation.download_size();
-                        dry_run_results.borrow_mut().installed_size = operation.installed_size();
+                        transaction_dry_run.borrow_mut().commit = operation_commit.to_string();
+                        transaction_dry_run.borrow_mut().download_size = operation.download_size();
+                        transaction_dry_run.borrow_mut().installed_size = operation.installed_size();
 
                         // Check if the ref is already installed
                         let installed = real_installation.installed_ref(
@@ -372,7 +373,7 @@ impl TransactionHandler {
                         // Yep -> it's installed
                         if let Ok(installed) = installed {
                             if operation.operation_type() == TransactionOperationType::InstallBundle{
-                                dry_run_results.borrow_mut().has_update_source = false;
+                                transaction_dry_run.borrow_mut().has_update_source = false;
                             }
 
                             let installed_origin = installed.origin().unwrap();
@@ -382,25 +383,25 @@ impl TransactionHandler {
                             // If yes, it the already installed ref needs to get uninstalled first,
                             // before the new one can get installed.
                             if installed_origin != operation_remote {
-                                dry_run_results.borrow_mut().is_replacing_remote = installed_origin.to_string();
+                                transaction_dry_run.borrow_mut().is_replacing_remote = installed_origin.to_string();
                             }
 
                             if installed.commit().unwrap() == operation_commit {
                                 // Commit is the same -> ref is already installed
-                                dry_run_results.borrow_mut().is_already_done = true;
+                                transaction_dry_run.borrow_mut().is_already_installed = true;
                             }else{
                                 // Commit differs -> is update
-                                dry_run_results.borrow_mut().is_update = true;
+                                transaction_dry_run.borrow_mut().is_update = true;
                             }
                         }
                     }else{
-                        let runtime = DryRunRuntime{
+                        let runtime = TransactionDryRunRuntime{
                             ref_: operation_ref_string.to_string(),
                             type_: operation.operation_type().to_str().unwrap().to_string(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
                         };
-                        dry_run_results.borrow_mut().runtimes.push(runtime);
+                        transaction_dry_run.borrow_mut().runtimes.push(runtime);
                     }
                 }
 
@@ -416,21 +417,21 @@ impl TransactionHandler {
                 let regex = regex::Regex::new(r".+ (.+/.+/[^ ]+) .+ (.+/.+/[^ ]+) .+").unwrap();
                 let error = if let Some(runtimes) = regex.captures(err.message()) {
                     let runtime = runtimes[2].parse().unwrap();
-                    DryRunError::RuntimeNotFound(runtime)
+                    TransactionDryRunError::RuntimeNotFound(runtime)
                 } else {
-                    DryRunError::RuntimeNotFound("unknown-runtime".to_string())
+                    TransactionDryRunError::RuntimeNotFound("unknown-runtime".to_string())
                 };
 
                 return Err(error);
             } else if err.kind::<libflatpak::Error>() != Some(libflatpak::Error::Aborted) {
                 error!("Error during transaction dry run: {}", err.message());
                 let message = err.message().to_string();
-                let error = DryRunError::Other(message);
+                let error = TransactionDryRunError::Other(message);
                 return Err(error);
             }
         }
 
-        let results = dry_run_results.borrow().clone();
+        let results = transaction_dry_run.borrow().clone();
         Ok(results)
     }
 

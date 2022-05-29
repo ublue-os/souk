@@ -17,25 +17,28 @@
 use core::fmt::Debug;
 
 use appstream::Component;
-use async_trait::async_trait;
+use gtk::gio::File;
 use gtk::glib;
+use gtk::glib::Bytes;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use libflatpak::prelude::*;
 use libflatpak::Ref;
 use once_cell::unsync::OnceCell;
 
-use crate::app::SkApplication;
 use crate::error::Error;
 use crate::flatpak::sideload::SkSideloadType;
 use crate::flatpak::{SkTransaction, SkWorker};
+use crate::worker::TransactionDryRun;
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
     pub struct SkSideloadable {
-        pub sideloadable: OnceCell<Box<dyn Sideloadable>>,
+        pub file: OnceCell<File>,
+        pub type_: OnceCell<SkSideloadType>,
+        pub transaction_dry_run: OnceCell<TransactionDryRun>,
+        pub installation_uuid: OnceCell<String>,
     }
 
     #[glib::object_subclass]
@@ -53,117 +56,114 @@ glib::wrapper! {
 }
 
 impl SkSideloadable {
-    pub fn new(sideloadable: Box<dyn Sideloadable>) -> Self {
-        let obj: Self = glib::Object::new(&[]).unwrap();
+    pub fn new(
+        file: &File,
+        type_: SkSideloadType,
+        transaction_dry_run: TransactionDryRun,
+        installation_uuid: &str,
+    ) -> Self {
+        let sideloadable: Self = glib::Object::new(&[]).unwrap();
 
-        let imp = obj.imp();
-        imp.sideloadable.set(sideloadable).unwrap();
+        let imp = sideloadable.imp();
+        imp.file.set(file.clone()).unwrap();
+        imp.type_.set(type_).unwrap();
+        imp.transaction_dry_run.set(transaction_dry_run).unwrap();
+        imp.installation_uuid
+            .set(installation_uuid.to_string())
+            .unwrap();
 
-        obj
+        sideloadable
+    }
+
+    pub fn file(&self) -> File {
+        self.imp().file.get().unwrap().clone()
     }
 
     pub fn type_(&self) -> SkSideloadType {
-        self.imp().sideloadable.get().unwrap().type_()
+        *self.imp().type_.get().unwrap()
     }
 
     pub fn commit(&self) -> String {
-        self.imp().sideloadable.get().unwrap().commit()
+        self.transaction_dry_run().commit.clone()
     }
 
     pub fn icon(&self) -> Option<gdk::Paintable> {
-        self.imp().sideloadable.get().unwrap().icon()
+        let icon = self.transaction_dry_run().icon.clone();
+        let bytes = Bytes::from_owned(icon);
+        if let Ok(paintable) = gdk::Texture::from_bytes(&bytes) {
+            Some(paintable.upcast())
+        } else {
+            None
+        }
     }
 
     pub fn appstream_component(&self) -> Option<Component> {
-        self.imp().sideloadable.get().unwrap().appstream_component()
+        serde_json::from_str(&self.transaction_dry_run().appstream_component).ok()
     }
 
     pub fn installation_uuid(&self) -> String {
-        self.imp().sideloadable.get().unwrap().installation_uuid()
+        self.imp().installation_uuid.get().unwrap().clone()
     }
 
     pub fn has_update_source(&self) -> bool {
-        self.imp().sideloadable.get().unwrap().has_update_source()
+        self.transaction_dry_run().has_update_source
     }
 
     pub fn is_replacing_remote(&self) -> String {
-        self.imp().sideloadable.get().unwrap().is_replacing_remote()
+        self.transaction_dry_run().is_replacing_remote.clone()
     }
 
     pub fn contains_package(&self) -> bool {
-        self.imp().sideloadable.get().unwrap().contains_package()
+        true
     }
 
     pub fn contains_repository(&self) -> bool {
-        self.imp().sideloadable.get().unwrap().contains_repository()
+        false // TODO: Bundles may include a repo
     }
 
     pub fn ref_(&self) -> Ref {
-        self.imp().sideloadable.get().unwrap().ref_().upcast()
+        let ref_ = self.transaction_dry_run().ref_.clone();
+        Ref::parse(&ref_).unwrap()
     }
 
     pub fn is_already_done(&self) -> bool {
-        self.imp().sideloadable.get().unwrap().is_already_done()
+        self.transaction_dry_run().is_already_installed
     }
 
     pub fn is_update(&self) -> bool {
-        self.imp().sideloadable.get().unwrap().is_update()
+        self.transaction_dry_run().is_update
     }
 
     pub fn download_size(&self) -> u64 {
-        self.imp().sideloadable.get().unwrap().download_size()
+        self.transaction_dry_run().download_size
     }
 
     pub fn installed_size(&self) -> u64 {
-        self.imp().sideloadable.get().unwrap().installed_size()
+        self.transaction_dry_run().installed_size
     }
 
-    pub async fn sideload(&self) -> Result<SkTransaction, Error> {
-        let worker = SkApplication::default().worker();
-        self.imp()
-            .sideloadable
-            .get()
-            .unwrap()
-            .sideload(&worker)
-            .await
+    pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTransaction>, Error> {
+        let no_update = !self.is_replacing_remote().is_empty();
+
+        let transaction = match self.type_() {
+            SkSideloadType::Bundle => {
+                let transaction = worker
+                    .install_flatpak_bundle(
+                        &self.ref_(),
+                        &self.file(),
+                        &self.installation_uuid(),
+                        no_update,
+                    )
+                    .await?;
+                Some(transaction)
+            }
+            _ => None,
+        };
+
+        Ok(transaction)
     }
-}
 
-#[async_trait(?Send)]
-pub trait Sideloadable {
-    fn type_(&self) -> SkSideloadType;
-
-    fn commit(&self) -> String;
-
-    fn icon(&self) -> Option<gdk::Paintable>;
-
-    fn appstream_component(&self) -> Option<Component>;
-
-    fn installation_uuid(&self) -> String;
-
-    fn has_update_source(&self) -> bool;
-
-    fn is_replacing_remote(&self) -> String;
-
-    fn contains_package(&self) -> bool;
-
-    fn contains_repository(&self) -> bool;
-
-    fn ref_(&self) -> Ref;
-
-    fn is_already_done(&self) -> bool;
-
-    fn is_update(&self) -> bool;
-
-    fn download_size(&self) -> u64;
-
-    fn installed_size(&self) -> u64;
-
-    async fn sideload(&self, worker: &SkWorker) -> Result<SkTransaction, Error>;
-}
-
-impl Debug for dyn Sideloadable {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "Sideloadable: {}", self.ref_().format_ref().unwrap())
+    fn transaction_dry_run(&self) -> &TransactionDryRun {
+        self.imp().transaction_dry_run.get().unwrap()
     }
 }

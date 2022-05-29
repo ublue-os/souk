@@ -29,7 +29,7 @@ use once_cell::sync::{Lazy, OnceCell};
 use crate::app::SkApplication;
 use crate::config;
 use crate::error::Error;
-use crate::flatpak::sideload::SkSideloadable;
+use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::flatpak::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
 use crate::ui::SkInstallationListBox;
@@ -284,7 +284,7 @@ impl SkSideloadWindow {
                 Error::DryRunRuntimeNotFound(runtime) => {
                     self.show_missing_runtime_message(&runtime)
                 }
-                Error::DryRunError(message) => self.show_error_message(&message),
+                Error::TransactionDryRunError(message) => self.show_error_message(&message),
                 Error::UnsupportedSideloadType => {
                     let message = i18n("Unknown or unsupported file format.");
                     self.show_error_message(&message);
@@ -450,27 +450,38 @@ impl SkSideloadWindow {
     }
 
     #[template_callback]
-    fn start_sideload(&self) {
+    fn start_sideload_clicked(&self) {
         let fut = clone!(@weak self as this => async move{
-            this.start_transaction().await;
+            this.start_sideload().await;
         });
         spawn!(fut);
     }
 
-    async fn start_transaction(&self) {
+    async fn start_sideload(&self) {
         let imp = self.imp();
+        let worker = SkApplication::default().worker();
         let sideloadable = self.sideloadable().unwrap();
 
-        imp.sideload_leaflet.set_visible_child_name("progress");
+        match sideloadable.type_() {
+            SkSideloadType::Bundle | SkSideloadType::Ref => {
+                let transaction = match sideloadable.sideload(&worker).await {
+                    Ok(transaction) => transaction.unwrap(),
+                    Err(err) => {
+                        self.show_error_message(&err.to_string());
+                        return;
+                    }
+                };
 
-        // Start sideloading the sideloadable, and track the transaction
-        let transaction = match sideloadable.sideload().await {
-            Ok(transaction) => transaction,
-            Err(err) => {
-                self.show_error_message(&err.to_string());
-                return;
+                self.handle_sideload_transaction(&transaction);
+                imp.transaction.set(transaction).unwrap();
             }
-        };
+            _ => (),
+        }
+    }
+
+    fn handle_sideload_transaction(&self, transaction: &SkTransaction) {
+        let imp = self.imp();
+        imp.sideload_leaflet.set_visible_child_name("progress");
 
         transaction
             .bind_property("progress", &imp.progress_bar.get(), "fraction")
@@ -523,12 +534,10 @@ impl SkSideloadWindow {
                 None
             }),
         );
-
-        imp.transaction.set(transaction).unwrap();
     }
 
     #[template_callback]
-    fn cancel_sideload(&self) {
+    fn cancel_sideload_clicked(&self) {
         let fut = clone!(@weak self as this => async move{
             let imp = this.imp();
             let uuid = imp.transaction.get().unwrap().uuid();
@@ -543,7 +552,7 @@ impl SkSideloadWindow {
     }
 
     #[template_callback]
-    fn launch_app(&self) {
+    fn launch_app_clicked(&self) {
         let fut = clone!(@weak self as this => async move{
             let worker = SkApplication::default().worker();
             let sideloadable = this.sideloadable().unwrap();

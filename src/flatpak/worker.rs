@@ -28,9 +28,9 @@ use libflatpak::Ref;
 use once_cell::sync::Lazy;
 
 use crate::error::Error;
-use crate::flatpak::sideload::{BundleSideloadable, SkSideloadType, SkSideloadable};
+use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::flatpak::{SkInstallation, SkTransaction, SkTransactionModel, SkTransactionType};
-use crate::worker::{DryRunError, Process, WorkerProxy};
+use crate::worker::{Process, TransactionDryRunError, WorkerProxy};
 
 mod imp {
     use super::*;
@@ -238,8 +238,8 @@ impl SkWorker {
         let path = file.path().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
-        let type_ = SkSideloadType::determine_type(&file);
-        let dry_run_results = match type_ {
+        let type_ = SkSideloadType::determine_type(file);
+        let transaction_dry_run = match type_ {
             SkSideloadType::Bundle => {
                 proxy
                     .install_flatpak_bundle_dry_run(&path_string, installation_uuid)
@@ -248,26 +248,21 @@ impl SkWorker {
             _ => return Err(Error::UnsupportedSideloadType),
         };
 
-        debug!("Dry run results: {:#?}", dry_run_results);
-        let dry_run_results = match dry_run_results {
-            Ok(sideloadable) => sideloadable,
+        debug!("Dry run results: {:#?}", transaction_dry_run);
+        let transaction_dry_run = match transaction_dry_run {
+            Ok(transaction_dry_run) => transaction_dry_run,
             Err(err) => match err {
-                DryRunError::RuntimeNotFound(runtime) => {
+                TransactionDryRunError::RuntimeNotFound(runtime) => {
                     return Err(Error::DryRunRuntimeNotFound(runtime))
                 }
-                DryRunError::Other(message) => return Err(Error::DryRunError(message)),
-                DryRunError::ZBus(err) => return Err(Error::DbusError(err)),
+                TransactionDryRunError::Other(message) => {
+                    return Err(Error::TransactionDryRunError(message))
+                }
+                TransactionDryRunError::ZBus(err) => return Err(Error::DbusError(err)),
             },
         };
 
-        let sideloadable = match type_ {
-            SkSideloadType::Bundle => {
-                BundleSideloadable::new(&file, dry_run_results, installation_uuid)
-            }
-            _ => return Err(Error::UnsupportedSideloadType),
-        };
-
-        let sideloadable = SkSideloadable::new(Box::new(sideloadable));
+        let sideloadable = SkSideloadable::new(file, type_, transaction_dry_run, installation_uuid);
         Ok(sideloadable)
     }
 

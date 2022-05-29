@@ -25,7 +25,7 @@ pub enum Error {
     DryRunRuntimeNotFound(String),
 
     #[error("Dry run error")]
-    DryRunError(String),
+    TransactionDryRunError(String),
 
     #[error("Unsupported sideload type")]
     UnsupportedSideloadType,
