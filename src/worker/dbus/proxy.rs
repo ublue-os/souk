@@ -19,7 +19,8 @@ use zbus::Result;
 use crate::config;
 use crate::worker::flatpak::installation::InstallationInfo;
 use crate::worker::flatpak::transaction;
-use crate::worker::flatpak::transaction::{TransactionDryRun, TransactionDryRunError};
+use crate::worker::flatpak::transaction::TransactionDryRun;
+use crate::worker::WorkerError;
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
@@ -44,7 +45,7 @@ trait Worker {
         &self,
         path: &str,
         installation: &str,
-    ) -> std::result::Result<TransactionDryRun, TransactionDryRunError>;
+    ) -> std::result::Result<TransactionDryRun, WorkerError>;
 
     fn cancel_transaction(&self, uuid: &str) -> Result<()>;
 

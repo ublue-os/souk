@@ -25,8 +25,8 @@ use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
 use async_std::task;
 use gio::prelude::*;
-use gio::{Cancellable, IOErrorEnum};
-use glib::{clone, Downgrade, Error};
+use gio::Cancellable;
+use glib::{clone, Downgrade};
 use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 use libflatpak::prelude::*;
@@ -36,10 +36,11 @@ use libflatpak::{
 };
 
 use super::{
-    TransactionCommand, TransactionDryRun, TransactionDryRunError, TransactionDryRunRemote,
-    TransactionDryRunRuntime, TransactionMessage, TransactionProgress,
+    TransactionCommand, TransactionDryRun, TransactionDryRunRemote, TransactionDryRunRuntime,
+    TransactionMessage, TransactionProgress,
 };
 use crate::worker::flatpak::installation::InstallationManager;
+use crate::worker::WorkerError;
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct TransactionHandler {
@@ -78,7 +79,6 @@ impl TransactionHandler {
 
     fn process_command(&self, command: TransactionCommand) {
         debug!("Process command: {:?}", command);
-        let mut dry_run_sender = None;
 
         let (result, transaction_uuid) = match command {
             TransactionCommand::InstallFlatpak(
@@ -96,11 +96,9 @@ impl TransactionHandler {
                 uuid,
             ),
             TransactionCommand::InstallFlatpakBundleDryRun(path, installation_uuid, sender) => {
-                dry_run_sender = Some(sender.clone());
-                (
-                    self.install_flatpak_bundle_dry_run(&path, &installation_uuid, sender),
-                    String::new(), // We don't have an uuid for dry runs
-                )
+                let result = self.install_flatpak_bundle_dry_run(&path, &installation_uuid);
+                sender.try_send(result).unwrap();
+                return;
             }
             TransactionCommand::CancelTransaction(uuid) => {
                 let transactions = self.transactions.lock().unwrap();
@@ -114,29 +112,16 @@ impl TransactionHandler {
         };
 
         if let Err(err) = result {
-            // If it's a dry run transaction, send the error via channel
-            if let Some(dry_run_sender) = dry_run_sender {
-                let msg = err.message().to_string();
-                let dry_run_error = TransactionDryRunError::Other(msg);
-                dry_run_sender.try_send(Err(dry_run_error)).unwrap();
-                return;
-            }
-
-            // No uuid -> dry run transaction -> we don't care about errors
-            if transaction_uuid.is_empty() {
-                error!("Error during transaction dry run: {}", err.message());
-                return;
-            }
-
-            if err.kind::<IOErrorEnum>() == Some(IOErrorEnum::Cancelled) {
+            // Transaction got cancelled (probably by user)
+            if err == WorkerError::GLibCancelled {
                 let progress = TransactionProgress::new(transaction_uuid, None, None, None);
                 let progress = progress.cancelled();
+
                 self.sender
                     .try_send(TransactionMessage::Progress(progress))
                     .unwrap();
             } else {
-                let error =
-                    super::TransactionError::new(transaction_uuid, err.message().to_string());
+                let error = super::TransactionError::new(transaction_uuid, err.message());
                 self.sender
                     .try_send(TransactionMessage::Error(error))
                     .unwrap();
@@ -151,10 +136,10 @@ impl TransactionHandler {
         remote: &str,
         installation_uuid: &str,
         no_update: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<(), WorkerError> {
         info!("Install Flatpak: {}", ref_);
 
-        let transaction = self.new_transaction(installation_uuid, false);
+        let transaction = self.new_transaction(installation_uuid, false)?;
         transaction.add_install(remote, ref_, &[])?;
 
         // There are situations where we can't directly upgrade an already installed
@@ -176,11 +161,11 @@ impl TransactionHandler {
         path: &str,
         installation_uuid: &str,
         no_update: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<(), WorkerError> {
         info!("Install Flatpak bundle: {}", path);
         let file = gio::File::for_parse_name(path);
 
-        let transaction = self.new_transaction(installation_uuid, false);
+        let transaction = self.new_transaction(installation_uuid, false)?;
         transaction.add_install_bundle(&file, None)?;
 
         // There are situations where we can't directly upgrade an already installed
@@ -202,12 +187,11 @@ impl TransactionHandler {
         &self,
         path: &str,
         installation_uuid: &str,
-        sender: Sender<Result<TransactionDryRun, TransactionDryRunError>>,
-    ) -> Result<(), Error> {
+    ) -> Result<TransactionDryRun, WorkerError> {
         info!("Install Flatpak bundle (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
 
-        let transaction = self.new_transaction(installation_uuid, true);
+        let transaction = self.new_transaction(installation_uuid, true)?;
         transaction.add_install_bundle(&file, None)?;
 
         let bundle = BundleRef::new(&file)?;
@@ -242,19 +226,17 @@ impl TransactionHandler {
                 results.appstream_component = Some(json).into();
             }
 
-            sender.try_send(Ok(results)).unwrap()
-        } else {
-            sender.try_send(results).unwrap()
+            return Ok(results);
         }
 
-        Ok(())
+        results
     }
 
     fn run_transaction(
         &self,
         transaction_uuid: String,
         transaction: Transaction,
-    ) -> Result<(), Error> {
+    ) -> Result<(), WorkerError> {
         transaction.connect_add_new_remote(move |_, reason, _, _, _| {
             reason == TransactionRemoteReason::RuntimeDeps
         });
@@ -333,7 +315,7 @@ impl TransactionHandler {
         // We need the *real* intallation (and not the dry-run clone) to check what's already
         // installed
         real_installation: &Installation,
-    ) -> Result<TransactionDryRun, TransactionDryRunError> {
+    ) -> Result<TransactionDryRun, WorkerError> {
         let transaction_dry_run = Rc::new(RefCell::new(TransactionDryRun::default()));
         transaction_dry_run.borrow_mut().ref_ = ref_.format_ref().unwrap().to_string();
 
@@ -425,17 +407,15 @@ impl TransactionHandler {
                 let regex = regex::Regex::new(r".+ (.+/.+/[^ ]+) .+ (.+/.+/[^ ]+) .+").unwrap();
                 let error = if let Some(runtimes) = regex.captures(err.message()) {
                     let runtime = runtimes[2].parse().unwrap();
-                    TransactionDryRunError::RuntimeNotFound(runtime)
+                    WorkerError::DryRunRuntimeNotFound(runtime)
                 } else {
-                    TransactionDryRunError::RuntimeNotFound("unknown-runtime".to_string())
+                    WorkerError::DryRunRuntimeNotFound("unknown-runtime".to_string())
                 };
 
                 return Err(error);
             } else if err.kind::<libflatpak::Error>() != Some(libflatpak::Error::Aborted) {
                 error!("Error during transaction dry run: {}", err.message());
-                let message = err.message().to_string();
-                let error = TransactionDryRunError::Other(message);
-                return Err(error);
+                return Err(err.into());
             }
         }
 
@@ -443,7 +423,11 @@ impl TransactionHandler {
         Ok(results)
     }
 
-    fn new_transaction(&self, installation_uuid: &str, dry_run: bool) -> Transaction {
+    fn new_transaction(
+        &self,
+        installation_uuid: &str,
+        dry_run: bool,
+    ) -> Result<Transaction, WorkerError> {
         let installation = self
             .installation_manager
             .flatpak_installation_by_uuid(installation_uuid);
@@ -453,14 +437,14 @@ impl TransactionHandler {
         // doesn't touch the specified installation, but has nevertheless the same local
         // runtimes available.
         if dry_run {
-            let remotes = installation.list_remotes(Cancellable::NONE).unwrap();
+            let remotes = installation.list_remotes(Cancellable::NONE)?;
 
             // Remove previous dry run installation
             std::fs::remove_dir_all("/tmp/repo").expect("Unable to remove dry run installation");
 
             // New temporary dry run installation
             let dry_run_path = gio::File::for_parse_name("/tmp");
-            let dry_run = Installation::for_path(&dry_run_path, true, Cancellable::NONE).unwrap();
+            let dry_run = Installation::for_path(&dry_run_path, true, Cancellable::NONE)?;
 
             // Add the same remotes to the dry run installation
             for remote in remotes {
@@ -475,33 +459,34 @@ impl TransactionHandler {
                 // For whatever reason we have to create a new remote object
                 let remote_to_add = Remote::new(&remote.name().unwrap());
                 remote_to_add.set_url(&remote.url().unwrap());
-                dry_run
-                    .add_remote(&remote_to_add, true, Cancellable::NONE)
-                    .unwrap();
+                dry_run.add_remote(&remote_to_add, true, Cancellable::NONE)?;
             }
 
             // Create new transaction, and add the "real" installation as dependency source
-            let t = Transaction::for_installation(&dry_run, Cancellable::NONE).unwrap();
+            let t = Transaction::for_installation(&dry_run, Cancellable::NONE)?;
             t.add_dependency_source(&installation);
 
-            t
+            Ok(t)
         } else {
-            Transaction::for_installation(&installation, Cancellable::NONE).unwrap()
+            Ok(Transaction::for_installation(
+                &installation,
+                Cancellable::NONE,
+            )?)
         }
     }
 
-    fn uninstall_ref(&self, ref_: &str, installation_uuid: &str) -> Result<(), Error> {
+    fn uninstall_ref(&self, ref_: &str, installation_uuid: &str) -> Result<(), WorkerError> {
         debug!("Uninstall: {}", ref_);
 
-        let transaction = self.new_transaction(installation_uuid, false);
+        let transaction = self.new_transaction(installation_uuid, false)?;
         transaction.add_uninstall(ref_)?;
         transaction.run(Cancellable::NONE)?;
         Ok(())
     }
 
-    fn retrieve_flatpak_remote(&self, repo_url: &str) -> Result<Remote, Error> {
-        let mut response = isahc::get(repo_url).unwrap();
-        let bytes = glib::Bytes::from_owned(response.bytes().unwrap());
+    fn retrieve_flatpak_remote(&self, repo_url: &str) -> Result<Remote, WorkerError> {
+        let mut response = isahc::get(repo_url)?;
+        let bytes = glib::Bytes::from_owned(response.bytes()?);
 
         Ok(Remote::from_file("remote", &bytes)?)
     }

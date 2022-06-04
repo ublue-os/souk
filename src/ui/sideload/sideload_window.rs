@@ -33,6 +33,7 @@ use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::flatpak::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
 use crate::ui::SkInstallationListBox;
+use crate::worker::WorkerError;
 
 mod imp {
     use super::*;
@@ -280,20 +281,28 @@ impl SkSideloadWindow {
                 self.update_widgets();
                 imp.sideload_stack.set_visible_child_name("leaflet");
             }
-            Err(err) => match err {
-                Error::DryRunRuntimeNotFound(runtime) => {
-                    self.show_missing_runtime_message(&runtime)
+            Err(err) => {
+                if let Error::Worker(worker_error) = &err {
+                    match worker_error {
+                        WorkerError::DryRunRuntimeNotFound(runtime) => {
+                            self.show_missing_runtime_message(runtime)
+                        }
+                        _ => self.show_error_message(&worker_error.message()),
+                    }
                 }
-                Error::TransactionDryRunError(message) => self.show_error_message(&message),
-                Error::UnsupportedSideloadType => {
-                    let message = i18n("Unknown or unsupported file format.");
-                    self.show_error_message(&message);
+
+                match err {
+                    Error::Worker(_) => (),
+                    Error::UnsupportedSideloadType => {
+                        let message = i18n("Unknown or unsupported file format.");
+                        self.show_error_message(&message);
+                    }
+                    Error::ZBus(_) => {
+                        let message = i18n("Unable to communicate with worker process.");
+                        self.show_error_message(&message);
+                    }
                 }
-                Error::DBusError(_) => {
-                    let message = i18n("Unable to communicate with worker process.");
-                    self.show_error_message(&message);
-                }
-            },
+            }
         }
     }
 

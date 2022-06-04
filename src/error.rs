@@ -16,17 +16,16 @@
 
 use thiserror::Error;
 
+use crate::worker::WorkerError;
+
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("DBus error")]
-    DBusError(#[from] zbus::Error),
-
-    #[error("Required runtime not found")]
-    DryRunRuntimeNotFound(String),
-
-    #[error("Dry run error")]
-    TransactionDryRunError(String),
+    #[error("Souk worker error")]
+    Worker(#[from] WorkerError),
 
     #[error("Unsupported sideload type")]
     UnsupportedSideloadType,
+
+    #[error("ZBus error")]
+    ZBus(#[from] zbus::Error),
 }

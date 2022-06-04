@@ -30,7 +30,7 @@ use once_cell::sync::Lazy;
 use crate::error::Error;
 use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::flatpak::{SkInstallation, SkTransaction, SkTransactionModel, SkTransactionType};
-use crate::worker::{Process, TransactionDryRunError, WorkerProxy};
+use crate::worker::{Process, WorkerProxy};
 
 mod imp {
     use super::*;
@@ -243,24 +243,12 @@ impl SkWorker {
             SkSideloadType::Bundle => {
                 proxy
                     .install_flatpak_bundle_dry_run(&path_string, installation_uuid)
-                    .await
+                    .await?
             }
             _ => return Err(Error::UnsupportedSideloadType),
         };
 
         debug!("Dry run results: {:#?}", transaction_dry_run);
-        let transaction_dry_run = match transaction_dry_run {
-            Ok(transaction_dry_run) => transaction_dry_run,
-            Err(err) => match err {
-                TransactionDryRunError::RuntimeNotFound(runtime) => {
-                    return Err(Error::DryRunRuntimeNotFound(runtime))
-                }
-                TransactionDryRunError::Other(message) => {
-                    return Err(Error::TransactionDryRunError(message))
-                }
-                TransactionDryRunError::ZBus(err) => return Err(Error::DBusError(err)),
-            },
-        };
 
         let sideloadable =
             SkSideloadable::new_package(file, type_, transaction_dry_run, installation_uuid);

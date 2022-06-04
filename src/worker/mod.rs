@@ -15,14 +15,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod dbus;
+mod error;
 mod flatpak;
 mod process;
 
 pub use dbus::WorkerProxy;
+pub use error::WorkerError;
 pub use flatpak::installation::{InstallationInfo, InstallationManager};
 pub use flatpak::transaction::{
-    TransactionDryRun, TransactionDryRunError, TransactionError, TransactionHandler,
-    TransactionProgress,
+    TransactionDryRun, TransactionError, TransactionHandler, TransactionProgress,
 };
 pub use process::Process;
 

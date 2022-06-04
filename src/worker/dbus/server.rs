@@ -22,9 +22,10 @@ use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
 use crate::config;
 use crate::worker::flatpak::installation::{InstallationInfo, InstallationManager};
 use crate::worker::flatpak::transaction::{
-    TransactionCommand, TransactionDryRun, TransactionDryRunError, TransactionError,
-    TransactionMessage, TransactionProgress,
+    TransactionCommand, TransactionDryRun, TransactionError, TransactionMessage,
+    TransactionProgress,
 };
+use crate::worker::WorkerError;
 
 #[derive(Debug)]
 struct Worker {
@@ -82,7 +83,7 @@ impl Worker {
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> Result<TransactionDryRun, TransactionDryRunError> {
+    ) -> Result<TransactionDryRun, WorkerError> {
         let (transaction_sender, mut receiver) = unbounded();
 
         self.transaction_sender
@@ -156,13 +157,17 @@ pub async fn start(
     while let Some(message) = receiver.next().await {
         match message {
             TransactionMessage::Progress(progress) => {
+                // Emit `transaction_progress` signal via dbus
                 Worker::transaction_progress(&signal_ctxt, progress)
                     .await
                     .unwrap()
             }
-            TransactionMessage::Error(error) => Worker::transaction_error(&signal_ctxt, error)
-                .await
-                .unwrap(),
+            TransactionMessage::Error(error) => {
+                // Emit `transaction_error` signal via dbus
+                Worker::transaction_error(&signal_ctxt, error)
+                    .await
+                    .unwrap()
+            }
         }
     }
     debug!("Stopped.");

@@ -19,16 +19,6 @@ use libflatpak::prelude::*;
 use libflatpak::Remote;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
-use zbus::DBusError;
-
-#[derive(DBusError, Debug)]
-pub enum TransactionDryRunError {
-    #[dbus_error(zbus_error)]
-    ZBus(zbus::Error),
-
-    RuntimeNotFound(String),
-    Other(String),
-}
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone)]
 #[derivative(Debug)]
