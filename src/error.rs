@@ -19,7 +19,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("DBus error")]
-    DbusError(#[from] zbus::Error),
+    DBusError(#[from] zbus::Error),
 
     #[error("Required runtime not found")]
     DryRunRuntimeNotFound(String),

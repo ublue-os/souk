@@ -28,6 +28,7 @@ use gio::prelude::*;
 use gio::{Cancellable, IOErrorEnum};
 use glib::{clone, Downgrade, Error};
 use gtk::{gio, glib};
+use isahc::ReadResponseExt;
 use libflatpak::prelude::*;
 use libflatpak::{
     BundleRef, Installation, Ref, Remote, Transaction, TransactionOperation,
@@ -113,9 +114,10 @@ impl TransactionHandler {
         };
 
         if let Err(err) = result {
+            // If it's a dry run transaction, send the error via channel
             if let Some(dry_run_sender) = dry_run_sender {
-                let message = err.message().to_string();
-                let dry_run_error = TransactionDryRunError::Other(message);
+                let msg = err.message().to_string();
+                let dry_run_error = TransactionDryRunError::Other(msg);
                 dry_run_sender.try_send(Err(dry_run_error)).unwrap();
                 return;
             }
@@ -210,7 +212,6 @@ impl TransactionHandler {
 
         let bundle = BundleRef::new(&file)?;
         let ref_ = bundle.clone().upcast::<Ref>();
-        dbg!(bundle.runtime_repo_url().unwrap().to_string());
 
         let installation = self
             .installation_manager
@@ -220,6 +221,12 @@ impl TransactionHandler {
         if let Ok(mut results) = results {
             // Installed bundle size
             results.installed_size = bundle.installed_size();
+
+            // Optional remote / repository
+            if let Some(remote) = results.remote.as_mut() {
+                let f_remote = self.retrieve_flatpak_remote(&bundle.runtime_repo_url().unwrap())?;
+                remote.set_flatpak_remote(f_remote);
+            }
 
             // Icon
             if let Some(bytes) = bundle.icon(128) {
@@ -232,7 +239,7 @@ impl TransactionHandler {
                 let component = &collection.components[0];
 
                 let json = serde_json::to_string(component).unwrap();
-                results.appstream_component = json;
+                results.appstream_component = Some(json).into();
             }
 
             sender.try_send(Ok(results)).unwrap()
@@ -336,10 +343,11 @@ impl TransactionHandler {
                 if reason == TransactionRemoteReason::RuntimeDeps{
                     let remote = TransactionDryRunRemote{
                         suggested_remote_name: name.to_string(),
-                        url: url.to_string(),
+                        repository_url: url.to_string(),
+                        ..Default::default()
                     };
 
-                    transaction_dry_run.borrow_mut().remotes.push(remote);
+                    transaction_dry_run.borrow_mut().remote = Some(remote).into();
                     return true;
                 }
 
@@ -383,7 +391,7 @@ impl TransactionHandler {
                             // If yes, it the already installed ref needs to get uninstalled first,
                             // before the new one can get installed.
                             if installed_origin != operation_remote {
-                                transaction_dry_run.borrow_mut().is_replacing_remote = installed_origin.to_string();
+                                transaction_dry_run.borrow_mut().is_replacing_remote = Some(installed_origin.to_string()).into();
                             }
 
                             if installed.commit().unwrap() == operation_commit {
@@ -489,5 +497,12 @@ impl TransactionHandler {
         transaction.add_uninstall(ref_)?;
         transaction.run(Cancellable::NONE)?;
         Ok(())
+    }
+
+    fn retrieve_flatpak_remote(&self, repo_url: &str) -> Result<Remote, Error> {
+        let mut response = isahc::get(repo_url).unwrap();
+        let bytes = glib::Bytes::from_owned(response.bytes().unwrap());
+
+        Ok(Remote::from_file("remote", &bytes)?)
     }
 }

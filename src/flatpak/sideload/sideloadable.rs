@@ -16,15 +16,13 @@
 
 use core::fmt::Debug;
 
-use appstream::Component;
 use gtk::gio::File;
 use gtk::glib;
-use gtk::glib::Bytes;
-use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use libflatpak::Ref;
+use libflatpak::Remote;
 use once_cell::unsync::OnceCell;
 
+use super::SideloadPackage;
 use crate::error::Error;
 use crate::flatpak::sideload::SkSideloadType;
 use crate::flatpak::{SkTransaction, SkWorker};
@@ -37,7 +35,10 @@ mod imp {
     pub struct SkSideloadable {
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
-        pub transaction_dry_run: OnceCell<TransactionDryRun>,
+
+        pub package: OnceCell<Option<SideloadPackage>>,
+        pub remote: OnceCell<Option<Remote>>,
+
         pub installation_uuid: OnceCell<String>,
     }
 
@@ -56,7 +57,8 @@ glib::wrapper! {
 }
 
 impl SkSideloadable {
-    pub fn new(
+    /// Can be a *.flatpakref or *.flatpak file
+    pub fn new_package(
         file: &File,
         type_: SkSideloadType,
         transaction_dry_run: TransactionDryRun,
@@ -67,7 +69,34 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(type_).unwrap();
-        imp.transaction_dry_run.set(transaction_dry_run).unwrap();
+        imp.installation_uuid
+            .set(installation_uuid.to_string())
+            .unwrap();
+
+        // remote / repository
+        let remote = transaction_dry_run
+            .remote
+            .as_ref()
+            .map(|r| r.flatpak_remote());
+        imp.remote.set(remote).unwrap();
+
+        // package
+        let package = SideloadPackage {
+            transaction_dry_run,
+        };
+        imp.package.set(Some(package)).unwrap();
+
+        sideloadable
+    }
+
+    // *.flatpak repo
+    pub fn new_repo(file: &File, remote: &Remote, installation_uuid: &str) -> Self {
+        let sideloadable: Self = glib::Object::new(&[]).unwrap();
+
+        let imp = sideloadable.imp();
+        imp.file.set(file.clone()).unwrap();
+        imp.type_.set(SkSideloadType::Repo).unwrap();
+        imp.remote.set(Some(remote.clone())).unwrap();
         imp.installation_uuid
             .set(installation_uuid.to_string())
             .unwrap();
@@ -83,87 +112,52 @@ impl SkSideloadable {
         *self.imp().type_.get().unwrap()
     }
 
-    pub fn commit(&self) -> String {
-        self.transaction_dry_run().commit.clone()
-    }
-
-    pub fn icon(&self) -> Option<gdk::Paintable> {
-        let icon = self.transaction_dry_run().icon.clone();
-        let bytes = Bytes::from_owned(icon);
-        if let Ok(paintable) = gdk::Texture::from_bytes(&bytes) {
-            Some(paintable.upcast())
-        } else {
-            None
-        }
-    }
-
-    pub fn appstream_component(&self) -> Option<Component> {
-        serde_json::from_str(&self.transaction_dry_run().appstream_component).ok()
-    }
-
     pub fn installation_uuid(&self) -> String {
         self.imp().installation_uuid.get().unwrap().clone()
     }
 
-    pub fn has_update_source(&self) -> bool {
-        self.transaction_dry_run().has_update_source
+    pub fn package(&self) -> Option<SideloadPackage> {
+        self.imp().package.get().unwrap().to_owned()
     }
 
-    pub fn is_replacing_remote(&self) -> String {
-        self.transaction_dry_run().is_replacing_remote.clone()
+    pub fn repository(&self) -> Option<Remote> {
+        self.imp().remote.get().unwrap().to_owned()
     }
 
-    pub fn contains_package(&self) -> bool {
-        true
-    }
+    pub fn no_changes(&self) -> bool {
+        if let Some(package) = self.package() {
+            return package.is_already_installed();
+        }
 
-    pub fn contains_repository(&self) -> bool {
-        false // TODO: Bundles may include a repo
-    }
+        // TODO: Check if remote is already added as well
 
-    pub fn ref_(&self) -> Ref {
-        let ref_ = self.transaction_dry_run().ref_.clone();
-        Ref::parse(&ref_).unwrap()
-    }
-
-    pub fn is_already_done(&self) -> bool {
-        self.transaction_dry_run().is_already_installed
-    }
-
-    pub fn is_update(&self) -> bool {
-        self.transaction_dry_run().is_update
-    }
-
-    pub fn download_size(&self) -> u64 {
-        self.transaction_dry_run().download_size
-    }
-
-    pub fn installed_size(&self) -> u64 {
-        self.transaction_dry_run().installed_size
+        false
     }
 
     pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTransaction>, Error> {
-        let no_update = !self.is_replacing_remote().is_empty();
+        if let Some(package) = self.package() {
+            let no_update = package.is_replacing_remote().is_some();
 
-        let transaction = match self.type_() {
-            SkSideloadType::Bundle => {
-                let transaction = worker
-                    .install_flatpak_bundle(
-                        &self.ref_(),
-                        &self.file(),
-                        &self.installation_uuid(),
-                        no_update,
-                    )
-                    .await?;
-                Some(transaction)
-            }
-            _ => None,
-        };
+            let transaction = match self.type_() {
+                SkSideloadType::Bundle => {
+                    let transaction = worker
+                        .install_flatpak_bundle(
+                            &package.ref_(),
+                            &self.file(),
+                            &self.installation_uuid(),
+                            no_update,
+                        )
+                        .await?;
+                    Some(transaction)
+                }
+                _ => None,
+            };
 
-        Ok(transaction)
-    }
+            return Ok(transaction);
+        }
 
-    fn transaction_dry_run(&self) -> &TransactionDryRun {
-        self.imp().transaction_dry_run.get().unwrap()
+        // TODO: Handle sideloading remotes
+
+        Ok(None)
     }
 }

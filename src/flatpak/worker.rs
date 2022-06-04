@@ -211,7 +211,7 @@ impl SkWorker {
         let type_ = SkTransactionType::Install;
         let transaction = SkTransaction::new(
             &transaction_uuid,
-            &ref_,
+            ref_,
             &type_,
             filename_string,
             installation,
@@ -258,11 +258,12 @@ impl SkWorker {
                 TransactionDryRunError::Other(message) => {
                     return Err(Error::TransactionDryRunError(message))
                 }
-                TransactionDryRunError::ZBus(err) => return Err(Error::DbusError(err)),
+                TransactionDryRunError::ZBus(err) => return Err(Error::DBusError(err)),
             },
         };
 
-        let sideloadable = SkSideloadable::new(file, type_, transaction_dry_run, installation_uuid);
+        let sideloadable =
+            SkSideloadable::new_package(file, type_, transaction_dry_run, installation_uuid);
         Ok(sideloadable)
     }
 

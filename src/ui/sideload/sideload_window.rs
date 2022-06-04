@@ -289,7 +289,7 @@ impl SkSideloadWindow {
                     let message = i18n("Unknown or unsupported file format.");
                     self.show_error_message(&message);
                 }
-                Error::DbusError(_) => {
+                Error::DBusError(_) => {
                     let message = i18n("Unable to communicate with worker process.");
                     self.show_error_message(&message);
                 }
@@ -324,9 +324,9 @@ impl SkSideloadWindow {
         let update_error_title = i18n("Update Failed");
         let repo_error_title = i18n("Adding Source Failed");
 
-        // Setup window titles and headerbar buttons
-        if sideloadable.contains_package() {
-            if sideloadable.is_update() {
+        // Package
+        if let Some(package) = sideloadable.package() {
+            if package.is_update() {
                 imp.start_button.set_label(&update_start_button);
                 imp.details_title.set_title(&update_details_title);
                 imp.progress_title.set_title(&update_progress_title);
@@ -340,25 +340,73 @@ impl SkSideloadWindow {
                 imp.error_title.set_title(&app_error_title);
             }
             imp.already_done_title.set_title(&app_already_done_title);
-        }
 
-        if sideloadable.contains_repository() && !sideloadable.contains_package() {
-            imp.start_button.set_label(&repo_start_button);
-            imp.details_title.set_title(&repo_details_title);
-            imp.progress_title.set_title(&repo_progress_title);
-            imp.done_title.set_title(&repo_done_title);
-            imp.already_done_title.set_title(&repo_already_done_title);
-            imp.error_title.set_title(&repo_error_title);
-        }
+            // Only display launch button if it's an app
+            if package.ref_().kind() == RefKind::App {
+                imp.launch_button.set_visible(true);
+            }
 
-        // Setup general package appstream metadata
-        if let Some(component) = sideloadable.appstream_component() {
-            let name = component.name.get_default().unwrap();
-            imp.package_name_label.set_text(name);
+            // Show warn message for packages without update source
+            let no_update_source = !package.has_update_source();
+            imp.no_update_source_row.set_visible(no_update_source);
 
-            if let Some(paintable) = sideloadable.icon() {
-                imp.package_icon_image.set_paintable(Some(&paintable));
+            // Show warn message when package is already installed, but from a different
+            // remote
+            if let Some(remote) = package.is_replacing_remote().as_ref() {
+                imp.replacing_remote_row.set_visible(true);
+                let msg = i18n_f("This package is already installed from \"{}\", during the installation the old version will be uninstalled first", &[remote]);
+                imp.replacing_remote_row.set_subtitle(&msg);
+            }
+
+            // Setup size information
+            let size = glib::format_size(package.download_size());
+            let download_string = i18n_f("Up to {} download", &[&size]);
+            imp.package_download_size_row.set_title(&download_string);
+
+            let size = glib::format_size(package.installed_size());
+            let installed_string = i18n_f("Up to {} installed size", &[&size]);
+            imp.package_installed_size_row.set_title(&installed_string);
+
+            // Setup general package appstream metadata
+            if let Some(component) = package.appstream() {
+                let name = component.name.get_default().unwrap();
+                imp.package_name_label.set_text(name);
+
+                if let Some(paintable) = package.icon() {
+                    imp.package_icon_image.set_paintable(Some(&paintable));
+                } else {
+                    let it = gtk::IconTheme::new();
+                    let paintable = it.lookup_icon(
+                        "dialog-question",
+                        &[],
+                        128,
+                        self.scale_factor(),
+                        gtk::TextDirection::None,
+                        gtk::IconLookupFlags::FORCE_SYMBOLIC,
+                    );
+                    imp.package_icon_image.set_paintable(Some(&paintable));
+                }
+
+                let developer = if let Some(developer_name) = component.developer_name {
+                    developer_name.get_default().unwrap().clone()
+                } else {
+                    i18n("Unknown Developer")
+                };
+                imp.package_developer_label.set_text(&developer);
+
+                let mut releases = component.releases;
+                releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
+                let version = if let Some(release) = releases.get(0) {
+                    i18n_f("Version {}", &[&release.version.clone()])
+                } else {
+                    i18n("Unknown Version")
+                };
+                imp.package_version_label.set_text(&version);
             } else {
+                // Fallback if there's no appstream metadata
+                let name = package.ref_().name().unwrap();
+                imp.package_name_label.set_text(&name);
+
                 let it = gtk::IconTheme::new();
                 let paintable = it.lookup_icon(
                     "dialog-question",
@@ -369,77 +417,34 @@ impl SkSideloadWindow {
                     gtk::IconLookupFlags::FORCE_SYMBOLIC,
                 );
                 imp.package_icon_image.set_paintable(Some(&paintable));
-            }
 
-            let developer = if let Some(developer_name) = component.developer_name {
-                developer_name.get_default().unwrap().clone()
-            } else {
-                i18n("Unknown Developer")
-            };
-            imp.package_developer_label.set_text(&developer);
+                let developer = i18n("Unknown Developer");
+                imp.package_developer_label.set_text(&developer);
 
-            let mut releases = component.releases;
-            releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
-            let version = if let Some(release) = releases.get(0) {
-                i18n_f("Version {}", &[&release.version.clone()])
-            } else {
-                i18n("Unknown Version")
-            };
-            imp.package_version_label.set_text(&version);
-        } else {
-            // Fallback if there's no appstream metadata
-            let name = sideloadable.ref_().name().unwrap();
-            imp.package_name_label.set_text(&name);
-
-            let it = gtk::IconTheme::new();
-            let paintable = it.lookup_icon(
-                "dialog-question",
-                &[],
-                128,
-                self.scale_factor(),
-                gtk::TextDirection::None,
-                gtk::IconLookupFlags::FORCE_SYMBOLIC,
-            );
-            imp.package_icon_image.set_paintable(Some(&paintable));
-
-            let developer = i18n("Unknown Developer");
-            imp.package_developer_label.set_text(&developer);
-
-            let version = i18n("Unknown Version");
-            imp.package_version_label.set_text(&version);
-        }
-
-        // Setup details page
-        if sideloadable.contains_package() {
-            let size = glib::format_size(sideloadable.download_size());
-            let download_string = i18n_f("Up to {} download", &[&size]);
-            imp.package_download_size_row.set_title(&download_string);
-
-            let size = glib::format_size(sideloadable.installed_size());
-            let installed_string = i18n_f("Up to {} installed size", &[&size]);
-            imp.package_installed_size_row.set_title(&installed_string);
-
-            let no_update_source = !sideloadable.has_update_source();
-            imp.no_update_source_row.set_visible(no_update_source);
-
-            let replacing_remote = !sideloadable.is_replacing_remote().is_empty();
-            imp.replacing_remote_row.set_visible(replacing_remote);
-            if replacing_remote {
-                let msg = i18n_f("This package is already installed from \"{}\", during the installation the old version will be uninstalled first", &[&sideloadable.is_replacing_remote()]);
-                imp.replacing_remote_row.set_subtitle(&msg);
+                let version = i18n("Unknown Version");
+                imp.package_version_label.set_text(&version);
             }
         }
 
-        if sideloadable.is_already_done() {
+        // Repository
+        if let Some(repository) = sideloadable.repository() {
+            // bla
+        }
+
+        // *Only* repository
+        if sideloadable.package().is_none() && sideloadable.repository().is_none() {
+            imp.start_button.set_label(&repo_start_button);
+            imp.details_title.set_title(&repo_details_title);
+            imp.progress_title.set_title(&repo_progress_title);
+            imp.done_title.set_title(&repo_done_title);
+            imp.already_done_title.set_title(&repo_already_done_title);
+            imp.error_title.set_title(&repo_error_title);
+        }
+
+        if sideloadable.no_changes() {
             imp.sideload_leaflet.set_visible_child_name("already-done");
-            return;
         } else {
             imp.sideload_leaflet.set_visible_child_name("details");
-        }
-
-        // Hide launch button if sideload content is not an app
-        if sideloadable.ref_().kind() != RefKind::App {
-            imp.launch_button.set_visible(false);
         }
     }
 
@@ -556,9 +561,10 @@ impl SkSideloadWindow {
         let fut = clone!(@weak self as this => async move{
             let worker = SkApplication::default().worker();
             let sideloadable = this.sideloadable().unwrap();
+            let package = sideloadable.package().unwrap();
             let installation_uuid = sideloadable.installation_uuid();
 
-            let _ = worker.launch_app(&installation_uuid, &sideloadable.ref_(), &sideloadable.commit()).await;
+            let _ = worker.launch_app(&installation_uuid, &package.ref_(), &package.commit()).await;
             this.close();
         });
         spawn!(fut);
