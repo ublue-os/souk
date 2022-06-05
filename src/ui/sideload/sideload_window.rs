@@ -26,6 +26,7 @@ use libflatpak::prelude::*;
 use libflatpak::RefKind;
 use once_cell::sync::{Lazy, OnceCell};
 
+use super::SkRemoteRow;
 use crate::app::SkApplication;
 use crate::config;
 use crate::error::Error;
@@ -68,6 +69,8 @@ mod imp {
         pub no_update_source_row: TemplateChild<adw::ActionRow>,
         #[template_child]
         pub replacing_remote_row: TemplateChild<adw::ActionRow>,
+        #[template_child]
+        pub remote_group: TemplateChild<adw::PreferencesGroup>,
 
         #[template_child]
         pub installation_listbox: TemplateChild<SkInstallationListBox>,
@@ -371,10 +374,14 @@ impl SkSideloadWindow {
             let size = glib::format_size(package.download_size());
             let download_string = i18n_f("Up to {} download", &[&size]);
             imp.package_download_size_row.set_title(&download_string);
+            imp.package_download_size_row
+                .set_subtitle(&"Requires up to 0 MB of shared system packages");
 
             let size = glib::format_size(package.installed_size());
             let installed_string = i18n_f("Up to {} installed size", &[&size]);
             imp.package_installed_size_row.set_title(&installed_string);
+            imp.package_installed_size_row
+                .set_subtitle(&"Requires up to 0 MB of shared system packages");
 
             // Setup general package appstream metadata
             if let Some(component) = package.appstream() {
@@ -435,19 +442,24 @@ impl SkSideloadWindow {
             }
         }
 
-        // Repository
-        if let Some(repository) = sideloadable.repository() {
-            // bla
-        }
+        // Remote / Repository
+        if let Some(remote) = sideloadable.remote() {
+            let msg = if sideloadable.package().is_none() {
+                imp.start_button.set_label(&repo_start_button);
+                imp.details_title.set_title(&repo_details_title);
+                imp.progress_title.set_title(&repo_progress_title);
+                imp.done_title.set_title(&repo_done_title);
+                imp.already_done_title.set_title(&repo_already_done_title);
+                imp.error_title.set_title(&repo_error_title);
 
-        // *Only* repository
-        if sideloadable.package().is_none() && sideloadable.repository().is_none() {
-            imp.start_button.set_label(&repo_start_button);
-            imp.details_title.set_title(&repo_details_title);
-            imp.progress_title.set_title(&repo_progress_title);
-            imp.done_title.set_title(&repo_done_title);
-            imp.already_done_title.set_title(&repo_already_done_title);
-            imp.error_title.set_title(&repo_error_title);
+                i18n("New applications can be obtained from this source. Only proceed if you trust this source.")
+            } else {
+                i18n("This package adds a new software source. New applications can be obtained from it. Only proceed with the installation if you trust this source.")
+            };
+            imp.remote_group.set_description(Some(&msg));
+
+            let remote_row = SkRemoteRow::new(&remote);
+            imp.remote_group.add(&remote_row);
         }
 
         if sideloadable.no_changes() {

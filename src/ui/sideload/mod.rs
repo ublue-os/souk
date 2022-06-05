@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod remote_row;
 mod sideload_window;
 
+pub use remote_row::SkRemoteRow;
 pub use sideload_window::SkSideloadWindow;

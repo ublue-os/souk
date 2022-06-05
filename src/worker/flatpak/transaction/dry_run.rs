@@ -112,6 +112,7 @@ pub struct TransactionDryRunRemote {
 impl TransactionDryRunRemote {
     pub fn flatpak_remote(&self) -> Remote {
         let remote = Remote::new(&self.suggested_remote_name);
+        remote.set_url(&self.repository_url);
 
         if let Some(value) = self.title.as_ref() {
             remote.set_title(value);

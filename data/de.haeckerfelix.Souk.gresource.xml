@@ -3,6 +3,7 @@
   <gresource prefix="/de/haeckerfelix/Souk">
     <file compressed="true" preprocess="xml-stripblanks" alias="gtk/help-overlay.ui">gtk/help_overlay.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/installation_row.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">gtk/remote_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/sideload_window.ui</file>
     <file compressed="true" alias="style.css">gtk/style.css</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/transaction_row.ui</file>
@@ -10,6 +11,7 @@
   </gresource>
   <gresource prefix="/de/haeckerfelix/Souk/icons/16x16/status/">
     <file preprocess="xml-stripblanks" alias="dotted-box-symbolic.svg">icons/hicolor/scalable/status/dotted-box-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="external-link-symbolic.svg">icons/hicolor/scalable/status/external-link-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="people-symbolic.svg">icons/hicolor/scalable/status/people-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="person-symbolic.svg">icons/hicolor/scalable/status/person-symbolic.svg</file>
   </gresource>

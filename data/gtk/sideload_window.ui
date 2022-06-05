@@ -75,117 +75,130 @@
                               </object>
                             </child>
                             <child>
-                              <object class="AdwClamp">
-                                <property name="margin_start">12</property>
-                                <property name="margin_end">12</property>
+                              <object class="GtkScrolledWindow">
+                                <property name="vexpand">True</property>
                                 <child>
-                                  <object class="GtkBox">
-                                    <property name="orientation">vertical</property>
-                                    <property name="spacing">12</property>
+                                  <object class="AdwClamp">
+                                    <property name="margin_start">12</property>
+                                    <property name="margin_end">12</property>
+                                    <property name="margin_top">18</property>
+                                    <property name="margin_bottom">24</property>
                                     <child>
                                       <object class="GtkBox">
-                                        <property name="spacing">24</property>
-                                        <property name="margin_top">18</property>
-                                        <property name="margin_bottom">12</property>
-                                        <child>
-                                          <object class="GtkImage" id="package_icon_image">
-                                            <property name="pixel_size">128</property>
-                                          </object>
-                                        </child>
+                                        <property name="orientation">vertical</property>
+                                        <property name="spacing">12</property>
                                         <child>
                                           <object class="GtkBox">
-                                            <property name="orientation">vertical</property>
-                                            <property name="valign">center</property>
-                                            <property name="spacing">6</property>
+                                            <property name="spacing">24</property>
+                                            <property name="margin_bottom">12</property>
                                             <child>
-                                              <object class="GtkLabel" id="package_name_label">
-                                                <property name="ellipsize">end</property>
-                                                <property name="xalign">0</property>
-                                                <style>
-                                                  <class name="title-2"/>
-                                                </style>
+                                              <object class="GtkImage" id="package_icon_image">
+                                                <property name="pixel_size">128</property>
                                               </object>
                                             </child>
                                             <child>
-                                              <object class="GtkLabel" id="package_developer_label">
-                                                <property name="ellipsize">end</property>
-                                                <property name="xalign">0</property>
-                                              </object>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="package_version_label">
-                                                <property name="ellipsize">end</property>
-                                                <property name="xalign">0</property>
-                                              </object>
-                                            </child>
-                                          </object>
-                                        </child>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="AdwPreferencesGroup" id="package_group">
-                                        <child>
-                                          <object class="AdwActionRow" id="package_download_size_row">
-                                            <property name="icon_name">folder-download-symbolic</property>
-                                          </object>
-                                        </child>
-                                        <child>
-                                          <object class="AdwActionRow" id="package_installed_size_row">
-                                            <property name="icon_name">drive-harddisk-symbolic</property>
-                                          </object>
-                                        </child>
-                                        <style>
-                                          <class name="large-rows"/>
-                                        </style>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="AdwPreferencesGroup">
-                                        <child>
-                                          <object class="AdwActionRow">
-                                            <property name="icon_name">document-save-as-symbolic</property>
-                                            <property name="title" translatable="yes">Installation</property>
-                                            <property name="activatable">True</property>
-                                            <property name="action-name">sideload.select-installation</property>
-                                            <child>
-                                              <object class="GtkLabel">
-                                                <binding name="label">
-                                                  <lookup name="display_name" type="SkInstallation">
-                                                    <lookup name="selected_installation" type="SkInstallationListBox">installation_listbox</lookup>
-                                                  </lookup>
-                                                </binding>
-                                              </object>
-                                            </child>
-                                            <child>
-                                              <object class="GtkImage">
-                                                <property name="icon_name">go-next</property>
+                                              <object class="GtkBox">
+                                                <property name="orientation">vertical</property>
+                                                <property name="valign">center</property>
+                                                <property name="spacing">6</property>
+                                                <child>
+                                                  <object class="GtkLabel" id="package_name_label">
+                                                    <property name="ellipsize">end</property>
+                                                    <property name="xalign">0</property>
+                                                    <style>
+                                                      <class name="title-2"/>
+                                                    </style>
+                                                  </object>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkLabel" id="package_developer_label">
+                                                    <property name="ellipsize">end</property>
+                                                    <property name="xalign">0</property>
+                                                  </object>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkLabel" id="package_version_label">
+                                                    <property name="ellipsize">end</property>
+                                                    <property name="xalign">0</property>
+                                                  </object>
+                                                </child>
                                               </object>
                                             </child>
                                           </object>
                                         </child>
-                                        <style>
-                                          <class name="large-rows"/>
-                                        </style>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="AdwPreferencesGroup">
                                         <child>
-                                          <object class="AdwActionRow" id="no_update_source_row">
-                                            <property name="visible">False</property>
-                                            <property name="title" translatable="yes">No Update Source</property>
-                                            <property name="subtitle" translatable="yes">This package does not include a source for updates, and will not receive any updates or security fixes</property>
+                                          <object class="AdwPreferencesGroup" id="package_group">
+                                            <child>
+                                              <object class="AdwActionRow" id="package_download_size_row">
+                                                <property name="icon_name">folder-download-symbolic</property>
+                                              </object>
+                                            </child>
+                                            <child>
+                                              <object class="AdwActionRow" id="package_installed_size_row">
+                                                <property name="icon_name">drive-harddisk-symbolic</property>
+                                              </object>
+                                            </child>
                                             <style>
-                                              <class name="warning-row"/>
+                                              <class name="large-rows"/>
                                             </style>
                                           </object>
                                         </child>
                                         <child>
-                                          <object class="AdwActionRow" id="replacing_remote_row">
-                                            <property name="visible">False</property>
-                                            <property name="title" translatable="yes">Different Source</property>
+                                          <object class="AdwPreferencesGroup">
+                                            <child>
+                                              <object class="AdwActionRow">
+                                                <property name="icon_name">document-save-as-symbolic</property>
+                                                <property name="title" translatable="yes">Installation</property>
+                                                <property name="activatable">True</property>
+                                                <property name="action-name">sideload.select-installation</property>
+                                                <child>
+                                                  <object class="GtkLabel">
+                                                    <binding name="label">
+                                                      <lookup name="display_name" type="SkInstallation">
+                                                        <lookup name="selected_installation" type="SkInstallationListBox">installation_listbox</lookup>
+                                                      </lookup>
+                                                    </binding>
+                                                  </object>
+                                                </child>
+                                                <child>
+                                                  <object class="GtkImage">
+                                                    <property name="icon_name">go-next</property>
+                                                  </object>
+                                                </child>
+                                              </object>
+                                            </child>
                                             <style>
-                                              <class name="warning-row"/>
+                                              <class name="large-rows"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                        <child>
+                                          <object class="AdwPreferencesGroup">
+                                            <child>
+                                              <object class="AdwActionRow" id="no_update_source_row">
+                                                <property name="visible">False</property>
+                                                <property name="title" translatable="yes">No Automatic Updates</property>
+                                                <property name="subtitle" translatable="yes">This package will not receive automatic updates. New versions with possible bug / security fixes have to be downloaded and installed manually.</property>
+                                                <style>
+                                                  <class name="warning-row"/>
+                                                </style>
+                                              </object>
+                                            </child>
+                                            <child>
+                                              <object class="AdwActionRow" id="replacing_remote_row">
+                                                <property name="visible">False</property>
+                                                <property name="title" translatable="yes">Different Source</property>
+                                                <style>
+                                                  <class name="warning-row"/>
+                                                </style>
+                                              </object>
+                                            </child>
+                                          </object>
+                                        </child>
+                                        <child>
+                                          <object class="AdwPreferencesGroup" id="remote_group">
+                                            <style>
+                                              <class name="large-rows"/>
                                             </style>
                                           </object>
                                         </child>

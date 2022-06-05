@@ -7,6 +7,7 @@ data/gtk/window.ui
 
 src/flatpak/installation.rs
 src/ui/about_dialog.rs
+src/ui/sideload/remote_row.rs
 src/ui/sideload/sideload_window.rs
 
 data/de.haeckerfelix.Souk.metainfo.xml.in.in

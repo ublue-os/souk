@@ -73,7 +73,7 @@ impl SkSideloadable {
             .set(installation_uuid.to_string())
             .unwrap();
 
-        // remote / repository
+        // remote
         let remote = transaction_dry_run
             .remote
             .as_ref()
@@ -120,7 +120,7 @@ impl SkSideloadable {
         self.imp().package.get().unwrap().to_owned()
     }
 
-    pub fn repository(&self) -> Option<Remote> {
+    pub fn remote(&self) -> Option<Remote> {
         self.imp().remote.get().unwrap().to_owned()
     }
 

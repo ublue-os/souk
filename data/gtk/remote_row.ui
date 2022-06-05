@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="SkRemoteRow" parent="AdwActionRow">
+    <property name="activatable">True</property>
+    <child type="prefix">
+      <object class="GtkImage" id="icon_image">
+        <property name="valign">center</property>
+        <property name="pixel_size">32</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImage" id="external_link_image">
+        <property name="valign">center</property>
+        <property name="halign">start</property>
+        <property name="visible">False</property>
+        <property name="icon-name">external-link-symbolic</property>
+        <style>
+          <class name="checkmark"/>
+        </style>
+      </object>
+    </child>
+  </template>
+</interface>
+
