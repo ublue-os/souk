@@ -31,6 +31,14 @@ pub enum TransactionCommand {
         String,
         Sender<Result<TransactionDryRun, WorkerError>>,
     ),
+    // uuid, path, installation_uuid, no_update
+    InstallFlatpakRef(String, String, String, bool),
+    // path, installation_uuid, sender
+    InstallFlatpakRefDryRun(
+        String,
+        String,
+        Sender<Result<TransactionDryRun, WorkerError>>,
+    ),
     // uuid,
     CancelTransaction(String),
 }

@@ -150,6 +150,17 @@ impl SkSideloadable {
                         .await?;
                     Some(transaction)
                 }
+                SkSideloadType::Ref => {
+                    let transaction = worker
+                        .install_flatpak_ref(
+                            &package.ref_(),
+                            &self.file(),
+                            &self.installation_uuid(),
+                            no_update,
+                        )
+                        .await?;
+                    Some(transaction)
+                }
                 _ => None,
             };
 

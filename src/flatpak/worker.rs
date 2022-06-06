@@ -221,6 +221,37 @@ impl SkWorker {
         Ok(transaction)
     }
 
+    /// Install new Flatpak by ref file
+    pub async fn install_flatpak_ref(
+        &self,
+        ref_: &Ref,
+        file: &File,
+        installation: &str,
+        no_update: bool,
+    ) -> Result<SkTransaction, Error> {
+        let path = file.path().unwrap();
+        let filename_string = path.file_name().unwrap().to_str().unwrap();
+        let path_string = path.to_str().unwrap().to_string();
+
+        let transaction_uuid = self
+            .imp()
+            .proxy
+            .install_flatpak_ref(&path_string, installation, no_update)
+            .await?;
+
+        let type_ = SkTransactionType::Install;
+        let transaction = SkTransaction::new(
+            &transaction_uuid,
+            ref_,
+            &type_,
+            filename_string,
+            installation,
+        );
+        self.add_transaction(&transaction);
+
+        Ok(transaction)
+    }
+
     /// Cancel a Flatpak transaction
     pub async fn cancel_transaction(&self, uuid: &str) -> Result<(), Error> {
         self.imp().proxy.cancel_transaction(uuid).await?;
@@ -243,6 +274,11 @@ impl SkWorker {
             SkSideloadType::Bundle => {
                 proxy
                     .install_flatpak_bundle_dry_run(&path_string, installation_uuid)
+                    .await?
+            }
+            SkSideloadType::Ref => {
+                proxy
+                    .install_flatpak_ref_dry_run(&path_string, installation_uuid)
                     .await?
             }
             _ => return Err(Error::UnsupportedSideloadType),

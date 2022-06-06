@@ -44,7 +44,20 @@ trait Worker {
     fn install_flatpak_bundle_dry_run(
         &self,
         path: &str,
-        installation: &str,
+        installation_uuid: &str,
+    ) -> std::result::Result<TransactionDryRun, WorkerError>;
+
+    fn install_flatpak_ref(
+        &self,
+        path: &str,
+        installation_uuid: &str,
+        no_update: bool,
+    ) -> Result<String>;
+
+    fn install_flatpak_ref_dry_run(
+        &self,
+        path: &str,
+        installation_uuid: &str,
     ) -> std::result::Result<TransactionDryRun, WorkerError>;
 
     fn cancel_transaction(&self, uuid: &str) -> Result<()>;

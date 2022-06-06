@@ -21,6 +21,7 @@
         "--talk-name=org.freedesktop.Flatpak",
         "--talk-name=org.gtk.vfs",
         "--talk-name=org.gtk.vfs.*",
+        "--filesystem=xdg-run/gvfsd",
     	"--env=RUST_LOG=souk=debug",
     	"--env=RUST_BACKTRACE=1",
     	"--env=GOBJECT_DEBUG=instance-count"

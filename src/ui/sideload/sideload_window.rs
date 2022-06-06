@@ -66,6 +66,8 @@ mod imp {
         #[template_child]
         pub package_installed_size_row: TemplateChild<adw::ActionRow>,
         #[template_child]
+        pub warn_group: TemplateChild<adw::PreferencesGroup>,
+        #[template_child]
         pub no_update_source_row: TemplateChild<adw::ActionRow>,
         #[template_child]
         pub replacing_remote_row: TemplateChild<adw::ActionRow>,
@@ -368,7 +370,13 @@ impl SkSideloadWindow {
                 imp.replacing_remote_row.set_visible(true);
                 let msg = i18n_f("This package is already installed from \"{}\", during the installation the old version will be uninstalled first", &[remote]);
                 imp.replacing_remote_row.set_subtitle(&msg);
+            } else {
+                imp.replacing_remote_row.set_visible(false);
             }
+
+            imp.warn_group.set_visible(
+                !(!imp.no_update_source_row.is_visible() && !imp.replacing_remote_row.is_visible()),
+            );
 
             // Setup size information
             let size = glib::format_size(package.download_size());

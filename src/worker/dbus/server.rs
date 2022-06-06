@@ -98,6 +98,45 @@ impl Worker {
         receiver.next().await.unwrap()
     }
 
+    async fn install_flatpak_ref(
+        &self,
+        path: &str,
+        installation_uuid: &str,
+        no_update: bool,
+    ) -> String {
+        let uuid = Uuid::new_v4().to_string();
+        self.transaction_sender
+            .send(TransactionCommand::InstallFlatpakRef(
+                uuid.clone(),
+                path.to_string(),
+                installation_uuid.to_string(),
+                no_update,
+            ))
+            .await
+            .unwrap();
+
+        uuid
+    }
+
+    async fn install_flatpak_ref_dry_run(
+        &self,
+        path: &str,
+        installation_uuid: &str,
+    ) -> Result<TransactionDryRun, WorkerError> {
+        let (transaction_sender, mut receiver) = unbounded();
+
+        self.transaction_sender
+            .send(TransactionCommand::InstallFlatpakRefDryRun(
+                path.to_string(),
+                installation_uuid.to_string(),
+                transaction_sender,
+            ))
+            .await
+            .unwrap();
+
+        receiver.next().await.unwrap()
+    }
+
     async fn cancel_transaction(&self, transaction_uuid: &str) {
         self.transaction_sender
             .send(TransactionCommand::CancelTransaction(

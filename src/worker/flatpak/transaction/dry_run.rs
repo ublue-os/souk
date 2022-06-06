@@ -78,7 +78,7 @@ impl Default for TransactionDryRun {
             appstream_component: None.into(),
             is_already_installed: false,
             is_update: false,
-            has_update_source: false,
+            has_update_source: true,
             is_replacing_remote: None.into(),
             download_size: 0,
             installed_size: 0,

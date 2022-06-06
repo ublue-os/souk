@@ -20,13 +20,13 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use appstream::Collection;
+use appstream::{AppId, Collection};
 use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
 use async_std::task;
 use gio::prelude::*;
 use gio::Cancellable;
-use glib::{clone, Downgrade};
+use glib::{clone, Downgrade, KeyFile};
 use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 use libflatpak::prelude::*;
@@ -97,6 +97,15 @@ impl TransactionHandler {
             ),
             TransactionCommand::InstallFlatpakBundleDryRun(path, installation_uuid, sender) => {
                 let result = self.install_flatpak_bundle_dry_run(&path, &installation_uuid);
+                sender.try_send(result).unwrap();
+                return;
+            }
+            TransactionCommand::InstallFlatpakRef(uuid, path, installation_uuid, no_update) => (
+                self.install_flatpak_ref(&uuid, &path, &installation_uuid, no_update),
+                uuid,
+            ),
+            TransactionCommand::InstallFlatpakRefDryRun(path, installation_uuid, sender) => {
+                let result = self.install_flatpak_ref_dry_run(&path, &installation_uuid);
                 sender.try_send(result).unwrap();
                 return;
             }
@@ -190,17 +199,15 @@ impl TransactionHandler {
     ) -> Result<TransactionDryRun, WorkerError> {
         info!("Install Flatpak bundle (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
+        let bundle = BundleRef::new(&file)?;
 
         let transaction = self.new_transaction(installation_uuid, true)?;
         transaction.add_install_bundle(&file, None)?;
 
-        let bundle = BundleRef::new(&file)?;
-        let ref_ = bundle.clone().upcast::<Ref>();
-
         let installation = self
             .installation_manager
             .flatpak_installation_by_uuid(installation_uuid);
-        let results = self.run_dry_run_transaction(transaction, &ref_, &installation);
+        let results = self.run_dry_run_transaction(transaction, &installation, false);
 
         if let Ok(mut results) = results {
             // Installed bundle size
@@ -224,6 +231,71 @@ impl TransactionHandler {
 
                 let json = serde_json::to_string(component).unwrap();
                 results.appstream_component = Some(json).into();
+            }
+
+            return Ok(results);
+        }
+
+        results
+    }
+
+    fn install_flatpak_ref(
+        &self,
+        transaction_uuid: &str,
+        path: &str,
+        installation_uuid: &str,
+        no_update: bool,
+    ) -> Result<(), WorkerError> {
+        info!("Install Flatpak ref: {}", path);
+        let file = gio::File::for_parse_name(path);
+        let bytes = file.load_bytes(Cancellable::NONE)?.0;
+
+        let transaction = self.new_transaction(installation_uuid, false)?;
+        transaction.add_install_flatpakref(&bytes)?;
+
+        // There are situations where we can't directly upgrade an already installed
+        // ref, and we have to uninstall the old version first, before we
+        // install the new version. (for example installing a ref from a
+        // different remote, and the gpg signature wouldn't match)
+        if no_update {
+            let keyfile = KeyFile::new();
+            keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
+
+            let name = keyfile.value("Flatpak Ref", "Name")?;
+            self.uninstall_ref(&name, installation_uuid)?;
+        }
+
+        self.run_transaction(transaction_uuid.to_string(), transaction)?;
+
+        Ok(())
+    }
+
+    fn install_flatpak_ref_dry_run(
+        &self,
+        path: &str,
+        installation_uuid: &str,
+    ) -> Result<TransactionDryRun, WorkerError> {
+        info!("Install Flatpak ref (dry run): {}", path);
+        let file = gio::File::for_parse_name(path);
+        let bytes = file.load_bytes(Cancellable::NONE)?.0;
+
+        let transaction = self.new_transaction(installation_uuid, true)?;
+        transaction.add_install_flatpakref(&bytes)?;
+
+        let installation = self
+            .installation_manager
+            .flatpak_installation_by_uuid(installation_uuid);
+        let results = self.run_dry_run_transaction(transaction, &installation, true);
+
+        if let Ok(mut results) = results {
+            // Remote / repository
+            if let Some(remote) = results.remote.as_mut() {
+                let keyfile = KeyFile::new();
+                keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
+                let remote_url = keyfile.value("Flatpak Ref", "RuntimeRepo")?;
+
+                let f_remote = self.retrieve_flatpak_remote(&remote_url)?;
+                remote.set_flatpak_remote(f_remote);
             }
 
             return Ok(results);
@@ -311,13 +383,12 @@ impl TransactionHandler {
     fn run_dry_run_transaction(
         &self,
         transaction: Transaction,
-        ref_: &Ref,
         // We need the *real* intallation (and not the dry-run clone) to check what's already
         // installed
         real_installation: &Installation,
+        download_appstream: bool,
     ) -> Result<TransactionDryRun, WorkerError> {
         let transaction_dry_run = Rc::new(RefCell::new(TransactionDryRun::default()));
-        transaction_dry_run.borrow_mut().ref_ = ref_.format_ref().unwrap().to_string();
 
         // Check if new remotes are added during the transaction
         transaction.connect_add_new_remote(
@@ -339,19 +410,24 @@ impl TransactionHandler {
 
         // Ready -> Everything got resolved, so we can check the transaction operations
         transaction.connect_ready(
-            clone!(@weak transaction_dry_run, @weak ref_, @weak real_installation => @default-return false, move |transaction|{
-                for operation in transaction.operations(){
-                    let ref_string = ref_.format_ref().unwrap().to_string();
-                    let operation_ref_string = operation.get_ref().unwrap().to_string();
-                    let operation_commit = operation.commit().unwrap();
+            clone!(@weak transaction_dry_run, @weak real_installation, @strong download_appstream => @default-return false, move |transaction|{
+                let operation_count = transaction.operations().len();
+                for (pos, operation) in transaction.operations().iter().enumerate() {
+                    // Check if it's the last operation, which is the actual app / runtime
+                    if (pos+1) ==  operation_count {
+                        let operation_commit = operation.commit().unwrap().to_string();
 
-                    // Check if it's the ref which we want to install
-                    if operation_ref_string == ref_string {
-                        transaction_dry_run.borrow_mut().commit = operation_commit.to_string();
+                        transaction_dry_run.borrow_mut().ref_ = operation.get_ref().unwrap().to_string();
+                        transaction_dry_run.borrow_mut().commit = operation_commit.clone();
                         transaction_dry_run.borrow_mut().download_size = operation.download_size();
                         transaction_dry_run.borrow_mut().installed_size = operation.installed_size();
 
+                        if operation.operation_type() == TransactionOperationType::InstallBundle{
+                            transaction_dry_run.borrow_mut().has_update_source = false;
+                        }
+
                         // Check if the ref is already installed
+                        let ref_ = Ref::parse(&operation.get_ref().unwrap()).unwrap();
                         let installed = real_installation.installed_ref(
                             ref_.kind(),
                             &ref_.name().unwrap(),
@@ -362,10 +438,6 @@ impl TransactionHandler {
 
                         // Yep -> it's installed
                         if let Ok(installed) = installed {
-                            if operation.operation_type() == TransactionOperationType::InstallBundle{
-                                transaction_dry_run.borrow_mut().has_update_source = false;
-                            }
-
                             let installed_origin = installed.origin().unwrap();
                             let operation_remote = operation.remote().unwrap();
 
@@ -384,9 +456,54 @@ impl TransactionHandler {
                                 transaction_dry_run.borrow_mut().is_update = true;
                             }
                         }
+
+                        // Appstream Metadata
+                        if download_appstream {
+                            // Update appstream data from dry run transaction. That's expensive to do
+                            // (needs several seconds), but this only needs to be done once, because
+                            // the next time the remote is already added, and the appstream data is
+                            // already present, and therefore the app can be opened in the normal
+                            // non-sideload details view.
+                            let installation = transaction.installation().unwrap();
+                            let remote = operation.remote().unwrap().to_string();
+                            let arch = ref_.arch().unwrap().to_string();
+
+                            debug!("Update appstream data...");
+                            let res = installation.update_appstream_sync(&remote, Some(&arch), Cancellable::NONE);
+                            if let Err(err) = res {
+                                warn!("Unable to update appstream data: {}", err.to_string());
+                                return false;
+                            }
+
+                            let remote = installation.remote_by_name(&remote, Cancellable::NONE).unwrap();
+                            let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
+                            let appstream_file = appstream_dir.child("appstream.xml");
+
+                            debug!("Try to retrieve appstream component...");
+                            if let Ok(collection) = Collection::from_path(appstream_file.path().unwrap()){
+                                let app_id = AppId(ref_.name().unwrap().to_string());
+
+                                // Try to retrieve component
+                                let component = collection.find_by_id(app_id).get(0).cloned();
+                                if let Some(component) = component{
+                                    // Appstream
+                                    let json = serde_json::to_string(component).unwrap();
+                                    transaction_dry_run.borrow_mut().appstream_component = Some(json).into();
+
+                                    // Icon
+                                    let icon = appstream_dir.child(format!("icons/128x128/{}.png", ref_.name().unwrap()));
+                                    if let Ok((bytes, _)) = icon.load_bytes(Cancellable::NONE){
+                                        transaction_dry_run.borrow_mut().icon = bytes.to_vec();
+                                    }
+                                }
+                            }else{
+                                warn!("Unable to parse appstream file");
+                                return false;
+                            }
+                        }
                     }else{
                         let runtime = TransactionDryRunRuntime{
-                            ref_: operation_ref_string.to_string(),
+                            ref_: operation.get_ref().unwrap().to_string(),
                             type_: operation.operation_type().to_str().unwrap().to_string(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
@@ -438,13 +555,16 @@ impl TransactionHandler {
         // runtimes available.
         if dry_run {
             let remotes = installation.list_remotes(Cancellable::NONE)?;
+            let mut dry_run_path = glib::tmp_dir();
+            dry_run_path.push("souk-dry-run");
 
             // Remove previous dry run installation
-            std::fs::remove_dir_all("/tmp/repo").expect("Unable to remove dry run installation");
+            let _ = std::fs::remove_dir_all(&dry_run_path);
 
             // New temporary dry run installation
-            let dry_run_path = gio::File::for_parse_name("/tmp");
-            let dry_run = Installation::for_path(&dry_run_path, true, Cancellable::NONE)?;
+            std::fs::create_dir_all(&dry_run_path).expect("Unable to create dry run installation");
+            let file = gio::File::for_path(dry_run_path);
+            let dry_run = Installation::for_path(&file, true, Cancellable::NONE)?;
 
             // Add the same remotes to the dry run installation
             for remote in remotes {
@@ -459,6 +579,9 @@ impl TransactionHandler {
                 // For whatever reason we have to create a new remote object
                 let remote_to_add = Remote::new(&remote.name().unwrap());
                 remote_to_add.set_url(&remote.url().unwrap());
+                // We can't retrieve the public key of the added remote, so we trust that the
+                // the added remote is valid, and disable gpg verify for the dry run transaction
+                remote_to_add.set_gpg_verify(false);
                 dry_run.add_remote(&remote_to_add, true, Cancellable::NONE)?;
             }
 

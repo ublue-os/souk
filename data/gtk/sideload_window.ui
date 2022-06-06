@@ -173,7 +173,7 @@
                                           </object>
                                         </child>
                                         <child>
-                                          <object class="AdwPreferencesGroup">
+                                          <object class="AdwPreferencesGroup" id="warn_group">
                                             <child>
                                               <object class="AdwActionRow" id="no_update_source_row">
                                                 <property name="visible">False</property>
