@@ -20,7 +20,7 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use appstream::{AppId, Collection};
+use appstream::{Collection, Component};
 use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
 use async_std::task;
@@ -34,6 +34,7 @@ use libflatpak::{
     BundleRef, Installation, Ref, Remote, Transaction, TransactionOperation,
     TransactionOperationType, TransactionRemoteReason,
 };
+use xb::prelude::*;
 
 use super::{
     TransactionCommand, TransactionDryRun, TransactionDryRunRemote, TransactionDryRunRuntime,
@@ -479,15 +480,28 @@ impl TransactionHandler {
                             let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
                             let appstream_file = appstream_dir.child("appstream.xml");
 
-                            debug!("Try to retrieve appstream component...");
-                            if let Ok(collection) = Collection::from_path(appstream_file.path().unwrap()){
-                                let app_id = AppId(ref_.name().unwrap().to_string());
+                            debug!("Retrieve appstream xml...");
+                            let source = xb::BuilderSource::new();
+                            let res = source.load_file(&appstream_file, xb::BuilderSourceFlags::NONE, Cancellable::NONE);
+                            if let Err(err) = res{
+                                error!("Unable to load appstream file: {}", err.to_string());
+                                return false;
+                            }
 
-                                // Try to retrieve component
-                                let component = collection.find_by_id(app_id).get(0).cloned();
-                                if let Some(component) = component{
+                            let builder = xb::Builder::new();
+                            builder.import_source(&source);
+
+                            let silo = builder.compile(xb::BuilderCompileFlags::NONE, Cancellable::NONE).unwrap();
+                            let xpath = format!("components/component/id[text()='{}']/..", ref_.name().unwrap());
+
+                            if let Ok(node) = silo.query_first(&xpath){
+                                let xml = node.export(xb::NodeExportFlags::NONE).unwrap().to_string();
+                                let element = xmltree::Element::parse(xml.as_bytes()).unwrap();
+                                let component = Component::try_from(&element);
+
+                                if let Ok(component) = component{
                                     // Appstream
-                                    let json = serde_json::to_string(component).unwrap();
+                                    let json = serde_json::to_string(&component).unwrap();
                                     transaction_dry_run.borrow_mut().appstream_component = Some(json).into();
 
                                     // Icon
@@ -497,8 +511,7 @@ impl TransactionHandler {
                                     }
                                 }
                             }else{
-                                warn!("Unable to parse appstream file");
-                                return false;
+                                warn!("Couldn't find appstream component node.");
                             }
                         }
                     }else{
