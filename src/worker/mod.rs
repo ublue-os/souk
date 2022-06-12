@@ -23,11 +23,11 @@ pub use dbus::WorkerProxy;
 pub use error::WorkerError;
 pub use flatpak::installation::{InstallationInfo, InstallationManager};
 pub use flatpak::transaction::{
-    TransactionDryRun, TransactionError, TransactionHandler, TransactionProgress,
+    TransactionDryRun, TransactionError, TransactionManager, TransactionProgress,
 };
 pub use process::Process;
 
-/// Start DBus server and Flatpak transaction handler.
+/// Start DBus server and Flatpak transaction manager.
 /// This method gets called from the `souk-worker` binary.
 pub async fn spawn_dbus_server() {
     use async_std::channel::unbounded;
@@ -35,12 +35,12 @@ pub async fn spawn_dbus_server() {
 
     let installation_manager = InstallationManager::new();
 
-    // The Flatpak transaction handler is multithreaded, because Flatpak
+    // The Flatpak transaction manager is multithreaded, because Flatpak
     // transactions are blocking. Therefore it uses message passing for inter
     // thread communication
     let (command_sender, command_receiver) = unbounded();
     let (message_sender, message_receiver) = unbounded();
-    TransactionHandler::start(
+    TransactionManager::start(
         installation_manager.clone(),
         message_sender,
         command_receiver,

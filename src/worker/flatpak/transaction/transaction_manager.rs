@@ -1,4 +1,4 @@
-// Souk - transaction_handler.rs
+// Souk - transaction_manager.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -44,13 +44,13 @@ use crate::worker::flatpak::installation::InstallationManager;
 use crate::worker::WorkerError;
 
 #[derive(Debug, Clone, Downgrade)]
-pub struct TransactionHandler {
+pub struct TransactionManager {
     transactions: Arc<Mutex<HashMap<String, Cancellable>>>,
     installation_manager: Arc<InstallationManager>,
     sender: Arc<Sender<TransactionMessage>>,
 }
 
-impl TransactionHandler {
+impl TransactionManager {
     pub fn start(
         installation_manager: InstallationManager,
         sender: Sender<TransactionMessage>,
@@ -58,19 +58,19 @@ impl TransactionHandler {
     ) {
         let installation_manager = Arc::new(installation_manager);
 
-        let handler = Self {
+        let manager = Self {
             transactions: Arc::default(),
             installation_manager,
             sender: Arc::new(sender),
         };
 
-        thread::spawn(clone!(@strong handler, @strong receiver => move || {
+        thread::spawn(clone!(@strong manager, @strong receiver => move || {
             let mut receiver = receiver;
             let fut = async move {
                 while let Some(command) = receiver.next().await {
                     // TODO: Don't work with raw threads here, but us a scheduler / pool or sth
-                    thread::spawn(clone!(@weak handler => move || {
-                        handler.process_command(command);
+                    thread::spawn(clone!(@weak manager => move || {
+                        manager.process_command(command);
                     }));
                 }
             };

@@ -17,9 +17,9 @@
 mod command;
 mod dry_run;
 mod message;
-mod transaction_handler;
+mod transaction_manager;
 
 pub use command::TransactionCommand;
 pub use dry_run::{TransactionDryRun, TransactionDryRunRemote, TransactionDryRunRuntime};
 pub use message::{TransactionError, TransactionMessage, TransactionProgress};
-pub use transaction_handler::TransactionHandler;
+pub use transaction_manager::TransactionManager;
