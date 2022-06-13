@@ -52,6 +52,10 @@ mod imp {
         #[template_child]
         pub start_button: TemplateChild<gtk::Button>,
         #[template_child]
+        pub package_box: TemplateChild<gtk::Box>,
+        #[template_child]
+        pub remote_box: TemplateChild<gtk::Box>,
+        #[template_child]
         pub details_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
         pub package_icon_image: TemplateChild<gtk::Image>,
@@ -304,6 +308,7 @@ impl SkSideloadWindow {
                         let message = i18n("Unknown or unsupported file format.");
                         self.show_error_message(&message);
                     }
+                    Error::GLib(err) => self.show_error_message(err.message()),
                     Error::ZBus(_) => {
                         let message = i18n("Unable to communicate with worker process.");
                         self.show_error_message(&message);
@@ -341,7 +346,9 @@ impl SkSideloadWindow {
         let repo_error_title = i18n("Adding Source Failed");
 
         // Package
-        if let Some(package) = sideloadable.package() {
+        let package = sideloadable.package();
+        imp.package_box.set_visible(package.is_some());
+        if let Some(package) = package {
             if package.is_update() {
                 imp.start_button.set_label(&update_start_button);
                 imp.details_title.set_title(&update_details_title);
@@ -453,6 +460,8 @@ impl SkSideloadWindow {
         }
 
         // Remote / Repository
+        let remote = sideloadable.remote();
+        imp.remote_box.set_visible(remote.is_some());
         if let Some(remote) = sideloadable.remote() {
             let msg = if sideloadable.package().is_none() {
                 imp.start_button.set_label(&repo_start_button);
@@ -462,6 +471,8 @@ impl SkSideloadWindow {
                 imp.already_done_title.set_title(&repo_already_done_title);
                 imp.error_title.set_title(&repo_error_title);
 
+                self.set_default_height(325);
+
                 i18n("New applications can be obtained from this source. Only proceed if you trust this source.")
             } else {
                 i18n("This package adds a new software source. New applications can be obtained from it. Only proceed with the installation if you trust this source.")
@@ -469,8 +480,6 @@ impl SkSideloadWindow {
             imp.remote_group.set_description(Some(&msg));
             imp.remote_row.set_remote(&remote);
         }
-        imp.remote_group
-            .set_visible(sideloadable.remote().is_some());
 
         if sideloadable.no_changes() {
             imp.sideload_leaflet.set_visible_child_name("already-done");

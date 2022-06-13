@@ -96,6 +96,7 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(SkSideloadType::Repo).unwrap();
+        imp.package.set(None).unwrap();
         imp.remote.set(Some(remote.clone())).unwrap();
         imp.installation_uuid
             .set(installation_uuid.to_string())

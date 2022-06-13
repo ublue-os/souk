@@ -26,6 +26,9 @@ pub enum Error {
     #[error("Unsupported sideload type")]
     UnsupportedSideloadType,
 
+    #[error("GLib error")]
+    GLib(#[from] gtk::glib::Error),
+
     #[error("ZBus error")]
     ZBus(#[from] zbus::Error),
 }

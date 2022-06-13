@@ -6,6 +6,7 @@
       <object class="GtkImage" id="icon_image">
         <property name="valign">center</property>
         <property name="pixel_size">32</property>
+        <property name="width_request">40</property>
       </object>
     </child>
     <child>
@@ -13,7 +14,8 @@
         <property name="valign">center</property>
         <property name="halign">start</property>
         <property name="visible">False</property>
-        <property name="icon-name">external-link-symbolic</property>
+        <property name="icon_name">external-link-symbolic</property>
+        <property name="margin-start">6</property>
         <style>
           <class name="checkmark"/>
         </style>

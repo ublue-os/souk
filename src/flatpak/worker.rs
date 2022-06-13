@@ -24,7 +24,7 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use libflatpak::prelude::*;
-use libflatpak::Ref;
+use libflatpak::{Ref, Remote};
 use once_cell::sync::Lazy;
 
 use crate::error::Error;
@@ -124,6 +124,7 @@ impl SkWorker {
     }
 
     /// Starts the `souk-worker` process
+    /// TODO: Automatically start / stop the worker process on demand
     pub async fn start_process(&self) {
         let imp = self.imp();
 
@@ -281,14 +282,21 @@ impl SkWorker {
                     .install_flatpak_ref_dry_run(&path_string, installation_uuid)
                     .await?
             }
+            SkSideloadType::Repo => {
+                let bytes = file.load_bytes(gio::Cancellable::NONE)?.0;
+                let remote = Remote::from_file("remote", &bytes)?;
+                return Ok(SkSideloadable::new_repo(file, &remote, installation_uuid));
+            }
             _ => return Err(Error::UnsupportedSideloadType),
         };
 
         debug!("Dry run results: {:#?}", transaction_dry_run);
-
-        let sideloadable =
-            SkSideloadable::new_package(file, type_, transaction_dry_run, installation_uuid);
-        Ok(sideloadable)
+        Ok(SkSideloadable::new_package(
+            file,
+            type_,
+            transaction_dry_run,
+            installation_uuid,
+        ))
     }
 
     fn add_transaction(&self, transaction: &SkTransaction) {

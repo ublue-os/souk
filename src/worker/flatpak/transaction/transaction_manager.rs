@@ -545,6 +545,9 @@ impl TransactionManager {
         // installation as dependency source. This way the dry run transaction
         // doesn't touch the specified installation, but has nevertheless the same local
         // runtimes available.
+
+        // TODO: There's a race condition when you run multiple dry-run transactions at
+        // the same time, since they use the same installation
         if dry_run {
             let remotes = installation.list_remotes(Cancellable::NONE)?;
             let mut dry_run_path = glib::tmp_dir();
