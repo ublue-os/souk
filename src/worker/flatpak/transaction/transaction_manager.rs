@@ -20,7 +20,7 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use appstream::{Collection, Component};
+use ::appstream::Collection;
 use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
 use async_std::task;
@@ -34,12 +34,12 @@ use libflatpak::{
     BundleRef, Installation, Ref, Remote, Transaction, TransactionOperation,
     TransactionOperationType, TransactionRemoteReason,
 };
-use xb::prelude::*;
 
 use super::{
     TransactionCommand, TransactionDryRun, TransactionDryRunRemote, TransactionDryRunRuntime,
     TransactionMessage, TransactionProgress,
 };
+use crate::worker::flatpak::appstream;
 use crate::worker::flatpak::installation::InstallationManager;
 use crate::worker::WorkerError;
 
@@ -384,10 +384,10 @@ impl TransactionManager {
     fn run_dry_run_transaction(
         &self,
         transaction: Transaction,
-        // We need the *real* intallation (and not the dry-run clone) to check what's already
-        // installed
+        // We need the "real" intallation (not the dry-run) to check what's already installed
         real_installation: &Installation,
-        download_appstream: bool,
+        // Whether to load the AppStream data from the Remote
+        load_remote_appstream: bool,
     ) -> Result<TransactionDryRun, WorkerError> {
         let transaction_dry_run = Rc::new(RefCell::new(TransactionDryRun::default()));
 
@@ -411,7 +411,7 @@ impl TransactionManager {
 
         // Ready -> Everything got resolved, so we can check the transaction operations
         transaction.connect_ready(
-            clone!(@weak transaction_dry_run, @weak real_installation, @strong download_appstream => @default-return false, move |transaction|{
+            clone!(@weak transaction_dry_run, @weak real_installation, @strong load_remote_appstream => @default-return false, move |transaction|{
                 let operation_count = transaction.operations().len();
                 for (pos, operation) in transaction.operations().iter().enumerate() {
                     // Check if it's the last operation, which is the actual app / runtime
@@ -427,7 +427,7 @@ impl TransactionManager {
                             transaction_dry_run.borrow_mut().has_update_source = false;
                         }
 
-                        // Check if the ref is already installed
+                        // Check if ref is already installed
                         let ref_ = Ref::parse(&operation.get_ref().unwrap()).unwrap();
                         let installed = real_installation.installed_ref(
                             ref_.kind(),
@@ -437,7 +437,6 @@ impl TransactionManager {
                             Cancellable::NONE
                         );
 
-                        // Yep -> it's installed
                         if let Ok(installed) = installed {
                             let installed_origin = installed.origin().unwrap();
                             let operation_remote = operation.remote().unwrap();
@@ -458,60 +457,40 @@ impl TransactionManager {
                             }
                         }
 
-                        // Appstream Metadata
-                        if download_appstream {
-                            // Update appstream data from dry run transaction. That's expensive to do
-                            // (needs several seconds), but this only needs to be done once, because
-                            // the next time the remote is already added, and the appstream data is
-                            // already present, and therefore the app can be opened in the normal
-                            // non-sideload details view.
-                            let installation = transaction.installation().unwrap();
-                            let remote = operation.remote().unwrap().to_string();
+                        // Load appstream metadata
+                        if load_remote_appstream {
+                            let dry_run_installation = transaction.installation().unwrap();
+                            let remote_name = operation.remote().unwrap().to_string();
                             let arch = ref_.arch().unwrap().to_string();
 
-                            debug!("Update appstream data...");
-                            let res = installation.update_appstream_sync(&remote, Some(&arch), Cancellable::NONE);
-                            if let Err(err) = res {
-                                warn!("Unable to update appstream data: {}", err.to_string());
-                                return false;
-                            }
-
-                            let remote = installation.remote_by_name(&remote, Cancellable::NONE).unwrap();
-                            let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
-                            let appstream_file = appstream_dir.child("appstream.xml");
-
-                            debug!("Retrieve appstream xml...");
-                            let source = xb::BuilderSource::new();
-                            let res = source.load_file(&appstream_file, xb::BuilderSourceFlags::NONE, Cancellable::NONE);
-                            if let Err(err) = res{
-                                error!("Unable to load appstream file: {}", err.to_string());
-                                return false;
-                            }
-
-                            let builder = xb::Builder::new();
-                            builder.import_source(&source);
-
-                            let silo = builder.compile(xb::BuilderCompileFlags::NONE, Cancellable::NONE).unwrap();
-                            let xpath = format!("components/component/id[text()='{}']/..", ref_.name().unwrap());
-
-                            if let Ok(node) = silo.query_first(&xpath){
-                                let xml = node.export(xb::NodeExportFlags::NONE).unwrap().to_string();
-                                let element = xmltree::Element::parse(xml.as_bytes()).unwrap();
-                                let component = Component::try_from(&element);
-
-                                if let Ok(component) = component{
-                                    // Appstream
-                                    let json = serde_json::to_string(&component).unwrap();
-                                    transaction_dry_run.borrow_mut().appstream_component = Some(json).into();
-
-                                    // Icon
-                                    let icon = appstream_dir.child(format!("icons/128x128/{}.png", ref_.name().unwrap()));
-                                    if let Ok((bytes, _)) = icon.load_bytes(Cancellable::NONE){
-                                        transaction_dry_run.borrow_mut().icon = bytes.to_vec();
+                            // Check if remote is already added (and we don't need to update the appstram data)
+                            let remote = match real_installation.remote_by_name(&remote_name, Cancellable::NONE){
+                                Ok(remote) => remote,
+                                Err(_) => {
+                                    debug!("Update appstream data for remote \"{}\" in dry run installation...", remote_name);
+                                    let res = dry_run_installation.update_appstream_sync(&remote_name, Some(&arch), Cancellable::NONE);
+                                    if let Err(err) = res {
+                                        warn!("Unable to update appstream data: {}", err.to_string());
+                                        return false;
                                     }
+
+                                    dry_run_installation.remote_by_name(&remote_name, Cancellable::NONE).unwrap()
+                                }
+                            };
+
+                            if let Some(component) = appstream::utils::component_from_remote(&ref_, &remote){
+                                // Appstream
+                                let json = serde_json::to_string(&component).unwrap();
+                                transaction_dry_run.borrow_mut().appstream_component = Some(json).into();
+
+                                // Icon
+                                let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
+                                let icon = appstream_dir.child(format!("icons/128x128/{}.png", ref_.name().unwrap()));
+                                if let Ok((bytes, _)) = icon.load_bytes(Cancellable::NONE){
+                                    transaction_dry_run.borrow_mut().icon = bytes.to_vec();
                                 }
                             }else{
-                                warn!("Couldn't find appstream component node.");
+                                warn!("Couldn't find appstream component.");
                             }
                         }
                     }else{
