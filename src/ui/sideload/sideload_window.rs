@@ -93,6 +93,8 @@ mod imp {
         #[template_child]
         pub done_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
+        pub done_status_page: TemplateChild<adw::StatusPage>,
+        #[template_child]
         pub launch_button: TemplateChild<gtk::Button>,
 
         #[template_child]
@@ -102,6 +104,8 @@ mod imp {
 
         #[template_child]
         pub already_done_title: TemplateChild<adw::WindowTitle>,
+        #[template_child]
+        pub already_done_status_page: TemplateChild<adw::StatusPage>,
 
         #[template_child]
         pub missing_runtime_status_page: TemplateChild<adw::StatusPage>,
@@ -336,10 +340,15 @@ impl SkSideloadWindow {
 
         let app_already_done_title = i18n("Already Installed");
         let repo_already_done_title = i18n("Already Added Source");
+        let app_already_done_descr = i18n("This application or runtime is already installed.");
+        let repo_already_done_descr = i18n("This software source is already added.");
 
         let app_done_title = i18n("Installation Complete");
         let update_done_title = i18n("Update Complete");
         let repo_done_title = i18n("Added Software Source");
+        let app_done_descr = i18n("Successfully installed!");
+        let update_done_descr = i18n("Successfully updated!");
+        let repo_done_descr = i18n("Successfully added!");
 
         let app_error_title = i18n("Installation Failed");
         let update_error_title = i18n("Update Failed");
@@ -354,15 +363,20 @@ impl SkSideloadWindow {
                 imp.details_title.set_title(&update_details_title);
                 imp.progress_title.set_title(&update_progress_title);
                 imp.done_title.set_title(&update_done_title);
+                imp.done_status_page
+                    .set_description(Some(&update_done_descr));
                 imp.error_title.set_title(&update_error_title);
             } else {
                 imp.start_button.set_label(&app_start_button);
                 imp.details_title.set_title(&app_details_title);
                 imp.progress_title.set_title(&app_progress_title);
+                imp.done_status_page.set_description(Some(&app_done_descr));
                 imp.done_title.set_title(&app_done_title);
                 imp.error_title.set_title(&app_error_title);
             }
             imp.already_done_title.set_title(&app_already_done_title);
+            imp.already_done_status_page
+                .set_description(Some(&app_already_done_descr));
 
             // Only display launch button if it's an app
             if package.ref_().kind() == RefKind::App {
@@ -464,15 +478,26 @@ impl SkSideloadWindow {
         imp.remote_box.set_visible(remote.is_some());
         if let Some(remote) = sideloadable.remote() {
             let msg = if sideloadable.package().is_none() {
+                let name = if let Some(title) = remote.title() {
+                    title.to_string()
+                } else {
+                    i18n("Software Source")
+                };
+                // The other widgets are bound to the package name / icon
+                imp.package_name_label.set_text(&name);
+                imp.package_icon_image.set_icon_name(Some("gear-symbolic"));
+
                 imp.start_button.set_label(&repo_start_button);
                 imp.details_title.set_title(&repo_details_title);
                 imp.progress_title.set_title(&repo_progress_title);
                 imp.done_title.set_title(&repo_done_title);
                 imp.already_done_title.set_title(&repo_already_done_title);
                 imp.error_title.set_title(&repo_error_title);
+                imp.done_status_page.set_description(Some(&repo_done_descr));
+                imp.already_done_status_page
+                    .set_description(Some(&repo_already_done_descr));
 
-                self.set_default_height(325);
-
+                self.set_default_height(430);
                 i18n("New applications can be obtained from this source. Only proceed if you trust this source.")
             } else {
                 i18n("This package adds a new software source. New applications can be obtained from it. Only proceed with the installation if you trust this source.")
@@ -519,6 +544,12 @@ impl SkSideloadWindow {
 
                 self.handle_sideload_transaction(&transaction);
                 imp.transaction.set(transaction).unwrap();
+            }
+            SkSideloadType::Repo => {
+                match sideloadable.sideload(&worker).await {
+                    Ok(_) => imp.sideload_leaflet.set_visible_child_name("done"),
+                    Err(err) => self.show_error_message(&err.to_string()),
+                };
             }
             _ => (),
         }

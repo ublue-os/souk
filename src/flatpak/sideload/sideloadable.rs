@@ -39,6 +39,7 @@ mod imp {
         pub package: OnceCell<Option<SideloadPackage>>,
         pub remote: OnceCell<Option<Remote>>,
 
+        pub no_changes: OnceCell<bool>,
         pub installation_uuid: OnceCell<String>,
     }
 
@@ -69,6 +70,9 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(type_).unwrap();
+        imp.no_changes
+            .set(transaction_dry_run.is_already_installed)
+            .unwrap();
         imp.installation_uuid
             .set(installation_uuid.to_string())
             .unwrap();
@@ -90,7 +94,12 @@ impl SkSideloadable {
     }
 
     // *.flatpak repo
-    pub fn new_repo(file: &File, remote: &Remote, installation_uuid: &str) -> Self {
+    pub fn new_repo(
+        file: &File,
+        remote: &Remote,
+        already_added: bool,
+        installation_uuid: &str,
+    ) -> Self {
         let sideloadable: Self = glib::Object::new(&[]).unwrap();
 
         let imp = sideloadable.imp();
@@ -98,6 +107,7 @@ impl SkSideloadable {
         imp.type_.set(SkSideloadType::Repo).unwrap();
         imp.package.set(None).unwrap();
         imp.remote.set(Some(remote.clone())).unwrap();
+        imp.no_changes.set(already_added).unwrap();
         imp.installation_uuid
             .set(installation_uuid.to_string())
             .unwrap();
@@ -126,13 +136,7 @@ impl SkSideloadable {
     }
 
     pub fn no_changes(&self) -> bool {
-        if let Some(package) = self.package() {
-            return package.is_already_installed();
-        }
-
-        // TODO: Check if remote is already added as well
-
-        false
+        *self.imp().no_changes.get().unwrap()
     }
 
     pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTransaction>, Error> {
@@ -166,10 +170,11 @@ impl SkSideloadable {
             };
 
             return Ok(transaction);
+        } else if self.type_() == SkSideloadType::Repo {
+            worker
+                .add_remote(&self.file(), &self.installation_uuid())
+                .await?;
         }
-
-        // TODO: Handle sideloading remotes
-
         Ok(None)
     }
 }

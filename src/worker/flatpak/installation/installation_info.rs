@@ -1,4 +1,4 @@
-// Souk - info.rs
+// Souk - installation_info.rs
 // Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify

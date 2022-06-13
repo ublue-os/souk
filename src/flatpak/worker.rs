@@ -253,9 +253,22 @@ impl SkWorker {
         Ok(transaction)
     }
 
+    /// Add a new remote by flatpakrepo file
+    pub async fn add_remote(&self, file: &File, installation_uuid: &str) -> Result<(), Error> {
+        let path = file.path().unwrap().into_os_string();
+        self.imp()
+            .proxy
+            .add_installation_remote(installation_uuid, path.to_str().unwrap())
+            .await?;
+        Ok(())
+    }
+
     /// Cancel a Flatpak transaction
-    pub async fn cancel_transaction(&self, uuid: &str) -> Result<(), Error> {
-        self.imp().proxy.cancel_transaction(uuid).await?;
+    pub async fn cancel_transaction(&self, transaction_uuid: &str) -> Result<(), Error> {
+        self.imp()
+            .proxy
+            .cancel_transaction(transaction_uuid)
+            .await?;
         Ok(())
     }
 
@@ -285,7 +298,22 @@ impl SkWorker {
             SkSideloadType::Repo => {
                 let bytes = file.load_bytes(gio::Cancellable::NONE)?.0;
                 let remote = Remote::from_file("remote", &bytes)?;
-                return Ok(SkSideloadable::new_repo(file, &remote, installation_uuid));
+
+                let name = remote.name().unwrap().to_string();
+                let url = remote.url().unwrap().to_string();
+
+                // Check if remote is already added
+                let remotes = proxy.installation_remotes(installation_uuid).await?;
+                let already_added = remotes
+                    .iter()
+                    .any(|r| r.name == name || r.repository_url == url);
+
+                return Ok(SkSideloadable::new_repo(
+                    file,
+                    &remote,
+                    already_added,
+                    installation_uuid,
+                ));
             }
             _ => return Err(Error::UnsupportedSideloadType),
         };

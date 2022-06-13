@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod info;
+mod installation_info;
 mod installation_manager;
+mod remote_info;
 
-pub use info::InstallationInfo;
+pub use installation_info::InstallationInfo;
 pub use installation_manager::InstallationManager;
+pub use remote_info::RemoteInfo;

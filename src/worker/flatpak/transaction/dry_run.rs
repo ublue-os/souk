@@ -15,10 +15,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use derivative::Derivative;
-use libflatpak::prelude::*;
-use libflatpak::Remote;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
+
+use crate::worker::flatpak::installation::RemoteInfo;
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone)]
 #[derivative(Debug)]
@@ -48,7 +48,7 @@ pub struct TransactionDryRun {
     /// Which runtimes are installed during the installation
     pub runtimes: Vec<TransactionDryRunRuntime>,
     /// Which remote may be added during installation
-    pub remote: Optional<TransactionDryRunRemote>,
+    pub remote: Optional<RemoteInfo>,
 }
 
 impl TransactionDryRun {
@@ -94,79 +94,4 @@ pub struct TransactionDryRunRuntime {
     pub type_: String,
     pub download_size: u64,
     pub installed_size: u64,
-}
-
-#[derive(Deserialize, Serialize, Type, Debug, Clone, PartialEq)]
-pub struct TransactionDryRunRemote {
-    pub suggested_remote_name: String,
-    pub repository_url: String,
-
-    // Metadata which is in the .flatpakrepo file
-    pub title: Optional<String>,
-    pub description: Optional<String>,
-    pub comment: Optional<String>,
-    pub homepage: Optional<String>,
-    pub icon: Optional<String>,
-}
-
-impl TransactionDryRunRemote {
-    pub fn flatpak_remote(&self) -> Remote {
-        let remote = Remote::new(&self.suggested_remote_name);
-        remote.set_url(&self.repository_url);
-
-        if let Some(value) = self.title.as_ref() {
-            remote.set_title(value);
-        }
-
-        if let Some(value) = self.description.as_ref() {
-            remote.set_description(value);
-        }
-
-        if let Some(value) = self.comment.as_ref() {
-            remote.set_comment(value);
-        }
-
-        if let Some(value) = self.homepage.as_ref() {
-            remote.set_homepage(value);
-        }
-
-        if let Some(value) = self.icon.as_ref() {
-            remote.set_icon(value);
-        }
-
-        remote
-    }
-
-    pub fn set_flatpak_remote(&mut self, remote: Remote) {
-        if let Some(value) = remote.title() {
-            self.title = Some(value.into()).into();
-        }
-        if let Some(value) = remote.description() {
-            self.description = Some(value.into()).into();
-        }
-        if let Some(value) = remote.comment() {
-            self.comment = Some(value.into()).into();
-        }
-        if let Some(value) = remote.homepage() {
-            self.homepage = Some(value.into()).into();
-        }
-        if let Some(value) = remote.icon() {
-            self.icon = Some(value.into()).into();
-        }
-    }
-}
-
-impl Default for TransactionDryRunRemote {
-    fn default() -> Self {
-        Self {
-            suggested_remote_name: String::default(),
-            repository_url: String::default(),
-
-            title: None.into(),
-            description: None.into(),
-            comment: None.into(),
-            homepage: None.into(),
-            icon: None.into(),
-        }
-    }
 }

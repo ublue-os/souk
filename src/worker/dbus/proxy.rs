@@ -17,7 +17,7 @@
 use zbus::Result;
 
 use crate::config;
-use crate::worker::flatpak::installation::InstallationInfo;
+use crate::worker::flatpak::installation::{InstallationInfo, RemoteInfo};
 use crate::worker::flatpak::transaction;
 use crate::worker::flatpak::transaction::TransactionDryRun;
 use crate::worker::WorkerError;
@@ -75,6 +75,10 @@ trait Worker {
     fn installations(&self) -> Result<Vec<InstallationInfo>>;
 
     fn preferred_installation(&self) -> Result<InstallationInfo>;
+
+    fn add_installation_remote(&self, installation_uuid: &str, repo_path: &str) -> Result<()>;
+
+    fn installation_remotes(&self, installation_uuid: &str) -> Result<Vec<RemoteInfo>>;
 }
 
 impl Default for WorkerProxy<'static> {

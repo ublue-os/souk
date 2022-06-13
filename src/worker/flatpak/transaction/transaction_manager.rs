@@ -36,11 +36,11 @@ use libflatpak::{
 };
 
 use super::{
-    TransactionCommand, TransactionDryRun, TransactionDryRunRemote, TransactionDryRunRuntime,
-    TransactionMessage, TransactionProgress,
+    TransactionCommand, TransactionDryRun, TransactionDryRunRuntime, TransactionMessage,
+    TransactionProgress,
 };
 use crate::worker::flatpak::appstream;
-use crate::worker::flatpak::installation::InstallationManager;
+use crate::worker::flatpak::installation::{InstallationManager, RemoteInfo};
 use crate::worker::WorkerError;
 
 #[derive(Debug, Clone, Downgrade)]
@@ -207,7 +207,7 @@ impl TransactionManager {
 
         let installation = self
             .installation_manager
-            .flatpak_installation_by_uuid(installation_uuid);
+            .installation_by_uuid(installation_uuid);
         let results = self.run_dry_run_transaction(transaction, &installation, false);
 
         if let Ok(mut results) = results {
@@ -217,7 +217,7 @@ impl TransactionManager {
             // Optional remote / repository
             if let Some(remote) = results.remote.as_mut() {
                 let f_remote = self.retrieve_flatpak_remote(&bundle.runtime_repo_url().unwrap())?;
-                remote.set_flatpak_remote(f_remote);
+                remote.set_flatpak_remote(&f_remote);
             }
 
             // Icon
@@ -285,7 +285,7 @@ impl TransactionManager {
 
         let installation = self
             .installation_manager
-            .flatpak_installation_by_uuid(installation_uuid);
+            .installation_by_uuid(installation_uuid);
         let results = self.run_dry_run_transaction(transaction, &installation, true);
 
         if let Ok(mut results) = results {
@@ -296,7 +296,7 @@ impl TransactionManager {
                 let remote_url = keyfile.value("Flatpak Ref", "RuntimeRepo")?;
 
                 let f_remote = self.retrieve_flatpak_remote(&remote_url)?;
-                remote.set_flatpak_remote(f_remote);
+                remote.set_flatpak_remote(&f_remote);
             }
 
             return Ok(results);
@@ -395,12 +395,7 @@ impl TransactionManager {
         transaction.connect_add_new_remote(
             clone!(@weak transaction_dry_run => @default-return false, move |_, reason, _, name, url|{
                 if reason == TransactionRemoteReason::RuntimeDeps{
-                    let remote = TransactionDryRunRemote{
-                        suggested_remote_name: name.to_string(),
-                        repository_url: url.to_string(),
-                        ..Default::default()
-                    };
-
+                    let remote = RemoteInfo::new(name, url);
                     transaction_dry_run.borrow_mut().remote = Some(remote).into();
                     return true;
                 }
@@ -539,7 +534,7 @@ impl TransactionManager {
     ) -> Result<Transaction, WorkerError> {
         let installation = self
             .installation_manager
-            .flatpak_installation_by_uuid(installation_uuid);
+            .installation_by_uuid(installation_uuid);
 
         // Setup a own installation for dry run transactions, and add the specified
         // installation as dependency source. This way the dry run transaction

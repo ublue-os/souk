@@ -348,8 +348,8 @@
                               <object class="AdwStatusPage" id="done_status_page">
                                 <property name="vexpand">True</property>
                                 <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
+                                <property name="icon_name" bind-source="package_icon_image" bind-property="icon_name" bind-flags="sync-create"/>
                                 <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
-                                <property name="description" translatable="yes">Successfully Installed</property>
                                 <child>
                                   <object class="GtkButton" id="launch_button">
                                     <property name="halign">center</property>
@@ -422,8 +422,8 @@
                               <object class="AdwStatusPage" id="already_done_status_page">
                                 <property name="vexpand">True</property>
                                 <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
+                                <property name="icon_name" bind-source="package_icon_image" bind-property="icon_name" bind-flags="sync-create"/>
                                 <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
-                                <property name="description" translatable="yes">The package is already installed. Do you want to install it for a different installation?</property>
                                 <child>
                                   <object class="GtkBox">
                                     <property name="orientation">vertical</property>

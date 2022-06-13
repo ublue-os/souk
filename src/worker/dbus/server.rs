@@ -20,7 +20,7 @@ use uuid::Uuid;
 use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
 
 use crate::config;
-use crate::worker::flatpak::installation::{InstallationInfo, InstallationManager};
+use crate::worker::flatpak::installation::{InstallationInfo, InstallationManager, RemoteInfo};
 use crate::worker::flatpak::transaction::{
     TransactionCommand, TransactionDryRun, TransactionError, TransactionMessage,
     TransactionProgress,
@@ -171,6 +171,16 @@ impl Worker {
 
     async fn preferred_installation(&self) -> InstallationInfo {
         self.installation_manager.preferred_installation()
+    }
+
+    async fn add_installation_remote(&self, installation_uuid: &str, repo_path: &str) {
+        self.installation_manager
+            .add_installation_remote(installation_uuid, repo_path);
+    }
+
+    async fn installation_remotes(&self, installation_uuid: &str) -> Vec<RemoteInfo> {
+        self.installation_manager
+            .installation_remotes(installation_uuid)
     }
 }
 
