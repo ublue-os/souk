@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::RefCell;
+
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
@@ -23,7 +25,6 @@ use gtk::{glib, CompositeTemplate};
 use libflatpak::prelude::*;
 use libflatpak::Remote;
 use once_cell::sync::Lazy;
-use once_cell::unsync::OnceCell;
 
 use crate::i18n::i18n;
 
@@ -38,7 +39,7 @@ mod imp {
         #[template_child]
         pub external_link_image: TemplateChild<gtk::Image>,
 
-        pub remote: OnceCell<Remote>,
+        pub remote: RefCell<Option<Remote>>,
     }
 
     #[glib::object_subclass]
@@ -64,7 +65,7 @@ mod imp {
                     "Remote",
                     "Remote",
                     Remote::static_type(),
-                    ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ParamFlags::READABLE,
                 )]
             });
             PROPERTIES.as_ref()
@@ -79,20 +80,15 @@ mod imp {
 
         fn set_property(
             &self,
-            _obj: &Self::Type,
+            obj: &Self::Type,
             _id: usize,
             value: &glib::Value,
             pspec: &ParamSpec,
         ) {
             match pspec.name() {
-                "remote" => self.remote.set(value.get().unwrap()).unwrap(),
+                "remote" => obj.set_remote(value.get().unwrap()),
                 _ => unimplemented!(),
             }
-        }
-
-        fn constructed(&self, obj: &Self::Type) {
-            self.parent_constructed(obj);
-            obj.setup_widgets();
         }
     }
 
@@ -113,13 +109,24 @@ glib::wrapper! {
 }
 
 impl SkRemoteRow {
-    pub fn new(remote: &Remote) -> Self {
-        glib::Object::new(&[("remote", remote)]).unwrap()
+    pub fn new() -> Self {
+        glib::Object::new(&[]).unwrap()
     }
 
-    fn setup_widgets(&self) {
+    pub fn remote(&self) -> Option<Remote> {
+        self.imp().remote.borrow().clone()
+    }
+
+    pub fn set_remote(&self, remote: &Remote) {
+        *self.imp().remote.borrow_mut() = Some(remote.clone());
+
+        self.update_widgets();
+        self.notify("remote");
+    }
+
+    fn update_widgets(&self) {
         let imp = self.imp();
-        let remote = self.remote();
+        let remote = self.remote().unwrap();
 
         // Icon
         if let Some(value) = remote.icon() {
@@ -160,9 +167,8 @@ impl SkRemoteRow {
         self.set_subtitle(&subtitle);
 
         // Homepage
-        if remote.homepage().is_some() {
-            imp.external_link_image.set_visible(true);
-        }
+        imp.external_link_image
+            .set_visible(remote.homepage().is_some());
 
         self.connect_activated(clone!(@weak remote => move|s|{
             if let Some(homepage) = remote.homepage(){
@@ -170,9 +176,5 @@ impl SkRemoteRow {
                 gtk::show_uri(Some(&window), &homepage, gtk::gdk::CURRENT_TIME);
             }
         }));
-    }
-
-    pub fn remote(&self) -> Remote {
-        self.imp().remote.get().unwrap().clone()
     }
 }

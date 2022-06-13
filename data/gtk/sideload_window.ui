@@ -197,6 +197,9 @@
                                         </child>
                                         <child>
                                           <object class="AdwPreferencesGroup" id="remote_group">
+                                            <child>
+                                              <object class="SkRemoteRow" id="remote_row"/>
+                                            </child>
                                             <style>
                                               <class name="large-rows"/>
                                             </style>

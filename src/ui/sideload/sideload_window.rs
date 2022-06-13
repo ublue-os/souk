@@ -73,6 +73,8 @@ mod imp {
         pub replacing_remote_row: TemplateChild<adw::ActionRow>,
         #[template_child]
         pub remote_group: TemplateChild<adw::PreferencesGroup>,
+        #[template_child]
+        pub remote_row: TemplateChild<SkRemoteRow>,
 
         #[template_child]
         pub installation_listbox: TemplateChild<SkInstallationListBox>,
@@ -383,13 +385,13 @@ impl SkSideloadWindow {
             let download_string = i18n_f("Up to {} download", &[&size]);
             imp.package_download_size_row.set_title(&download_string);
             imp.package_download_size_row
-                .set_subtitle(&"Requires up to 0 MB of shared system packages");
+                .set_subtitle("Requires up to 0 MB of shared system packages");
 
             let size = glib::format_size(package.installed_size());
             let installed_string = i18n_f("Up to {} installed size", &[&size]);
             imp.package_installed_size_row.set_title(&installed_string);
             imp.package_installed_size_row
-                .set_subtitle(&"Requires up to 0 MB of shared system packages");
+                .set_subtitle("Requires up to 0 MB of shared system packages");
 
             // Setup general package appstream metadata
             if let Some(component) = package.appstream() {
@@ -465,10 +467,10 @@ impl SkSideloadWindow {
                 i18n("This package adds a new software source. New applications can be obtained from it. Only proceed with the installation if you trust this source.")
             };
             imp.remote_group.set_description(Some(&msg));
-
-            let remote_row = SkRemoteRow::new(&remote);
-            imp.remote_group.add(&remote_row);
+            imp.remote_row.set_remote(&remote);
         }
+        imp.remote_group
+            .set_visible(sideloadable.remote().is_some());
 
         if sideloadable.no_changes() {
             imp.sideload_leaflet.set_visible_child_name("already-done");
