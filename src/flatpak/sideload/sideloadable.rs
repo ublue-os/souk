@@ -25,7 +25,8 @@ use once_cell::unsync::OnceCell;
 use super::SideloadPackage;
 use crate::error::Error;
 use crate::flatpak::sideload::SkSideloadType;
-use crate::flatpak::{SkTransaction, SkWorker};
+use crate::flatpak::transaction::SkTransaction;
+use crate::flatpak::SkWorker;
 use crate::worker::TransactionDryRun;
 
 mod imp {

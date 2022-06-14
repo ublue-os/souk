@@ -24,7 +24,7 @@ use gtk::{glib, CompositeTemplate};
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::flatpak::SkInstallation;
+use crate::flatpak::installation::SkInstallation;
 
 mod imp {
     use super::*;

@@ -14,12 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod message;
-mod transaction_command;
-mod transaction_dry_run;
-mod transaction_manager;
+#[allow(clippy::module_inception)]
+mod transaction;
+mod transaction_model;
+mod transaction_type;
 
-pub use message::{TransactionError, TransactionMessage, TransactionProgress};
-pub use transaction_command::TransactionCommand;
-pub use transaction_dry_run::{TransactionDryRun, TransactionDryRunRuntime};
-pub use transaction_manager::TransactionManager;
+pub use transaction::SkTransaction;
+pub use transaction_model::SkTransactionModel;
+pub use transaction_type::SkTransactionType;

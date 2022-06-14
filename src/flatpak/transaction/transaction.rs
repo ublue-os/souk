@@ -28,7 +28,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::flatpak::SkTransactionType;
+use crate::flatpak::transaction::SkTransactionType;
 use crate::worker::{TransactionError, TransactionProgress};
 
 mod imp {
@@ -281,7 +281,7 @@ impl SkTransaction {
         self.imp().operations_count.get()
     }
 
-    pub(super) fn handle_progress(&self, progress: &TransactionProgress) {
+    pub fn handle_progress(&self, progress: &TransactionProgress) {
         let imp = self.imp();
 
         if progress.is_done {
@@ -321,7 +321,7 @@ impl SkTransaction {
         self.notify("operations-count");
     }
 
-    pub(super) fn handle_error(&self, error: &TransactionError) {
+    pub fn handle_error(&self, error: &TransactionError) {
         self.emit_by_name::<()>("error", &[&error.message.to_value()]);
     }
 }

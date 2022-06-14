@@ -52,10 +52,7 @@ impl TransactionProgress {
             ..Default::default()
         };
 
-        if transaction.is_some() && operation.is_some() {
-            let transaction = transaction.unwrap();
-            let operation = operation.unwrap();
-
+        if let (Some(transaction), Some(operation)) = (transaction, operation) {
             let operations = transaction.operations();
             let op_index = operations.iter().position(|o| o == operation).unwrap();
 

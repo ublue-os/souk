@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,12 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod message;
-mod transaction_command;
-mod transaction_dry_run;
-mod transaction_manager;
+#[allow(clippy::module_inception)]
+mod installation;
 
-pub use message::{TransactionError, TransactionMessage, TransactionProgress};
-pub use transaction_command::TransactionCommand;
-pub use transaction_dry_run::{TransactionDryRun, TransactionDryRunRuntime};
-pub use transaction_manager::TransactionManager;
+pub use installation::SkInstallation;

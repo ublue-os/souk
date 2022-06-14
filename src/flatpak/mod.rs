@@ -14,17 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+pub mod installation;
 pub mod sideload;
+pub mod transaction;
 
 mod dbus_proxy;
-mod installation;
-mod transaction;
-mod transaction_model;
-mod transaction_type;
 mod worker;
 
-pub use installation::SkInstallation;
-pub use transaction::SkTransaction;
-pub use transaction_model::SkTransactionModel;
-pub use transaction_type::SkTransactionType;
 pub use worker::SkWorker;

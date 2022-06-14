@@ -24,7 +24,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 
 use crate::app::SkApplication;
-use crate::flatpak::SkInstallation;
+use crate::flatpak::installation::SkInstallation;
 use crate::ui::SkInstallationRow;
 
 mod imp {

@@ -21,7 +21,7 @@ use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::OnceCell;
 
-use crate::flatpak::SkTransaction;
+use crate::flatpak::transaction::SkTransaction;
 
 mod imp {
     use super::*;

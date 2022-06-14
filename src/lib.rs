@@ -17,19 +17,18 @@
 #[macro_use]
 extern crate log;
 extern crate pretty_env_logger;
-//#[macro_use]
-// extern crate serde_derive;
-//#[macro_use]
-// extern crate diesel;
-//#[macro_use]
-// extern crate diesel_migrations;
-//#[macro_use]
-// extern crate strum_macros;
 #[macro_use]
 extern crate gtk_macros;
 
+/// Consumes the data of the `souk-worker` process, and wraps them into usable
+/// types so that they can easily consumed by the user interface (eg. gobjects
+/// with properties)
 pub mod flatpak;
+/// The user interface
 pub mod ui;
+/// Components of the `souk-worker` binary, which does the actual Flatpak and
+/// Appstream work / processing, and communicates via DBus with the main `souk`
+/// process.
 pub mod worker;
 
 mod app;

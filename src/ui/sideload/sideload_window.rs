@@ -31,7 +31,7 @@ use crate::app::SkApplication;
 use crate::config;
 use crate::error::Error;
 use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
-use crate::flatpak::SkTransaction;
+use crate::flatpak::transaction::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
 use crate::ui::SkInstallationListBox;
 use crate::worker::WorkerError;

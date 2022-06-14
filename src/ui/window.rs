@@ -22,7 +22,7 @@ use gtk::{gio, glib, CompositeTemplate};
 
 use crate::app::SkApplication;
 use crate::config;
-use crate::flatpak::SkTransaction;
+use crate::flatpak::transaction::SkTransaction;
 use crate::ui::SkTransactionRow;
 
 mod imp {
@@ -103,4 +103,10 @@ impl SkApplicationWindow {
     fn setup_signals(&self) {}
 
     fn setup_gactions(&self) {}
+}
+
+impl Default for SkApplicationWindow {
+    fn default() -> Self {
+        Self::new()
+    }
 }

@@ -22,15 +22,15 @@ mod installation;
 mod transaction;
 
 mod dbus_server;
-mod error;
 mod process;
+mod worker_error;
 
-pub use error::WorkerError;
 use installation::InstallationManager;
 pub use installation::{InstallationInfo, RemoteInfo};
 pub use process::Process;
 use transaction::TransactionManager;
 pub use transaction::{TransactionDryRun, TransactionError, TransactionProgress};
+pub use worker_error::WorkerError;
 
 /// Start DBus server. This method gets called from the `souk-worker` binary.
 pub async fn spawn_dbus_server() {

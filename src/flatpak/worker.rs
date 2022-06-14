@@ -29,8 +29,9 @@ use once_cell::sync::Lazy;
 
 use crate::error::Error;
 use crate::flatpak::dbus_proxy::WorkerProxy;
+use crate::flatpak::installation::SkInstallation;
 use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
-use crate::flatpak::{SkInstallation, SkTransaction, SkTransactionModel, SkTransactionType};
+use crate::flatpak::transaction::{SkTransaction, SkTransactionModel, SkTransactionType};
 use crate::worker::Process;
 
 mod imp {

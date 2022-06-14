@@ -109,10 +109,6 @@ glib::wrapper! {
 }
 
 impl SkRemoteRow {
-    pub fn new() -> Self {
-        glib::Object::new(&[]).unwrap()
-    }
-
     pub fn remote(&self) -> Option<Remote> {
         self.imp().remote.borrow().clone()
     }
