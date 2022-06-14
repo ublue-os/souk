@@ -39,9 +39,8 @@ use super::{
     TransactionCommand, TransactionDryRun, TransactionDryRunRuntime, TransactionMessage,
     TransactionProgress,
 };
-use crate::worker::flatpak::appstream;
-use crate::worker::flatpak::installation::{InstallationManager, RemoteInfo};
-use crate::worker::WorkerError;
+use crate::worker::installation::{InstallationManager, RemoteInfo};
+use crate::worker::{appstream, WorkerError};
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct TransactionManager {

@@ -16,7 +16,7 @@
 
 use async_std::channel::Sender;
 
-use crate::worker::flatpak::transaction::TransactionDryRun;
+use crate::worker::transaction::TransactionDryRun;
 use crate::worker::WorkerError;
 
 #[derive(Debug, Clone)]

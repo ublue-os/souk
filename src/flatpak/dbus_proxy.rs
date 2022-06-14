@@ -1,4 +1,4 @@
-// Souk - client.rs
+// Souk - dbus_proxy.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,10 +15,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::config;
-use crate::worker::flatpak::installation::{InstallationInfo, RemoteInfo};
-use crate::worker::flatpak::transaction;
-use crate::worker::flatpak::transaction::TransactionDryRun;
-use crate::worker::WorkerError;
+use crate::worker::{
+    InstallationInfo, RemoteInfo, TransactionDryRun, TransactionError as WTransactionError,
+    TransactionProgress as WTransactionProgress, WorkerError,
+};
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
@@ -61,10 +61,10 @@ trait Worker {
     fn cancel_transaction(&self, uuid: &str) -> zbus::Result<()>;
 
     #[dbus_proxy(signal)]
-    fn transaction_progress(&self, progress: transaction::TransactionProgress) -> zbus::Result<()>;
+    fn transaction_progress(&self, progress: WTransactionProgress) -> zbus::Result<()>;
 
     #[dbus_proxy(signal)]
-    fn transaction_error(&self, error: transaction::TransactionError) -> zbus::Result<()>;
+    fn transaction_error(&self, error: WTransactionError) -> zbus::Result<()>;
 
     // Installation
 

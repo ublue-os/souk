@@ -14,22 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod dbus;
+/// Parsing appstream metadata, creation of xmlb exports
+mod appstream;
+/// Handling of Flatpak installations with its remotes
+mod installation;
+/// Execution of Flatpak (dry-run) transactions, and state tracking
+mod transaction;
+
+mod dbus_server;
 mod error;
-mod flatpak;
 mod process;
 
-pub use dbus::WorkerProxy;
 pub use error::WorkerError;
+use installation::InstallationManager;
+pub use installation::{InstallationInfo, RemoteInfo};
 pub use process::Process;
+use transaction::TransactionManager;
+pub use transaction::{TransactionDryRun, TransactionError, TransactionProgress};
 
-pub use self::flatpak::installation::{InstallationInfo, InstallationManager};
-pub use self::flatpak::transaction::{
-    TransactionDryRun, TransactionError, TransactionManager, TransactionProgress,
-};
-
-/// Start DBus server and Flatpak transaction manager.
-/// This method gets called from the `souk-worker` binary.
+/// Start DBus server. This method gets called from the `souk-worker` binary.
 pub async fn spawn_dbus_server() {
     use async_std::channel::unbounded;
     debug!("Start souk-worker dbus server...");
@@ -47,7 +50,7 @@ pub async fn spawn_dbus_server() {
         command_receiver,
     );
 
-    dbus::server::start(installation_manager, command_sender, message_receiver)
+    dbus_server::start(installation_manager, command_sender, message_receiver)
         .await
         .unwrap();
 }

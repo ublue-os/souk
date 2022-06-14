@@ -16,6 +16,7 @@
 
 pub mod sideload;
 
+mod dbus_proxy;
 mod installation;
 mod transaction;
 mod transaction_model;

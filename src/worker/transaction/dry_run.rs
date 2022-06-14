@@ -18,7 +18,7 @@ use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::worker::flatpak::installation::RemoteInfo;
+use crate::worker::installation::RemoteInfo;
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone)]
 #[derivative(Debug)]

@@ -1,4 +1,4 @@
-// Souk - server.rs
+// Souk - dbus_server.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -20,8 +20,8 @@ use uuid::Uuid;
 use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
 
 use crate::config;
-use crate::worker::flatpak::installation::{InstallationInfo, InstallationManager, RemoteInfo};
-use crate::worker::flatpak::transaction::{
+use crate::worker::installation::{InstallationInfo, InstallationManager, RemoteInfo};
+use crate::worker::transaction::{
     TransactionCommand, TransactionDryRun, TransactionError, TransactionMessage,
     TransactionProgress,
 };

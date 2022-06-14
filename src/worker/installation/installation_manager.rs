@@ -79,6 +79,7 @@ impl InstallationManager {
     }
 
     // TODO: Expose this via the DBus interface / allow adding custom installations
+    #[allow(dead_code)]
     pub fn add_installation(
         &self,
         path: String,
