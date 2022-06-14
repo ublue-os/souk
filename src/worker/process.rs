@@ -35,7 +35,7 @@ impl Process {
         // First copy worker binary outside of sandbox
         let mut destination = path::BIN.clone();
         destination.push("souk-worker");
-        fs::copy("/app/bin/souk-worker", destination).expect("Unable to copy souk-worker binary");
+        fs::copy("/app/bin/souk-worker", &destination).expect("Unable to copy souk-worker binary");
 
         // If we kill flatpak-spawn, we also want to kill the child process too.
         let mut args: Vec<String> = vec!["--watch-bus".into()];
@@ -44,7 +44,7 @@ impl Process {
         // We cannot do stuff inside the Flatpak Sandbox,
         // so we have to spawn the worker process on host side
         args.push("--host".into());
-        args.push("souk-worker".into());
+        args.push(destination.to_str().unwrap().into());
 
         let child = Command::new("flatpak-spawn").args(&args).spawn().unwrap();
         *self.child.borrow_mut() = Some(child);
