@@ -24,16 +24,16 @@ use ::appstream::Collection;
 use async_std::channel::{Receiver, Sender};
 use async_std::prelude::*;
 use async_std::task;
+use flatpak::prelude::*;
+use flatpak::{
+    BundleRef, Installation, Ref, Remote, Transaction, TransactionOperation,
+    TransactionOperationType, TransactionRemoteReason,
+};
 use gio::prelude::*;
 use gio::Cancellable;
 use glib::{clone, Downgrade, KeyFile};
 use gtk::{gio, glib};
 use isahc::ReadResponseExt;
-use libflatpak::prelude::*;
-use libflatpak::{
-    BundleRef, Installation, Ref, Remote, Transaction, TransactionOperation,
-    TransactionOperationType, TransactionRemoteReason,
-};
 
 use super::{
     TransactionCommand, TransactionDryRun, TransactionDryRunRuntime, TransactionMessage,
@@ -263,7 +263,7 @@ impl TransactionManager {
             keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
             let name = keyfile.value("Flatpak Ref", "Name")?;
             let branch = keyfile.value("Flatpak Ref", "Branch")?;
-            let arch = libflatpak::functions::default_arch().unwrap();
+            let arch = flatpak::functions::default_arch().unwrap();
 
             let ref_ = format!("app/{}/{}/{}", name, arch, branch);
             self.uninstall_ref(&ref_, installation_uuid)?;
@@ -364,7 +364,7 @@ impl TransactionManager {
         transaction_uuid: String,
         transaction: &Transaction,
         transaction_operation: &TransactionOperation,
-        transaction_progress: &libflatpak::TransactionProgress,
+        transaction_progress: &flatpak::TransactionProgress,
     ) {
         let progress = TransactionProgress::new(
             transaction_uuid,
@@ -508,7 +508,7 @@ impl TransactionManager {
         );
 
         if let Err(err) = transaction.run(Cancellable::NONE) {
-            if err.kind::<libflatpak::Error>() == Some(libflatpak::Error::RuntimeNotFound) {
+            if err.kind::<flatpak::Error>() == Some(flatpak::Error::RuntimeNotFound) {
                 // Unfortunately there's no clean way to find out which runtime is missing
                 // so we have to parse the error message to find the runtime ref.
                 let regex = regex::Regex::new(r".+ (.+/.+/[^ ]+) .+ (.+/.+/[^ ]+) .+").unwrap();
@@ -520,7 +520,7 @@ impl TransactionManager {
                 };
 
                 return Err(error);
-            } else if err.kind::<libflatpak::Error>() != Some(libflatpak::Error::Aborted) {
+            } else if err.kind::<flatpak::Error>() != Some(flatpak::Error::Aborted) {
                 error!("Error during transaction dry run: {}", err.message());
                 return Err(err.into());
             }

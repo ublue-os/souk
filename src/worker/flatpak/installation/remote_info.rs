@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use libflatpak::prelude::*;
-use libflatpak::Remote;
+use flatpak::prelude::*;
+use flatpak::Remote;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 

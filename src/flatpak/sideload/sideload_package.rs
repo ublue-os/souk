@@ -15,9 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use appstream::Component;
+use flatpak::Ref;
 use gtk::glib::Bytes;
 use gtk::prelude::*;
-use libflatpak::Ref;
 
 use crate::worker::TransactionDryRun;
 

@@ -18,12 +18,12 @@ use std::cell::RefCell;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
+use flatpak::prelude::*;
+use flatpak::Remote;
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::gio::File;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
-use libflatpak::prelude::*;
-use libflatpak::Remote;
 use once_cell::sync::Lazy;
 
 use crate::i18n::i18n;

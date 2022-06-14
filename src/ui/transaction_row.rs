@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use flatpak::prelude::*;
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
-use libflatpak::prelude::*;
 use once_cell::sync::OnceCell;
 
 use crate::flatpak::SkTransaction;

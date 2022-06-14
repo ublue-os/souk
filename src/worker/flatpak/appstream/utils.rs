@@ -15,10 +15,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use appstream::Component;
+use flatpak::prelude::*;
+use flatpak::{Ref, Remote};
 use gtk::gio::Cancellable;
 use gtk::prelude::*;
-use libflatpak::prelude::*;
-use libflatpak::{Ref, Remote};
 use xb::prelude::*;
 
 pub fn component_from_remote(ref_: &Ref, remote: &Remote) -> Option<Component> {

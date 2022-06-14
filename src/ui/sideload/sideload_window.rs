@@ -18,12 +18,12 @@ use std::cell::RefCell;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
+use flatpak::prelude::*;
+use flatpak::RefKind;
 use gio::File;
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
-use libflatpak::prelude::*;
-use libflatpak::RefKind;
 use once_cell::sync::{Lazy, OnceCell};
 
 use super::SkRemoteRow;

@@ -16,6 +16,7 @@
 
 use std::cell::{Cell, RefCell};
 
+use flatpak::Ref;
 use glib::subclass::Signal;
 use glib::{
     ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecInt, ParamSpecObject,
@@ -24,7 +25,6 @@ use glib::{
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use libflatpak::Ref;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 

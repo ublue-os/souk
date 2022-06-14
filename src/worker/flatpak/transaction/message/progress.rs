@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use libflatpak::prelude::*;
-use libflatpak::{Transaction, TransactionOperation};
+use flatpak::prelude::*;
+use flatpak::{Transaction, TransactionOperation};
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
@@ -45,7 +45,7 @@ impl TransactionProgress {
         transaction_uuid: String,
         transaction: Option<&Transaction>,
         operation: Option<&TransactionOperation>,
-        operation_progress: Option<&libflatpak::TransactionProgress>,
+        operation_progress: Option<&flatpak::TransactionProgress>,
     ) -> Self {
         let mut progress = Self {
             transaction_uuid,
@@ -78,7 +78,7 @@ impl TransactionProgress {
         progress
     }
 
-    pub fn update(&self, operation_progress: &libflatpak::TransactionProgress) -> Self {
+    pub fn update(&self, operation_progress: &flatpak::TransactionProgress) -> Self {
         let mut updated = self.clone();
         updated.progress = operation_progress.progress();
         updated.bytes_transferred = operation_progress.bytes_transferred();

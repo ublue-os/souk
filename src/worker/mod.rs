@@ -21,11 +21,12 @@ mod process;
 
 pub use dbus::WorkerProxy;
 pub use error::WorkerError;
-pub use flatpak::installation::{InstallationInfo, InstallationManager};
-pub use flatpak::transaction::{
+pub use process::Process;
+
+pub use self::flatpak::installation::{InstallationInfo, InstallationManager};
+pub use self::flatpak::transaction::{
     TransactionDryRun, TransactionError, TransactionManager, TransactionProgress,
 };
-pub use process::Process;
 
 /// Start DBus server and Flatpak transaction manager.
 /// This method gets called from the `souk-worker` binary.

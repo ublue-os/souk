@@ -16,10 +16,10 @@
 
 use core::fmt::Debug;
 
+use flatpak::Remote;
 use gtk::gio::File;
 use gtk::glib;
 use gtk::subclass::prelude::*;
-use libflatpak::Remote;
 use once_cell::unsync::OnceCell;
 
 use super::SideloadPackage;

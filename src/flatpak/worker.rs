@@ -16,6 +16,8 @@
 
 use std::cell::RefCell;
 
+use flatpak::prelude::*;
+use flatpak::{Ref, Remote};
 use futures::future::join;
 use futures_util::stream::StreamExt;
 use gio::{File, ListStore};
@@ -23,8 +25,6 @@ use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use libflatpak::prelude::*;
-use libflatpak::{Ref, Remote};
 use once_cell::sync::Lazy;
 
 use crate::error::Error;

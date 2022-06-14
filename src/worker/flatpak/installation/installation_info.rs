@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use flatpak::prelude::*;
+use flatpak::Installation;
 use gtk::prelude::*;
-use libflatpak::prelude::*;
-use libflatpak::Installation;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use zbus::zvariant::Type;

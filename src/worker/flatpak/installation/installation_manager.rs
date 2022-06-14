@@ -17,11 +17,11 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use flatpak::prelude::*;
+use flatpak::{Installation, Ref, Remote};
 use gio::{Cancellable, File};
 use gtk::gio;
 use gtk::prelude::*;
-use libflatpak::prelude::*;
-use libflatpak::{Installation, Ref, Remote};
 
 use super::{InstallationInfo, RemoteInfo};
 use crate::worker::WorkerError;
