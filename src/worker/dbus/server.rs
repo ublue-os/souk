@@ -160,25 +160,37 @@ impl Worker {
 
     // Installation
 
-    async fn launch_app(&self, installation_uuid: &str, ref_: &str, commit: &str) {
+    async fn launch_app(
+        &self,
+        installation_uuid: &str,
+        ref_: &str,
+        commit: &str,
+    ) -> Result<(), WorkerError> {
         self.installation_manager
-            .launch_app(installation_uuid, ref_, commit);
+            .launch_app(installation_uuid, ref_, commit)
     }
 
-    async fn installations(&self) -> Vec<InstallationInfo> {
-        self.installation_manager.installations()
+    async fn installations(&self) -> Result<Vec<InstallationInfo>, WorkerError> {
+        Ok(self.installation_manager.installations())
     }
 
-    async fn preferred_installation(&self) -> InstallationInfo {
+    async fn preferred_installation(&self) -> Result<InstallationInfo, WorkerError> {
         self.installation_manager.preferred_installation()
     }
 
-    async fn add_installation_remote(&self, installation_uuid: &str, repo_path: &str) {
+    async fn add_installation_remote(
+        &self,
+        installation_uuid: &str,
+        repo_path: &str,
+    ) -> Result<(), WorkerError> {
         self.installation_manager
-            .add_installation_remote(installation_uuid, repo_path);
+            .add_installation_remote(installation_uuid, repo_path)
     }
 
-    async fn installation_remotes(&self, installation_uuid: &str) -> Vec<RemoteInfo> {
+    async fn installation_remotes(
+        &self,
+        installation_uuid: &str,
+    ) -> Result<Vec<RemoteInfo>, WorkerError> {
         self.installation_manager
             .installation_remotes(installation_uuid)
     }

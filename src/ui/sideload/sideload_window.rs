@@ -548,7 +548,7 @@ impl SkSideloadWindow {
             SkSideloadType::Repo => {
                 match sideloadable.sideload(&worker).await {
                     Ok(_) => imp.sideload_leaflet.set_visible_child_name("done"),
-                    Err(err) => self.show_error_message(&err.to_string()),
+                    Err(err) => self.show_error_message(&err.message()),
                 };
             }
             _ => (),

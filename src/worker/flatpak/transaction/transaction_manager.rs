@@ -207,7 +207,7 @@ impl TransactionManager {
 
         let installation = self
             .installation_manager
-            .installation_by_uuid(installation_uuid);
+            .installation_by_uuid(installation_uuid)?;
         let results = self.run_dry_run_transaction(transaction, &installation, false);
 
         if let Ok(mut results) = results {
@@ -261,9 +261,12 @@ impl TransactionManager {
         if no_update {
             let keyfile = KeyFile::new();
             keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
-
             let name = keyfile.value("Flatpak Ref", "Name")?;
-            self.uninstall_ref(&name, installation_uuid)?;
+            let branch = keyfile.value("Flatpak Ref", "Branch")?;
+            let arch = libflatpak::functions::default_arch().unwrap();
+
+            let ref_ = format!("app/{}/{}/{}", name, arch, branch);
+            self.uninstall_ref(&ref_, installation_uuid)?;
         }
 
         self.run_transaction(transaction_uuid.to_string(), transaction)?;
@@ -285,7 +288,7 @@ impl TransactionManager {
 
         let installation = self
             .installation_manager
-            .installation_by_uuid(installation_uuid);
+            .installation_by_uuid(installation_uuid)?;
         let results = self.run_dry_run_transaction(transaction, &installation, true);
 
         if let Ok(mut results) = results {
@@ -534,7 +537,7 @@ impl TransactionManager {
     ) -> Result<Transaction, WorkerError> {
         let installation = self
             .installation_manager
-            .installation_by_uuid(installation_uuid);
+            .installation_by_uuid(installation_uuid)?;
 
         // Setup a own installation for dry run transactions, and add the specified
         // installation as dependency source. This way the dry run transaction

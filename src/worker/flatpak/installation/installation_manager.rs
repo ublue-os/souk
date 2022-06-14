@@ -24,8 +24,7 @@ use libflatpak::prelude::*;
 use libflatpak::{Installation, Ref, Remote};
 
 use super::{InstallationInfo, RemoteInfo};
-
-// TODO: Error handling? Not found! :(
+use crate::worker::WorkerError;
 
 #[derive(Clone, Debug)]
 pub struct InstallationManager {
@@ -49,14 +48,19 @@ impl InstallationManager {
         }
     }
 
-    pub fn launch_app(&self, installation_uuid: &str, ref_: &str, commit: &str) {
+    pub fn launch_app(
+        &self,
+        installation_uuid: &str,
+        ref_: &str,
+        commit: &str,
+    ) -> Result<(), WorkerError> {
         debug!(
             "Launch app from installation \"{}\": {}",
             installation_uuid, ref_
         );
 
-        let installation = self.installation_by_uuid(installation_uuid);
-        let ref_ = Ref::parse(ref_).unwrap();
+        let installation = self.installation_by_uuid(installation_uuid)?;
+        let ref_ = Ref::parse(ref_)?;
 
         let _ = installation.launch(
             &ref_.name().unwrap(),
@@ -65,6 +69,8 @@ impl InstallationManager {
             Some(commit),
             Cancellable::NONE,
         );
+
+        Ok(())
     }
 
     pub fn installations(&self) -> Vec<InstallationInfo> {
@@ -73,11 +79,15 @@ impl InstallationManager {
     }
 
     // TODO: Expose this via the DBus interface / allow adding custom installations
-    pub fn add_installation(&self, path: String, is_user: bool) -> InstallationInfo {
+    pub fn add_installation(
+        &self,
+        path: String,
+        is_user: bool,
+    ) -> Result<InstallationInfo, WorkerError> {
         debug!("Add new installation: {} ({:?})", path, is_user);
 
         let path = File::for_parse_name(&path);
-        let installation = Installation::for_path(&path, is_user, Cancellable::NONE).unwrap();
+        let installation = Installation::for_path(&path, is_user, Cancellable::NONE)?;
 
         let info = InstallationInfo::new(&installation, false);
         self.installations
@@ -85,10 +95,10 @@ impl InstallationManager {
             .unwrap()
             .insert(info.uuid.clone(), info.clone());
 
-        info
+        Ok(info)
     }
 
-    pub fn installation_by_uuid(&self, uuid: &str) -> Installation {
+    pub fn installation_by_uuid(&self, uuid: &str) -> Result<Installation, WorkerError> {
         let info = {
             let installations = self.installations.lock().unwrap();
             installations
@@ -97,25 +107,27 @@ impl InstallationManager {
                 .clone()
         };
 
-        if !info.is_custom && info.is_user {
-            Installation::new_user(Cancellable::NONE).unwrap()
+        let installation = if !info.is_custom && info.is_user {
+            Installation::new_user(Cancellable::NONE)?
         } else if !info.is_custom && !info.is_user {
-            Installation::new_system(Cancellable::NONE).unwrap()
+            Installation::new_system(Cancellable::NONE)?
         } else {
             let path = File::for_parse_name(&info.path);
-            Installation::for_path(&path, info.is_user, Cancellable::NONE).unwrap()
-        }
+            Installation::for_path(&path, info.is_user, Cancellable::NONE)?
+        };
+
+        Ok(installation)
     }
 
     /// Returns the id of the installation with the most installed refs
-    pub fn preferred_installation(&self) -> InstallationInfo {
+    pub fn preferred_installation(&self) -> Result<InstallationInfo, WorkerError> {
         let installations = { self.installations.lock().unwrap().clone() };
 
         let mut top_count = 0;
         let mut preferred = None;
 
         for info in installations.values() {
-            let installation = self.installation_by_uuid(&info.uuid);
+            let installation = self.installation_by_uuid(&info.uuid)?;
             let count = installation
                 .list_installed_refs(Cancellable::NONE)
                 .unwrap()
@@ -127,19 +139,23 @@ impl InstallationManager {
             }
         }
 
-        preferred.unwrap().clone()
+        Ok(preferred.unwrap().clone())
     }
 
-    pub fn add_installation_remote(&self, installation_uuid: &str, repo_path: &str) {
+    pub fn add_installation_remote(
+        &self,
+        installation_uuid: &str,
+        repo_path: &str,
+    ) -> Result<(), WorkerError> {
         debug!(
             "Add remote for installation \"{}\": {}",
             installation_uuid, repo_path
         );
 
-        let installation = self.installation_by_uuid(installation_uuid);
+        let installation = self.installation_by_uuid(installation_uuid)?;
         let file = File::for_parse_name(repo_path);
-        let bytes = file.load_bytes(Cancellable::NONE).unwrap().0;
-        let remote = Remote::from_file("remote", &bytes).unwrap();
+        let bytes = file.load_bytes(Cancellable::NONE)?.0;
+        let remote = Remote::from_file("remote", &bytes)?;
 
         // Determine remote name
         let name = if let Some(title) = remote.title() {
@@ -155,22 +171,20 @@ impl InstallationManager {
         };
         remote.set_name(Some(&name));
 
-        installation
-            .add_remote(&remote, true, Cancellable::NONE)
-            .expect("Failed to add remote");
+        installation.add_remote(&remote, true, Cancellable::NONE)?;
+
+        Ok(())
     }
 
-    pub fn installation_remotes(&self, installation_uuid: &str) -> Vec<RemoteInfo> {
-        let installation = self.installation_by_uuid(installation_uuid);
+    pub fn installation_remotes(
+        &self,
+        installation_uuid: &str,
+    ) -> Result<Vec<RemoteInfo>, WorkerError> {
+        let installation = self.installation_by_uuid(installation_uuid)?;
         let mut result = Vec::new();
 
-        let remotes = installation.list_remotes(Cancellable::NONE);
-        if let Err(err) = remotes {
-            error!("Unable to list remotes: {}", err.message());
-            return result;
-        }
-
-        for remote in remotes.unwrap() {
+        let remotes = installation.list_remotes(Cancellable::NONE)?;
+        for remote in remotes {
             let name = remote.name().unwrap();
             let repo = remote.url().unwrap();
 
@@ -180,7 +194,7 @@ impl InstallationManager {
             result.push(remote_info);
         }
 
-        result
+        Ok(result)
     }
 }
 

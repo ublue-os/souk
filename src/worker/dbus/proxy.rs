@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use zbus::Result;
-
 use crate::config;
 use crate::worker::flatpak::installation::{InstallationInfo, RemoteInfo};
 use crate::worker::flatpak::transaction;
@@ -32,53 +30,63 @@ trait Worker {
         remote: &str,
         installation_uuid: &str,
         no_update: bool,
-    ) -> Result<String>;
+    ) -> zbus::Result<String>;
 
     fn install_flatpak_bundle(
         &self,
         path: &str,
         installation_uuid: &str,
         no_update: bool,
-    ) -> Result<String>;
+    ) -> zbus::Result<String>;
 
     fn install_flatpak_bundle_dry_run(
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> std::result::Result<TransactionDryRun, WorkerError>;
+    ) -> Result<TransactionDryRun, WorkerError>;
 
     fn install_flatpak_ref(
         &self,
         path: &str,
         installation_uuid: &str,
         no_update: bool,
-    ) -> Result<String>;
+    ) -> zbus::Result<String>;
 
     fn install_flatpak_ref_dry_run(
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> std::result::Result<TransactionDryRun, WorkerError>;
+    ) -> Result<TransactionDryRun, WorkerError>;
 
-    fn cancel_transaction(&self, uuid: &str) -> Result<()>;
-
-    #[dbus_proxy(signal)]
-    fn transaction_progress(&self, progress: transaction::TransactionProgress) -> Result<()>;
+    fn cancel_transaction(&self, uuid: &str) -> zbus::Result<()>;
 
     #[dbus_proxy(signal)]
-    fn transaction_error(&self, error: transaction::TransactionError) -> Result<()>;
+    fn transaction_progress(&self, progress: transaction::TransactionProgress) -> zbus::Result<()>;
+
+    #[dbus_proxy(signal)]
+    fn transaction_error(&self, error: transaction::TransactionError) -> zbus::Result<()>;
 
     // Installation
 
-    fn launch_app(&self, installation_uuid: &str, ref_: &str, commit: &str) -> Result<()>;
+    fn launch_app(
+        &self,
+        installation_uuid: &str,
+        ref_: &str,
+        commit: &str,
+    ) -> Result<(), WorkerError>;
 
-    fn installations(&self) -> Result<Vec<InstallationInfo>>;
+    fn installations(&self) -> Result<Vec<InstallationInfo>, WorkerError>;
 
-    fn preferred_installation(&self) -> Result<InstallationInfo>;
+    fn preferred_installation(&self) -> Result<InstallationInfo, WorkerError>;
 
-    fn add_installation_remote(&self, installation_uuid: &str, repo_path: &str) -> Result<()>;
+    fn add_installation_remote(
+        &self,
+        installation_uuid: &str,
+        repo_path: &str,
+    ) -> Result<(), WorkerError>;
 
-    fn installation_remotes(&self, installation_uuid: &str) -> Result<Vec<RemoteInfo>>;
+    fn installation_remotes(&self, installation_uuid: &str)
+        -> Result<Vec<RemoteInfo>, WorkerError>;
 }
 
 impl Default for WorkerProxy<'static> {

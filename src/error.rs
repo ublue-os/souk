@@ -32,3 +32,13 @@ pub enum Error {
     #[error("ZBus error")]
     ZBus(#[from] zbus::Error),
 }
+
+impl Error {
+    pub fn message(&self) -> String {
+        match self {
+            Self::Worker(err) => err.message(),
+            Self::GLib(err) => err.message().to_string(),
+            _ => self.to_string(),
+        }
+    }
+}
