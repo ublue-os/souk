@@ -22,11 +22,12 @@ use gtk::prelude::*;
 use xb::prelude::*;
 
 pub fn component_from_remote(ref_: &Ref, remote: &Remote) -> Option<Component> {
-    debug!("Load appstream file...");
     let appstream_dir = remote
         .appstream_dir(Some(&ref_.arch().unwrap().to_string()))
         .unwrap();
     let appstream_file = appstream_dir.child("appstream.xml");
+
+    debug!("Load appstream file {:?}", appstream_file.path().unwrap());
 
     // Load
     let source = xb::BuilderSource::new();

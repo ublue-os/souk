@@ -17,11 +17,12 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use async_std::process::{Child, Command};
 use flatpak::prelude::*;
 use flatpak::{Installation, Ref, Remote};
 use gio::{Cancellable, File};
-use gtk::gio;
 use gtk::prelude::*;
+use gtk::{gio, glib};
 
 use super::{InstallationInfo, RemoteInfo};
 use crate::worker::WorkerError;
@@ -35,11 +36,19 @@ impl InstallationManager {
     pub fn new() -> Self {
         let mut installations = HashMap::new();
 
+        // System Installation
         let installation = Installation::new_system(Cancellable::NONE).unwrap();
         let info = InstallationInfo::new(&installation, false);
         installations.insert(info.uuid.clone(), info);
 
-        let installation = Installation::new_user(gio::Cancellable::NONE).unwrap();
+        // User Installation
+        let mut user_path = glib::home_dir();
+        user_path.push(".local");
+        user_path.push("share");
+        user_path.push("flatpak");
+        let file = gio::File::for_path(user_path);
+
+        let installation = Installation::for_path(&file, true, gio::Cancellable::NONE).unwrap();
         let info = InstallationInfo::new(&installation, false);
         installations.insert(info.uuid.clone(), info);
 
@@ -60,15 +69,21 @@ impl InstallationManager {
         );
 
         let installation = self.installation_by_uuid(installation_uuid)?;
-        let ref_ = Ref::parse(ref_)?;
+        let id = installation.id().unwrap().to_string();
+        let installation = match id.as_str() {
+            "user" => "--user".to_string(),
+            "system" => "--system".to_string(),
+            _ => format!("--installation={}", id),
+        };
 
-        let _ = installation.launch(
-            &ref_.name().unwrap(),
-            Some(&ref_.arch().unwrap()),
-            Some(&ref_.branch().unwrap()),
-            Some(commit),
-            Cancellable::NONE,
-        );
+        Command::new("flatpak-spawn")
+            .arg("--host")
+            .arg("flatpak")
+            .arg("run")
+            .arg(installation)
+            .arg(ref_)
+            .spawn()
+            .unwrap();
 
         Ok(())
     }
@@ -90,7 +105,7 @@ impl InstallationManager {
         let path = File::for_parse_name(&path);
         let installation = Installation::for_path(&path, is_user, Cancellable::NONE)?;
 
-        let info = InstallationInfo::new(&installation, false);
+        let info = InstallationInfo::new(&installation, true);
         self.installations
             .lock()
             .unwrap()
@@ -109,7 +124,13 @@ impl InstallationManager {
         };
 
         let installation = if !info.is_custom && info.is_user {
-            Installation::new_user(Cancellable::NONE)?
+            let mut user_path = glib::home_dir();
+            user_path.push(".local");
+            user_path.push("share");
+            user_path.push("flatpak");
+            let file = gio::File::for_path(user_path);
+
+            Installation::for_path(&file, true, Cancellable::NONE)?
         } else if !info.is_custom && !info.is_user {
             Installation::new_system(Cancellable::NONE)?
         } else {
@@ -134,7 +155,7 @@ impl InstallationManager {
                 .unwrap()
                 .len();
 
-            if count > top_count {
+            if count >= top_count {
                 top_count = count;
                 preferred = Some(info);
             }

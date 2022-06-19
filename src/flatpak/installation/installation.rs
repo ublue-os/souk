@@ -102,13 +102,13 @@ mod imp {
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "uuid" => obj.id().to_value(),
+                "uuid" => obj.uuid().to_value(),
                 "id" => obj.id().to_value(),
                 "display-name" => obj.display_name().to_value(),
                 "description" => obj.description().to_value(),
                 "icon-name" => obj.icon_name().to_value(),
                 "is-user" => obj.is_user().to_value(),
-                "is-cusotm" => obj.is_custom().to_value(),
+                "is-custom" => obj.is_custom().to_value(),
                 "path" => obj.path().to_value(),
                 _ => unimplemented!(),
             }

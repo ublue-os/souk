@@ -15,11 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::cell::RefCell;
-use std::fs;
 
 use async_std::process::{Child, Command};
-
-use crate::path;
 
 #[derive(Debug, Default)]
 pub struct Process {
@@ -32,21 +29,11 @@ impl Process {
     pub fn spawn(&self) {
         debug!("Start souk-worker process...");
 
-        // First copy worker binary outside of sandbox
-        let mut destination = path::BIN.clone();
-        destination.push("souk-worker");
-        fs::copy("/app/bin/souk-worker", &destination).expect("Unable to copy souk-worker binary");
-
-        // If we kill flatpak-spawn, we also want to kill the child process too.
-        let mut args: Vec<String> = vec!["--watch-bus".into()];
-        args.push("--env=RUST_BACKTRACE=1".into());
-
-        // We cannot do stuff inside the Flatpak Sandbox,
-        // so we have to spawn the worker process on host side
-        args.push("--host".into());
-        args.push(destination.to_str().unwrap().into());
-
-        let child = Command::new("flatpak-spawn").args(&args).spawn().unwrap();
+        let child = Command::new("souk-worker")
+            .env("FLATPAK_BINARY", "/usr/bin/flatpak")
+            .env("FLATPAK_BWRAP", "/app/bin/flatpak-bwrap")
+            .spawn()
+            .unwrap();
         *self.child.borrow_mut() = Some(child);
     }
 
