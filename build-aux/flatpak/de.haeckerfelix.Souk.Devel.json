@@ -211,7 +211,7 @@
                 {
                     "type" : "git",
                     "url" : "https://gitlab.gnome.org/haecker-felix/souk.git",
-                    "branch" : "master"
+                    "branch" : "souk-next"
                 }
             ]
         }
