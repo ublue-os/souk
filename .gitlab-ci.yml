@@ -3,11 +3,12 @@ stages:
   - build
 
 variables:
-  MANIFEST_PATH: "build-aux/de.haeckerfelix.Souk.Devel.json"
+  MANIFEST_PATH: "build-aux/flatpak/de.haeckerfelix.Souk.Devel.json"
   FLATPAK_MODULE: "souk"
   APP_ID: "de.haeckerfelix.Souk.Devel"
   RUNTIME_REPO: "https://nightly.gnome.org/gnome-nightly.flatpakrepo"
   CI_IMAGE_X86_64: "registry.gitlab.gnome.org/gnome/gnome-runtime-images/rust_bundle:master"
+  CI_IMAGE_AARCH64: "registry.gitlab.gnome.org/gnome/gnome-runtime-images/aarch64:gnome-nightly"
 
 .build_template:
   script:
@@ -35,6 +36,12 @@ variables:
   tags:
     - flatpak
 
+.build_aarch64:
+  extends: .build_template
+  image: '${CI_IMAGE_AARCH64}'
+  tags:
+    - flatpak-aarch64
+
 # Configure and run code checks
 # Exits and fails if an error is encountered
 checks:
@@ -60,4 +67,11 @@ build-x86_64:
   stage: build
   variables:
     BUNDLE: "${FLATPAK_MODULE}_x86_64.flatpak"
+    CONFIG_OPTS: "-Dprofile=development"
+
+build-aarch64:
+  extends: .build_aarch64
+  stage: build
+  variables:
+    BUNDLE: "${FLATPAK_MODULE}_aarch64.flatpak"
     CONFIG_OPTS: "-Dprofile=development"
