@@ -17,9 +17,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use async_std::process::{Child, Command};
+use async_std::process::Command;
 use flatpak::prelude::*;
-use flatpak::{Installation, Ref, Remote};
+use flatpak::{Installation, Remote};
 use gio::{Cancellable, File};
 use gtk::prelude::*;
 use gtk::{gio, glib};
@@ -61,7 +61,8 @@ impl InstallationManager {
         &self,
         installation_uuid: &str,
         ref_: &str,
-        commit: &str,
+        // TODO: Check if we need the exact commit at all.
+        _commit: &str,
     ) -> Result<(), WorkerError> {
         debug!(
             "Launch app from installation \"{}\": {}",

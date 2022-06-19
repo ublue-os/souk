@@ -16,16 +16,17 @@
 
 use adw::subclass::prelude::*;
 use gio::subclass::prelude::ApplicationImpl;
-use glib::{ObjectExt, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{clone, ObjectExt, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib::WeakRef;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{gio, glib};
+use gtk::{gio, glib, FileChooserAction, FileChooserNative};
 use once_cell::sync::{Lazy, OnceCell};
 
 use crate::config;
 use crate::flatpak::sideload::SkSideloadType;
 use crate::flatpak::SkWorker;
+use crate::i18n::i18n;
 use crate::ui::sideload::SkSideloadWindow;
 use crate::ui::{about_dialog, SkApplicationWindow};
 
@@ -206,6 +207,61 @@ impl SkApplication {
                 about_dialog::show_about_dialog(&window);
             }
         });
+
+        // app.open
+        action!(self, "open", move |_, _| {
+            SkApplication::default().show_filechooser();
+        });
+        self.set_accels_for_action("app.open", &["<primary>o"]);
+    }
+
+    fn show_filechooser(&self) {
+        let window = self.app_window();
+
+        let dialog = FileChooserNative::new(
+            Some(&i18n("Open Flatpak package or repository")),
+            window.as_ref(),
+            FileChooserAction::Open,
+            Some(&i18n("_Open")),
+            None,
+        );
+
+        dialog.set_modal(true);
+        dialog.set_select_multiple(true);
+
+        // Set a filter to only show flatpak files
+        let flatpak_filter = gtk::FileFilter::new();
+        flatpak_filter.set_name(Some(&i18n("Flatpak Files")));
+        flatpak_filter.add_mime_type("application/vnd.flatpak");
+        flatpak_filter.add_mime_type("application/vnd.flatpak.repo");
+        flatpak_filter.add_mime_type("application/vnd.flatpak.ref");
+        dialog.add_filter(&flatpak_filter);
+
+        // Set a filter to show all files
+        let all_filter = gtk::FileFilter::new();
+        all_filter.set_name(Some(&i18n("All Files")));
+        all_filter.add_pattern("*");
+        dialog.add_filter(&all_filter);
+
+        dialog.connect_response(
+            clone!(@strong dialog, @weak self as this => move |_, resp| {
+                if resp == gtk::ResponseType::Accept {
+                    let mut files = Vec::new();
+                    for pos in 0..dialog.files().n_items() {
+                    let file = dialog.files()
+                        .item(pos)
+                        .unwrap()
+                        .downcast::<gio::File>()
+                        .unwrap();
+                        files.push(file);
+                    }
+
+                    this.open(&files, "");
+                }
+            }),
+        );
+
+        dialog.show();
     }
 }
 

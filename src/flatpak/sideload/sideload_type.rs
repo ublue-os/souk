@@ -17,7 +17,7 @@ impl SkSideloadType {
     pub fn determine_type(file: &File) -> SkSideloadType {
         let file = file.path().unwrap();
 
-        match file.extension().unwrap().to_str().unwrap() {
+        match file.extension().unwrap_or_default().to_str().unwrap() {
             "flatpakref" => SkSideloadType::Ref,
             "flatpakrepo" => SkSideloadType::Repo,
             "flatpak" => SkSideloadType::Bundle,

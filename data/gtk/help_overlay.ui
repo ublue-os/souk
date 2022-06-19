@@ -10,14 +10,14 @@
             <property name="title" translatable="yes">General</property>
             <child>
               <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes" context="shortcut window">Open shortcut window</property>
-                <property name="action_name">win.show-help-overlay</property>
+                <property name="title" translatable="yes" context="shortcut window">Open File</property>
+                <property name="action_name">app.open</property>
               </object>
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes" context="shortcut window">Open preferences</property>
-                <property name="action_name">app.show-preferences</property>
+                <property name="title" translatable="yes" context="shortcut window">Open shortcut window</property>
+                <property name="action_name">win.show-help-overlay</property>
               </object>
             </child>
             <child>

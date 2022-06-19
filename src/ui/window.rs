@@ -16,7 +16,7 @@
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::subclass;
+use glib::{clone, subclass};
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 
@@ -31,6 +31,8 @@ mod imp {
     #[derive(Debug, Default, CompositeTemplate)]
     #[template(resource = "/de/haeckerfelix/Souk/gtk/window.ui")]
     pub struct SkApplicationWindow {
+        #[template_child]
+        pub status_page: TemplateChild<adw::StatusPage>,
         #[template_child]
         pub transactions_listbox: TemplateChild<gtk::ListBox>,
     }
@@ -92,12 +94,29 @@ impl SkApplicationWindow {
             self.add_css_class("devel");
         }
 
+        // Active transactions listbox
         let model = app.worker().transactions();
         imp.transactions_listbox
             .bind_model(Some(&model), |transaction| {
                 let transaction: SkTransaction = transaction.clone().downcast().unwrap();
                 SkTransactionRow::new(&transaction).upcast()
             });
+        model.connect_items_changed(clone!(@weak self as this => move |model, _, _, _|{
+            let imp = this.imp();
+            imp.transactions_listbox.set_visible(model.n_items() != 0);
+        }));
+
+        // DND support for sideloading
+        let drop_target = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
+        drop_target.connect_drop(move |_, data, _, _| {
+            if let Ok(filelist) = data.get::<gdk::FileList>() {
+                let app = SkApplication::default();
+                app.open(&filelist.files(), "");
+                return true;
+            }
+            false
+        });
+        imp.status_page.add_controller(&drop_target);
     }
 
     fn setup_signals(&self) {}

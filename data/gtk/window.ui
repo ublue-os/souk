@@ -14,6 +14,18 @@
               <object class="GtkButton" id="back_button">
                 <property name="action_name">win.go-back</property>
                 <property name="icon_name">go-previous-symbolic</property>
+                <property name="visible">False</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="open_button">
+                <property name="action_name">app.open</property>
+                <child>
+                  <object class="AdwButtonContent">
+                    <property name="label" translatable="true">Open</property>
+                    <property name="icon_name">document-open-symbolic</property>
+                  </object>
+                </child>
               </object>
             </child>
             <child type="end">
@@ -22,31 +34,30 @@
                 <property name="menu_model">app_menu</property>
               </object>
             </child>
-            <child type="end">
-              <object class="GtkRevealer" id="search_revealer">
-                <property name="transition_type">crossfade</property>
-                <child>
-                  <object class="GtkToggleButton" id="search_button">
-                    <property name="icon_name">system-search-symbolic</property>
-                  </object>
-                </child>
-              </object>
-            </child>
           </object>
         </child>
         <child>
           <object class="AdwToastOverlay" id="toast_overlay">
             <child>
-              <object class="AdwClamp">
+              <object class="AdwStatusPage" id="status_page">
+                <property name="icon_name" translatable="true">package-x-generic-symbolic</property>
+                <property name="title" translatable="true">Install Flatpak Packages</property>
+                <property name="description" translatable="true">Open a Flatpak package or repository file from the file manager, or drag and drop them here.</property>
+                <property name="vexpand">True</property>
                 <child>
-                  <object class="GtkBox">
-                    <property name="orientation">vertical</property>
-                    <property name="spacing">12</property>
+                  <object class="AdwClamp">
                     <child>
-                      <object class="GtkListBox" id="transactions_listbox">
-                        <style>
-                          <class name="content"/>
-                        </style>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">12</property>
+                        <child>
+                          <object class="GtkListBox" id="transactions_listbox">
+                            <property name="visible">False</property>
+                            <style>
+                              <class name="content"/>
+                            </style>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>
@@ -60,10 +71,6 @@
   </template>
   <menu id="app_menu">
     <section>
-      <item>
-        <attribute name="label" translatable="yes">_Preferences</attribute>
-        <attribute name="action">app.show-preferences</attribute>
-      </item>
       <item>
         <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
         <attribute name="action">win.show-help-overlay</attribute>

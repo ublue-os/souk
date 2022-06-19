@@ -9,6 +9,7 @@ src/flatpak/installation/installation.rs
 src/ui/about_dialog.rs
 src/ui/sideload/remote_row.rs
 src/ui/sideload/sideload_window.rs
+src/app.rs
 
 data/de.haeckerfelix.Souk.metainfo.xml.in.in
 data/de.haeckerfelix.Souk.desktop.in.in

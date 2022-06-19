@@ -87,14 +87,22 @@ impl SkTransactionModel {
     }
 
     pub fn remove_transaction(&self, transaction: &SkTransaction) {
-        let mut map = self.imp().map.borrow_mut();
-
-        match map.get_index_of(&transaction.uuid()) {
-            Some(pos) => {
-                map.remove(&transaction.uuid());
-                self.items_changed(pos.try_into().unwrap(), 1, 0);
+        let pos = {
+            let mut map = self.imp().map.borrow_mut();
+            match map.get_index_of(&transaction.uuid()) {
+                Some(pos) => {
+                    map.remove(&transaction.uuid());
+                    Some(pos)
+                }
+                None => {
+                    warn!("Transaction {:?} not found in model", transaction.uuid());
+                    None
+                }
             }
-            None => warn!("Transaction {:?} not found in model", transaction.uuid()),
+        };
+
+        if let Some(pos) = pos {
+            self.items_changed(pos.try_into().unwrap(), 1, 0);
         }
     }
 
