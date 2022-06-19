@@ -471,6 +471,14 @@ impl SkSideloadWindow {
                 let version = i18n("Unknown Version");
                 imp.package_version_label.set_text(&version);
             }
+
+            // We don't support updating .flatpakrefs through sideloading, since the
+            // installation would fail with "x is already installed". Only bundles can be
+            // updated.
+            if package.is_update() && sideloadable.type_() == SkSideloadType::Ref {
+                imp.sideload_leaflet.set_visible_child_name("already-done");
+                return;
+            }
         }
 
         // Remote / Repository
