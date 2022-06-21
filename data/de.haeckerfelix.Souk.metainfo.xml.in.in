@@ -51,7 +51,9 @@
   </requires>
 
   <releases>
+    <release version="0.0" date="2022-06-21"/>
   </releases>
+
   <custom>
     <value key="Purism::form_factor">workstation</value>
     <value key="Purism::form_factor">mobile</value>
