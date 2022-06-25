@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="SkContextBox" parent="GtkBox">
+    <property name="orientation">vertical</property>
+    <property name="spacing">18</property>
+    <child>
+      <object class="GtkStack" id="type_stack">
+        <property name="hhomogeneous">false</property>
+        <property name="vhomogeneous">false</property>
+        <child>
+          <object class="GtkImage" id="icon_image">
+            <property name="halign">center</property>
+            <property name="pixel_size">24</property>
+            <style>
+              <class name="circular-background"/>
+              <class name="large"/>
+            </style>
+          </object>
+        </child>
+        <child>
+          <object class="GtkLabel" id="text_label">
+            <property name="halign">center</property>
+            <property name="use_markup">True</property>
+            <style>
+              <class name="title-1"/>
+              <class name="circular-background"/>
+              <class name="large"/>
+            </style>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkLabel" id="title_label">
+        <style>
+          <class name="title-2"/>
+        </style>
+      </object>
+    </child>
+    <child>
+      <object class="GtkLabel" id="description_label">
+        <property name="margin-bottom">6</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkListBox" id="details_listbox">
+        <property name="selection_mode">none</property>
+        <style>
+          <class name="content"/>
+        </style>
+      </object>
+    </child>
+    <style>
+      <class name="context-box"/>
+    </style>
+  </template>
+</interface>
+

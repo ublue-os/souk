@@ -179,6 +179,7 @@ impl InstallationManager {
         let file = File::for_parse_name(repo_path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
         let remote = Remote::from_file("remote", &bytes)?;
+        remote.set_gpg_verify(true);
 
         // Determine remote name
         let name = if let Some(title) = remote.title() {

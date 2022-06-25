@@ -1,32 +1,46 @@
-.large-rows box > list > row{
+.large-row row{
   min-height: 60px;
 }
 
-.large-rows box.title{
+.large-row > box {
   margin-top: 10px;
   margin-bottom: 10px;
 }
 
-.large-rows .title :not(.subtitle){
+.large-row .title :not(.subtitle){
   font-weight: bold;
 }
 
-.large-rows .subtitle{
+.large-row .subtitle{
   font-size: unset;
   opacity: unset;
-}
-
-.large-rows .icon {
-  border-radius: 99999px;
-  padding: 9px 11px;
-  min-width: 18px;
-  min-height: 22px;
-  color: alpha(@window_fg_color, .75);
-  background-color: alpha(@window_fg_color, .15);
 }
 
 .warning-row {
   background: alpha(@warning_color, .3);
   font-weight: bold;
   box-shadow: none;
+}
+
+.circular-background {
+  border-radius: 99999px;
+  padding: 9px 11px;
+  min-width: 18px;
+  min-height: 22px;
+  color: alpha(@window_fg_color, .75);
+  background-color: alpha(@window_fg_color, .15);
+  font-feature-settings: "tnum" 1;
+}
+
+.circular-background.large {
+  padding-left: 18px;
+  padding-right: 18px;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  min-width: 24px;
+  min-height: 30px;
+}
+
+.circular-background.size {
+  min-width: 75px;
 }

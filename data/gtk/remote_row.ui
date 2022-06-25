@@ -21,6 +21,9 @@
         </style>
       </object>
     </child>
+    <style>
+      <class name="large-row"/>
+    </style>
   </template>
 </interface>
 

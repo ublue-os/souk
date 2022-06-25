@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+pub mod context;
 pub mod sideload;
+pub mod utils;
 
 pub mod about_dialog;
 mod installation_listbox;

@@ -136,19 +136,10 @@
                                                   </object>
                                                 </child>
                                                 <child>
-                                                  <object class="AdwPreferencesGroup" id="package_group">
-                                                    <child>
-                                                      <object class="AdwActionRow" id="package_download_size_row">
-                                                        <property name="icon_name">folder-download-symbolic</property>
-                                                      </object>
-                                                    </child>
-                                                    <child>
-                                                      <object class="AdwActionRow" id="package_installed_size_row">
-                                                        <property name="icon_name">drive-harddisk-symbolic</property>
-                                                      </object>
-                                                    </child>
+                                                  <object class="GtkListBox" id="package_context_listbox">
+                                                    <property name="selection_mode">none</property>
                                                     <style>
-                                                      <class name="large-rows"/>
+                                                      <class name="content"/>
                                                     </style>
                                                   </object>
                                                 </child>
@@ -188,9 +179,6 @@
                                                 <child>
                                                   <object class="SkRemoteRow" id="remote_row"/>
                                                 </child>
-                                                <style>
-                                                  <class name="large-rows"/>
-                                                </style>
                                               </object>
                                             </child>
                                           </object>
@@ -199,7 +187,6 @@
                                           <object class="AdwPreferencesGroup" id="installation_group">
                                             <child>
                                               <object class="AdwActionRow">
-                                                <property name="icon_name">document-save-as-symbolic</property>
                                                 <property name="title" translatable="yes">Installation</property>
                                                 <property name="activatable">True</property>
                                                 <property name="action-name">sideload.select-installation</property>
@@ -212,19 +199,70 @@
                                                     </binding>
                                                   </object>
                                                 </child>
+                                                <child type="prefix">
+                                                  <object class="GtkImage" id="icon_image">
+                                                    <property name="icon_name">document-save-as-symbolic</property>
+                                                    <property name="valign">center</property>
+                                                    <style>
+                                                      <class name="circular-background"/>
+                                                    </style>
+                                                  </object>
+                                                </child>
                                                 <child>
                                                   <object class="GtkImage">
                                                     <property name="icon_name">go-next</property>
                                                   </object>
                                                 </child>
+                                                <style>
+                                                  <class name="large-row"/>
+                                                </style>
                                               </object>
                                             </child>
-                                            <style>
-                                              <class name="large-rows"/>
-                                            </style>
                                           </object>
                                         </child>
                                       </object>
+                                    </child>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwLeafletPage">
+                        <property name="name">context-information</property>
+                        <property name="navigatable">False</property>
+                        <property name="child">
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkHeaderBar">
+                                <child>
+                                  <object class="GtkButton">
+                                    <property name="icon_name">go-previous-symbolic</property>
+                                    <property name="action-name">window.go-back</property>
+                                  </object>
+                                </child>
+                                <child type="title">
+                                  <object class="AdwWindowTitle">
+                                    <property name="title" translatable="yes">Information</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkScrolledWindow">
+                                <property name="vexpand">True</property>
+                                <child>
+                                  <object class="AdwClamp">
+                                    <property name="margin_top">24</property>
+                                    <property name="margin_bottom">12</property>
+                                    <property name="margin_start">12</property>
+                                    <property name="margin_end">12</property>
+                                    <child>
+                                      <object class="SkContextBox" id="context_box"/>
                                     </child>
                                   </object>
                                 </child>

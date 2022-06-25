@@ -74,9 +74,9 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, _obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "transaction" => self.transaction.get().to_value(),
+                "transaction" => obj.transaction().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -133,7 +133,7 @@ impl SkTransactionRow {
     }
 
     pub fn transaction(&self) -> SkTransaction {
-        self.property("transaction")
+        self.imp().transaction.get().unwrap().clone()
     }
 
     fn update_labels(&self) {

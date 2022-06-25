@@ -1,5 +1,5 @@
-// Souk - transaction_type.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - context_detail_type.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,10 +19,9 @@ use gtk::glib;
 
 #[derive(Copy, Debug, Clone, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkTransactionType")]
-pub enum SkTransactionType {
-    Install,
-    Update,
-    Uninstall,
-    None,
+#[enum_type(name = "SkContextDetailType")]
+pub enum SkContextDetailType {
+    Icon,
+    Text,
+    Size,
 }

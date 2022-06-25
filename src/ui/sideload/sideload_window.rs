@@ -20,7 +20,7 @@ use adw::prelude::*;
 use adw::subclass::prelude::*;
 use flatpak::prelude::*;
 use flatpak::RefKind;
-use gio::File;
+use gio::{File, ListStore};
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
@@ -30,9 +30,11 @@ use super::SkRemoteRow;
 use crate::app::SkApplication;
 use crate::config;
 use crate::error::Error;
+use crate::flatpak::context::SkContext;
 use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::flatpak::transaction::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
+use crate::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::ui::SkInstallationListBox;
 use crate::worker::WorkerError;
 
@@ -66,9 +68,7 @@ mod imp {
         #[template_child]
         pub package_version_label: TemplateChild<gtk::Label>,
         #[template_child]
-        pub package_download_size_row: TemplateChild<adw::ActionRow>,
-        #[template_child]
-        pub package_installed_size_row: TemplateChild<adw::ActionRow>,
+        pub package_context_listbox: TemplateChild<gtk::ListBox>,
         #[template_child]
         pub warn_group: TemplateChild<adw::PreferencesGroup>,
         #[template_child]
@@ -79,6 +79,9 @@ mod imp {
         pub remote_group: TemplateChild<adw::PreferencesGroup>,
         #[template_child]
         pub remote_row: TemplateChild<SkRemoteRow>,
+
+        #[template_child]
+        pub context_box: TemplateChild<SkContextBox>,
 
         #[template_child]
         pub installation_listbox: TemplateChild<SkInstallationListBox>,
@@ -402,17 +405,41 @@ impl SkSideloadWindow {
             );
 
             // Setup size information
-            let size = glib::format_size(package.download_size());
-            let download_string = i18n_f("Up to {} download", &[&size]);
-            imp.package_download_size_row.set_title(&download_string);
-            imp.package_download_size_row
-                .set_subtitle("Requires up to 0 MB of shared system packages");
+            let contexts = ListStore::new(SkContext::static_type());
 
-            let size = glib::format_size(package.installed_size());
-            let installed_string = i18n_f("Up to {} installed size", &[&size]);
-            imp.package_installed_size_row.set_title(&installed_string);
-            imp.package_installed_size_row
-                .set_subtitle("Requires up to 0 MB of shared system packages");
+            let download_context = package.download_size_context();
+            contexts.append(&download_context);
+
+            let installed_context = package.installed_size_context();
+            contexts.append(&installed_context);
+
+            imp.package_context_listbox.bind_model(
+                Some(&contexts),
+                clone!(@weak self as this => @default-panic, move |context|{
+                    let context: &SkContext = context.downcast_ref().unwrap();
+                    let row = SkContextDetailRow::new(&context.summary(), true);
+                    row.set_activatable(true);
+
+                    row.connect_activated(clone!(@weak this, @weak context => move |_|{
+                        this.imp().context_box.set_context(&context);
+                        this.imp().sideload_leaflet.set_visible_child_name("context-information");
+                    }));
+
+                    row.upcast()
+                }),
+            );
+
+            // let size = glib::format_size(package.download_size());
+            // let download_string = i18n_f("Up to {} download", &[&size]);
+            // imp.package_download_size_row.set_title(&download_string);
+            // imp.package_download_size_row
+            // .set_subtitle("Requires up to 0 MB of shared system packages");
+            //
+            // let size = glib::format_size(package.installed_size());
+            // let installed_string = i18n_f("Up to {} installed size", &[&size]);
+            // imp.package_installed_size_row.set_title(&installed_string);
+            // imp.package_installed_size_row
+            // .set_subtitle("Requires up to 0 MB of shared system packages");
 
             // Setup general package appstream metadata
             if let Some(component) = package.appstream() {

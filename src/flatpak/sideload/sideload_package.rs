@@ -19,6 +19,7 @@ use flatpak::Ref;
 use gtk::glib::Bytes;
 use gtk::prelude::*;
 
+use crate::flatpak::context::SkContext;
 use crate::worker::TransactionDryRun;
 
 // TODO: This should be a gobject with properties
@@ -55,12 +56,12 @@ impl SideloadPackage {
         }
     }
 
-    pub fn download_size(&self) -> u64 {
-        self.transaction_dry_run.download_size
+    pub fn download_size_context(&self) -> SkContext {
+        SkContext::download_size(&self.transaction_dry_run)
     }
 
-    pub fn installed_size(&self) -> u64 {
-        self.transaction_dry_run.installed_size
+    pub fn installed_size_context(&self) -> SkContext {
+        SkContext::installed_size(&self.transaction_dry_run)
     }
 
     pub fn has_update_source(&self) -> bool {

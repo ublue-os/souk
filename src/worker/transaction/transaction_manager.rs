@@ -493,7 +493,7 @@ impl TransactionManager {
                     }else{
                         let runtime = TransactionDryRunRuntime{
                             ref_: operation.get_ref().unwrap().to_string(),
-                            type_: operation.operation_type().to_str().unwrap().to_string(),
+                            operation_type: operation.operation_type().to_str().unwrap().to_string(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
                         };

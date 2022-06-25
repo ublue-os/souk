@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="SkContextDetailRow" parent="AdwActionRow">
+    <child type="prefix">
+      <object class="GtkStack" id="type_stack">
+        <property name="hhomogeneous">false</property>
+        <property name="vhomogeneous">false</property>
+        <child>
+          <object class="GtkImage" id="icon_image">
+            <property name="valign">center</property>
+            <style>
+              <class name="circular-background"/>
+            </style>
+          </object>
+        </child>
+        <child>
+          <object class="GtkLabel" id="text_label">
+            <property name="valign">center</property>
+            <property name="use_markup">True</property>
+            <style>
+              <class name="title-4"/>
+              <class name="circular-background"/>
+            </style>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkImage" id="arrow">
+        <property name="icon_name">go-next</property>
+      </object>
+    </child>
+    <style>
+      <class name="large-row"/>
+    </style>
+  </template>
+</interface>
+

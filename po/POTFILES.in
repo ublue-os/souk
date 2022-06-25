@@ -5,7 +5,9 @@ data/gtk/sideload_window.ui
 data/gtk/help_overlay.ui
 data/gtk/window.ui
 
+src/flatpak/context/context.rs
 src/flatpak/installation/installation.rs
+src/flatpak/utils.rs
 src/ui/about_dialog.rs
 src/ui/sideload/remote_row.rs
 src/ui/sideload/sideload_window.rs

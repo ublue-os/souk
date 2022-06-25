@@ -91,7 +91,7 @@ impl Default for TransactionDryRun {
 #[derive(Default, Deserialize, Serialize, Type, Debug, Clone)]
 pub struct TransactionDryRunRuntime {
     pub ref_: String,
-    pub type_: String,
+    pub operation_type: String,
     pub download_size: u64,
     pub installed_size: u64,
 }
