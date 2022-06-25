@@ -20,6 +20,16 @@ pub fn size_to_markup(size: &str) -> String {
     let size: u64 = size.parse().unwrap();
     let formatted = glib::format_size(size).to_string();
 
-    let spl: Vec<&str> = formatted.split('\u{a0}').collect();
-    format!("{}\u{a0}<small>{}</small>", spl[0], spl[1])
+    let mut spl: Vec<&str> = formatted.split('\u{a0}').collect();
+    if spl.len() == 1 {
+        spl = formatted.split(' ').collect();
+    }
+
+    if spl.len() == 2 {
+        format!("{}\u{a0}<small>{}</small>", spl[0], spl[1])
+    }else{
+        warn!("Unable to build size markup: {}", size);
+        String::new()
+    }
+
 }
