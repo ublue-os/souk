@@ -145,15 +145,15 @@ mod imp {
                 vec![
                     ParamSpecObject::new(
                         "file",
-                        "File",
-                        "File",
+                        "",
+                        "",
                         File::static_type(),
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
                     ParamSpecObject::new(
                         "sideloadable",
-                        "Sideloadable",
-                        "Sideloadable",
+                        "",
+                        "",
                         SkSideloadable::static_type(),
                         ParamFlags::READABLE,
                     ),

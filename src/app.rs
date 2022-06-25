@@ -51,8 +51,8 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![ParamSpecObject::new(
                     "worker",
-                    "Worker",
-                    "Worker",
+                    "",
+                    "",
                     SkWorker::static_type(),
                     ParamFlags::READABLE,
                 )]

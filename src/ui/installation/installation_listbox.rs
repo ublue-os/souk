@@ -48,8 +48,8 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![ParamSpecObject::new(
                     "selected-installation",
-                    "Selected Installation",
-                    "Selected Installation",
+                    "",
+                    "",
                     SkInstallation::static_type(),
                     ParamFlags::READABLE,
                 )]

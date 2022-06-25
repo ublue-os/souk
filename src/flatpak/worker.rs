@@ -59,22 +59,22 @@ mod imp {
                 vec![
                     ParamSpecObject::new(
                         "transactions",
-                        "Transactions",
-                        "Transactions",
+                        "",
+                        "",
                         SkTransactionModel::static_type(),
                         ParamFlags::READABLE,
                     ),
                     ParamSpecObject::new(
                         "installations",
-                        "Installations",
-                        "Installations",
+                        "",
+                        "",
                         ListStore::static_type(),
                         ParamFlags::READABLE,
                     ),
                     ParamSpecObject::new(
                         "preferred-installation",
-                        "Preferred Installation",
-                        "Preferred Installation",
+                        "",
+                        "",
                         SkInstallation::static_type(),
                         ParamFlags::READABLE,
                     ),

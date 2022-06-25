@@ -62,8 +62,8 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![ParamSpecObject::new(
                     "remote",
-                    "Remote",
-                    "Remote",
+                    "",
+                    "",
                     Remote::static_type(),
                     ParamFlags::READABLE,
                 )]

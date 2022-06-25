@@ -53,48 +53,12 @@ mod imp {
                 vec![
                     ParamSpecString::new("uuid", "UUID", "UUID", None, ParamFlags::READABLE),
                     ParamSpecString::new("id", "ID", "ID", None, ParamFlags::READABLE),
-                    ParamSpecString::new(
-                        "display-name",
-                        "Display Name",
-                        "Display Name",
-                        None,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecString::new(
-                        "description",
-                        "Description",
-                        "Description",
-                        None,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecString::new(
-                        "icon-name",
-                        "Icon Name",
-                        "Icon Name",
-                        None,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecBoolean::new(
-                        "is-user",
-                        "Is User",
-                        "Is User",
-                        false,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecBoolean::new(
-                        "is-custom",
-                        "Is Custom",
-                        "Is Custom",
-                        false,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "path",
-                        "Path",
-                        "Path",
-                        File::static_type(),
-                        ParamFlags::READABLE,
-                    ),
+                    ParamSpecString::new("display-name", "", "", None, ParamFlags::READABLE),
+                    ParamSpecString::new("description", "", "", None, ParamFlags::READABLE),
+                    ParamSpecString::new("icon-name", "", "", None, ParamFlags::READABLE),
+                    ParamSpecBoolean::new("is-user", "", "", false, ParamFlags::READABLE),
+                    ParamSpecBoolean::new("is-custom", "", "", false, ParamFlags::READABLE),
+                    ParamSpecObject::new("path", "", "", File::static_type(), ParamFlags::READABLE),
                 ]
             });
             PROPERTIES.as_ref()

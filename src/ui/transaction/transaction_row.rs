@@ -65,8 +65,8 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![ParamSpecObject::new(
                     "transaction",
-                    "Transaction",
-                    "Transaction",
+                    "",
+                    "",
                     SkTransaction::static_type(),
                     ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                 )]

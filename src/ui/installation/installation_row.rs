@@ -60,18 +60,12 @@ mod imp {
                 vec![
                     ParamSpecObject::new(
                         "installation",
-                        "Installation",
-                        "Installation",
+                        "",
+                        "",
                         SkInstallation::static_type(),
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
-                    ParamSpecBoolean::new(
-                        "selected",
-                        "Selected",
-                        "Selected",
-                        false,
-                        ParamFlags::READWRITE,
-                    ),
+                    ParamSpecBoolean::new("selected", "", "Selected", false, ParamFlags::READWRITE),
                 ]
             });
             PROPERTIES.as_ref()
