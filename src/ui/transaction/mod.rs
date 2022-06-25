@@ -1,4 +1,4 @@
-// Souk - utils.rs
+// Souk - mod.rs
 // Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,21 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use gtk::glib;
+mod transaction_row;
 
-pub fn size_to_markup(size: &str) -> String {
-    let size: u64 = size.parse().unwrap();
-    let formatted = glib::format_size(size).to_string();
-
-    let mut spl: Vec<&str> = formatted.split('\u{a0}').collect();
-    if spl.len() == 1 {
-        spl = formatted.split(' ').collect();
-    }
-
-    if spl.len() == 2 {
-        format!("{}\u{a0}<small>{}</small>", spl[0], spl[1])
-    } else {
-        warn!("Unable to build size markup: {}", size);
-        String::new()
-    }
-}
+pub use transaction_row::SkTransactionRow;

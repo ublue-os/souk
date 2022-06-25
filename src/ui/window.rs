@@ -23,7 +23,7 @@ use gtk::{gio, glib, CompositeTemplate};
 use crate::app::SkApplication;
 use crate::config;
 use crate::flatpak::transaction::SkTransaction;
-use crate::ui::SkTransactionRow;
+use crate::ui::transaction::SkTransactionRow;
 
 mod imp {
     use super::*;

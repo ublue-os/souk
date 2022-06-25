@@ -35,7 +35,7 @@ use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::flatpak::transaction::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
 use crate::ui::context::{SkContextBox, SkContextDetailRow};
-use crate::ui::SkInstallationListBox;
+use crate::ui::installation::SkInstallationListBox;
 use crate::worker::WorkerError;
 
 mod imp {

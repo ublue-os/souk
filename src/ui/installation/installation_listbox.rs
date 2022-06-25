@@ -25,7 +25,7 @@ use once_cell::sync::Lazy;
 
 use crate::app::SkApplication;
 use crate::flatpak::installation::SkInstallation;
-use crate::ui::SkInstallationRow;
+use crate::ui::installation::SkInstallationRow;
 
 mod imp {
     use super::*;

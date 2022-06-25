@@ -15,16 +15,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pub mod context;
+pub mod installation;
 pub mod sideload;
-pub mod utils;
+pub mod transaction;
 
 pub mod about_dialog;
-mod installation_listbox;
-mod installation_row;
-mod transaction_row;
+pub mod utils;
+
 mod window;
 
-pub use installation_listbox::SkInstallationListBox;
-pub use installation_row::SkInstallationRow;
-pub use transaction_row::SkTransactionRow;
 pub use window::SkApplicationWindow;

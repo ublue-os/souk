@@ -17,7 +17,6 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{subclass, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject};
-use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::OnceCell;
