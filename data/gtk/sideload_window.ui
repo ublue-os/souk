@@ -261,6 +261,7 @@
                                     <property name="margin_bottom">12</property>
                                     <property name="margin_start">12</property>
                                     <property name="margin_end">12</property>
+                                    <property name="tightening_threshold">275</property>
                                     <child>
                                       <object class="SkContextBox" id="context_box"/>
                                     </child>
@@ -300,6 +301,7 @@
                                 <property name="margin_bottom">12</property>
                                 <property name="margin_start">12</property>
                                 <property name="margin_end">12</property>
+                                <property name="tightening_threshold">275</property>
                                 <child>
                                   <object class="AdwPreferencesGroup">
                                     <property name="description" translatable="yes">A Flatpak installation is a location in which packages can be installed. It depends on the installation whether an application is visible only to the currently logged-in user or to all users on this computer.</property>
@@ -346,6 +348,7 @@
                                 <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
                                 <child>
                                   <object class="AdwClamp">
+                                    <property name="tightening_threshold">275</property>
                                     <child>
                                       <object class="GtkBox">
                                         <property name="orientation">vertical</property>
