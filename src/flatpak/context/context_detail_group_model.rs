@@ -1,4 +1,4 @@
-// Shortwave - context_model.rs
+// Shortwave - context_detail_group_model.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -22,28 +22,28 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
-use crate::flatpak::context::SkContextDetail;
+use crate::flatpak::context::SkContextDetailGroup;
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct SkContextDetailModel {
-        pub map: RefCell<IndexMap<String, SkContextDetail>>,
+    pub struct SkContextDetailGroupModel {
+        pub map: RefCell<IndexMap<String, SkContextDetailGroup>>,
     }
 
     #[glib::object_subclass]
-    impl ObjectSubclass for SkContextDetailModel {
-        const NAME: &'static str = "SkContextDetailModel";
-        type Type = super::SkContextDetailModel;
+    impl ObjectSubclass for SkContextDetailGroupModel {
+        const NAME: &'static str = "SkContextDetailGroupModel";
+        type Type = super::SkContextDetailGroupModel;
         type Interfaces = (gio::ListModel,);
     }
 
-    impl ObjectImpl for SkContextDetailModel {}
+    impl ObjectImpl for SkContextDetailGroupModel {}
 
-    impl ListModelImpl for SkContextDetailModel {
+    impl ListModelImpl for SkContextDetailGroupModel {
         fn item_type(&self, _list_model: &Self::Type) -> glib::Type {
-            SkContextDetail::static_type()
+            SkContextDetailGroup::static_type()
         }
 
         fn n_items(&self, _list_model: &Self::Type) -> u32 {
@@ -60,11 +60,11 @@ mod imp {
 }
 
 glib::wrapper! {
-    pub struct SkContextDetailModel(ObjectSubclass<imp::SkContextDetailModel>) @implements gio::ListModel;
+    pub struct SkContextDetailGroupModel(ObjectSubclass<imp::SkContextDetailGroupModel>) @implements gio::ListModel;
 }
 
-impl SkContextDetailModel {
-    pub fn new(details: &[SkContextDetail]) -> Self {
+impl SkContextDetailGroupModel {
+    pub fn new(details: &[SkContextDetailGroup]) -> Self {
         let model: Self = glib::Object::new(&[]).unwrap();
 
         let imp = model.imp();

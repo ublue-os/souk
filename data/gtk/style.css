@@ -1,4 +1,4 @@
-.large-row row{
+.large-row row {
   min-height: 60px;
 }
 
@@ -7,11 +7,11 @@
   margin-bottom: 10px;
 }
 
-.large-row .title :not(.subtitle){
+.large-row .title :not(.subtitle) {
   font-weight: bold;
 }
 
-.large-row .subtitle{
+.large-row .subtitle {
   font-size: unset;
   opacity: unset;
 }
@@ -43,4 +43,12 @@
 
 .circular-background.size {
   min-width: 75px;
+}
+
+.nested-listbox {
+  background: transparent;
+}
+
+.nested-listbox > row {
+  padding: 0px;
 }

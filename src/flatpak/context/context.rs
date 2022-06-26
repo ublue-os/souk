@@ -24,7 +24,8 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::flatpak::context::{
-    SkContextDetail, SkContextDetailLevel, SkContextDetailModel, SkContextDetailType,
+    SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel, SkContextDetailLevel,
+    SkContextDetailType,
 };
 use crate::flatpak::utils;
 use crate::i18n::{i18n, i18n_f};
@@ -36,7 +37,7 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkContext {
         pub summary: OnceCell<SkContextDetail>,
-        pub details: OnceCell<SkContextDetailModel>,
+        pub details: OnceCell<SkContextDetailGroupModel>,
     }
 
     #[glib::object_subclass]
@@ -61,7 +62,7 @@ mod imp {
                         "details",
                         "",
                         "",
-                        SkContextDetailModel::static_type(),
+                        SkContextDetailGroupModel::static_type(),
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
                 ]
@@ -98,7 +99,7 @@ glib::wrapper! {
 }
 
 impl SkContext {
-    pub fn new(summary: &SkContextDetail, details: &SkContextDetailModel) -> Self {
+    pub fn new(summary: &SkContextDetail, details: &SkContextDetailGroupModel) -> Self {
         glib::Object::new(&[("summary", &summary), ("details", &details)]).unwrap()
     }
 
@@ -111,7 +112,7 @@ impl SkContext {
     }
 
     fn size_context(dry_run: &TransactionDryRun, download_size: bool) -> Self {
-        let mut details = Vec::new();
+        let mut groups = Vec::new();
         let mut runtime_size: u64 = 0;
 
         // Sort by size
@@ -123,23 +124,37 @@ impl SkContext {
         }
 
         // The package itelf
+        let mut package_details = Vec::new();
         let title = i18n("Application Data");
-        let description = i18n("The application itself");
+
+        let package_ref = Ref::parse(&dry_run.ref_).unwrap();
+        let package_ref_name = package_ref.name().unwrap().to_string();
+        let package_ref_branch = package_ref.branch().unwrap().to_string();
+        let subtitle = format!("{} ({})", package_ref_name, package_ref_branch);
+
         let size = if download_size {
             dry_run.download_size
         } else {
             dry_run.installed_size
         };
-        let detail = SkContextDetail::new_neutral_size(size, &title, &description);
+
+        let detail = SkContextDetail::new_neutral_size(size, &title, &subtitle);
         let package_size = size;
-        details.push(detail);
+        package_details.push(detail);
 
         // Runtimes
+        let mut runtime_details = Vec::new();
         for runtime in &runtimes {
             let ref_ = Ref::parse(&runtime.ref_).unwrap();
             let ref_name = ref_.name().unwrap().to_string();
+            let ref_branch = ref_.branch().unwrap().to_string();
 
-            let title = utils::runtime_ref_to_display_name(&ref_name);
+            let mut title = utils::runtime_ref_to_display_name(&ref_name);
+            if runtime.operation_type == "update" {
+                title = i18n_f("{} (Update)", &[&title]);
+            }
+            let subtitle = format!("{} ({})", ref_name, ref_branch);
+
             let size = if download_size {
                 runtime.download_size
             } else {
@@ -147,17 +162,43 @@ impl SkContext {
             };
             runtime_size += size;
 
-            let detail = SkContextDetail::new_neutral_size(size, &title, &ref_name);
-            details.push(detail);
+            let detail = SkContextDetail::new_neutral_size(size, &title, &subtitle);
+            if ref_name.contains(&package_ref_name) {
+                package_details.push(detail);
+            } else {
+                runtime_details.push(detail);
+            }
+        }
+
+        let description = i18n("The storage sizes are only maximum values. Actual usage will most likely be significantly lower due to deduplication of data.");
+        let group = SkContextDetailGroup::new(&package_details, Some(&description));
+        groups.push(group);
+
+        if !dry_run.runtimes.is_empty() {
+            let description = i18n("These components are shared with other applications, and only need to be downloaded once.");
+            let group = SkContextDetailGroup::new(&runtime_details, Some(&description));
+            groups.push(group);
         }
 
         // Summary
         let total_size = package_size + runtime_size;
-        let total_size = glib::format_size(total_size);
-        let runtime_size = glib::format_size(runtime_size);
+        let total_size_str = glib::format_size(total_size);
+        let runtime_size_str = glib::format_size(runtime_size);
         let summary = if download_size {
-            let title = i18n_f("Up to {} to download", &[&total_size]);
-            let descr = i18n_f("Needs {} of additional system packages", &[&runtime_size]);
+            let (title, descr) = if runtime_size == 0 {
+                (
+                    i18n("No download required"),
+                    i18n("No additional system packages needed"),
+                )
+            } else {
+                (
+                    i18n_f("Up to {} to download", &[&total_size_str]),
+                    i18n_f(
+                        "Needs {} of additional system packages",
+                        &[&runtime_size_str],
+                    ),
+                )
+            };
             SkContextDetail::new(
                 SkContextDetailType::Icon,
                 "folder-download-symbolic",
@@ -166,8 +207,15 @@ impl SkContext {
                 &descr,
             )
         } else {
-            let title = i18n_f("Up to {} storage required", &[&total_size]);
-            let descr = i18n_f("Requires {} for shared system packages", &[&runtime_size]);
+            let title = i18n_f("Up to {} storage required", &[&total_size_str]);
+            let descr = if runtime_size == 0 {
+                i18n("Requires no additional space for system packages")
+            } else {
+                i18n_f(
+                    "Requires {} for shared system packages",
+                    &[&runtime_size_str],
+                )
+            };
             SkContextDetail::new(
                 SkContextDetailType::Icon,
                 "drive-harddisk-system-symbolic",
@@ -177,15 +225,15 @@ impl SkContext {
             )
         };
 
-        let details = SkContextDetailModel::new(&details);
-        Self::new(&summary, &details)
+        let groups = SkContextDetailGroupModel::new(&groups);
+        Self::new(&summary, &groups)
     }
 
     pub fn summary(&self) -> SkContextDetail {
         self.imp().summary.get().unwrap().clone()
     }
 
-    pub fn details(&self) -> SkContextDetailModel {
+    pub fn details(&self) -> SkContextDetailGroupModel {
         self.imp().details.get().unwrap().clone()
     }
 }

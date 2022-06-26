@@ -41,8 +41,12 @@ pub fn runtime_ref_to_display_name(ref_: &str) -> String {
         return i18n("Graphic Drivers");
     }
 
+    if ref_.contains(".GL32.") {
+        return i18n("32-Bit Graphic Drivers");
+    }
+
     if ref_.contains(".Compat.") {
-        return i18n("32 Bit Compatibility Packages");
+        return i18n("32-Bit Compatibility Packages");
     }
 
     i18n("Shared System Package")

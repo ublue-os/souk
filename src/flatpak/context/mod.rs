@@ -17,12 +17,14 @@
 #[allow(clippy::module_inception)]
 mod context;
 mod context_detail;
+mod context_detail_group;
+mod context_detail_group_model;
 mod context_detail_level;
-mod context_detail_model;
 mod context_detail_type;
 
 pub use context::SkContext;
 pub use context_detail::SkContextDetail;
+pub use context_detail_group::SkContextDetailGroup;
+pub use context_detail_group_model::SkContextDetailGroupModel;
 pub use context_detail_level::SkContextDetailLevel;
-pub use context_detail_model::SkContextDetailModel;
 pub use context_detail_type::SkContextDetailType;

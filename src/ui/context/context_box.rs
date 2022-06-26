@@ -16,12 +16,14 @@
 
 use std::cell::RefCell;
 
-use glib::{subclass, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
-use crate::flatpak::context::{SkContext, SkContextDetail, SkContextDetailType};
+use crate::flatpak::context::{
+    SkContext, SkContextDetail, SkContextDetailGroup, SkContextDetailType,
+};
 use crate::ui::context::SkContextDetailRow;
 use crate::ui::utils;
 
@@ -149,9 +151,33 @@ impl SkContextBox {
             .set_text(&context.summary().description());
 
         imp.details_listbox
-            .bind_model(Some(&context.details()), |detail| {
-                let context_detail = detail.downcast_ref::<SkContextDetail>().unwrap();
-                SkContextDetailRow::new(context_detail, false).upcast()
-            });
+            .bind_model(Some(&context.details()), clone!(@weak self as this => @default-panic, move |detail_group| {
+                let context_detail_group = detail_group.downcast_ref::<SkContextDetailGroup>().unwrap();
+
+                let box_ = gtk::Box::new(gtk::Orientation::Vertical, 12);
+                if let Some(descr) = context_detail_group.description(){
+                    let label = gtk::Label::new(Some(&descr));
+                    label.set_xalign(0.0);
+                    label.set_wrap(true);
+                    label.add_css_class("dim-label");
+                    box_.append(&label);
+                }
+
+                let listbox = gtk::ListBox::new();
+                listbox.add_css_class("content");
+                listbox.set_margin_bottom(18);
+                listbox.set_selection_mode(gtk::SelectionMode::None);
+                listbox.bind_model(Some(context_detail_group), |detail|{
+                    let detail = detail.downcast_ref::<SkContextDetail>().unwrap();
+                    SkContextDetailRow::new(detail, false).upcast()
+                });
+                box_.append(&listbox);
+
+                let row = gtk::ListBoxRow::new();
+                row.set_child(Some(&box_));
+                row.set_activatable(false);
+
+                row.upcast()
+            }));
     }
 }
