@@ -1,4 +1,4 @@
-// Souk - transaction_dry_run.rs
+// Souk - dry_run_result.rs
 // Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -18,11 +18,12 @@ use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
+use super::DryRunRuntime;
 use crate::worker::installation::RemoteInfo;
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone)]
 #[derivative(Debug)]
-pub struct TransactionDryRun {
+pub struct DryRunResult {
     pub ref_: String,
     pub commit: String,
     #[derivative(Debug = "ignore")]
@@ -34,7 +35,8 @@ pub struct TransactionDryRun {
     pub is_already_installed: bool,
     /// The same ref is already installed, but the commit differs
     pub is_update: bool,
-    /// Whether the package has an source for future app updates
+    /// Whether the package has an source for future app updates (not always
+    /// necessary, for example sideloading)
     pub has_update_source: bool,
     /// Whether the package is already installed from a different remote, and
     /// the old app needs to get uninstalled first
@@ -46,30 +48,12 @@ pub struct TransactionDryRun {
     pub installed_size: u64,
 
     /// Which runtimes are installed during the installation
-    pub runtimes: Vec<TransactionDryRunRuntime>,
+    pub runtimes: Vec<DryRunRuntime>,
     /// Which remote may be added during installation
-    pub remote: Optional<RemoteInfo>,
+    pub new_remote: Optional<RemoteInfo>,
 }
 
-impl TransactionDryRun {
-    pub fn download_size(&self) -> u64 {
-        let mut size = self.download_size;
-        for runtime in &self.runtimes {
-            size += runtime.download_size;
-        }
-        size
-    }
-
-    pub fn installed_size(&self) -> u64 {
-        let mut size = self.installed_size;
-        for runtime in &self.runtimes {
-            size += runtime.installed_size;
-        }
-        size
-    }
-}
-
-impl Default for TransactionDryRun {
+impl Default for DryRunResult {
     fn default() -> Self {
         Self {
             ref_: String::default(),
@@ -83,15 +67,7 @@ impl Default for TransactionDryRun {
             download_size: 0,
             installed_size: 0,
             runtimes: Vec::default(),
-            remote: None.into(),
+            new_remote: None.into(),
         }
     }
-}
-
-#[derive(Default, Deserialize, Serialize, Type, Debug, Clone)]
-pub struct TransactionDryRunRuntime {
-    pub ref_: String,
-    pub operation_type: String,
-    pub download_size: u64,
-    pub installed_size: u64,
 }

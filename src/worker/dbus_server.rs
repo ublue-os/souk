@@ -22,8 +22,7 @@ use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
 use crate::config;
 use crate::worker::installation::{InstallationInfo, InstallationManager, RemoteInfo};
 use crate::worker::transaction::{
-    TransactionCommand, TransactionDryRun, TransactionError, TransactionMessage,
-    TransactionProgress,
+    DryRunResult, TransactionCommand, TransactionError, TransactionMessage, TransactionProgress,
 };
 use crate::worker::WorkerError;
 
@@ -83,7 +82,7 @@ impl Worker {
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> Result<TransactionDryRun, WorkerError> {
+    ) -> Result<DryRunResult, WorkerError> {
         let (transaction_sender, mut receiver) = unbounded();
 
         self.transaction_sender
@@ -122,7 +121,7 @@ impl Worker {
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> Result<TransactionDryRun, WorkerError> {
+    ) -> Result<DryRunResult, WorkerError> {
         let (transaction_sender, mut receiver) = unbounded();
 
         self.transaction_sender

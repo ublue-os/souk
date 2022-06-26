@@ -20,12 +20,12 @@ use gtk::glib::Bytes;
 use gtk::prelude::*;
 
 use crate::flatpak::context::SkContext;
-use crate::worker::TransactionDryRun;
+use crate::worker::DryRunResult;
 
 // TODO: This should be a gobject with properties
 #[derive(Debug, Default, Clone)]
 pub struct SideloadPackage {
-    pub transaction_dry_run: TransactionDryRun,
+    pub transaction_dry_run: DryRunResult,
 }
 
 impl SideloadPackage {

@@ -16,7 +16,7 @@
 
 use crate::config;
 use crate::worker::{
-    InstallationInfo, RemoteInfo, TransactionDryRun, TransactionError as WTransactionError,
+    DryRunResult, InstallationInfo, RemoteInfo, TransactionError as WTransactionError,
     TransactionProgress as WTransactionProgress, WorkerError,
 };
 
@@ -43,7 +43,7 @@ trait Worker {
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> Result<TransactionDryRun, WorkerError>;
+    ) -> Result<DryRunResult, WorkerError>;
 
     fn install_flatpak_ref(
         &self,
@@ -56,7 +56,7 @@ trait Worker {
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> Result<TransactionDryRun, WorkerError>;
+    ) -> Result<DryRunResult, WorkerError>;
 
     fn cancel_transaction(&self, uuid: &str) -> zbus::Result<()>;
 

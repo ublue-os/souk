@@ -29,7 +29,7 @@ use crate::flatpak::context::{
 };
 use crate::flatpak::utils;
 use crate::i18n::{i18n, i18n_f};
-use crate::worker::TransactionDryRun;
+use crate::worker::DryRunResult;
 
 mod imp {
     use super::*;
@@ -103,15 +103,15 @@ impl SkContext {
         glib::Object::new(&[("summary", &summary), ("details", &details)]).unwrap()
     }
 
-    pub fn download_size(dry_run: &TransactionDryRun) -> Self {
+    pub fn download_size(dry_run: &DryRunResult) -> Self {
         Self::size_context(dry_run, true)
     }
 
-    pub fn installed_size(dry_run: &TransactionDryRun) -> Self {
+    pub fn installed_size(dry_run: &DryRunResult) -> Self {
         Self::size_context(dry_run, false)
     }
 
-    fn size_context(dry_run: &TransactionDryRun, download_size: bool) -> Self {
+    fn size_context(dry_run: &DryRunResult, download_size: bool) -> Self {
         let mut groups = Vec::new();
         let mut runtime_size: u64 = 0;
 

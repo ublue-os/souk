@@ -27,7 +27,7 @@ use crate::error::Error;
 use crate::flatpak::sideload::SkSideloadType;
 use crate::flatpak::transaction::SkTransaction;
 use crate::flatpak::SkWorker;
-use crate::worker::TransactionDryRun;
+use crate::worker::DryRunResult;
 
 mod imp {
     use super::*;
@@ -63,7 +63,7 @@ impl SkSideloadable {
     pub fn new_package(
         file: &File,
         type_: SkSideloadType,
-        transaction_dry_run: TransactionDryRun,
+        transaction_dry_run: DryRunResult,
         installation_uuid: &str,
     ) -> Self {
         let sideloadable: Self = glib::Object::new(&[]).unwrap();
@@ -80,7 +80,7 @@ impl SkSideloadable {
 
         // remote
         let remote = transaction_dry_run
-            .remote
+            .new_remote
             .as_ref()
             .map(|r| r.flatpak_remote());
         imp.remote.set(remote).unwrap();

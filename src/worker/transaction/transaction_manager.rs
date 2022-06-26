@@ -36,8 +36,7 @@ use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 
 use super::{
-    TransactionCommand, TransactionDryRun, TransactionDryRunRuntime, TransactionMessage,
-    TransactionProgress,
+    DryRunResult, DryRunRuntime, TransactionCommand, TransactionMessage, TransactionProgress,
 };
 use crate::worker::installation::{InstallationManager, RemoteInfo};
 use crate::worker::{appstream, WorkerError};
@@ -196,7 +195,7 @@ impl TransactionManager {
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> Result<TransactionDryRun, WorkerError> {
+    ) -> Result<DryRunResult, WorkerError> {
         info!("Install Flatpak bundle (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
         let bundle = BundleRef::new(&file)?;
@@ -214,7 +213,7 @@ impl TransactionManager {
             results.installed_size = bundle.installed_size();
 
             // Optional remote / repository
-            if let Some(remote) = results.remote.as_mut() {
+            if let Some(remote) = results.new_remote.as_mut() {
                 let f_remote = self.retrieve_flatpak_remote(&bundle.runtime_repo_url().unwrap())?;
                 remote.set_flatpak_remote(&f_remote);
             }
@@ -277,7 +276,7 @@ impl TransactionManager {
         &self,
         path: &str,
         installation_uuid: &str,
-    ) -> Result<TransactionDryRun, WorkerError> {
+    ) -> Result<DryRunResult, WorkerError> {
         info!("Install Flatpak ref (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
@@ -292,7 +291,7 @@ impl TransactionManager {
 
         if let Ok(mut results) = results {
             // Remote / repository
-            if let Some(remote) = results.remote.as_mut() {
+            if let Some(remote) = results.new_remote.as_mut() {
                 let keyfile = KeyFile::new();
                 keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
                 let remote_url = keyfile.value("Flatpak Ref", "RuntimeRepo")?;
@@ -390,15 +389,15 @@ impl TransactionManager {
         real_installation: &Installation,
         // Whether to load the AppStream data from the Remote
         load_remote_appstream: bool,
-    ) -> Result<TransactionDryRun, WorkerError> {
-        let transaction_dry_run = Rc::new(RefCell::new(TransactionDryRun::default()));
+    ) -> Result<DryRunResult, WorkerError> {
+        let transaction_dry_run = Rc::new(RefCell::new(DryRunResult::default()));
 
         // Check if new remotes are added during the transaction
         transaction.connect_add_new_remote(
             clone!(@weak transaction_dry_run => @default-return false, move |_, reason, _, name, url|{
                 if reason == TransactionRemoteReason::RuntimeDeps{
                     let remote = RemoteInfo::new(name, url);
-                    transaction_dry_run.borrow_mut().remote = Some(remote).into();
+                    transaction_dry_run.borrow_mut().new_remote = Some(remote).into();
                     return true;
                 }
 
@@ -491,7 +490,7 @@ impl TransactionManager {
                             }
                         }
                     }else{
-                        let runtime = TransactionDryRunRuntime{
+                        let runtime = DryRunRuntime{
                             ref_: operation.get_ref().unwrap().to_string(),
                             operation_type: operation.operation_type().to_str().unwrap().to_string(),
                             download_size: operation.download_size(),
