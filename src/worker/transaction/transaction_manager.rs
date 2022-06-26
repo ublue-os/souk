@@ -544,7 +544,7 @@ impl TransactionManager {
 
         // TODO: There's a race condition when you run multiple dry-run transactions at
         // the same time, since they use the same installation
-        if dry_run {
+        let transaction = if dry_run {
             let remotes = installation.list_remotes(Cancellable::NONE)?;
             let mut dry_run_path = glib::tmp_dir();
             dry_run_path.push("souk-dry-run");
@@ -580,13 +580,16 @@ impl TransactionManager {
             let t = Transaction::for_installation(&dry_run, Cancellable::NONE)?;
             t.add_dependency_source(&installation);
 
-            Ok(t)
+            t
         } else {
-            Ok(Transaction::for_installation(
-                &installation,
-                Cancellable::NONE,
-            )?)
-        }
+            Transaction::for_installation(&installation, Cancellable::NONE)?
+        };
+
+        // Add all default installations (= system wide installations) as dependency
+        // source
+        transaction.add_default_dependency_sources();
+
+        Ok(transaction)
     }
 
     fn uninstall_ref(&self, ref_: &str, installation_uuid: &str) -> Result<(), WorkerError> {
