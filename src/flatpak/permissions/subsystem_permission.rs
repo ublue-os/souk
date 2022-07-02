@@ -1,5 +1,5 @@
-// Souk - mod.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - subsystem_permission.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,14 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod context;
-pub mod installation;
-pub mod permissions;
-pub mod sideload;
-pub mod transaction;
-pub mod utils;
+use gtk::glib;
 
-mod dbus_proxy;
-mod worker;
+#[glib::flags(name = "SkSubsystemPermission")]
+pub enum SkSubsystemPermission {
+    #[flags_value(name = "none")]
+    NONE = 1 << 0,
+    #[flags_value(name = "unknown")]
+    UNKNOWN = 1 << 1,
+    #[flags_value(name = "network")]
+    NETWORK = 1 << 2,
+    #[flags_value(name = "ipc")]
+    IPC = 1 << 3,
+}
 
-pub use worker::SkWorker;
+impl From<&str> for SkSubsystemPermission {
+    fn from(value: &str) -> Self {
+        match value {
+            "network" => Self::NETWORK,
+            "ipc" => Self::IPC,
+            _ => Self::UNKNOWN,
+        }
+    }
+}

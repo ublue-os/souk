@@ -390,14 +390,14 @@ impl TransactionManager {
         // Whether to load the AppStream data from the Remote
         load_remote_appstream: bool,
     ) -> Result<DryRunResult, WorkerError> {
-        let transaction_dry_run = Rc::new(RefCell::new(DryRunResult::default()));
+        let dry_run_result = Rc::new(RefCell::new(DryRunResult::default()));
 
         // Check if new remotes are added during the transaction
         transaction.connect_add_new_remote(
-            clone!(@weak transaction_dry_run => @default-return false, move |_, reason, _, name, url|{
+            clone!(@weak dry_run_result => @default-return false, move |_, reason, _, name, url|{
                 if reason == TransactionRemoteReason::RuntimeDeps{
                     let remote = RemoteInfo::new(name, url);
-                    transaction_dry_run.borrow_mut().new_remote = Some(remote).into();
+                    dry_run_result.borrow_mut().new_remote = Some(remote).into();
                     return true;
                 }
 
@@ -407,20 +407,24 @@ impl TransactionManager {
 
         // Ready -> Everything got resolved, so we can check the transaction operations
         transaction.connect_ready(
-            clone!(@weak transaction_dry_run, @weak real_installation, @strong load_remote_appstream => @default-return false, move |transaction|{
+            clone!(@weak dry_run_result, @weak real_installation, @strong load_remote_appstream => @default-return false, move |transaction|{
                 let operation_count = transaction.operations().len();
-                for (pos, operation) in transaction.operations().iter().enumerate() {
+                for (pos, operation) in transaction.operations().iter().enumerate () {
                     // Check if it's the last operation, which is the actual app / runtime
                     if (pos+1) ==  operation_count {
                         let operation_commit = operation.commit().unwrap().to_string();
+                        let operation_metadata = operation.metadata().unwrap().to_data().to_string();
+                        let operation_old_metadata = operation.metadata().map(|m| m.to_data().to_string());
 
-                        transaction_dry_run.borrow_mut().ref_ = operation.get_ref().unwrap().to_string();
-                        transaction_dry_run.borrow_mut().commit = operation_commit.clone();
-                        transaction_dry_run.borrow_mut().download_size = operation.download_size();
-                        transaction_dry_run.borrow_mut().installed_size = operation.installed_size();
+                        dry_run_result.borrow_mut().ref_ = operation.get_ref().unwrap().to_string();
+                        dry_run_result.borrow_mut().commit = operation_commit.clone();
+                        dry_run_result.borrow_mut().metainfo = operation_metadata;
+                        dry_run_result.borrow_mut().old_metainfo = operation_old_metadata.into();
+                        dry_run_result.borrow_mut().download_size = operation.download_size();
+                        dry_run_result.borrow_mut().installed_size = operation.installed_size();
 
                         if operation.operation_type() == TransactionOperationType::InstallBundle{
-                            transaction_dry_run.borrow_mut().has_update_source = false;
+                            dry_run_result.borrow_mut().has_update_source = false;
                         }
 
                         // Check if ref is already installed
@@ -441,15 +445,15 @@ impl TransactionManager {
                             // If yes, it the already installed ref needs to get uninstalled first,
                             // before the new one can get installed.
                             if installed_origin != operation_remote {
-                                transaction_dry_run.borrow_mut().is_replacing_remote = Some(installed_origin.to_string()).into();
+                                dry_run_result.borrow_mut().is_replacing_remote = Some(installed_origin.to_string()).into();
                             }
 
                             if installed.commit().unwrap() == operation_commit {
                                 // Commit is the same -> ref is already installed
-                                transaction_dry_run.borrow_mut().is_already_installed = true;
+                                dry_run_result.borrow_mut().is_already_installed = true;
                             }else{
                                 // Commit differs -> is update
-                                transaction_dry_run.borrow_mut().is_update = true;
+                                dry_run_result.borrow_mut().is_update = true;
                             }
                         }
 
@@ -477,13 +481,13 @@ impl TransactionManager {
                             if let Some(component) = appstream::utils::component_from_remote(&ref_, &remote){
                                 // Appstream
                                 let json = serde_json::to_string(&component).unwrap();
-                                transaction_dry_run.borrow_mut().appstream_component = Some(json).into();
+                                dry_run_result.borrow_mut().appstream_component = Some(json).into();
 
                                 // Icon
                                 let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
                                 let icon = appstream_dir.child(format!("icons/128x128/{}.png", ref_.name().unwrap()));
                                 if let Ok((bytes, _)) = icon.load_bytes(Cancellable::NONE){
-                                    transaction_dry_run.borrow_mut().icon = bytes.to_vec();
+                                    dry_run_result.borrow_mut().icon = bytes.to_vec();
                                 }
                             }else{
                                 warn!("Couldn't find appstream component.");
@@ -496,7 +500,7 @@ impl TransactionManager {
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
                         };
-                        transaction_dry_run.borrow_mut().runtimes.push(runtime);
+                        dry_run_result.borrow_mut().runtimes.push(runtime);
                     }
                 }
 
@@ -524,7 +528,7 @@ impl TransactionManager {
             }
         }
 
-        let results = transaction_dry_run.borrow().clone();
+        let results = dry_run_result.borrow().clone();
         Ok(results)
     }
 

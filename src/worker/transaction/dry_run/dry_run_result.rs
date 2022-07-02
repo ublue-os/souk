@@ -26,11 +26,18 @@ use crate::worker::installation::RemoteInfo;
 pub struct DryRunResult {
     pub ref_: String,
     pub commit: String,
+
     #[derivative(Debug = "ignore")]
     pub icon: Vec<u8>,
     /// Json serialized appstream component
     #[derivative(Debug = "ignore")]
     pub appstream_component: Optional<String>,
+    /// Flatpak metainfo
+    #[derivative(Debug = "ignore")]
+    pub metainfo: String,
+    #[derivative(Debug = "ignore")]
+    pub old_metainfo: Optional<String>,
+
     /// Whether the package with the exact commit is already installed
     pub is_already_installed: bool,
     /// The same ref is already installed, but the commit differs
@@ -60,6 +67,8 @@ impl Default for DryRunResult {
             commit: String::default(),
             icon: Vec::default(),
             appstream_component: None.into(),
+            metainfo: String::new(),
+            old_metainfo: None.into(),
             is_already_installed: false,
             is_update: false,
             has_update_source: true,

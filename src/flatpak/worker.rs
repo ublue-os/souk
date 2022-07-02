@@ -286,7 +286,7 @@ impl SkWorker {
         let path_string = path.to_str().unwrap().to_string();
 
         let type_ = SkSideloadType::determine_type(file);
-        let transaction_dry_run = match type_ {
+        let dry_run_result = match type_ {
             SkSideloadType::Bundle => {
                 proxy
                     .install_flatpak_bundle_dry_run(&path_string, installation_uuid)
@@ -320,11 +320,11 @@ impl SkWorker {
             _ => return Err(Error::UnsupportedSideloadType),
         };
 
-        debug!("Dry run results: {:#?}", transaction_dry_run);
+        debug!("Dry run results: {:#?}", dry_run_result);
         Ok(SkSideloadable::new_package(
             file,
             type_,
-            transaction_dry_run,
+            dry_run_result,
             installation_uuid,
         ))
     }

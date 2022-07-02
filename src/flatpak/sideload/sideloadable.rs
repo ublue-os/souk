@@ -63,7 +63,7 @@ impl SkSideloadable {
     pub fn new_package(
         file: &File,
         type_: SkSideloadType,
-        transaction_dry_run: DryRunResult,
+        dry_run_result: DryRunResult,
         installation_uuid: &str,
     ) -> Self {
         let sideloadable: Self = glib::Object::new(&[]).unwrap();
@@ -72,23 +72,21 @@ impl SkSideloadable {
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(type_).unwrap();
         imp.no_changes
-            .set(transaction_dry_run.is_already_installed)
+            .set(dry_run_result.is_already_installed)
             .unwrap();
         imp.installation_uuid
             .set(installation_uuid.to_string())
             .unwrap();
 
         // remote
-        let remote = transaction_dry_run
+        let remote = dry_run_result
             .new_remote
             .as_ref()
             .map(|r| r.flatpak_remote());
         imp.remote.set(remote).unwrap();
 
         // package
-        let package = SideloadPackage {
-            transaction_dry_run,
-        };
+        let package = SideloadPackage { dry_run_result };
         imp.package.set(Some(package)).unwrap();
 
         sideloadable

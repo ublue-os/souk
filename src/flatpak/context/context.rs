@@ -27,6 +27,7 @@ use crate::flatpak::context::{
     SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel, SkContextDetailLevel,
     SkContextDetailType,
 };
+use crate::flatpak::permissions::{SkAppPermissions, SkFilesystemPermission, SkServicePermission};
 use crate::flatpak::utils;
 use crate::i18n::{i18n, i18n_f};
 use crate::worker::DryRunResult;
@@ -101,6 +102,62 @@ glib::wrapper! {
 impl SkContext {
     pub fn new(summary: &SkContextDetail, details: &SkContextDetailGroupModel) -> Self {
         glib::Object::new(&[("summary", &summary), ("details", &details)]).unwrap()
+    }
+
+    pub fn permissions(
+        permissions: &SkAppPermissions,
+        _old_permissions: &Option<SkAppPermissions>,
+    ) -> Self {
+        let mut groups = Vec::new();
+
+        // Filesystems
+        let mut filesystem_permissions = Vec::new();
+        for value in permissions.filesystems().snapshot() {
+            let value: SkFilesystemPermission = value.downcast().unwrap();
+
+            let detail = SkContextDetail::new(
+                SkContextDetailType::Icon,
+                "dialog-warning-symbolic",
+                SkContextDetailLevel::Neutral,
+                &value.path(),
+                "",
+            );
+            filesystem_permissions.push(detail);
+        }
+
+        let description = i18n("Filesystem permissions");
+        let group = SkContextDetailGroup::new(&filesystem_permissions, Some(&description));
+        groups.push(group);
+
+        // Services
+        let mut services_permissions = Vec::new();
+        for value in permissions.services().snapshot() {
+            let value: SkServicePermission = value.downcast().unwrap();
+
+            let detail = SkContextDetail::new(
+                SkContextDetailType::Icon,
+                "dialog-warning-symbolic",
+                SkContextDetailLevel::Neutral,
+                &value.name(),
+                "",
+            );
+            services_permissions.push(detail);
+        }
+
+        let description = i18n("Service permissions");
+        let group = SkContextDetailGroup::new(&services_permissions, Some(&description));
+        groups.push(group);
+
+        let summary = SkContextDetail::new(
+            SkContextDetailType::Icon,
+            "dialog-warning-symbolic",
+            SkContextDetailLevel::Neutral,
+            "Permissions",
+            "",
+        );
+
+        let groups = SkContextDetailGroupModel::new(&groups);
+        Self::new(&summary, &groups)
     }
 
     pub fn download_size(dry_run: &DryRunResult) -> Self {

@@ -404,14 +404,17 @@ impl SkSideloadWindow {
                 !(!imp.no_update_source_row.is_visible() && !imp.replacing_remote_row.is_visible()),
             );
 
-            // Setup size information
+            // Context information
             let contexts = ListStore::new(SkContext::static_type());
 
-            let download_context = package.download_size_context();
-            contexts.append(&download_context);
+            let download_size_context = package.download_size_context();
+            contexts.append(&download_size_context);
 
-            let installed_context = package.installed_size_context();
-            contexts.append(&installed_context);
+            let installed_size_context = package.installed_size_context();
+            contexts.append(&installed_size_context);
+
+            let permissions_context = package.permissions_context();
+            contexts.append(&permissions_context);
 
             imp.package_context_listbox.bind_model(
                 Some(&contexts),
