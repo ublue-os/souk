@@ -1,0 +1,22 @@
+.context-good {
+	color: @green_1;
+	background-color: alpha(@green_4, .25);
+}
+
+.context-minor {
+	color: @blue_1;
+}
+
+.context-moderate {
+	color: @yellow_2;
+	background: alpha(#cd9309, .25);
+}
+
+.context-warning {
+	color: @orange_1;
+}
+
+.context-bad {
+	color: #ff7b63;
+}
+

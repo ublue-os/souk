@@ -20,6 +20,9 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
+use crate::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::i18n::{i18n, i18n_f};
+
 mod imp {
     use super::*;
 
@@ -78,5 +81,108 @@ impl SkServicePermission {
 
     pub fn is_system(&self) -> bool {
         *self.imp().is_system.get().unwrap()
+    }
+
+    pub fn to_context_detail(&self) -> SkContextDetail {
+        let type_ = SkContextDetailType::Icon;
+        let icon_name = "system-run-symbolic".to_string();
+        let mut level = if !self.is_system() {
+            SkContextDetailLevel::Neutral
+        } else {
+            SkContextDetailLevel::Moderate
+        };
+        let mut title = if !self.is_system() {
+            i18n_f("Access to “{}” Service", &[&self.name()])
+        } else {
+            i18n_f("Access to System Service “{}”", &[&self.name()])
+        };
+        let mut description = i18n("Allows sending commands to the service or transferring data");
+
+        // Well known dbus services
+
+        if self.name().starts_with("org.gnome.SettingsDaemon") {
+            level = SkContextDetailLevel::Bad;
+            title = i18n("Access to System Settings Service");
+            description = i18n("Can read and modify system settings");
+        }
+
+        if self.name().starts_with("org.gnome.SessionManager") {
+            level = SkContextDetailLevel::Bad;
+            title = i18n("Access to Session Manager Service");
+            description = i18n("Has access to the current user session and open applications");
+        }
+
+        if self.name().starts_with("org.freedesktop.PackageKit") {
+            level = SkContextDetailLevel::Bad;
+            title = i18n("Access to System Package Management");
+            description = i18n("Can install, uninstall or update system packages");
+        }
+
+        if self.name().starts_with("org.freedesktop.Flatpak") {
+            level = SkContextDetailLevel::Bad;
+            title = i18n("Access to Flatpak Service");
+            description = i18n("Can execute arbitrary commands on the host system");
+        }
+
+        if self.name().starts_with("org.freedesktop.secrets") {
+            level = SkContextDetailLevel::Bad;
+            title = i18n("Access to Password/Key Management Service");
+            description = i18n("Can read, edit or delete passwords or keys");
+        }
+
+        if self.name().starts_with("org.freedesktop.FileManager") {
+            title = i18n("Access to File Manager Service");
+            description = i18n("Can open folders or files");
+        }
+
+        if self.name().starts_with("org.freedesktop.Notifications") {
+            title = i18n("Access to Notifications Service");
+            description = i18n("Can send desktop notifications");
+        }
+
+        if self.name().starts_with("org.freedesktop.NetworkManager") {
+            level = SkContextDetailLevel::Bad;
+            title = i18n("Access to System Network Service");
+            description = i18n("Can read and modify network settings");
+        }
+
+        if self.name().starts_with("org.freedesktop.ScreenSaver") {
+            title = i18n("Access to Screen Saver Service");
+            description = i18n("Can read and modify screen saver settings");
+        }
+
+        if self.name().starts_with("org.freedesktop.Avahi") {
+            title = i18n("Access to Avahi Network Service");
+            description = i18n("Can publish or find information on the local network");
+        }
+
+        if self.name().starts_with("org.freedesktop.UPower") {
+            title = i18n("Access to Power Management Service");
+            description = i18n("Can read information about the current power consumption / status");
+        }
+
+        if self.name().starts_with("org.freedesktop.UDisks2") {
+            level = SkContextDetailLevel::Bad;
+            title = i18n("Access to Disks Management Service");
+            description = i18n("Can access, mount, unmount, or edit disk volumes");
+        }
+
+        if self.name().starts_with("org.mpris.MediaPlayer") {
+            title = i18n("Access to Media Player Service");
+            description = i18n("Can integrate as a media player in the desktop environment");
+        }
+
+        if self.name().starts_with("org.kde.StatusNotifier") {
+            title = i18n("Access to KDE Status Notifier Service");
+            description = i18n("Can modify the system tray status icons");
+        }
+
+        if self.name().starts_with("ca.desrt.dconf") {
+            level = SkContextDetailLevel::Bad;
+            title = i18n("Access to System Settings Database Service");
+            description = i18n("Can read and modify system / application settings");
+        }
+
+        SkContextDetail::new(type_, &icon_name, level, &title, &description)
     }
 }

@@ -7,6 +7,7 @@
     <file compressed="true" preprocess="xml-stripblanks">gtk/installation_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/remote_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/sideload_window.ui</file>
+    <file compressed="true" alias="style-dark.css">gtk/style-dark.css</file>
     <file compressed="true" alias="style.css">gtk/style.css</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/transaction_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/window.ui</file>

@@ -16,6 +16,9 @@
 
 use gtk::glib;
 
+use crate::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::i18n::i18n;
+
 #[glib::flags(name = "SkSocketPermission")]
 pub enum SkSocketPermission {
     #[flags_value(name = "none")]
@@ -40,6 +43,115 @@ pub enum SkSocketPermission {
     PCSC = 1 << 9,
     #[flags_value(name = "cups")]
     CUPS = 1 << 10,
+}
+
+impl SkSocketPermission {
+    pub fn to_context_details(&self) -> Vec<SkContextDetail> {
+        let mut details = Vec::new();
+        let type_ = SkContextDetailType::Icon;
+        let level = SkContextDetailLevel::Bad;
+
+        if self.contains(Self::X11) && !self.contains(Self::FALLBACK_X11) {
+            let icon_name = "computer-symbolic";
+            let title = i18n("Legacy Windowing System");
+            let description = i18n("Uses a legacy windowing system, can access the contents of other windows and intercept keyboard inputs");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        }
+
+        if self.contains(Self::SESSION_BUS) {
+            let icon_name = "system-run-symbolic";
+            let title = i18n("Access to All Session Services");
+            let description = i18n("Has access to all session services");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        }
+
+        if self.contains(Self::SYSTEM_BUS) {
+            let icon_name = "system-run-symbolic";
+            let title = i18n("Access to All System Services");
+            let description = i18n("Has access to all system services");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        }
+
+        if self.contains(Self::SSH_AUTH) {
+            let icon_name = "dialog-password-symbolic";
+            let title = i18n("Access to SSH Authentication");
+            let description = i18n("Can access SSH keys / can perform authentications");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        }
+
+        if self.contains(Self::PCSC) {
+            let icon_name = "dialog-password-symbolic";
+            let title = i18n("Access to Smartcards / Security Keys");
+            let description = i18n("Can access smartcards and security devices");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        }
+
+        if self.contains(Self::CUPS) {
+            let icon_name = "printer-symbolic";
+            let title = i18n("Access to Printing Management");
+            let description = i18n("Unrestricted access to printer management");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        }
+
+        if self.contains(Self::UNKNOWN) {
+            let icon_name = "dialog-question-symbolic";
+            let level = SkContextDetailLevel::Warning;
+            let title = i18n("Access to Unknown Socket");
+            let description = i18n("Can access an unknown socket");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        }
+
+        details
+    }
 }
 
 impl From<&str> for SkSocketPermission {

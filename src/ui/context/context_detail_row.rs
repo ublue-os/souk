@@ -21,7 +21,7 @@ use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::OnceCell;
 
-use crate::flatpak::context::{SkContextDetail, SkContextDetailType};
+use crate::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
 use crate::ui::utils;
 
 mod imp {
@@ -147,6 +147,17 @@ impl SkContextDetailRow {
             imp.text_label.set_markup(&detail.type_value());
             imp.text_label.remove_css_class("size");
         }
+
+        let css = match detail.level() {
+            SkContextDetailLevel::Neutral => "context-neutral",
+            SkContextDetailLevel::Good => "context-good",
+            SkContextDetailLevel::Minor => "context-minor",
+            SkContextDetailLevel::Moderate => "context-moderate",
+            SkContextDetailLevel::Warning => "context-warning",
+            SkContextDetailLevel::Bad => "context-bad",
+        };
+        imp.icon_image.add_css_class(css);
+        imp.text_label.add_css_class(css);
 
         imp.arrow.set_visible(self.show_arrow());
 

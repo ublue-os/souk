@@ -16,6 +16,9 @@
 
 use gtk::glib;
 
+use crate::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::i18n::i18n;
+
 #[glib::flags(name = "SkSubsystemPermission")]
 pub enum SkSubsystemPermission {
     #[flags_value(name = "none")]
@@ -26,6 +29,57 @@ pub enum SkSubsystemPermission {
     NETWORK = 1 << 2,
     #[flags_value(name = "ipc")]
     IPC = 1 << 3,
+}
+
+impl SkSubsystemPermission {
+    pub fn to_context_details(&self) -> Vec<SkContextDetail> {
+        let mut details = Vec::new();
+        let icon_name = "network-wireless-symbolic";
+        let type_ = SkContextDetailType::Icon;
+
+        if self.contains(Self::NETWORK) {
+            let level = SkContextDetailLevel::Neutral;
+            let title = i18n("Network Access");
+            let description = i18n("Can access the internet / local network");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        } else {
+            let level = SkContextDetailLevel::Good;
+            let title = i18n("No Network Access");
+            let description = i18n("Cannot access the internet / local network");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        }
+
+        if self.contains(Self::UNKNOWN) {
+            let icon_name = "dialog-question-symbolic";
+            let level = SkContextDetailLevel::Warning;
+            let title = i18n("Access to Unknown Subsystem");
+            let description = i18n("Can access an unknown subsystem");
+
+            details.push(SkContextDetail::new(
+                type_,
+                icon_name,
+                level,
+                &title,
+                &description,
+            ));
+        }
+
+        details
+    }
 }
 
 impl From<&str> for SkSubsystemPermission {

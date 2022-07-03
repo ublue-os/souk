@@ -121,48 +121,96 @@ impl SkAppPermissions {
             .unwrap();
 
         let filesystems = ListStore::new(SkFilesystemPermission::static_type());
-        let filesystem_list = keyfile.string_list("Context", "filesystems").unwrap();
-        for filesystem in filesystem_list {
-            let value = SkFilesystemPermission::new(&filesystem);
-            filesystems.append(&value);
+        if let Ok(filesystem_list) = keyfile.string_list("Context", "filesystems") {
+            for filesystem in filesystem_list {
+                let value = SkFilesystemPermission::new(&filesystem);
+                filesystems.append(&value);
+            }
         }
         imp.filesystems.set(filesystems).unwrap();
 
         let services = ListStore::new(SkServicePermission::static_type());
-        let session_list = keyfile.keys("Session Bus Policy").unwrap().0;
-        let system_list = keyfile.keys("System Bus Policy").unwrap().0;
-        for service in session_list {
-            let value = SkServicePermission::new(&service, false);
-            services.append(&value);
+        if let Ok(session_list) = keyfile.keys("Session Bus Policy") {
+            for service in session_list.0 {
+                let value = SkServicePermission::new(&service, false);
+                services.append(&value);
+            }
         }
-        for service in system_list {
-            let value = SkServicePermission::new(&service, true);
-            services.append(&value);
+        if let Ok(system_list) = keyfile.keys("System Bus Policy") {
+            for service in system_list.0 {
+                let value = SkServicePermission::new(&service, true);
+                services.append(&value);
+            }
         }
         imp.services.set(services).unwrap();
 
         let mut devices = SkDevicePermission::NONE;
-        let device_list = keyfile.string_list("Context", "devices").unwrap();
-        for device in device_list {
-            devices |= device.as_str().into();
-            devices.remove(SkDevicePermission::NONE);
+        if let Ok(device_list) = keyfile.string_list("Context", "devices") {
+            for device in device_list {
+                devices |= device.as_str().into();
+                devices.remove(SkDevicePermission::NONE);
+            }
         }
         imp.devices.set(devices).unwrap();
 
         let mut sockets = SkSocketPermission::NONE;
-        let socket_list = keyfile.string_list("Context", "sockets").unwrap();
-        for socket in socket_list {
-            sockets |= socket.as_str().into();
-            sockets.remove(SkSocketPermission::NONE);
+        if let Ok(socket_list) = keyfile.string_list("Context", "sockets") {
+            for socket in socket_list {
+                sockets |= socket.as_str().into();
+                sockets.remove(SkSocketPermission::NONE);
+            }
         }
         imp.sockets.set(sockets).unwrap();
 
         let mut subsystems = SkSubsystemPermission::NONE;
-        let subsystem_list = keyfile.string_list("Context", "shared").unwrap();
-        for subsystem in subsystem_list {
-            subsystems |= subsystem.as_str().into();
-            subsystems.remove(SkSubsystemPermission::NONE);
+        if let Ok(subsystem_list) = keyfile.string_list("Context", "shared") {
+            for subsystem in subsystem_list {
+                subsystems |= subsystem.as_str().into();
+                subsystems.remove(SkSubsystemPermission::NONE);
+            }
         }
+        imp.subsystems.set(subsystems).unwrap();
+
+        permissions
+    }
+
+    /// Compares with a different `SkAppPermissions` object, and returns the
+    /// additional permissions which aren't in `self`
+    pub fn additional_permissions(&self, other: &Self) -> Self {
+        let devices = other.devices().difference(self.devices());
+        let sockets = other.sockets().difference(self.sockets());
+        let subsystems = other.subsystems().difference(self.subsystems());
+
+        let filesystems = ListStore::new(SkFilesystemPermission::static_type());
+        for filesystem in other.filesystems().snapshot() {
+            let filesystem: SkFilesystemPermission = filesystem.downcast().unwrap();
+            if !self.filesystems().snapshot().iter().any(|a| {
+                let a: &SkFilesystemPermission = a.downcast_ref().unwrap();
+                a.path() == filesystem.path() && a.type_() == filesystem.type_()
+            }) {
+                filesystems.append(&filesystem);
+            }
+        }
+
+        let services = ListStore::new(SkServicePermission::static_type());
+        for service in other.services().snapshot() {
+            let service: SkServicePermission = service.downcast().unwrap();
+            if !self.services().snapshot().iter().any(|a| {
+                let a: &SkServicePermission = a.downcast_ref().unwrap();
+                a.name() == service.name() && a.is_system() == service.is_system()
+            }) {
+                services.append(&service);
+            }
+        }
+
+        let permissions: Self = glib::Object::new(&[]).unwrap();
+
+        let imp = permissions.imp();
+        imp.filesystems.set(filesystems).unwrap();
+        imp.services.set(services).unwrap();
+
+        imp.devices.set(devices).unwrap();
+        imp.sockets.set(sockets).unwrap();
         imp.subsystems.set(subsystems).unwrap();
 
         permissions
@@ -180,11 +228,11 @@ impl SkAppPermissions {
         *self.imp().devices.get().unwrap()
     }
 
-    pub fn sockets(&self) -> SkDevicePermission {
-        *self.imp().devices.get().unwrap()
+    pub fn sockets(&self) -> SkSocketPermission {
+        *self.imp().sockets.get().unwrap()
     }
 
-    pub fn subsystems(&self) -> SkDevicePermission {
-        *self.imp().devices.get().unwrap()
+    pub fn subsystems(&self) -> SkSubsystemPermission {
+        *self.imp().subsystems.get().unwrap()
     }
 }

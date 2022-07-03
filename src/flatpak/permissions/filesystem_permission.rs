@@ -22,6 +22,8 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use super::SkFilesystemPermissionType;
+use crate::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::i18n::{i18n, i18n_f};
 
 mod imp {
     use super::*;
@@ -100,5 +102,159 @@ impl SkFilesystemPermission {
 
     pub fn path(&self) -> String {
         self.imp().path.get().unwrap().to_string()
+    }
+
+    pub fn to_context_detail(&self) -> SkContextDetail {
+        let type_ = SkContextDetailType::Icon;
+        let mut icon_name = "folder-documents-symbolic".to_string();
+        let mut level = if self.type_() == SkFilesystemPermissionType::ReadOnly {
+            SkContextDetailLevel::Moderate
+        } else {
+            SkContextDetailLevel::Warning
+        };
+        let mut title = if self.type_() == SkFilesystemPermissionType::ReadOnly {
+            i18n_f("Read-Only Access to “{}”", &[&self.path()])
+        } else {
+            i18n_f("Read/Write Access to “{}”", &[&self.path()])
+        };
+        let mut description = if self.type_() == SkFilesystemPermissionType::ReadOnly {
+            i18n("Can read data in the directory")
+        } else {
+            i18n("Can read and write data in the directory")
+        };
+
+        // host filesystem
+        if self.path() == "host" {
+            icon_name = "drive-harddisk-symbolic".into();
+            level = SkContextDetailLevel::Bad;
+
+            if self.type_() == SkFilesystemPermissionType::ReadOnly {
+                title = i18n("Full File System Read/Write Access");
+                description = i18n("Can read and write all data on the file system");
+            } else {
+                title = i18n("Full File System Read-Only Access");
+                description = i18n("Can read all data on the file system");
+            }
+        }
+
+        // home filesystem
+        if self.path() == "home" {
+            icon_name = "emblem-documents-symbolic".into();
+            level = SkContextDetailLevel::Bad;
+
+            if self.type_() == SkFilesystemPermissionType::ReadOnly {
+                title = i18n("Home Folder Read/Write Access");
+                description = i18n("Can read and write all data in your home directory");
+            } else {
+                title = i18n("Home Folder Read-Only Access");
+                description = i18n("Can read all data in your home directory");
+            }
+        }
+
+        // xdg paths
+        if self.path().starts_with("xdg-") {
+            let mut subdir = None;
+            let xdg = if self.path().contains('/') {
+                let path = self.path();
+                let split = path.splitn(2, '/').collect::<Vec<&str>>();
+                subdir = Some(split.last().unwrap().to_string());
+                split.first().unwrap().to_string()
+            } else {
+                self.path()
+            };
+
+            let xdg_title = match xdg.as_str() {
+                "xdg-desktop" => {
+                    icon_name = "user-desktop-symbolic".into();
+                    i18n("Desktop")
+                }
+                "xdg-documents" => {
+                    icon_name = "emblem-documents-symbolic".into();
+                    level = SkContextDetailLevel::Bad;
+                    i18n("Documents")
+                }
+                "xdg-download" => {
+                    icon_name = "folder-download-symbolic".into();
+                    i18n("Downloads")
+                }
+                "xdg-music" => {
+                    icon_name = "folder-music-symbolic".into();
+                    i18n("Music")
+                }
+                "xdg-pictures" => {
+                    icon_name = "folder-pictures-symbolic".into();
+                    level = SkContextDetailLevel::Bad;
+                    i18n("Pictures")
+                }
+                "xdg-public-share" => {
+                    icon_name = "folder-publicshare-symbolic".into();
+                    i18n("Public")
+                }
+                "xdg-videos" => {
+                    icon_name = "folder-videos-symbolic".into();
+                    level = SkContextDetailLevel::Bad;
+                    i18n("Videos")
+                }
+                "xdg-templates" => {
+                    icon_name = "folder-templates-symbolic".into();
+                    i18n("Templates")
+                }
+                "xdg-config" => {
+                    icon_name = "emblem-system-symbolic".into();
+                    level = SkContextDetailLevel::Bad;
+                    i18n("Application-Config")
+                }
+                "xdg-cache" => {
+                    icon_name = "folder-symbolic".into();
+                    i18n("Application-Cache")
+                }
+                "xdg-data" => {
+                    icon_name = "folder-symbolic".into();
+                    level = SkContextDetailLevel::Bad;
+                    i18n("Application-Data")
+                }
+                "xdg-run" => {
+                    icon_name = "system-run-symbolic".into();
+                    level = SkContextDetailLevel::Bad;
+                    i18n("Runtime")
+                }
+                _ => xdg,
+            };
+
+            if self.type_() == SkFilesystemPermissionType::ReadOnly {
+                title = i18n_f("{} Folder Read-Only Access", &[&xdg_title]);
+                if let Some(subdir) = subdir {
+                    description = i18n_f(
+                        "Can read data in the “{}” subdirectory in the “{}” directory",
+                        &[&subdir, &xdg_title],
+                    );
+                } else {
+                    description = i18n_f("Can read all data in the “{}” directory", &[&xdg_title]);
+                }
+            } else {
+                title = i18n_f("{} Folder Read/Write Access", &[&xdg_title]);
+                if let Some(subdir) = subdir {
+                    description = i18n_f(
+                        "Can read and write data in the “{}” subdirectory in the “{}” directory",
+                        &[&subdir, &xdg_title],
+                    );
+                } else {
+                    description = i18n_f(
+                        "Can read and write all data in the “{}” directory",
+                        &[&xdg_title],
+                    );
+                }
+            }
+
+            if self.type_() != SkFilesystemPermissionType::ReadOnly
+                && self.path() == "xdg-data/flatpak/overrides"
+            {
+                title = i18n("Explicit Access to Flatpak System Folder");
+                description = i18n("Can set arbitrary permissions, or change the permissions of other applications");
+                level = SkContextDetailLevel::Bad;
+            }
+        }
+
+        SkContextDetail::new(type_, &icon_name, level, &title, &description)
     }
 }

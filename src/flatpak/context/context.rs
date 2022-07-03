@@ -106,26 +106,31 @@ impl SkContext {
 
     pub fn permissions(
         permissions: &SkAppPermissions,
-        _old_permissions: &Option<SkAppPermissions>,
+        old_permissions: &Option<SkAppPermissions>,
     ) -> Self {
+        let new_permissions = old_permissions
+            .as_ref()
+            .map(|op| op.additional_permissions(permissions));
         let mut groups = Vec::new();
+
+        // General
+        let mut general_permissions = Vec::new();
+        general_permissions.append(&mut permissions.subsystems().to_context_details());
+        general_permissions.append(&mut permissions.devices().to_context_details());
+        general_permissions.append(&mut permissions.sockets().to_context_details());
+
+        let description = i18n("Applications can request for additional permissions at runtime. However, these must be explicitly confirmed by the user.");
+        let group = SkContextDetailGroup::new(&general_permissions, Some(&description));
+        groups.push(group);
 
         // Filesystems
         let mut filesystem_permissions = Vec::new();
         for value in permissions.filesystems().snapshot() {
             let value: SkFilesystemPermission = value.downcast().unwrap();
-
-            let detail = SkContextDetail::new(
-                SkContextDetailType::Icon,
-                "dialog-warning-symbolic",
-                SkContextDetailLevel::Neutral,
-                &value.path(),
-                "",
-            );
-            filesystem_permissions.push(detail);
+            filesystem_permissions.push(value.to_context_detail());
         }
 
-        let description = i18n("Filesystem permissions");
+        let description = i18n("The application can request additional filesystem permissions at runtime, which are not explicitly listed here.");
         let group = SkContextDetailGroup::new(&filesystem_permissions, Some(&description));
         groups.push(group);
 
@@ -133,18 +138,10 @@ impl SkContext {
         let mut services_permissions = Vec::new();
         for value in permissions.services().snapshot() {
             let value: SkServicePermission = value.downcast().unwrap();
-
-            let detail = SkContextDetail::new(
-                SkContextDetailType::Icon,
-                "dialog-warning-symbolic",
-                SkContextDetailLevel::Neutral,
-                &value.name(),
-                "",
-            );
-            services_permissions.push(detail);
+            services_permissions.push(value.to_context_detail());
         }
 
-        let description = i18n("Service permissions");
+        let description = i18n("The application can communicate with the following services.");
         let group = SkContextDetailGroup::new(&services_permissions, Some(&description));
         groups.push(group);
 
