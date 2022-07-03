@@ -19,6 +19,8 @@ extern crate log;
 extern crate pretty_env_logger;
 #[macro_use]
 extern crate gtk_macros;
+#[macro_use]
+extern crate lazy_static;
 
 /// Consumes the data of the `souk-worker` process, and wraps them into usable
 /// types so that they can easily consumed by the user interface (eg. gobjects

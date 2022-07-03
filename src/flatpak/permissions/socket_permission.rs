@@ -123,7 +123,7 @@ impl SkSocketPermission {
 
         if self.contains(Self::CUPS) {
             let icon_name = "printer-symbolic";
-            let title = i18n("Access to Printing Management");
+            let title = i18n("Access to Printer Management");
             let description = i18n("Unrestricted access to printer management");
 
             details.push(SkContextDetail::new(

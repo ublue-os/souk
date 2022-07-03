@@ -26,6 +26,18 @@ use once_cell::unsync::OnceCell;
 
 use super::*;
 
+lazy_static! {
+    static ref SERVICE_WHITELIST: Vec<&'static str> = vec![
+        "org.kde.StatusNotifier",
+        "org.mpris.MediaPlayer",
+        "org.freedesktop.Notifications",
+        "com.canonical.AppMenu.Registrar",
+        "com.canonical.indicator.application",
+        "com.canonical.Unity.LauncherEntry",
+        "org.a11y.Bus"
+    ];
+}
+
 mod imp {
     use super::*;
 
@@ -132,12 +144,18 @@ impl SkAppPermissions {
         let services = ListStore::new(SkServicePermission::static_type());
         if let Ok(session_list) = keyfile.keys("Session Bus Policy") {
             for service in session_list.0 {
+                if Self::is_whitelisted(SERVICE_WHITELIST.to_vec(), &service) {
+                    continue;
+                }
                 let value = SkServicePermission::new(&service, false);
                 services.append(&value);
             }
         }
         if let Ok(system_list) = keyfile.keys("System Bus Policy") {
             for service in system_list.0 {
+                if Self::is_whitelisted(SERVICE_WHITELIST.to_vec(), &service) {
+                    continue;
+                }
                 let value = SkServicePermission::new(&service, true);
                 services.append(&value);
             }
@@ -234,5 +252,13 @@ impl SkAppPermissions {
 
     pub fn subsystems(&self) -> SkSubsystemPermission {
         *self.imp().subsystems.get().unwrap()
+    }
+
+    fn is_whitelisted(list: Vec<&str>, value: &str) -> bool {
+        let res = list.iter().any(|i| value.starts_with(i));
+        if res {
+            debug!("Ignoring whitelisted permission entry: {}", value);
+        }
+        res
     }
 }

@@ -135,11 +135,6 @@ impl SkServicePermission {
             description = i18n("Can open folders or files");
         }
 
-        if self.name().starts_with("org.freedesktop.Notifications") {
-            title = i18n("Access to Notifications Service");
-            description = i18n("Can send desktop notifications");
-        }
-
         if self.name().starts_with("org.freedesktop.NetworkManager") {
             level = SkContextDetailLevel::Bad;
             title = i18n("Access to System Network Service");
@@ -165,16 +160,6 @@ impl SkServicePermission {
             level = SkContextDetailLevel::Bad;
             title = i18n("Access to Disks Management Service");
             description = i18n("Can access, mount, unmount, or edit disk volumes");
-        }
-
-        if self.name().starts_with("org.mpris.MediaPlayer") {
-            title = i18n("Access to Media Player Service");
-            description = i18n("Can integrate as a media player in the desktop environment");
-        }
-
-        if self.name().starts_with("org.kde.StatusNotifier") {
-            title = i18n("Access to KDE Status Notifier Service");
-            description = i18n("Can modify the system tray status icons");
         }
 
         if self.name().starts_with("ca.desrt.dconf") {
