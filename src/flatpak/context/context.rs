@@ -120,7 +120,7 @@ impl SkContext {
         general_permissions.append(&mut permissions.sockets().to_context_details());
 
         let description = i18n("Applications can request for additional permissions at runtime. However, these must be explicitly confirmed by the user.");
-        let group = SkContextDetailGroup::new(&general_permissions, Some(&description));
+        let group = SkContextDetailGroup::new(&general_permissions, None, Some(&description));
         groups.push(group);
 
         // Filesystems
@@ -130,8 +130,8 @@ impl SkContext {
             filesystem_permissions.push(value.to_context_detail());
         }
 
-        let description = i18n("The application can request additional filesystem permissions at runtime, which are not explicitly listed here.");
-        let group = SkContextDetailGroup::new(&filesystem_permissions, Some(&description));
+        let title = i18n("Filesystem Permissions");
+        let group = SkContextDetailGroup::new(&filesystem_permissions, Some(&title), None);
         groups.push(group);
 
         // Services
@@ -141,8 +141,8 @@ impl SkContext {
             services_permissions.push(value.to_context_detail());
         }
 
-        let description = i18n("The application can communicate with the following services.");
-        let group = SkContextDetailGroup::new(&services_permissions, Some(&description));
+        let title = i18n("Service Permissions");
+        let group = SkContextDetailGroup::new(&services_permissions, Some(&title), None);
         groups.push(group);
 
         let summary = SkContextDetail::new(
@@ -225,12 +225,12 @@ impl SkContext {
         }
 
         let description = i18n("The storage sizes are only maximum values. Actual usage will most likely be significantly lower due to deduplication of data.");
-        let group = SkContextDetailGroup::new(&package_details, Some(&description));
+        let group = SkContextDetailGroup::new(&package_details, None, Some(&description));
         groups.push(group);
 
         if !dry_run.runtimes.is_empty() {
             let description = i18n("These components are shared with other applications, and only need to be downloaded once.");
-            let group = SkContextDetailGroup::new(&runtime_details, Some(&description));
+            let group = SkContextDetailGroup::new(&runtime_details, None, Some(&description));
             groups.push(group);
         }
 

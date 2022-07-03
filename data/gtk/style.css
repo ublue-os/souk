@@ -45,11 +45,11 @@
   min-width: 75px;
 }
 
-.nested-listbox {
+.transparent-rows {
   background: transparent;
 }
 
-.nested-listbox > row {
+.transparent-rows > row {
   padding: 0px;
 }
 

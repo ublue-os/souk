@@ -16,6 +16,7 @@
 
 use std::cell::RefCell;
 
+use adw::prelude::*;
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -150,34 +151,32 @@ impl SkContextBox {
         imp.description_label
             .set_text(&context.summary().description());
 
-        imp.details_listbox
-            .bind_model(Some(&context.details()), clone!(@weak self as this => @default-panic, move |detail_group| {
-                let context_detail_group = detail_group.downcast_ref::<SkContextDetailGroup>().unwrap();
+        imp.details_listbox.bind_model(
+            Some(&context.details()),
+            clone!(@weak self as this => @default-panic, move |detail_group| {
+                let detail_group = detail_group.downcast_ref::<SkContextDetailGroup>().unwrap();
 
-                let box_ = gtk::Box::new(gtk::Orientation::Vertical, 12);
-                if let Some(descr) = context_detail_group.description(){
-                    let label = gtk::Label::new(Some(&descr));
-                    label.set_xalign(0.0);
-                    label.set_wrap(true);
-                    label.add_css_class("dim-label");
-                    box_.append(&label);
+                let group_box = adw::PreferencesGroup::new();
+                group_box.set_margin_bottom(12);
+
+                if let Some(title) = detail_group.title(){
+                    group_box.set_title(&title);
+                }
+                if let Some(description) = detail_group.description(){
+                    group_box.set_description(Some(&description));
                 }
 
-                let listbox = gtk::ListBox::new();
-                listbox.add_css_class("content");
-                listbox.set_margin_bottom(18);
-                listbox.set_selection_mode(gtk::SelectionMode::None);
-                listbox.bind_model(Some(context_detail_group), |detail|{
+                for detail in detail_group.snapshot().iter(){
                     let detail = detail.downcast_ref::<SkContextDetail>().unwrap();
-                    SkContextDetailRow::new(detail, false).upcast()
-                });
-                box_.append(&listbox);
+                    group_box.add(&SkContextDetailRow::new(detail, false));
+                }
 
                 let row = gtk::ListBoxRow::new();
-                row.set_child(Some(&box_));
+                row.set_child(Some(&group_box));
                 row.set_activatable(false);
 
                 row.upcast()
-            }));
+            }),
+        );
     }
 }

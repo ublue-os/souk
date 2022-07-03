@@ -46,7 +46,7 @@
       <object class="GtkListBox" id="details_listbox">
         <property name="selection_mode">none</property>
         <style>
-          <class name="nested-listbox"/>
+          <class name="transparent-rows"/>
         </style>
       </object>
     </child>

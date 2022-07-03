@@ -34,6 +34,7 @@ mod imp {
     pub struct SkContextDetailGroup {
         pub map: RefCell<IndexMap<String, SkContextDetail>>,
 
+        pub title: OnceCell<Option<String>>,
         pub description: OnceCell<Option<String>>,
     }
 
@@ -47,19 +48,29 @@ mod imp {
     impl ObjectImpl for SkContextDetailGroup {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![ParamSpecString::new(
-                    "description",
-                    "",
-                    "",
-                    None,
-                    ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                )]
+                vec![
+                    ParamSpecString::new(
+                        "title",
+                        "",
+                        "",
+                        None,
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
+                    ParamSpecString::new(
+                        "description",
+                        "",
+                        "",
+                        None,
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
+                ]
             });
             PROPERTIES.as_ref()
         }
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
+                "title" => obj.title().to_value(),
                 "description" => obj.description().to_value(),
                 _ => unimplemented!(),
             }
@@ -73,6 +84,7 @@ mod imp {
             pspec: &ParamSpec,
         ) {
             match pspec.name() {
+                "title" => self.title.set(value.get().unwrap()).unwrap(),
                 "description" => self.description.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
             }
@@ -102,8 +114,13 @@ glib::wrapper! {
 }
 
 impl SkContextDetailGroup {
-    pub fn new(details: &[SkContextDetail], description: Option<&str>) -> Self {
-        let model: Self = glib::Object::new(&[("description", &description)]).unwrap();
+    pub fn new(
+        details: &[SkContextDetail],
+        title: Option<&str>,
+        description: Option<&str>,
+    ) -> Self {
+        let model: Self =
+            glib::Object::new(&[("title", &title), ("description", &description)]).unwrap();
 
         let imp = model.imp();
         for (pos, detail) in details.iter().enumerate() {
@@ -111,6 +128,10 @@ impl SkContextDetailGroup {
         }
 
         model
+    }
+
+    pub fn title(&self) -> Option<String> {
+        self.imp().title.get().unwrap().to_owned()
     }
 
     pub fn description(&self) -> Option<String> {

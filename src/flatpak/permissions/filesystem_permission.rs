@@ -85,9 +85,12 @@ impl SkFilesystemPermission {
         } else if value.ends_with(":create") {
             path = value.trim_end_matches(":create");
             SkFilesystemPermissionType::Create
-        } else {
+        } else if value.ends_with(":ro") {
             path = value.trim_end_matches(":ro");
             SkFilesystemPermissionType::ReadOnly
+        } else {
+            path = value;
+            SkFilesystemPermissionType::ReadWrite
         };
 
         imp.type_.set(type_).unwrap();
