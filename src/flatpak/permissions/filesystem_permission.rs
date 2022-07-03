@@ -140,6 +140,22 @@ impl SkFilesystemPermission {
             }
         }
 
+        if self.path() == "host-os" {
+            icon_name = "drive-harddisk-symbolic".into();
+            level = SkContextDetailLevel::Bad;
+
+            title = i18n("Full Access to System Libraries and Executables");
+            description = i18n("Can access system libraries, executables and static data");
+        }
+
+        if self.path() == "host-etc" {
+            icon_name = "drive-harddisk-symbolic".into();
+            level = SkContextDetailLevel::Bad;
+
+            title = i18n("Full Access to System Configuration");
+            description = i18n("Can access system configuration data from “/etc”");
+        }
+
         // home filesystem
         if self.path() == "home" {
             icon_name = "emblem-documents-symbolic".into();

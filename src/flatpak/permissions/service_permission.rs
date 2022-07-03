@@ -127,7 +127,7 @@ impl SkServicePermission {
         if self.name().starts_with("org.freedesktop.secrets") {
             level = SkContextDetailLevel::Bad;
             title = i18n("Access to Password/Key Management Service");
-            description = i18n("Can read, edit or delete passwords or keys");
+            description = i18n("Can read, edit or delete passwords and keys");
         }
 
         if self.name().starts_with("org.freedesktop.FileManager") {
