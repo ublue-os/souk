@@ -83,6 +83,17 @@ impl SkServicePermission {
         *self.imp().is_system.get().unwrap()
     }
 
+    pub fn no_permission_context() -> SkContextDetail {
+        let type_ = SkContextDetailType::Icon;
+        let icon_name = "system-run-symbolic".to_string();
+        let level = SkContextDetailLevel::Good;
+
+        let title = i18n("No Access to Services");
+        let description = i18n("Does not communicate with any service");
+
+        SkContextDetail::new(type_, &icon_name, level, &title, &description)
+    }
+
     pub fn to_context_detail(&self) -> SkContextDetail {
         let type_ = SkContextDetailType::Icon;
         let icon_name = "system-run-symbolic".to_string();

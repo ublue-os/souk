@@ -107,6 +107,17 @@ impl SkFilesystemPermission {
         self.imp().path.get().unwrap().to_string()
     }
 
+    pub fn no_permission_context() -> SkContextDetail {
+        let type_ = SkContextDetailType::Icon;
+        let icon_name = "folder-documents-symbolic".to_string();
+        let level = SkContextDetailLevel::Good;
+
+        let title = i18n("No Filessystem Access");
+        let description = i18n("Cannot access the filesystem at all");
+
+        SkContextDetail::new(type_, &icon_name, level, &title, &description)
+    }
+
     pub fn to_context_detail(&self) -> SkContextDetail {
         let type_ = SkContextDetailType::Icon;
         let mut icon_name = "folder-documents-symbolic".to_string();

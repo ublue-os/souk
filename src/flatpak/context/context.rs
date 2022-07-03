@@ -129,6 +129,9 @@ impl SkContext {
             let value: SkFilesystemPermission = value.downcast().unwrap();
             filesystem_permissions.push(value.to_context_detail());
         }
+        if permissions.filesystems().n_items() == 0 {
+            filesystem_permissions.push(SkFilesystemPermission::no_permission_context());
+        }
 
         let title = i18n("Filesystem Permissions");
         let group = SkContextDetailGroup::new(&filesystem_permissions, Some(&title), None);
@@ -139,6 +142,9 @@ impl SkContext {
         for value in permissions.services().snapshot() {
             let value: SkServicePermission = value.downcast().unwrap();
             services_permissions.push(value.to_context_detail());
+        }
+        if permissions.services().n_items() == 0 {
+            services_permissions.push(SkServicePermission::no_permission_context());
         }
 
         let title = i18n("Service Permissions");
