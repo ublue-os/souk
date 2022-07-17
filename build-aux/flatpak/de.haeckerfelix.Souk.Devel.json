@@ -5,7 +5,7 @@
     "sdk" : "org.gnome.Sdk",
     "sdk-extensions" : [
         "org.freedesktop.Sdk.Extension.rust-stable",
-        "org.freedesktop.Sdk.Extension.llvm13"
+        "org.freedesktop.Sdk.Extension.llvm14"
     ],
     "command" : "souk",
     "tags" : [
@@ -32,7 +32,7 @@
     	"--env=GOBJECT_DEBUG=instance-count"
     ],
     "build-options" : {
-        "append-path" : "/usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm13/bin",
+        "append-path" : "/usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm14/bin",
         "env": {
             "MOUNT_FUSE_PATH" : "../tmp/",
             "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER": "clang",
@@ -69,6 +69,10 @@
                 {
                     "type" : "patch",
                     "path" : "fuse-disable-sys-mount-under-flatpak.patch"
+                },
+                {
+                    "type" : "patch",
+                    "path" : "fuse-2.9.2-closefrom.patch"
                 },
                 {
                     "type" : "file",
