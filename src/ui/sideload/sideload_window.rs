@@ -422,6 +422,7 @@ impl SkSideloadWindow {
                     let context: &SkContext = context.downcast_ref().unwrap();
                     let row = SkContextDetailRow::new(&context.summary(), true);
                     row.set_activatable(true);
+                    row.set_subtitle_lines(2);
 
                     row.connect_activated(clone!(@weak this, @weak context => move |_|{
                         this.imp().context_box.set_context(&context);

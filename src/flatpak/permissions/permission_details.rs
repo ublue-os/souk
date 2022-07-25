@@ -1,4 +1,4 @@
-// Souk - mod.rs
+// Souk - permission_details.rs
 // Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,12 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod types;
+use super::SkPermissionSummary;
+use crate::flatpak::context::SkContextDetail;
 
-mod app_permissions;
-mod permission_details;
-mod permission_summary;
-
-pub use app_permissions::SkAppPermissions;
-pub use permission_details::PermissionDetails;
-pub use permission_summary::SkPermissionSummary;
+pub trait PermissionDetails {
+    fn summary(&self) -> SkPermissionSummary;
+    fn context_details(&self) -> Vec<SkContextDetail>;
+}

@@ -24,7 +24,7 @@ use gtk::{gio, glib};
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use super::*;
+use super::types::*;
 
 lazy_static! {
     static ref SERVICE_WHITELIST: Vec<&'static str> = vec![

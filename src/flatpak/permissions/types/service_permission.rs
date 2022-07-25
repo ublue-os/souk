@@ -21,7 +21,21 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::i18n::{i18n, i18n_f};
+
+lazy_static! {
+    static ref SENSITIVE_SERVICES: Vec<&'static str> = vec![
+        "org.gnome.SessionManager",
+        "org.freedesktop.PackageKit",
+        "org.freedesktop.NetworkManager",
+        "org.freedesktop.UDisks2",
+        "ca.desrt.dconf",
+        "org.gnome.SettingsDaemon",
+        "org.freedesktop.secrets",
+        "org.freedesktop.Flatpak"
+    ];
+}
 
 mod imp {
     use super::*;
@@ -93,8 +107,27 @@ impl SkServicePermission {
 
         SkContextDetail::new(type_, &icon_name, level, &title, &description)
     }
+}
 
-    pub fn to_context_detail(&self) -> SkContextDetail {
+impl PermissionDetails for SkServicePermission {
+    fn summary(&self) -> SkPermissionSummary {
+        let mut summary = SkPermissionSummary::empty();
+
+        if SENSITIVE_SERVICES
+            .iter()
+            .any(|i| self.name().starts_with(i))
+        {
+            summary |= SkPermissionSummary::READWRITE_DATA;
+        }
+
+        if self.name().starts_with("org.freedesktop.Flatpak") {
+            summary |= SkPermissionSummary::SANDBOX_ESCAPE;
+        }
+
+        summary
+    }
+
+    fn context_details(&self) -> Vec<SkContextDetail> {
         let type_ = SkContextDetailType::Icon;
         let icon_name = "system-run-symbolic".to_string();
         let mut level = if !self.is_system() {
@@ -107,36 +140,31 @@ impl SkServicePermission {
         } else {
             i18n_f("Access to System Service “{}”", &[&self.name()])
         };
-        let mut description = i18n("Allows sending commands to the service or transferring data");
+        let mut description = i18n("Allows sending commands to the service and sharing data");
 
         // Well known dbus services
 
         if self.name().starts_with("org.gnome.SettingsDaemon") {
-            level = SkContextDetailLevel::Bad;
             title = i18n("Access to System Settings Service");
             description = i18n("Can read and modify system settings");
         }
 
         if self.name().starts_with("org.gnome.SessionManager") {
-            level = SkContextDetailLevel::Bad;
             title = i18n("Access to Session Manager Service");
             description = i18n("Has access to the current user session and open applications");
         }
 
         if self.name().starts_with("org.freedesktop.PackageKit") {
-            level = SkContextDetailLevel::Bad;
             title = i18n("Access to System Package Management");
             description = i18n("Can install, uninstall or update system packages");
         }
 
         if self.name().starts_with("org.freedesktop.Flatpak") {
-            level = SkContextDetailLevel::Bad;
             title = i18n("Access to Flatpak Service");
             description = i18n("Can execute arbitrary commands on the host system");
         }
 
         if self.name().starts_with("org.freedesktop.secrets") {
-            level = SkContextDetailLevel::Bad;
             title = i18n("Access to Password/Key Management Service");
             description = i18n("Can read, edit or delete passwords and keys");
         }
@@ -147,7 +175,6 @@ impl SkServicePermission {
         }
 
         if self.name().starts_with("org.freedesktop.NetworkManager") {
-            level = SkContextDetailLevel::Bad;
             title = i18n("Access to System Network Service");
             description = i18n("Can read and modify network settings");
         }
@@ -168,17 +195,28 @@ impl SkServicePermission {
         }
 
         if self.name().starts_with("org.freedesktop.UDisks2") {
-            level = SkContextDetailLevel::Bad;
             title = i18n("Access to Disks Management Service");
             description = i18n("Can access, mount, unmount, or edit disk volumes");
         }
 
         if self.name().starts_with("ca.desrt.dconf") {
-            level = SkContextDetailLevel::Bad;
             title = i18n("Access to System Settings Database Service");
             description = i18n("Can read and modify system / application settings");
         }
 
-        SkContextDetail::new(type_, &icon_name, level, &title, &description)
+        if SENSITIVE_SERVICES
+            .iter()
+            .any(|i| self.name().starts_with(i))
+        {
+            level = SkContextDetailLevel::Bad;
+        }
+
+        vec![SkContextDetail::new(
+            type_,
+            &icon_name,
+            level,
+            &title,
+            &description,
+        )]
     }
 }

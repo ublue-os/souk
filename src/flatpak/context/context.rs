@@ -27,7 +27,8 @@ use crate::flatpak::context::{
     SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel, SkContextDetailLevel,
     SkContextDetailType,
 };
-use crate::flatpak::permissions::{SkAppPermissions, SkFilesystemPermission, SkServicePermission};
+use crate::flatpak::permissions::types::{SkFilesystemPermission, SkServicePermission};
+use crate::flatpak::permissions::{PermissionDetails, SkAppPermissions, SkPermissionSummary};
 use crate::flatpak::utils;
 use crate::i18n::{i18n, i18n_f};
 use crate::worker::DryRunResult;
@@ -108,18 +109,22 @@ impl SkContext {
         permissions: &SkAppPermissions,
         old_permissions: &Option<SkAppPermissions>,
     ) -> Self {
-        let new_permissions = old_permissions
+        let additional_permissions = old_permissions
             .as_ref()
             .map(|op| op.additional_permissions(permissions));
         let mut groups = Vec::new();
+        let mut summary = SkPermissionSummary::empty();
 
         // General
         let mut general_permissions = Vec::new();
-        general_permissions.append(&mut permissions.subsystems().to_context_details());
-        general_permissions.append(&mut permissions.devices().to_context_details());
-        general_permissions.append(&mut permissions.sockets().to_context_details());
+        general_permissions.append(&mut permissions.subsystems().context_details());
+        general_permissions.append(&mut permissions.devices().context_details());
+        general_permissions.append(&mut permissions.sockets().context_details());
+        summary |= permissions.subsystems().summary();
+        summary |= permissions.devices().summary();
+        summary |= permissions.sockets().summary();
 
-        let description = i18n("Applications can request for additional permissions at runtime. However, these must be explicitly confirmed by the user.");
+        let description = i18n("The isolated environment does not protect against malicious applications. Applications can request additional permissions at runtime. However, these must be explicitly confirmed.");
         let group = SkContextDetailGroup::new(&general_permissions, None, Some(&description));
         groups.push(group);
 
@@ -127,7 +132,8 @@ impl SkContext {
         let mut filesystem_permissions = Vec::new();
         for value in permissions.filesystems().snapshot() {
             let value: SkFilesystemPermission = value.downcast().unwrap();
-            filesystem_permissions.push(value.to_context_detail());
+            filesystem_permissions.push(value.context_details()[0].clone());
+            summary |= value.summary();
         }
         if permissions.filesystems().n_items() == 0 {
             filesystem_permissions.push(SkFilesystemPermission::no_permission_context());
@@ -141,7 +147,8 @@ impl SkContext {
         let mut services_permissions = Vec::new();
         for value in permissions.services().snapshot() {
             let value: SkServicePermission = value.downcast().unwrap();
-            services_permissions.push(value.to_context_detail());
+            services_permissions.push(value.context_details()[0].clone());
+            summary |= value.summary();
         }
         if permissions.services().n_items() == 0 {
             services_permissions.push(SkServicePermission::no_permission_context());
@@ -151,13 +158,8 @@ impl SkContext {
         let group = SkContextDetailGroup::new(&services_permissions, Some(&title), None);
         groups.push(group);
 
-        let summary = SkContextDetail::new(
-            SkContextDetailType::Icon,
-            "dialog-warning-symbolic",
-            SkContextDetailLevel::Neutral,
-            "Permissions",
-            "",
-        );
+        // Summary
+        let summary = summary.to_context_detail();
 
         let groups = SkContextDetailGroupModel::new(&groups);
         Self::new(&summary, &groups)

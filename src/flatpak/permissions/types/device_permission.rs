@@ -17,6 +17,7 @@
 use gtk::glib;
 
 use crate::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::i18n::i18n;
 
 #[glib::flags(name = "SkDevicePermission")]
@@ -35,15 +36,31 @@ pub enum SkDevicePermission {
     ALL = 1 << 5,
 }
 
-impl SkDevicePermission {
-    pub fn to_context_details(&self) -> Vec<SkContextDetail> {
+impl PermissionDetails for SkDevicePermission {
+    fn summary(&self) -> SkPermissionSummary {
+        let mut summary = SkPermissionSummary::empty();
+
+        if self.contains(Self::ALL) {
+            summary |= SkPermissionSummary::FULL_DEVICE_ACCESS;
+        }
+
+        if self.contains(Self::SHM) {
+            summary |= SkPermissionSummary::READ_DATA;
+        }
+
+        if self.contains(Self::UNKNOWN) {
+            summary |= SkPermissionSummary::UNKNOWN;
+        }
+
+        summary
+    }
+
+    fn context_details(&self) -> Vec<SkContextDetail> {
         let mut details = Vec::new();
         let type_ = SkContextDetailType::Icon;
         let icon_name = "drive-harddisk-usb-symbolic";
 
-        dbg!(&self);
-
-        if self.contains(Self::NONE) || self == &SkDevicePermission::DRI {
+        if self == &Self::NONE || self == &SkDevicePermission::DRI {
             let level = SkContextDetailLevel::Good;
             let title = i18n("No Device Access");
             let description = i18n("Has no access to connected devices");
@@ -104,7 +121,7 @@ impl SkDevicePermission {
 
         if self.contains(Self::UNKNOWN) {
             let icon_name = "dialog-question-symbolic";
-            let level = SkContextDetailLevel::Warning;
+            let level = SkContextDetailLevel::Bad;
             let title = i18n("Access to Unknown Device");
             let description = i18n("Can access an unknown device");
 

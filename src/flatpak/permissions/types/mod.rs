@@ -14,12 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod types;
+mod device_permission;
+mod filesystem_permission;
+mod filesystem_permission_type;
+mod service_permission;
+mod socket_permission;
+mod subsystem_permission;
 
-mod app_permissions;
-mod permission_details;
-mod permission_summary;
-
-pub use app_permissions::SkAppPermissions;
-pub use permission_details::PermissionDetails;
-pub use permission_summary::SkPermissionSummary;
+pub use device_permission::SkDevicePermission;
+pub use filesystem_permission::SkFilesystemPermission;
+pub use filesystem_permission_type::SkFilesystemPermissionType;
+pub use service_permission::SkServicePermission;
+pub use socket_permission::SkSocketPermission;
+pub use subsystem_permission::SkSubsystemPermission;

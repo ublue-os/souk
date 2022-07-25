@@ -17,6 +17,7 @@
 use gtk::glib;
 
 use crate::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::i18n::i18n;
 
 #[glib::flags(name = "SkSocketPermission")]
@@ -45,8 +46,38 @@ pub enum SkSocketPermission {
     CUPS = 1 << 10,
 }
 
-impl SkSocketPermission {
-    pub fn to_context_details(&self) -> Vec<SkContextDetail> {
+impl PermissionDetails for SkSocketPermission {
+    fn summary(&self) -> SkPermissionSummary {
+        let mut summary = SkPermissionSummary::empty();
+
+        if self.contains(Self::X11) && !self.contains(Self::FALLBACK_X11) {
+            summary |= SkPermissionSummary::READ_DATA;
+        }
+
+        if self.contains(Self::SESSION_BUS) {
+            summary |= SkPermissionSummary::FULL_SESSION_BUS_ACCESS;
+        }
+
+        if self.contains(Self::SYSTEM_BUS) {
+            summary |= SkPermissionSummary::FULL_SYSTEM_BUS_ACCESS;
+        }
+
+        if self.contains(Self::SSH_AUTH) {
+            summary |= SkPermissionSummary::READ_DATA;
+        }
+
+        if self.contains(Self::PCSC) {
+            summary |= SkPermissionSummary::READ_DATA;
+        }
+
+        if self.contains(Self::UNKNOWN) {
+            summary |= SkPermissionSummary::UNKNOWN;
+        }
+
+        summary
+    }
+
+    fn context_details(&self) -> Vec<SkContextDetail> {
         let mut details = Vec::new();
         let type_ = SkContextDetailType::Icon;
         let level = SkContextDetailLevel::Bad;
@@ -123,6 +154,7 @@ impl SkSocketPermission {
 
         if self.contains(Self::CUPS) {
             let icon_name = "printer-symbolic";
+            let level = SkContextDetailLevel::Neutral;
             let title = i18n("Access to Printer Management");
             let description = i18n("Unrestricted access to printer management");
 
@@ -137,7 +169,7 @@ impl SkSocketPermission {
 
         if self.contains(Self::UNKNOWN) {
             let icon_name = "dialog-question-symbolic";
-            let level = SkContextDetailLevel::Warning;
+            let level = SkContextDetailLevel::Bad;
             let title = i18n("Access to Unknown Socket");
             let description = i18n("Can access an unknown socket");
 

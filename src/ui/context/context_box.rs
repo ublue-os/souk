@@ -18,12 +18,11 @@ use std::cell::RefCell;
 
 use adw::prelude::*;
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
-use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
 use crate::flatpak::context::{
-    SkContext, SkContextDetail, SkContextDetailGroup, SkContextDetailType,
+    SkContext, SkContextDetail, SkContextDetailGroup, SkContextDetailLevel, SkContextDetailType,
 };
 use crate::ui::context::SkContextDetailRow;
 use crate::ui::utils;
@@ -147,9 +146,34 @@ impl SkContextBox {
             imp.text_label.set_markup(&summary.type_value());
         }
 
+        // Remove previous set css classes
+        let css_classes = vec![
+            "context-neutral",
+            "context-good",
+            "context-minor",
+            "context-moderate",
+            "context-warning",
+            "context-bad",
+        ];
+        for class in &css_classes {
+            imp.icon_image.remove_css_class(class);
+            imp.text_label.remove_css_class(class);
+        }
+
+        let css = match summary.level() {
+            SkContextDetailLevel::Neutral => "context-neutral",
+            SkContextDetailLevel::Good => "context-good",
+            SkContextDetailLevel::Minor => "context-minor",
+            SkContextDetailLevel::Moderate => "context-moderate",
+            SkContextDetailLevel::Warning => "context-warning",
+            SkContextDetailLevel::Bad => "context-bad",
+        };
+        imp.icon_image.add_css_class(css);
+        imp.text_label.add_css_class(css);
+
         imp.title_label.set_text(&context.summary().title());
         imp.description_label
-            .set_text(&context.summary().description());
+            .set_markup(&context.summary().description());
 
         imp.details_listbox.bind_model(
             Some(&context.details()),
