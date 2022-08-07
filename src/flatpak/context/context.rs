@@ -105,57 +105,51 @@ impl SkContext {
         glib::Object::new(&[("summary", &summary), ("details", &details)]).unwrap()
     }
 
-    pub fn permissions(
-        permissions: &SkAppPermissions,
-        old_permissions: &Option<SkAppPermissions>,
-    ) -> Self {
-        let additional_permissions = old_permissions
-            .as_ref()
-            .map(|op| op.additional_permissions(permissions));
+    pub fn permissions(permissions: &SkAppPermissions) -> Self {
         let mut groups = Vec::new();
         let mut summary = SkPermissionSummary::empty();
 
         // General
-        let mut general_permissions = Vec::new();
-        general_permissions.append(&mut permissions.subsystems().context_details());
-        general_permissions.append(&mut permissions.devices().context_details());
-        general_permissions.append(&mut permissions.sockets().context_details());
+        let mut general_details = Vec::new();
+        general_details.append(&mut permissions.subsystems().context_details());
+        general_details.append(&mut permissions.devices().context_details());
+        general_details.append(&mut permissions.sockets().context_details());
         summary |= permissions.subsystems().summary();
         summary |= permissions.devices().summary();
         summary |= permissions.sockets().summary();
 
         let description = i18n("The isolated environment does not protect against malicious applications. Applications can request additional permissions at runtime. However, these must be explicitly confirmed.");
-        let group = SkContextDetailGroup::new(&general_permissions, None, Some(&description));
+        let group = SkContextDetailGroup::new(&general_details, None, Some(&description));
         groups.push(group);
 
         // Filesystems
-        let mut filesystem_permissions = Vec::new();
+        let mut filesystem_details = Vec::new();
         for value in permissions.filesystems().snapshot() {
             let value: SkFilesystemPermission = value.downcast().unwrap();
-            filesystem_permissions.push(value.context_details()[0].clone());
+            filesystem_details.push(value.context_details()[0].clone());
             summary |= value.summary();
         }
         if permissions.filesystems().n_items() == 0 {
-            filesystem_permissions.push(SkFilesystemPermission::no_permission_context());
+            filesystem_details.push(SkFilesystemPermission::no_permission_context());
         }
 
         let title = i18n("Filesystem Permissions");
-        let group = SkContextDetailGroup::new(&filesystem_permissions, Some(&title), None);
+        let group = SkContextDetailGroup::new(&filesystem_details, Some(&title), None);
         groups.push(group);
 
         // Services
-        let mut services_permissions = Vec::new();
+        let mut service_details = Vec::new();
         for value in permissions.services().snapshot() {
             let value: SkServicePermission = value.downcast().unwrap();
-            services_permissions.push(value.context_details()[0].clone());
+            service_details.push(value.context_details()[0].clone());
             summary |= value.summary();
         }
         if permissions.services().n_items() == 0 {
-            services_permissions.push(SkServicePermission::no_permission_context());
+            service_details.push(SkServicePermission::no_permission_context());
         }
 
         let title = i18n("Service Permissions");
-        let group = SkContextDetailGroup::new(&services_permissions, Some(&title), None);
+        let group = SkContextDetailGroup::new(&service_details, Some(&title), None);
         groups.push(group);
 
         // Summary

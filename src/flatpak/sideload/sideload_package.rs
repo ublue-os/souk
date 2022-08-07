@@ -75,7 +75,7 @@ impl SideloadPackage {
     }
 
     pub fn permissions_context(&self) -> SkContext {
-        SkContext::permissions(&self.permissions(), &self.old_permissions())
+        SkContext::permissions(&self.permissions())
     }
 
     pub fn download_size_context(&self) -> SkContext {
