@@ -187,7 +187,7 @@ impl SkContext {
         } else {
             dry_run.installed_size
         };
-        let package_size = size;
+        let mut package_size = size;
 
         let package_ref = Ref::parse(&dry_run.ref_).unwrap();
         let package_ref_name = package_ref.name().unwrap().to_string();
@@ -221,13 +221,14 @@ impl SkContext {
             } else {
                 runtime.installed_size
             };
-            runtime_size += size;
 
             let detail = SkContextDetail::new_neutral_size(size, &title, &subtitle);
             if ref_name.contains(&package_ref_name) {
                 package_details.push(detail);
+                package_size += size;
             } else {
                 runtime_details.push(detail);
+                runtime_size += size;
             }
         }
 
@@ -235,7 +236,7 @@ impl SkContext {
         let group = SkContextDetailGroup::new(&package_details, None, Some(&description));
         groups.push(group);
 
-        if !dry_run.runtimes.is_empty() {
+        if runtime_size != 0 {
             let description = i18n("These components are shared with other applications, and only need to be downloaded once.");
             let group = SkContextDetailGroup::new(&runtime_details, None, Some(&description));
             groups.push(group);
