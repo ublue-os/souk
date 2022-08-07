@@ -52,7 +52,7 @@ checks:
 
 # Lint the code
 cargo-clippy:
-  image: '${CI_IMAGE_X86_64}'
+  image: '${CI_IMAGE}'
   stage: check
   tags:
     - flatpak
