@@ -7,8 +7,7 @@ variables:
   FLATPAK_MODULE: "souk"
   APP_ID: "de.haeckerfelix.Souk.Devel"
   RUNTIME_REPO: "https://nightly.gnome.org/gnome-nightly.flatpakrepo"
-  CI_IMAGE_X86_64: "registry.gitlab.gnome.org/gnome/gnome-runtime-images/rust_bundle:master"
-  CI_IMAGE_AARCH64: "registry.gitlab.gnome.org/gnome/gnome-runtime-images/aarch64:gnome-nightly"
+  CI_IMAGE: "quay.io/gnome_infrastructure/gnome-runtime-images:gnome-master"
 
 .build_template:
   script:
@@ -32,13 +31,13 @@ variables:
 
 .build_x86_64:
   extends: .build_template
-  image: '${CI_IMAGE_X86_64}'
+  image: '${CI_IMAGE}'
   tags:
     - flatpak
 
 .build_aarch64:
   extends: .build_template
-  image: '${CI_IMAGE_AARCH64}'
+  image: '${CI_IMAGE}'
   tags:
     - flatpak-aarch64
 
