@@ -3,7 +3,7 @@ use gio::File;
 use glib::Enum;
 use gtk::{gio, glib};
 
-#[derive(Copy, Debug, Clone, PartialEq, Enum)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
 #[enum_type(name = "SkSideloadType")]
 pub enum SkSideloadType {

@@ -225,7 +225,7 @@ impl TransactionManager {
 
             // Appstream metadata
             if let Some(compressed) = bundle.appstream() {
-                let collection = Collection::from_gzipped_bytes(&compressed.to_vec()).unwrap();
+                let collection = Collection::from_gzipped_bytes(&compressed).unwrap();
                 let component = &collection.components[0];
 
                 let json = serde_json::to_string(component).unwrap();

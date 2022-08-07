@@ -17,7 +17,7 @@
 use glib::Enum;
 use gtk::glib;
 
-#[derive(Copy, Debug, Clone, PartialEq, Enum)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
 #[enum_type(name = "SkContextDetailType")]
 pub enum SkContextDetailType {

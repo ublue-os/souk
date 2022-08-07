@@ -19,7 +19,7 @@ use flatpak::Remote;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-#[derive(Deserialize, Serialize, Type, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq)]
 pub struct RemoteInfo {
     pub name: String,
     pub repository_url: String,
