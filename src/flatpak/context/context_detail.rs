@@ -151,6 +151,17 @@ impl SkContextDetail {
         .unwrap()
     }
 
+    pub fn new_neutral_text(text: &str, title: &str, description: &str) -> Self {
+        glib::Object::new(&[
+            ("type", &SkContextDetailType::Text),
+            ("type-value", &text.to_string()),
+            ("level", &SkContextDetailLevel::Neutral),
+            ("title", &title),
+            ("description", &description),
+        ])
+        .unwrap()
+    }
+
     pub fn type_(&self) -> SkContextDetailType {
         *self.imp().type_.get().unwrap()
     }

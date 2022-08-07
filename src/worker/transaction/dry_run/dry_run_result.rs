@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use derivative::Derivative;
+use gtk::glib::{KeyFile, KeyFileFlags};
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
@@ -43,7 +44,7 @@ pub struct DryRunResult {
     /// The same ref is already installed, but the commit differs
     pub is_update: bool,
     /// Whether the package has an source for future app updates (not always
-    /// necessary, for example sideloading)
+    /// the case, for example sideloading a bundle)
     pub has_update_source: bool,
     /// Whether the package is already installed from a different remote, and
     /// the old app needs to get uninstalled first
@@ -58,6 +59,14 @@ pub struct DryRunResult {
     pub runtimes: Vec<DryRunRuntime>,
     /// Which remote may be added during installation
     pub new_remote: Optional<RemoteInfo>,
+}
+
+impl DryRunResult {
+    pub fn has_extra_data(&self) -> bool {
+        let keyfile = KeyFile::new();
+        let _ = keyfile.load_from_data(&self.metainfo, KeyFileFlags::NONE);
+        keyfile.has_group("Extra Data")
+    }
 }
 
 impl Default for DryRunResult {

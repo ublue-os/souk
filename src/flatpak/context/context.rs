@@ -187,21 +187,26 @@ impl SkContext {
 
         // The package itelf
         let mut package_details = Vec::new();
-        let title = i18n("Application Data");
-
-        let package_ref = Ref::parse(&dry_run.ref_).unwrap();
-        let package_ref_name = package_ref.name().unwrap().to_string();
-        let package_ref_branch = package_ref.branch().unwrap().to_string();
-        let subtitle = format!("{} ({})", package_ref_name, package_ref_branch);
 
         let size = if download_size {
             dry_run.download_size
         } else {
             dry_run.installed_size
         };
-
-        let detail = SkContextDetail::new_neutral_size(size, &title, &subtitle);
         let package_size = size;
+
+        let package_ref = Ref::parse(&dry_run.ref_).unwrap();
+        let package_ref_name = package_ref.name().unwrap().to_string();
+        let package_ref_branch = package_ref.branch().unwrap().to_string();
+
+        let title = i18n("Application Data");
+        let detail = if dry_run.has_extra_data() && !download_size {
+            let subtitle = i18n_f("{} ({}) – Requires additional extra data from an external source with unknown size", &[&package_ref_name, &package_ref_branch]);
+            SkContextDetail::new_neutral_text("  ???  ", &title, &subtitle)
+        } else {
+            let subtitle = format!("{} ({})", package_ref_name, package_ref_branch);
+            SkContextDetail::new_neutral_size(size, &title, &subtitle)
+        };
         package_details.push(detail);
 
         // Runtimes
@@ -247,20 +252,21 @@ impl SkContext {
         let total_size_str = glib::format_size(total_size);
         let runtime_size_str = glib::format_size(runtime_size);
         let summary = if download_size {
-            let (title, descr) = if runtime_size == 0 {
-                (
-                    i18n("No download required"),
-                    i18n("No additional system packages needed"),
-                )
+            let title = if total_size == 0 {
+                i18n("No download required")
             } else {
-                (
-                    i18n_f("Up to {} to download", &[&total_size_str]),
-                    i18n_f(
-                        "Needs {} of additional system packages",
-                        &[&runtime_size_str],
-                    ),
+                i18n_f("Up to {} to download", &[&total_size_str])
+            };
+
+            let descr = if runtime_size == 0 {
+                i18n("No additional system packages needed")
+            } else {
+                i18n_f(
+                    "Needs {} of additional system packages",
+                    &[&runtime_size_str],
                 )
             };
+
             SkContextDetail::new(
                 SkContextDetailType::Icon,
                 "folder-download-symbolic",
@@ -269,7 +275,12 @@ impl SkContext {
                 &descr,
             )
         } else {
-            let title = i18n_f("Up to {} storage required", &[&total_size_str]);
+            let title = if dry_run.has_extra_data() {
+                i18n("Unknown storage size")
+            } else {
+                i18n_f("Up to {} storage required", &[&total_size_str])
+            };
+
             let descr = if runtime_size == 0 {
                 i18n("Requires no additional space for system packages")
             } else {
