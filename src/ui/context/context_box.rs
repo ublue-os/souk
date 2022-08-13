@@ -135,10 +135,10 @@ impl SkContextBox {
         let context = self.context();
         let summary = context.summary();
 
-        if summary.type_() == SkContextDetailType::Icon {
+        if summary.type_() == SkContextDetailType::ICON {
             imp.type_stack.set_visible_child(&imp.icon_image.get());
             imp.icon_image.set_icon_name(Some(&summary.type_value()));
-        } else if summary.type_() == SkContextDetailType::Size {
+        } else if summary.type_() == SkContextDetailType::SIZE {
             let markup = utils::size_to_markup(&summary.type_value());
             imp.text_label.set_markup(&markup);
         } else {
@@ -148,12 +148,12 @@ impl SkContextBox {
 
         // Remove previous set css classes
         let css_classes = vec![
-            "context-neutral",
-            "context-good",
-            "context-minor",
-            "context-moderate",
-            "context-warning",
-            "context-bad",
+            "color-neutral",
+            "color-green",
+            "color-blue",
+            "color-orange",
+            "color-yellow",
+            "color-red",
         ];
         for class in &css_classes {
             imp.icon_image.remove_css_class(class);
@@ -161,12 +161,12 @@ impl SkContextBox {
         }
 
         let css = match summary.level() {
-            SkContextDetailLevel::Neutral => "context-neutral",
-            SkContextDetailLevel::Good => "context-good",
-            SkContextDetailLevel::Minor => "context-minor",
-            SkContextDetailLevel::Moderate => "context-moderate",
-            SkContextDetailLevel::Warning => "context-warning",
-            SkContextDetailLevel::Bad => "context-bad",
+            SkContextDetailLevel::NEUTRAL => "color-neutral",
+            SkContextDetailLevel::GOOD => "color-green",
+            SkContextDetailLevel::MINOR => "color-blue",
+            SkContextDetailLevel::MODERATE => "color-orange",
+            SkContextDetailLevel::WARNING => "color-yellow",
+            SkContextDetailLevel::BAD => "color-red",
         };
         imp.icon_image.add_css_class(css);
         imp.text_label.add_css_class(css);

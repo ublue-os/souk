@@ -103,7 +103,7 @@ impl SkSideloadable {
 
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
-        imp.type_.set(SkSideloadType::Repo).unwrap();
+        imp.type_.set(SkSideloadType::REPO).unwrap();
         imp.package.set(None).unwrap();
         imp.remote.set(Some(remote.clone())).unwrap();
         imp.no_changes.set(already_added).unwrap();
@@ -143,7 +143,7 @@ impl SkSideloadable {
             let no_update = package.is_replacing_remote().is_some();
 
             let transaction = match self.type_() {
-                SkSideloadType::Bundle => {
+                SkSideloadType::BUNDLE => {
                     let transaction = worker
                         .install_flatpak_bundle(
                             &package.ref_(),
@@ -154,7 +154,7 @@ impl SkSideloadable {
                         .await?;
                     Some(transaction)
                 }
-                SkSideloadType::Ref => {
+                SkSideloadType::REF => {
                     let transaction = worker
                         .install_flatpak_ref(
                             &package.ref_(),
@@ -169,7 +169,7 @@ impl SkSideloadable {
             };
 
             return Ok(transaction);
-        } else if self.type_() == SkSideloadType::Repo {
+        } else if self.type_() == SkSideloadType::REPO {
             worker
                 .add_remote(&self.file(), &self.installation_uuid())
                 .await?;

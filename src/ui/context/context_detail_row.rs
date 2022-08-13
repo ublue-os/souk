@@ -134,10 +134,10 @@ impl SkContextDetailRow {
         let imp = self.imp();
         let detail = self.detail();
 
-        if detail.type_() == SkContextDetailType::Icon {
+        if detail.type_() == SkContextDetailType::ICON {
             imp.type_stack.set_visible_child(&imp.icon_image.get());
             imp.icon_image.set_icon_name(Some(&detail.type_value()));
-        } else if detail.type_() == SkContextDetailType::Size {
+        } else if detail.type_() == SkContextDetailType::SIZE {
             imp.type_stack.set_visible_child(&imp.text_label.get());
             let markup = utils::size_to_markup(&detail.type_value());
             imp.text_label.set_markup(&markup);
@@ -149,12 +149,12 @@ impl SkContextDetailRow {
         }
 
         let css = match detail.level() {
-            SkContextDetailLevel::Neutral => "context-neutral",
-            SkContextDetailLevel::Good => "context-good",
-            SkContextDetailLevel::Minor => "context-minor",
-            SkContextDetailLevel::Moderate => "context-moderate",
-            SkContextDetailLevel::Warning => "context-warning",
-            SkContextDetailLevel::Bad => "context-bad",
+            SkContextDetailLevel::NEUTRAL => "context-neutral",
+            SkContextDetailLevel::GOOD => "color-green",
+            SkContextDetailLevel::MINOR => "color-blue",
+            SkContextDetailLevel::MODERATE => "color-orange",
+            SkContextDetailLevel::WARNING => "color-yellow",
+            SkContextDetailLevel::BAD => "color-red",
         };
         imp.icon_image.add_css_class(css);
         imp.text_label.add_css_class(css);

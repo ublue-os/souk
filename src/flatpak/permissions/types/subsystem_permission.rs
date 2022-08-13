@@ -50,10 +50,10 @@ impl PermissionDetails for SkSubsystemPermission {
     fn context_details(&self) -> Vec<SkContextDetail> {
         let mut details = Vec::new();
         let icon_name = "network-wireless-symbolic";
-        let type_ = SkContextDetailType::Icon;
+        let type_ = SkContextDetailType::ICON;
 
         if self.contains(Self::NETWORK) {
-            let level = SkContextDetailLevel::Neutral;
+            let level = SkContextDetailLevel::NEUTRAL;
             let title = i18n("Network Access");
             let description = i18n("Can access the internet / local network");
 
@@ -65,7 +65,7 @@ impl PermissionDetails for SkSubsystemPermission {
                 &description,
             ));
         } else {
-            let level = SkContextDetailLevel::Good;
+            let level = SkContextDetailLevel::GOOD;
             let title = i18n("No Network Access");
             let description = i18n("Cannot access the internet / local network");
 
@@ -80,7 +80,7 @@ impl PermissionDetails for SkSubsystemPermission {
 
         if self.contains(Self::UNKNOWN) {
             let icon_name = "dialog-question-symbolic";
-            let level = SkContextDetailLevel::Bad;
+            let level = SkContextDetailLevel::BAD;
             let title = i18n("Access to Unknown Subsystem");
             let description = i18n("Can access an unknown subsystem");
 
