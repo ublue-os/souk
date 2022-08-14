@@ -149,12 +149,12 @@ impl SkContextDetailRow {
         }
 
         let css = match detail.level() {
-            SkContextDetailLevel::NEUTRAL => "color-neutral",
-            SkContextDetailLevel::GOOD => "color-green",
-            SkContextDetailLevel::MINOR => "color-blue",
-            SkContextDetailLevel::MODERATE => "color-orange",
-            SkContextDetailLevel::WARNING => "color-yellow",
-            SkContextDetailLevel::BAD => "color-red",
+            SkContextDetailLevel::Neutral => "color-neutral",
+            SkContextDetailLevel::Good => "color-green",
+            SkContextDetailLevel::Minor => "color-blue",
+            SkContextDetailLevel::Moderate => "color-orange",
+            SkContextDetailLevel::Warning => "color-yellow",
+            SkContextDetailLevel::Bad => "color-red",
         };
         imp.icon_image.add_css_class(css);
         imp.text_label.add_css_class(css);
