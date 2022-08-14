@@ -181,6 +181,10 @@ impl SkBadge {
     fn update_css(&self) {
         utils::remove_css_colors(self);
 
+        if !self.colored(){
+            return;
+        }
+
         let css = match self.type_() {
             SkBadgeType::Repository => "color-blue",
             SkBadgeType::Branch => match self.value().to_lowercase().as_str() {

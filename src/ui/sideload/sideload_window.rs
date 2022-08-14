@@ -446,18 +446,6 @@ impl SkSideloadWindow {
                 }),
             );
 
-            // let size = glib::format_size(package.download_size());
-            // let download_string = i18n_f("Up to {} download", &[&size]);
-            // imp.package_download_size_row.set_title(&download_string);
-            // imp.package_download_size_row
-            // .set_subtitle("Requires up to 0 MB of shared system packages");
-            //
-            // let size = glib::format_size(package.installed_size());
-            // let installed_string = i18n_f("Up to {} installed size", &[&size]);
-            // imp.package_installed_size_row.set_title(&installed_string);
-            // imp.package_installed_size_row
-            // .set_subtitle("Requires up to 0 MB of shared system packages");
-
             // Setup general package appstream metadata
             if let Some(component) = package.appstream() {
                 let name = component.name.get_default().unwrap();
