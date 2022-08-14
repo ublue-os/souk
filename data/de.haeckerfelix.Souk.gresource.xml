@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/de/haeckerfelix/Souk">
+    <file compressed="true" preprocess="xml-stripblanks">gtk/badge.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/context_box.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/context_detail_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="gtk/help-overlay.ui">gtk/help_overlay.ui</file>
@@ -11,6 +12,15 @@
     <file compressed="true" alias="style.css">gtk/style.css</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/transaction_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/window.ui</file>
+  </gresource>
+  <gresource prefix="/de/haeckerfelix/Souk/icons/16x16/emblems/">
+    <file preprocess="xml-stripblanks" alias="branch-beta-symbolic.svg">icons/hicolor/scalable/emblems/branch-beta-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="branch-generic-symbolic.svg">icons/hicolor/scalable/emblems/branch-generic-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="branch-master-symbolic.svg">icons/hicolor/scalable/emblems/branch-master-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="branch-stable-symbolic.svg">icons/hicolor/scalable/emblems/branch-stable-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="repo-flathub-symbolic.svg">icons/hicolor/scalable/emblems/repo-flathub-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="repo-generic-symbolic.svg">icons/hicolor/scalable/emblems/repo-generic-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="repo-gnome-symbolic.svg">icons/hicolor/scalable/emblems/repo-gnome-symbolic.svg</file>
   </gresource>
   <gresource prefix="/de/haeckerfelix/Souk/icons/16x16/status/">
     <file preprocess="xml-stripblanks" alias="dotted-box-symbolic.svg">icons/hicolor/scalable/status/dotted-box-symbolic.svg</file>

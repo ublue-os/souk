@@ -34,6 +34,7 @@ use crate::flatpak::context::SkContext;
 use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::flatpak::transaction::SkTransaction;
 use crate::i18n::{i18n, i18n_f};
+use crate::ui::badge::{SkBadge, SkBadgeType};
 use crate::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::ui::installation::SkInstallationListBox;
 use crate::worker::WorkerError;
@@ -67,6 +68,8 @@ mod imp {
         pub package_developer_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub package_version_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub package_badges_box: TemplateChild<gtk::Box>,
         #[template_child]
         pub package_context_listbox: TemplateChild<gtk::ListBox>,
         #[template_child]
@@ -403,6 +406,16 @@ impl SkSideloadWindow {
             imp.warn_group.set_visible(
                 !(!imp.no_update_source_row.is_visible() && !imp.replacing_remote_row.is_visible()),
             );
+
+            // Badges
+            // TODO: Use real data
+            let repo_badge = SkBadge::new(SkBadgeType::REPOSITORY, "flathub", true);
+            imp.package_badges_box.append(&repo_badge);
+
+            if "branch" != "stable" {
+                let branch_badge = SkBadge::new(SkBadgeType::BRANCH, "beta", true);
+                imp.package_badges_box.append(&branch_badge);
+            }
 
             // Context information
             let contexts = ListStore::new(SkContext::static_type());

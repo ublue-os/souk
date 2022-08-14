@@ -149,7 +149,7 @@ impl SkContextDetailRow {
         }
 
         let css = match detail.level() {
-            SkContextDetailLevel::NEUTRAL => "context-neutral",
+            SkContextDetailLevel::NEUTRAL => "color-neutral",
             SkContextDetailLevel::GOOD => "color-green",
             SkContextDetailLevel::MINOR => "color-blue",
             SkContextDetailLevel::MODERATE => "color-orange",

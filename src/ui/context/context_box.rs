@@ -147,18 +147,8 @@ impl SkContextBox {
         }
 
         // Remove previous set css classes
-        let css_classes = vec![
-            "color-neutral",
-            "color-green",
-            "color-blue",
-            "color-orange",
-            "color-yellow",
-            "color-red",
-        ];
-        for class in &css_classes {
-            imp.icon_image.remove_css_class(class);
-            imp.text_label.remove_css_class(class);
-        }
+        utils::remove_css_colors(&imp.icon_image.get());
+        utils::remove_css_colors(&imp.text_label.get());
 
         let css = match summary.level() {
             SkContextDetailLevel::NEUTRAL => "color-neutral",

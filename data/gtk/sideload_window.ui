@@ -131,6 +131,11 @@
                                                             <property name="xalign">0</property>
                                                           </object>
                                                         </child>
+                                                        <child>
+                                                          <object class="GtkBox" id="package_badges_box">
+                                                            <property name="spacing">6</property>
+                                                          </object>
+                                                        </child>
                                                       </object>
                                                     </child>
                                                   </object>
@@ -205,6 +210,7 @@
                                                     <property name="valign">center</property>
                                                     <style>
                                                       <class name="circular-background"/>
+                                                      <class name="color-neutral"/>
                                                     </style>
                                                   </object>
                                                 </child>

@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use gtk::glib;
+use gtk::prelude::*;
 
 pub fn size_to_markup(size: &str) -> String {
     let size: u64 = size.parse().unwrap();
@@ -30,5 +31,20 @@ pub fn size_to_markup(size: &str) -> String {
     } else {
         warn!("Unable to build size markup: {}", size);
         String::new()
+    }
+}
+
+pub fn remove_css_colors<T: IsA<gtk::Widget>>(widget: &T) {
+    let css_classes = vec![
+        "color-neutral",
+        "color-green",
+        "color-blue",
+        "color-orange",
+        "color-yellow",
+        "color-red",
+    ];
+
+    for class in &css_classes {
+        widget.remove_css_class(class);
     }
 }

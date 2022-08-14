@@ -1,5 +1,5 @@
-// Souk - mod.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - badge_type.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,15 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod badge;
-pub mod context;
-pub mod installation;
-pub mod sideload;
-pub mod transaction;
+use glib::Enum;
+use gtk::glib;
 
-pub mod about_dialog;
-pub mod utils;
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
+#[repr(u32)]
+#[enum_type(name = "SkBadgeType")]
+pub enum SkBadgeType {
+    REPOSITORY,
+    BRANCH,
+    FILE,
+}
 
-mod window;
-
-pub use window::SkApplicationWindow;
+impl Default for SkBadgeType {
+    fn default() -> Self {
+        SkBadgeType::BRANCH
+    }
+}
