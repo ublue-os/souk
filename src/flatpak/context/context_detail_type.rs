@@ -21,7 +21,7 @@ use gtk::glib;
 #[repr(u32)]
 #[enum_type(name = "SkContextDetailType")]
 pub enum SkContextDetailType {
-    ICON,
-    TEXT,
-    SIZE,
+    Icon,
+    Text,
+    Size,
 }

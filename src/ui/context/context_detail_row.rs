@@ -134,10 +134,10 @@ impl SkContextDetailRow {
         let imp = self.imp();
         let detail = self.detail();
 
-        if detail.type_() == SkContextDetailType::ICON {
+        if detail.type_() == SkContextDetailType::Icon {
             imp.type_stack.set_visible_child(&imp.icon_image.get());
             imp.icon_image.set_icon_name(Some(&detail.type_value()));
-        } else if detail.type_() == SkContextDetailType::SIZE {
+        } else if detail.type_() == SkContextDetailType::Size {
             imp.type_stack.set_visible_child(&imp.text_label.get());
             let markup = utils::size_to_markup(&detail.type_value());
             imp.text_label.set_markup(&markup);

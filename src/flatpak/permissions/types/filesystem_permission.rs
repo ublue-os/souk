@@ -51,7 +51,7 @@ mod imp {
                         "",
                         "",
                         SkFilesystemPermissionType::static_type(),
-                        SkFilesystemPermissionType::READONLY as i32,
+                        SkFilesystemPermissionType::ReadOnly as i32,
                         ParamFlags::READABLE,
                     ),
                     ParamSpecString::new("path", "", "", None, ParamFlags::READABLE),
@@ -82,16 +82,16 @@ impl SkFilesystemPermission {
         let path: &str;
         let type_ = if value.ends_with(":rw") {
             path = value.trim_end_matches(":rw");
-            SkFilesystemPermissionType::READWRITE
+            SkFilesystemPermissionType::ReadWrite
         } else if value.ends_with(":create") {
             path = value.trim_end_matches(":create");
-            SkFilesystemPermissionType::CREATE
+            SkFilesystemPermissionType::Create
         } else if value.ends_with(":ro") {
             path = value.trim_end_matches(":ro");
-            SkFilesystemPermissionType::READONLY
+            SkFilesystemPermissionType::ReadOnly
         } else {
             path = value;
-            SkFilesystemPermissionType::READWRITE
+            SkFilesystemPermissionType::ReadWrite
         };
 
         imp.type_.set(type_).unwrap();
@@ -109,9 +109,9 @@ impl SkFilesystemPermission {
     }
 
     pub fn no_permission_context() -> SkContextDetail {
-        let type_ = SkContextDetailType::ICON;
+        let type_ = SkContextDetailType::Icon;
         let icon_name = "folder-documents-symbolic".to_string();
-        let level = SkContextDetailLevel::GOOD;
+        let level = SkContextDetailLevel::Good;
 
         let title = i18n("No Filessystem Access");
         let description = i18n("Cannot access the filesystem at all");
@@ -124,14 +124,14 @@ impl PermissionDetails for SkFilesystemPermission {
     fn summary(&self) -> SkPermissionSummary {
         let mut summary = SkPermissionSummary::empty();
 
-        let s = if self.type_() == SkFilesystemPermissionType::READONLY {
+        let s = if self.type_() == SkFilesystemPermissionType::ReadOnly {
             SkPermissionSummary::READ_DATA
         } else {
             SkPermissionSummary::READWRITE_DATA
         };
         summary |= s;
 
-        if self.type_() != SkFilesystemPermissionType::READONLY
+        if self.type_() != SkFilesystemPermissionType::ReadOnly
             && self.path().contains("flatpak/overrides")
         {
             summary |= SkPermissionSummary::SANDBOX_ESCAPE;
@@ -157,12 +157,12 @@ impl PermissionDetails for SkFilesystemPermission {
             path.clone()
         };
 
-        let type_ = SkContextDetailType::ICON;
+        let type_ = SkContextDetailType::Icon;
         let mut icon_name = "folder-documents-symbolic".to_string();
-        let mut level = if self.type_() == SkFilesystemPermissionType::READONLY {
-            SkContextDetailLevel::MODERATE
+        let mut level = if self.type_() == SkFilesystemPermissionType::ReadOnly {
+            SkContextDetailLevel::Moderate
         } else {
-            SkContextDetailLevel::WARNING
+            SkContextDetailLevel::Warning
         };
 
         let permission_object;
@@ -174,10 +174,10 @@ impl PermissionDetails for SkFilesystemPermission {
             "home" => {
                 permission_object = i18n("Home");
                 icon_name = "user-home-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
 
                 if subdir.is_none() {
-                    if self.type_() == SkFilesystemPermissionType::READONLY {
+                    if self.type_() == SkFilesystemPermissionType::ReadOnly {
                         permission_title = Some(i18n("Home Folder Read/Write Access"));
                         permission_description =
                             Some(i18n("Can read and write all data in your home directory"));
@@ -191,11 +191,11 @@ impl PermissionDetails for SkFilesystemPermission {
             "host" => {
                 permission_object = i18n("Host");
                 icon_name = "drive-harddisk-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
                 is_folder = false;
 
                 if subdir.is_none() {
-                    if self.type_() == SkFilesystemPermissionType::READONLY {
+                    if self.type_() == SkFilesystemPermissionType::ReadOnly {
                         permission_title = Some(i18n("Full File System Read/Write Access"));
                         permission_description =
                             Some(i18n("Can read and write all data on the file system"));
@@ -208,7 +208,7 @@ impl PermissionDetails for SkFilesystemPermission {
             "host-os" => {
                 permission_object = i18n("Host-os");
                 icon_name = "drive-harddisk-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
                 is_folder = false;
 
                 if subdir.is_none() {
@@ -222,7 +222,7 @@ impl PermissionDetails for SkFilesystemPermission {
             "host-etc" => {
                 permission_object = i18n("Host-etc");
                 icon_name = "drive-harddisk-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
                 is_folder = false;
 
                 if subdir.is_none() {
@@ -238,7 +238,7 @@ impl PermissionDetails for SkFilesystemPermission {
             "xdg-documents" => {
                 permission_object = i18n("Documents");
                 icon_name = "emblem-documents-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
             }
             "xdg-download" => {
                 permission_object = i18n("Downloads");
@@ -251,7 +251,7 @@ impl PermissionDetails for SkFilesystemPermission {
             "xdg-pictures" => {
                 permission_object = i18n("Pictures");
                 icon_name = "folder-pictures-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
             }
             "xdg-public-share" => {
                 permission_object = i18n("Public");
@@ -260,7 +260,7 @@ impl PermissionDetails for SkFilesystemPermission {
             "xdg-videos" => {
                 permission_object = i18n("Videos");
                 icon_name = "folder-videos-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
             }
             "xdg-templates" => {
                 permission_object = i18n("Templates");
@@ -269,7 +269,7 @@ impl PermissionDetails for SkFilesystemPermission {
             "xdg-config" => {
                 permission_object = i18n("Application Configuration");
                 icon_name = "emblem-system-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
             }
             "xdg-cache" => {
                 permission_object = i18n("Application Cache");
@@ -278,12 +278,12 @@ impl PermissionDetails for SkFilesystemPermission {
             "xdg-data" => {
                 permission_object = i18n("Application Data");
                 icon_name = "folder-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
             }
             "xdg-run" => {
                 permission_object = i18n("Runtime");
                 icon_name = "system-run-symbolic".into();
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
             }
             _ => {
                 permission_object = permission;
@@ -292,18 +292,18 @@ impl PermissionDetails for SkFilesystemPermission {
                 warn!("Unknown permission object: {}", permission_object);
 
                 // We don't know what this is about -> bad by default
-                level = SkContextDetailLevel::BAD;
+                level = SkContextDetailLevel::Bad;
             }
         }
 
-        if self.type_() != SkFilesystemPermissionType::READONLY
+        if self.type_() != SkFilesystemPermissionType::ReadOnly
             && path.contains("/flatpak/overrides")
         {
             permission_title = Some(i18n("Explicit Access to Flatpak System Folder"));
             permission_description = Some(i18n(
                 "Can set arbitrary permissions, or change the permissions of other applications",
             ));
-            level = SkContextDetailLevel::BAD;
+            level = SkContextDetailLevel::Bad;
         }
 
         let title_object_name = if is_folder {
@@ -314,7 +314,7 @@ impl PermissionDetails for SkFilesystemPermission {
 
         let title = if let Some(title) = permission_title {
             title
-        } else if self.type_() == SkFilesystemPermissionType::READONLY {
+        } else if self.type_() == SkFilesystemPermissionType::ReadOnly {
             i18n_f("{} Read-Only Access", &[&title_object_name])
         } else {
             i18n_f("{} Read/Write Access", &[&title_object_name])
@@ -322,7 +322,7 @@ impl PermissionDetails for SkFilesystemPermission {
 
         let description = if let Some(description) = permission_description {
             description
-        } else if self.type_() == SkFilesystemPermissionType::READONLY {
+        } else if self.type_() == SkFilesystemPermissionType::ReadOnly {
             if let Some(subdir) = subdir {
                 i18n_f(
                     "Can read “{}” in the “{}” directory",

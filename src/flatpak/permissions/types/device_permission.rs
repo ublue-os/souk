@@ -57,11 +57,11 @@ impl PermissionDetails for SkDevicePermission {
 
     fn context_details(&self) -> Vec<SkContextDetail> {
         let mut details = Vec::new();
-        let type_ = SkContextDetailType::ICON;
+        let type_ = SkContextDetailType::Icon;
         let icon_name = "drive-harddisk-usb-symbolic";
 
         if self == &Self::NONE || self == &SkDevicePermission::DRI {
-            let level = SkContextDetailLevel::GOOD;
+            let level = SkContextDetailLevel::Good;
             let title = i18n("No Device Access");
             let description = i18n("Has no access to connected devices");
 
@@ -75,7 +75,7 @@ impl PermissionDetails for SkDevicePermission {
         }
 
         if self.contains(Self::ALL) {
-            let level = SkContextDetailLevel::BAD;
+            let level = SkContextDetailLevel::Bad;
             let title = i18n("Access to All Devices");
             let description =
                 i18n("Can access all connected devices, e.g. webcams or game controllers");
@@ -91,7 +91,7 @@ impl PermissionDetails for SkDevicePermission {
 
         if !self.contains(Self::ALL) && self.contains(Self::KVM) {
             let icon_name = "computer-symbolic";
-            let level = SkContextDetailLevel::NEUTRAL;
+            let level = SkContextDetailLevel::Neutral;
             let title = i18n("Access to Virtualization Subsystem");
             let description = i18n("Can access and run virtual machines");
 
@@ -106,7 +106,7 @@ impl PermissionDetails for SkDevicePermission {
 
         if self.contains(Self::SHM) {
             let icon_name = "folder-symbolic";
-            let level = SkContextDetailLevel::WARNING;
+            let level = SkContextDetailLevel::Warning;
             let title = i18n("Access to Shared Memory");
             let description = i18n("Can access memory which is shared with other applications");
 
@@ -121,7 +121,7 @@ impl PermissionDetails for SkDevicePermission {
 
         if self.contains(Self::UNKNOWN) {
             let icon_name = "dialog-question-symbolic";
-            let level = SkContextDetailLevel::BAD;
+            let level = SkContextDetailLevel::Bad;
             let title = i18n("Access to Unknown Device");
             let description = i18n("Can access an unknown device");
 

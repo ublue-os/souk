@@ -7,10 +7,10 @@ use gtk::{gio, glib};
 #[repr(u32)]
 #[enum_type(name = "SkSideloadType")]
 pub enum SkSideloadType {
-    REF,
-    REPO,
-    BUNDLE,
-    NONE,
+    Ref,
+    Repo,
+    Bundle,
+    None,
 }
 
 impl SkSideloadType {
@@ -18,10 +18,10 @@ impl SkSideloadType {
         let file = file.path().unwrap();
 
         match file.extension().unwrap_or_default().to_str().unwrap() {
-            "flatpakref" => SkSideloadType::REF,
-            "flatpakrepo" => SkSideloadType::REPO,
-            "flatpak" => SkSideloadType::BUNDLE,
-            _ => SkSideloadType::NONE,
+            "flatpakref" => SkSideloadType::Ref,
+            "flatpakrepo" => SkSideloadType::Repo,
+            "flatpak" => SkSideloadType::Bundle,
+            _ => SkSideloadType::None,
         }
     }
 }

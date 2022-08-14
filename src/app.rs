@@ -113,7 +113,7 @@ mod imp {
             for file in files {
                 let sideload_type = SkSideloadType::determine_type(file);
 
-                if sideload_type == SkSideloadType::REF {
+                if sideload_type == SkSideloadType::Ref {
                     // TODO: Check if the FlatpakRef file is for a already added remote
                     let is_known_remote = false;
                     if is_known_remote {

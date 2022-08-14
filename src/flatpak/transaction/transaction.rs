@@ -91,7 +91,7 @@ mod imp {
                         "",
                         "",
                         SkTransactionType::static_type(),
-                        SkTransactionType::NONE as i32,
+                        SkTransactionType::None as i32,
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
                     ParamSpecString::new(

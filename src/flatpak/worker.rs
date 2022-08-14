@@ -186,7 +186,7 @@ impl SkWorker {
             .install_flatpak(&ref_string, remote, installation, no_update)
             .await?;
 
-        let type_ = SkTransactionType::INSTALL;
+        let type_ = SkTransactionType::Install;
         let transaction = SkTransaction::new(&transaction_uuid, ref_, &type_, remote, installation);
         self.add_transaction(&transaction);
 
@@ -211,7 +211,7 @@ impl SkWorker {
             .install_flatpak_bundle(&path_string, installation, no_update)
             .await?;
 
-        let type_ = SkTransactionType::INSTALL;
+        let type_ = SkTransactionType::Install;
         let transaction = SkTransaction::new(
             &transaction_uuid,
             ref_,
@@ -242,7 +242,7 @@ impl SkWorker {
             .install_flatpak_ref(&path_string, installation, no_update)
             .await?;
 
-        let type_ = SkTransactionType::INSTALL;
+        let type_ = SkTransactionType::Install;
         let transaction = SkTransaction::new(
             &transaction_uuid,
             ref_,
@@ -287,17 +287,17 @@ impl SkWorker {
 
         let type_ = SkSideloadType::determine_type(file);
         let dry_run_result = match type_ {
-            SkSideloadType::BUNDLE => {
+            SkSideloadType::Bundle => {
                 proxy
                     .install_flatpak_bundle_dry_run(&path_string, installation_uuid)
                     .await?
             }
-            SkSideloadType::REF => {
+            SkSideloadType::Ref => {
                 proxy
                     .install_flatpak_ref_dry_run(&path_string, installation_uuid)
                     .await?
             }
-            SkSideloadType::REPO => {
+            SkSideloadType::Repo => {
                 let bytes = file.load_bytes(gio::Cancellable::NONE)?.0;
                 let remote = Remote::from_file("remote", &bytes)?;
 

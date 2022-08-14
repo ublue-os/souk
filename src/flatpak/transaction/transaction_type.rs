@@ -21,8 +21,8 @@ use gtk::glib;
 #[repr(u32)]
 #[enum_type(name = "SkTransactionType")]
 pub enum SkTransactionType {
-    INSTALL,
-    UPDATE,
-    UNINSTALL,
-    NONE,
+    Install,
+    Update,
+    Uninstall,
+    None,
 }

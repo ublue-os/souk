@@ -263,9 +263,9 @@ impl SkContext {
             };
 
             SkContextDetail::new(
-                SkContextDetailType::ICON,
+                SkContextDetailType::Icon,
                 "folder-download-symbolic",
-                SkContextDetailLevel::NEUTRAL,
+                SkContextDetailLevel::Neutral,
                 &title,
                 &descr,
             )
@@ -285,9 +285,9 @@ impl SkContext {
                 )
             };
             SkContextDetail::new(
-                SkContextDetailType::ICON,
+                SkContextDetailType::Icon,
                 "drive-harddisk-system-symbolic",
-                SkContextDetailLevel::NEUTRAL,
+                SkContextDetailLevel::Neutral,
                 &title,
                 &descr,
             )

@@ -21,7 +21,7 @@ use gtk::glib;
 #[repr(u32)]
 #[enum_type(name = "SkFilesystemPermissionType")]
 pub enum SkFilesystemPermissionType {
-    READONLY,
-    READWRITE,
-    CREATE,
+    ReadOnly,
+    ReadWrite,
+    Create,
 }

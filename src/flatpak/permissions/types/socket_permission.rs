@@ -79,8 +79,8 @@ impl PermissionDetails for SkSocketPermission {
 
     fn context_details(&self) -> Vec<SkContextDetail> {
         let mut details = Vec::new();
-        let type_ = SkContextDetailType::ICON;
-        let level = SkContextDetailLevel::BAD;
+        let type_ = SkContextDetailType::Icon;
+        let level = SkContextDetailLevel::Bad;
 
         if self.contains(Self::X11) && !self.contains(Self::FALLBACK_X11) {
             let icon_name = "computer-symbolic";
@@ -154,7 +154,7 @@ impl PermissionDetails for SkSocketPermission {
 
         if self.contains(Self::CUPS) {
             let icon_name = "printer-symbolic";
-            let level = SkContextDetailLevel::NEUTRAL;
+            let level = SkContextDetailLevel::Neutral;
             let title = i18n("Access to Printer Management");
             let description = i18n("Unrestricted access to printer management");
 
@@ -169,7 +169,7 @@ impl PermissionDetails for SkSocketPermission {
 
         if self.contains(Self::UNKNOWN) {
             let icon_name = "dialog-question-symbolic";
-            let level = SkContextDetailLevel::BAD;
+            let level = SkContextDetailLevel::Bad;
             let title = i18n("Access to Unknown Socket");
             let description = i18n("Can access an unknown socket");
 

@@ -446,6 +446,18 @@ impl SkSideloadWindow {
                 }),
             );
 
+            // let size = glib::format_size(package.download_size());
+            // let download_string = i18n_f("Up to {} download", &[&size]);
+            // imp.package_download_size_row.set_title(&download_string);
+            // imp.package_download_size_row
+            // .set_subtitle("Requires up to 0 MB of shared system packages");
+            //
+            // let size = glib::format_size(package.installed_size());
+            // let installed_string = i18n_f("Up to {} installed size", &[&size]);
+            // imp.package_installed_size_row.set_title(&installed_string);
+            // imp.package_installed_size_row
+            // .set_subtitle("Requires up to 0 MB of shared system packages");
+
             // Setup general package appstream metadata
             if let Some(component) = package.appstream() {
                 let name = component.name.get_default().unwrap();
@@ -507,7 +519,7 @@ impl SkSideloadWindow {
             // We don't support updating .flatpakrefs through sideloading, since the
             // installation would fail with "x is already installed". Only bundles can be
             // updated.
-            if package.is_update() && sideloadable.type_() == SkSideloadType::REF {
+            if package.is_update() && sideloadable.type_() == SkSideloadType::Ref {
                 imp.sideload_leaflet.set_visible_child_name("already-done");
                 return;
             }
@@ -573,7 +585,7 @@ impl SkSideloadWindow {
         let sideloadable = self.sideloadable().unwrap();
 
         match sideloadable.type_() {
-            SkSideloadType::BUNDLE | SkSideloadType::REF => {
+            SkSideloadType::Bundle | SkSideloadType::Ref => {
                 let transaction = match sideloadable.sideload(&worker).await {
                     Ok(transaction) => transaction.unwrap(),
                     Err(err) => {
@@ -585,7 +597,7 @@ impl SkSideloadWindow {
                 self.handle_sideload_transaction(&transaction);
                 imp.transaction.set(transaction).unwrap();
             }
-            SkSideloadType::REPO => {
+            SkSideloadType::Repo => {
                 match sideloadable.sideload(&worker).await {
                     Ok(_) => imp.sideload_leaflet.set_visible_child_name("done"),
                     Err(err) => self.show_error_message(&err.message()),

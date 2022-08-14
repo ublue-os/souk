@@ -51,7 +51,7 @@ mod imp {
                         "",
                         "",
                         SkContextDetailType::static_type(),
-                        SkContextDetailType::ICON as i32,
+                        SkContextDetailType::Icon as i32,
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
                     ParamSpecString::new(
@@ -66,7 +66,7 @@ mod imp {
                         "",
                         "",
                         SkContextDetailLevel::static_type(),
-                        SkContextDetailLevel::NEUTRAL as i32,
+                        SkContextDetailLevel::Neutral as i32,
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
                     ParamSpecString::new(
@@ -142,9 +142,9 @@ impl SkContextDetail {
 
     pub fn new_neutral_size(size: u64, title: &str, description: &str) -> Self {
         glib::Object::new(&[
-            ("type", &SkContextDetailType::SIZE),
+            ("type", &SkContextDetailType::Size),
             ("type-value", &size.to_string()),
-            ("level", &SkContextDetailLevel::NEUTRAL),
+            ("level", &SkContextDetailLevel::Neutral),
             ("title", &title),
             ("description", &description),
         ])
@@ -153,9 +153,9 @@ impl SkContextDetail {
 
     pub fn new_neutral_text(text: &str, title: &str, description: &str) -> Self {
         glib::Object::new(&[
-            ("type", &SkContextDetailType::TEXT),
+            ("type", &SkContextDetailType::Text),
             ("type-value", &text.to_string()),
-            ("level", &SkContextDetailLevel::NEUTRAL),
+            ("level", &SkContextDetailLevel::Neutral),
             ("title", &title),
             ("description", &description),
         ])

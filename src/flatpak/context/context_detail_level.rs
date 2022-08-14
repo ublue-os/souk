@@ -22,15 +22,15 @@ use gtk::glib;
 #[enum_type(name = "SkContextDetailLevel")]
 pub enum SkContextDetailLevel {
     /// Grey
-    NEUTRAL,
+    Neutral,
     /// Green
-    GOOD,
+    Good,
     /// Blue
-    MINOR,
+    Minor,
     /// Yellow
-    MODERATE,
+    Moderate,
     /// Orange
-    WARNING,
+    Warning,
     /// Red
-    BAD,
+    Bad,
 }
