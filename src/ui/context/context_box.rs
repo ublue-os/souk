@@ -151,12 +151,12 @@ impl SkContextBox {
         utils::remove_css_colors(&imp.text_label.get());
 
         let css = match summary.level() {
-            SkContextDetailLevel::Neutral => "context-neutral",
-            SkContextDetailLevel::Good => "context-good",
-            SkContextDetailLevel::Minor => "context-minor",
-            SkContextDetailLevel::Moderate => "context-moderate",
-            SkContextDetailLevel::Warning => "context-warning",
-            SkContextDetailLevel::Bad => "context-bad",
+            SkContextDetailLevel::Neutral => "color-neutral",
+            SkContextDetailLevel::Good => "color-good",
+            SkContextDetailLevel::Minor => "color-minor",
+            SkContextDetailLevel::Moderate => "color-moderate",
+            SkContextDetailLevel::Warning => "color-warning",
+            SkContextDetailLevel::Bad => "color-bad",
         };
         imp.icon_image.add_css_class(css);
         imp.text_label.add_css_class(css);
