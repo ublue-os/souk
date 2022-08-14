@@ -385,7 +385,7 @@ impl TransactionManager {
     fn run_dry_run_transaction(
         &self,
         transaction: Transaction,
-        // We need the "real" intallation (not the dry-run) to check what's already installed
+        // We need the "real" installation (not the dry-run) to check what's already installed
         real_installation: &Installation,
         // Whether to load the AppStream data from the Remote
         load_remote_appstream: bool,
