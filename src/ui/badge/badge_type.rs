@@ -21,13 +21,13 @@ use gtk::glib;
 #[repr(u32)]
 #[enum_type(name = "SkBadgeType")]
 pub enum SkBadgeType {
-    REPOSITORY,
-    BRANCH,
-    FILE,
+    Repository,
+    Branch,
+    File,
 }
 
 impl Default for SkBadgeType {
     fn default() -> Self {
-        SkBadgeType::BRANCH
+        SkBadgeType::Branch
     }
 }

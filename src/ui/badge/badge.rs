@@ -155,7 +155,7 @@ impl SkBadge {
 
     fn update_icon(&self) {
         let icon = match self.type_() {
-            SkBadgeType::REPOSITORY => {
+            SkBadgeType::Repository => {
                 if self.value().to_lowercase().starts_with("gnome") {
                     "repo-gnome-symbolic"
                 } else if self.value().to_lowercase() == "flathub" {
@@ -165,13 +165,13 @@ impl SkBadge {
                     "repo-generic-symbolic"
                 }
             }
-            SkBadgeType::BRANCH => match self.value().to_lowercase().as_str() {
+            SkBadgeType::Branch => match self.value().to_lowercase().as_str() {
                 "stable" => "branch-stable-symbolic",
                 "beta" => "branch-beta-symbolic",
                 "master" => "branch-master-symbolic",
                 _ => "branch-generic-symbolic",
             },
-            SkBadgeType::FILE => "folder-documents-symbolic",
+            SkBadgeType::File => "folder-documents-symbolic",
         };
 
         self.imp().image.set_icon_name(Some(icon));
@@ -182,14 +182,14 @@ impl SkBadge {
         utils::remove_css_colors(self);
 
         let css = match self.type_() {
-            SkBadgeType::REPOSITORY => "color-blue",
-            SkBadgeType::BRANCH => match self.value().to_lowercase().as_str() {
+            SkBadgeType::Repository => "color-blue",
+            SkBadgeType::Branch => match self.value().to_lowercase().as_str() {
                 "stable" => "color-green",
                 "beta" => "color-orange",
                 "master" => "color-red",
                 _ => "color-neutral",
             },
-            SkBadgeType::FILE => "color-orange",
+            SkBadgeType::File => "color-orange",
         };
 
         self.add_css_class(css);

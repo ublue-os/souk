@@ -409,11 +409,11 @@ impl SkSideloadWindow {
 
             // Badges
             // TODO: Use real data
-            let repo_badge = SkBadge::new(SkBadgeType::REPOSITORY, "flathub", true);
+            let repo_badge = SkBadge::new(SkBadgeType::Repository, "flathub", true);
             imp.package_badges_box.append(&repo_badge);
 
             if "branch" != "stable" {
-                let branch_badge = SkBadge::new(SkBadgeType::BRANCH, "beta", true);
+                let branch_badge = SkBadge::new(SkBadgeType::Branch, "beta", true);
                 imp.package_badges_box.append(&branch_badge);
             }
 
