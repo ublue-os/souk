@@ -14,39 +14,54 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 use flatpak::prelude::*;
 use flatpak::Installation;
 use gtk::prelude::*;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use zbus::zvariant::Type;
 
-#[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
+use crate::worker::installation::RemoteInfo;
+
+#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Default, Debug, Clone)]
 pub struct InstallationInfo {
-    pub uuid: String,
     pub id: String,
-    pub display_name: String,
+    pub name: String,
+    pub title: String,
     pub is_user: bool,
-    pub is_custom: bool,
     pub path: String,
+
+    pub remotes: Vec<RemoteInfo>,
 }
 
 impl InstallationInfo {
-    pub fn new(installation: &Installation, is_custom: bool) -> Self {
+    pub fn new(installation: &Installation, remotes: Vec<RemoteInfo>) -> Self {
+        let name = installation.id().unwrap().to_string();
+        let title = installation.display_name().unwrap().to_string();
+        let is_user = installation.is_user();
+        let path = installation
+            .path()
+            .unwrap()
+            .path()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let id = format!("{}{}{}", name, is_user, path);
+        let mut s = DefaultHasher::new();
+        id.hash(&mut s);
+        let id = s.finish().to_string();
+
         Self {
-            uuid: Uuid::new_v4().to_string(),
-            id: installation.id().unwrap().to_string(),
-            display_name: installation.display_name().unwrap().to_string(),
-            is_user: installation.is_user(),
-            is_custom,
-            path: installation
-                .path()
-                .unwrap()
-                .path()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string(),
+            id,
+            name,
+            title,
+            is_user,
+            path,
+            remotes,
         }
     }
 }

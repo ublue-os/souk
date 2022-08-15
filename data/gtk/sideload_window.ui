@@ -310,7 +310,7 @@
                                 <property name="tightening_threshold">275</property>
                                 <child>
                                   <object class="AdwPreferencesGroup">
-                                    <property name="description" translatable="yes">A Flatpak installation is a location in which packages can be installed. It depends on the installation whether an application is visible only to the currently logged-in user or to all users on this computer.</property>
+                                    <property name="description" translatable="yes">An installation is a location where applications are stored. Depending on this location, an application may be available to all users system-wide or, for example, only to the currently logged-in user.</property>
                                     <child>
                                       <object class="SkInstallationListBox" id="installation_listbox">
                                         <style>

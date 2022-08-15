@@ -34,42 +34,27 @@ pub struct InstallationManager {
 
 impl InstallationManager {
     pub fn new() -> Self {
-        let mut installations = HashMap::new();
+        let manager = Self {
+            installations: Arc::default(),
+        };
 
-        // System Installation
-        let installation = Installation::new_system(Cancellable::NONE).unwrap();
-        let info = InstallationInfo::new(&installation, false);
-        installations.insert(info.uuid.clone(), info);
-
-        // User Installation
-        let mut user_path = glib::home_dir();
-        user_path.push(".local");
-        user_path.push("share");
-        user_path.push("flatpak");
-        let file = gio::File::for_path(user_path);
-
-        let installation = Installation::for_path(&file, true, gio::Cancellable::NONE).unwrap();
-        let info = InstallationInfo::new(&installation, false);
-        installations.insert(info.uuid.clone(), info);
-
-        Self {
-            installations: Arc::new(Mutex::new(installations)),
-        }
+        manager.update_installations();
+        manager
     }
 
     pub fn launch_app(
         &self,
-        installation_uuid: &str,
+        installation_id: &str,
         ref_: &str,
         // TODO: Check if we need the exact commit at all.
         _commit: &str,
     ) -> Result<(), WorkerError> {
         debug!(
             "Launch app from installation \"{}\": {}",
-            installation_uuid, ref_
+            installation_id, ref_
         );
 
-        let installation = self.installation_by_uuid(installation_uuid)?;
+        let installation = self.flatpak_installation_by_id(installation_id)?;
         let id = installation.id().unwrap().to_string();
         let installation = match id.as_str() {
             "user" => "--user".to_string(),
@@ -89,42 +74,29 @@ impl InstallationManager {
         Ok(())
     }
 
+    /// Returns all installations
     pub fn installations(&self) -> Vec<InstallationInfo> {
         let installations = self.installations.lock().unwrap();
         installations.values().cloned().collect()
     }
 
-    // TODO: Expose this via the DBus interface / allow adding custom installations
-    #[allow(dead_code)]
-    pub fn add_installation(
-        &self,
-        path: String,
-        is_user: bool,
-    ) -> Result<InstallationInfo, WorkerError> {
-        debug!("Add new installation: {} ({:?})", path, is_user);
-
-        let path = File::for_parse_name(&path);
-        let installation = Installation::for_path(&path, is_user, Cancellable::NONE)?;
-
-        let info = InstallationInfo::new(&installation, true);
-        self.installations
-            .lock()
-            .unwrap()
-            .insert(info.uuid.clone(), info.clone());
-
-        Ok(info)
+    /// Returns a libflatpak `Installation` by the installation id.
+    pub fn installation_by_id(&self, installation_id: &str) -> Option<InstallationInfo> {
+        let installations = self.installations.lock().unwrap();
+        installations.get(installation_id).cloned()
     }
 
-    pub fn installation_by_uuid(&self, uuid: &str) -> Result<Installation, WorkerError> {
+    /// Returns a libflatpak `Installation` by the installation id.
+    pub(crate) fn flatpak_installation_by_id(&self, id: &str) -> Result<Installation, WorkerError> {
         let info = {
             let installations = self.installations.lock().unwrap();
             installations
-                .get(uuid)
-                .expect("Unknown installation uuid")
+                .get(id)
+                .expect("Unknown installation id")
                 .clone()
         };
 
-        let installation = if !info.is_custom && info.is_user {
+        let installation = if info.id == "user" && info.is_user {
             let mut user_path = glib::home_dir();
             user_path.push(".local");
             user_path.push("share");
@@ -132,7 +104,7 @@ impl InstallationManager {
             let file = gio::File::for_path(user_path);
 
             Installation::for_path(&file, true, Cancellable::NONE)?
-        } else if !info.is_custom && !info.is_user {
+        } else if info.id == "default" && !info.is_user {
             Installation::new_system(Cancellable::NONE)?
         } else {
             let path = File::for_parse_name(&info.path);
@@ -150,7 +122,7 @@ impl InstallationManager {
         let mut preferred = None;
 
         for info in installations.values() {
-            let installation = self.installation_by_uuid(&info.uuid)?;
+            let installation = self.flatpak_installation_by_id(&info.id)?;
             let count = installation
                 .list_installed_refs(Cancellable::NONE)
                 .unwrap()
@@ -165,17 +137,13 @@ impl InstallationManager {
         Ok(preferred.unwrap().clone())
     }
 
-    pub fn add_installation_remote(
-        &self,
-        installation_uuid: &str,
-        repo_path: &str,
-    ) -> Result<(), WorkerError> {
+    pub fn add_remote(&self, installation_id: &str, repo_path: &str) -> Result<(), WorkerError> {
         debug!(
             "Add remote for installation \"{}\": {}",
-            installation_uuid, repo_path
+            installation_id, repo_path
         );
 
-        let installation = self.installation_by_uuid(installation_uuid)?;
+        let installation = self.flatpak_installation_by_id(installation_id)?;
         let file = File::for_parse_name(repo_path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
         let remote = Remote::from_file("remote", &bytes)?;
@@ -196,29 +164,50 @@ impl InstallationManager {
         remote.set_name(Some(&name));
 
         installation.add_remote(&remote, true, Cancellable::NONE)?;
+        self.update_installations();
 
         Ok(())
     }
 
-    pub fn installation_remotes(
-        &self,
-        installation_uuid: &str,
-    ) -> Result<Vec<RemoteInfo>, WorkerError> {
-        let installation = self.installation_by_uuid(installation_uuid)?;
-        let mut result = Vec::new();
+    fn update_installations(&self) {
+        debug!("Updating Flatpak installations...");
 
-        let remotes = installation.list_remotes(Cancellable::NONE)?;
-        for remote in remotes {
-            let name = remote.name().unwrap();
-            let repo = remote.url().unwrap();
+        let mut installations = self.installations.lock().unwrap();
+        installations.clear();
 
-            let mut remote_info = RemoteInfo::new(&name, &repo);
-            remote_info.set_flatpak_remote(&remote);
+        let mut flatpak_installations = Vec::new();
 
-            result.push(remote_info);
+        // System Installation
+        let installation = Installation::new_system(Cancellable::NONE).unwrap();
+        flatpak_installations.push(installation);
+
+        // User Installation
+        let mut user_path = glib::home_dir();
+        user_path.push(".local");
+        user_path.push("share");
+        user_path.push("flatpak");
+        let file = gio::File::for_path(user_path);
+        let installation = Installation::for_path(&file, true, Cancellable::NONE).unwrap();
+        flatpak_installations.push(installation);
+
+        // Other Installations
+        let mut system_installations =
+            flatpak::functions::system_installations(Cancellable::NONE).unwrap();
+        flatpak_installations.append(&mut system_installations);
+
+        for flatpak_installation in flatpak_installations {
+            let mut remote_infos = Vec::new();
+            let remotes = flatpak_installation
+                .list_remotes(Cancellable::NONE)
+                .unwrap();
+            for remote in &remotes {
+                let remote_info = RemoteInfo::new(remote);
+                remote_infos.push(remote_info);
+            }
+
+            let info = InstallationInfo::new(&flatpak_installation, remote_infos);
+            installations.insert(info.id.clone(), info);
         }
-
-        Ok(result)
     }
 }
 

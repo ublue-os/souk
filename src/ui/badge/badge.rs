@@ -181,7 +181,7 @@ impl SkBadge {
     fn update_css(&self) {
         utils::remove_css_colors(self);
 
-        if !self.colored(){
+        if !self.colored() {
             return;
         }
 

@@ -18,14 +18,13 @@ use std::cell::RefCell;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use flatpak::prelude::*;
-use flatpak::Remote;
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::gio::File;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::Lazy;
 
+use crate::flatpak::installation::SkRemote;
 use crate::i18n::i18n;
 
 mod imp {
@@ -39,7 +38,7 @@ mod imp {
         #[template_child]
         pub external_link_image: TemplateChild<gtk::Image>,
 
-        pub remote: RefCell<Option<Remote>>,
+        pub remote: RefCell<Option<SkRemote>>,
     }
 
     #[glib::object_subclass]
@@ -64,7 +63,7 @@ mod imp {
                     "remote",
                     "",
                     "",
-                    Remote::static_type(),
+                    SkRemote::static_type(),
                     ParamFlags::READABLE,
                 )]
             });
@@ -109,11 +108,11 @@ glib::wrapper! {
 }
 
 impl SkRemoteRow {
-    pub fn remote(&self) -> Option<Remote> {
+    pub fn remote(&self) -> Option<SkRemote> {
         self.imp().remote.borrow().clone()
     }
 
-    pub fn set_remote(&self, remote: &Remote) {
+    pub fn set_remote(&self, remote: &SkRemote) {
         *self.imp().remote.borrow_mut() = Some(remote.clone());
 
         self.update_widgets();
@@ -139,7 +138,7 @@ impl SkRemoteRow {
         if let Some(value) = remote.title() {
             self.set_title(&value);
         } else {
-            self.set_title(&i18n("Unknown Remote Name"));
+            self.set_title(&i18n("Unknown SkRemote Name"));
         }
 
         // Subtitle
@@ -153,12 +152,10 @@ impl SkRemoteRow {
                 subtitle = format!("{} {}", subtitle, value);
             }
         }
-        if let Some(url) = remote.url() {
-            if subtitle.is_empty() {
-                subtitle = format!("<small>{}</small>", url);
-            } else {
-                subtitle = format!("{}\n\n<small>{}</small>", subtitle, url);
-            }
+        if subtitle.is_empty() {
+            subtitle = format!("<small>{}</small>", remote.repository_url());
+        } else {
+            subtitle = format!("{}\n\n<small>{}</small>", subtitle, remote.repository_url());
         }
         self.set_subtitle(&subtitle);
 

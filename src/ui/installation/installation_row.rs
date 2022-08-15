@@ -125,7 +125,7 @@ impl SkInstallationRow {
         let installation = self.installation();
 
         self.set_icon_name(Some(&installation.icon_name()));
-        self.set_title(&installation.display_name());
+        self.set_title(&installation.title());
         self.set_subtitle(&installation.description());
 
         self.bind_property("selected", &imp.checkmark.get(), "visible")

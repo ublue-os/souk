@@ -288,11 +288,11 @@ impl SkSideloadWindow {
         imp.sideload_stack.set_visible_child_name("loading");
 
         let installation = imp.installation_listbox.selected_installation().unwrap();
-        let installation_uuid = installation.uuid();
+        let installation_id = installation.id();
         let file = self.file();
 
         let worker = SkApplication::default().worker();
-        let sideloadable = worker.load_sideloadable(&file, &installation_uuid).await;
+        let sideloadable = worker.load_sideloadable(&file, &installation_id).await;
 
         match sideloadable {
             Ok(sideloadable) => {
@@ -673,9 +673,9 @@ impl SkSideloadWindow {
             let worker = SkApplication::default().worker();
             let sideloadable = this.sideloadable().unwrap();
             let package = sideloadable.package().unwrap();
-            let installation_uuid = sideloadable.installation_uuid();
+            let installation_id = sideloadable.installation_id();
 
-            let _ = worker.launch_app(&installation_uuid, &package.ref_(), &package.commit()).await;
+            let _ = worker.launch_app(&installation_id, &package.ref_(), &package.commit()).await;
             this.close();
         });
         spawn!(fut);

@@ -21,15 +21,15 @@ use crate::worker::WorkerError;
 
 #[derive(Debug, Clone)]
 pub enum TransactionCommand {
-    // uuid, ref_, remote, installation_uuid, no_update
+    // uuid, ref_, remote, installation_id, no_update
     InstallFlatpak(String, String, String, String, bool),
-    // uuid, path, installation_uuid, no_update
+    // uuid, path, installation_id, no_update
     InstallFlatpakBundle(String, String, String, bool),
-    // path, installation_uuid, sender
+    // path, installation_id, sender
     InstallFlatpakBundleDryRun(String, String, Sender<Result<DryRunResult, WorkerError>>),
-    // uuid, path, installation_uuid, no_update
+    // uuid, path, installation_id, no_update
     InstallFlatpakRef(String, String, String, bool),
-    // path, installation_uuid, sender
+    // path, installation_id, sender
     InstallFlatpakRefDryRun(String, String, Sender<Result<DryRunResult, WorkerError>>),
     // uuid,
     CancelTransaction(String),

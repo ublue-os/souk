@@ -113,7 +113,7 @@ impl SkInstallationListBox {
         let mut index = 0;
         while let Some(row) = self.imp().listbox.row_at_index(index) {
             let row = row.downcast_ref::<SkInstallationRow>().unwrap();
-            if row.installation().uuid() == installation.uuid() {
+            if row.installation().id() == installation.id() {
                 row.set_selected(true);
 
                 *self.imp().selected_installation.borrow_mut() = Some(row.installation());

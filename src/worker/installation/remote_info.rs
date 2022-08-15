@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 use flatpak::prelude::*;
 use flatpak::Remote;
 use serde::{Deserialize, Serialize};
@@ -21,10 +24,11 @@ use zbus::zvariant::{Optional, Type};
 
 #[derive(Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq)]
 pub struct RemoteInfo {
+    pub id: String,
     pub name: String,
     pub repository_url: String,
 
-    // Metadata which is in the .flatpakrepo file
+    // Optional metadata from .flatpakrepo file
     pub title: Optional<String>,
     pub description: Optional<String>,
     pub comment: Optional<String>,
@@ -33,15 +37,41 @@ pub struct RemoteInfo {
 }
 
 impl RemoteInfo {
-    pub fn new(name: &str, repository_url: &str) -> Self {
+    pub fn new(remote: &Remote) -> Self {
+        let name = remote.name().unwrap().to_string();
+        let repository_url = remote.url().unwrap().to_string();
+
+        let id = format!("{}{}", name, repository_url);
+        let mut s = DefaultHasher::new();
+        id.hash(&mut s);
+        let id = s.finish().to_string();
+
+        let mut info = Self {
+            id,
+            name,
+            repository_url,
+            ..Default::default()
+        };
+
+        info.set_flatpak_remote(remote);
+        info
+    }
+
+    pub fn new_minimal(name: &str, repository_url: &str) -> Self {
+        let id = format!("{}{}", name, repository_url);
+        let mut s = DefaultHasher::new();
+        id.hash(&mut s);
+        let id = s.finish().to_string();
+
         Self {
+            id,
             name: name.into(),
             repository_url: repository_url.into(),
             ..Default::default()
         }
     }
 
-    pub fn flatpak_remote(&self) -> Remote {
+    pub fn as_flatpak_remote(&self) -> Remote {
         let remote = Remote::new(&self.name);
         remote.set_url(&self.repository_url);
 
@@ -72,15 +102,19 @@ impl RemoteInfo {
         if let Some(value) = remote.title() {
             self.title = Some(value.into()).into();
         }
+
         if let Some(value) = remote.description() {
             self.description = Some(value.into()).into();
         }
+
         if let Some(value) = remote.comment() {
             self.comment = Some(value.into()).into();
         }
+
         if let Some(value) = remote.homepage() {
             self.homepage = Some(value.into()).into();
         }
+
         if let Some(value) = remote.icon() {
             self.icon = Some(value.into()).into();
         }
@@ -90,6 +124,7 @@ impl RemoteInfo {
 impl Default for RemoteInfo {
     fn default() -> Self {
         Self {
+            id: String::default(),
             name: String::default(),
             repository_url: String::default(),
 

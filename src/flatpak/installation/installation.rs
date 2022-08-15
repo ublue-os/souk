@@ -22,6 +22,7 @@ use gtk::{gio, glib};
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
+use crate::flatpak::installation::{SkRemote, SkRemoteModel};
 use crate::i18n::i18n;
 use crate::worker::InstallationInfo;
 
@@ -30,14 +31,14 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkInstallation {
-        pub uuid: OnceCell<String>,
         pub id: OnceCell<String>,
-        pub display_name: OnceCell<String>,
+        pub name: OnceCell<String>,
+        pub title: OnceCell<String>,
         pub description: OnceCell<String>,
         pub icon_name: OnceCell<String>,
         pub is_user: OnceCell<bool>,
-        pub is_custom: OnceCell<bool>,
         pub path: OnceCell<File>,
+        pub remotes: SkRemoteModel,
     }
 
     #[glib::object_subclass]
@@ -51,14 +52,20 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
-                    ParamSpecString::new("uuid", "UUID", "UUID", None, ParamFlags::READABLE),
-                    ParamSpecString::new("id", "ID", "ID", None, ParamFlags::READABLE),
+                    ParamSpecString::new("id", "", "", None, ParamFlags::READABLE),
+                    ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("display-name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("description", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("icon-name", "", "", None, ParamFlags::READABLE),
                     ParamSpecBoolean::new("is-user", "", "", false, ParamFlags::READABLE),
-                    ParamSpecBoolean::new("is-custom", "", "", false, ParamFlags::READABLE),
                     ParamSpecObject::new("path", "", "", File::static_type(), ParamFlags::READABLE),
+                    ParamSpecObject::new(
+                        "remotes",
+                        "",
+                        "",
+                        SkRemoteModel::static_type(),
+                        ParamFlags::READABLE,
+                    ),
                 ]
             });
             PROPERTIES.as_ref()
@@ -66,14 +73,14 @@ mod imp {
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "uuid" => obj.uuid().to_value(),
                 "id" => obj.id().to_value(),
-                "display-name" => obj.display_name().to_value(),
+                "name" => obj.name().to_value(),
+                "display-name" => obj.title().to_value(),
                 "description" => obj.description().to_value(),
                 "icon-name" => obj.icon_name().to_value(),
                 "is-user" => obj.is_user().to_value(),
-                "is-custom" => obj.is_custom().to_value(),
                 "path" => obj.path().to_value(),
+                "remotes" => obj.remotes().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -89,26 +96,31 @@ impl SkInstallation {
         let installation: Self = glib::Object::new(&[]).unwrap();
         let imp = installation.imp();
 
-        imp.uuid.set(info.uuid.clone()).unwrap();
         imp.id.set(info.id.clone()).unwrap();
+        imp.name.set(info.name.clone()).unwrap();
         imp.is_user.set(info.is_user).unwrap();
-        imp.is_custom.set(info.is_custom).unwrap();
         let path = File::for_parse_name(&info.path);
         imp.path.set(path).unwrap();
+        for remote_info in &info.remotes {
+            let remote = SkRemote::new(remote_info);
+            imp.remotes.add_remote(&remote);
+        }
 
-        if !info.is_custom && !info.is_user {
+        // Set a fancy user visible title
+        // We overwrite the default Flatpak ones here using more user friendly terms.
+        if info.name == "default" && !info.is_user {
             // Default system installation
-            let display_name = i18n("System");
-            imp.display_name.set(display_name).unwrap();
+            let title = i18n("System");
+            imp.title.set(title).unwrap();
 
             let description = i18n("All users on this computer");
             imp.description.set(description).unwrap();
 
-            imp.icon_name.set("people-symbolic".into()).unwrap();
-        } else if !info.is_custom && info.is_user {
+            imp.icon_name.set("computer-symbolic".into()).unwrap();
+        } else if info.name == "user" && info.is_user {
             // Default user installation
-            let display_name = i18n("User");
-            imp.display_name.set(display_name).unwrap();
+            let title = i18n("User");
+            imp.title.set(title).unwrap();
 
             let description = i18n("Only currently logged in user");
             imp.description.set(description).unwrap();
@@ -116,24 +128,29 @@ impl SkInstallation {
             imp.icon_name.set("person-symbolic".into()).unwrap();
         } else {
             // Custom installations
-            imp.display_name.set(info.display_name.clone()).unwrap();
-            imp.description.set(String::new()).unwrap();
-            imp.icon_name.set("dotted-box-symbolic".into()).unwrap();
+            imp.title.set(info.title.clone()).unwrap();
+            if info.is_user {
+                imp.description.set(i18n("User Installation")).unwrap();
+            } else {
+                imp.description.set(i18n("System Installation")).unwrap();
+            }
+
+            imp.icon_name.set("drive-harddisk-symbolic".into()).unwrap();
         }
 
         installation
-    }
-
-    pub fn uuid(&self) -> String {
-        self.imp().uuid.get().unwrap().to_string()
     }
 
     pub fn id(&self) -> String {
         self.imp().id.get().unwrap().to_string()
     }
 
-    pub fn display_name(&self) -> String {
-        self.imp().display_name.get().unwrap().to_string()
+    pub fn name(&self) -> String {
+        self.imp().name.get().unwrap().to_string()
+    }
+
+    pub fn title(&self) -> String {
+        self.imp().title.get().unwrap().to_string()
     }
 
     pub fn description(&self) -> String {
@@ -148,11 +165,11 @@ impl SkInstallation {
         *self.imp().is_user.get().unwrap()
     }
 
-    pub fn is_custom(&self) -> bool {
-        *self.imp().is_user.get().unwrap()
-    }
-
     pub fn path(&self) -> File {
         self.imp().path.get().unwrap().clone()
+    }
+
+    pub fn remotes(&self) -> SkRemoteModel {
+        self.imp().remotes.clone()
     }
 }

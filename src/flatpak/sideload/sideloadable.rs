@@ -16,7 +16,6 @@
 
 use core::fmt::Debug;
 
-use flatpak::Remote;
 use gtk::gio::File;
 use gtk::glib;
 use gtk::subclass::prelude::*;
@@ -24,6 +23,7 @@ use once_cell::unsync::OnceCell;
 
 use super::SideloadPackage;
 use crate::error::Error;
+use crate::flatpak::installation::SkRemote;
 use crate::flatpak::sideload::SkSideloadType;
 use crate::flatpak::transaction::SkTransaction;
 use crate::flatpak::SkWorker;
@@ -37,11 +37,13 @@ mod imp {
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
 
+        /// Package which gets intalled or updated during the sideload process
         pub package: OnceCell<Option<SideloadPackage>>,
-        pub remote: OnceCell<Option<Remote>>,
+        /// Remote which gets added during the sideload process
+        pub remote: OnceCell<Option<SkRemote>>,
 
         pub no_changes: OnceCell<bool>,
-        pub installation_uuid: OnceCell<String>,
+        pub installation_id: OnceCell<String>,
     }
 
     #[glib::object_subclass]
@@ -64,7 +66,7 @@ impl SkSideloadable {
         file: &File,
         type_: SkSideloadType,
         dry_run_result: DryRunResult,
-        installation_uuid: &str,
+        installation_id: &str,
     ) -> Self {
         let sideloadable: Self = glib::Object::new(&[]).unwrap();
 
@@ -74,16 +76,17 @@ impl SkSideloadable {
         imp.no_changes
             .set(dry_run_result.is_already_installed)
             .unwrap();
-        imp.installation_uuid
-            .set(installation_uuid.to_string())
+        imp.installation_id
+            .set(installation_id.to_string())
             .unwrap();
 
         // remote
-        let remote = dry_run_result
-            .new_remote
-            .as_ref()
-            .map(|r| r.flatpak_remote());
-        imp.remote.set(remote).unwrap();
+        if let Some(remote_info) = dry_run_result.new_remote.as_ref() {
+            let remote = SkRemote::new(remote_info);
+            imp.remote.set(Some(remote)).unwrap();
+        } else {
+            imp.remote.set(None).unwrap();
+        }
 
         // package
         let package = SideloadPackage { dry_run_result };
@@ -95,9 +98,9 @@ impl SkSideloadable {
     // *.flatpak repo
     pub fn new_repo(
         file: &File,
-        remote: &Remote,
+        remote: &SkRemote,
         already_added: bool,
-        installation_uuid: &str,
+        installation_id: &str,
     ) -> Self {
         let sideloadable: Self = glib::Object::new(&[]).unwrap();
 
@@ -107,8 +110,8 @@ impl SkSideloadable {
         imp.package.set(None).unwrap();
         imp.remote.set(Some(remote.clone())).unwrap();
         imp.no_changes.set(already_added).unwrap();
-        imp.installation_uuid
-            .set(installation_uuid.to_string())
+        imp.installation_id
+            .set(installation_id.to_string())
             .unwrap();
 
         sideloadable
@@ -122,15 +125,15 @@ impl SkSideloadable {
         *self.imp().type_.get().unwrap()
     }
 
-    pub fn installation_uuid(&self) -> String {
-        self.imp().installation_uuid.get().unwrap().clone()
+    pub fn installation_id(&self) -> String {
+        self.imp().installation_id.get().unwrap().clone()
     }
 
     pub fn package(&self) -> Option<SideloadPackage> {
         self.imp().package.get().unwrap().to_owned()
     }
 
-    pub fn remote(&self) -> Option<Remote> {
+    pub fn remote(&self) -> Option<SkRemote> {
         self.imp().remote.get().unwrap().to_owned()
     }
 
@@ -148,7 +151,7 @@ impl SkSideloadable {
                         .install_flatpak_bundle(
                             &package.ref_(),
                             &self.file(),
-                            &self.installation_uuid(),
+                            &self.installation_id(),
                             no_update,
                         )
                         .await?;
@@ -159,7 +162,7 @@ impl SkSideloadable {
                         .install_flatpak_ref(
                             &package.ref_(),
                             &self.file(),
-                            &self.installation_uuid(),
+                            &self.installation_id(),
                             no_update,
                         )
                         .await?;
@@ -171,7 +174,7 @@ impl SkSideloadable {
             return Ok(transaction);
         } else if self.type_() == SkSideloadType::Repo {
             worker
-                .add_remote(&self.file(), &self.installation_uuid())
+                .add_remote(&self.file(), &self.installation_id())
                 .await?;
         }
         Ok(None)
