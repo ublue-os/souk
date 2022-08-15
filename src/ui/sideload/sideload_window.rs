@@ -519,7 +519,7 @@ impl SkSideloadWindow {
         if let Some(remote) = sideloadable.remote() {
             let msg = if sideloadable.package().is_none() {
                 let name = if let Some(title) = remote.title() {
-                    title.to_string()
+                    title
                 } else {
                     i18n("Software Source")
                 };

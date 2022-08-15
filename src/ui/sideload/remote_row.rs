@@ -143,7 +143,7 @@ impl SkRemoteRow {
 
         // Subtitle
         let mut subtitle = if let Some(value) = remote.description() {
-            value.to_string()
+            value
         } else {
             "".to_string()
         };

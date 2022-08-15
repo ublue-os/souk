@@ -197,7 +197,7 @@ impl TransactionManager {
         let transaction = self.new_transaction(installation_id, true)?;
         transaction.add_install_bundle(&file, None)?;
 
-        let results = self.run_dry_run_transaction(transaction, &installation_id, false);
+        let results = self.run_dry_run_transaction(transaction, installation_id, false);
 
         if let Ok(mut results) = results {
             // Installed bundle size
@@ -275,7 +275,7 @@ impl TransactionManager {
         let transaction = self.new_transaction(installation_id, true)?;
         transaction.add_install_flatpakref(&bytes)?;
 
-        let results = self.run_dry_run_transaction(transaction, &installation_id, true);
+        let results = self.run_dry_run_transaction(transaction, installation_id, true);
 
         if let Ok(mut results) = results {
             // Remote / repository
