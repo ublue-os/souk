@@ -25,7 +25,7 @@ use gtk::prelude::*;
 use gtk::{gio, glib};
 
 use super::{InstallationInfo, RemoteInfo};
-use crate::worker::WorkerError;
+use crate::worker::{PackageInfo, WorkerError};
 
 #[derive(Clone, Debug)]
 pub struct InstallationManager {
@@ -200,6 +200,8 @@ impl InstallationManager {
             let mut installation_info = InstallationInfo::new(&flatpak_installation);
 
             let mut remote_infos = Vec::new();
+            let mut package_infos = Vec::new();
+
             let remotes = flatpak_installation
                 .list_remotes(Cancellable::NONE)
                 .unwrap();
@@ -209,7 +211,23 @@ impl InstallationManager {
                 remote_infos.push(remote_info);
             }
 
+            let installed_refs = flatpak_installation
+                .list_installed_refs(Cancellable::NONE)
+                .unwrap();
+            for ref_ in installed_refs {
+                let origin = ref_.origin().unwrap().to_string();
+                let remote = flatpak_installation
+                    .remote_by_name(&origin, Cancellable::NONE)
+                    .unwrap();
+                let remote_info = RemoteInfo::new(&remote, &installation_info.id);
+
+                let package_info =
+                    PackageInfo::new(&ref_.upcast(), &installation_info.id, &remote_info.id);
+                package_infos.push(package_info);
+            }
+
             installation_info.remotes = remote_infos;
+            installation_info.packages = package_infos;
             installations.insert(installation_info.id.clone(), installation_info);
         }
     }

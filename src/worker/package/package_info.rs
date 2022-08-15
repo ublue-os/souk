@@ -1,4 +1,4 @@
-// Souk - installation_info.rs
+// Souk - package_info.rs
 // Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -18,52 +18,38 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 use flatpak::prelude::*;
-use flatpak::Installation;
-use gtk::prelude::*;
+use flatpak::Ref;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-use crate::worker::{PackageInfo, RemoteInfo};
-
-#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Default, Debug, Clone)]
-pub struct InstallationInfo {
+#[derive(Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq)]
+pub struct PackageInfo {
     pub id: String,
-    pub name: String,
-    pub title: String,
-    pub is_user: bool,
-    pub path: String,
+    pub installation_id: String,
+    pub remote_id: String,
 
-    pub remotes: Vec<RemoteInfo>,
-    pub packages: Vec<PackageInfo>,
+    pub ref_: String,
+    pub commit: String,
 }
 
-impl InstallationInfo {
-    pub fn new(installation: &Installation) -> Self {
-        let name = installation.id().unwrap().to_string();
-        let title = installation.display_name().unwrap().to_string();
-        let is_user = installation.is_user();
-        let path = installation
-            .path()
-            .unwrap()
-            .path()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
+impl PackageInfo {
+    pub fn new(ref_: &Ref, installation_id: &str, remote_id: &str) -> Self {
+        let installation_id = installation_id.to_string();
+        let remote_id = remote_id.to_string();
+        let commit = ref_.commit().unwrap().to_string();
+        let ref_ = ref_.format_ref().unwrap().to_string();
 
-        let id = format!("{}{}{}", name, is_user, path);
+        let id = format!("{}{}{}{}", installation_id, remote_id, ref_, commit);
         let mut s = DefaultHasher::new();
         id.hash(&mut s);
         let id = s.finish().to_string();
 
         Self {
             id,
-            name,
-            title,
-            is_user,
-            path,
-            remotes: Vec::default(),
-            packages: Vec::default(),
+            installation_id,
+            remote_id,
+            ref_,
+            commit,
         }
     }
 }

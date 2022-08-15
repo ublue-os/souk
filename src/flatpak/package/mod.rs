@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,15 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod context;
-pub mod installation;
-pub mod package;
-pub mod permissions;
-pub mod sideload;
-pub mod transaction;
-pub mod utils;
+#[allow(clippy::module_inception)]
+mod package;
+mod package_model;
+mod package_type;
 
-mod dbus_proxy;
-mod worker;
-
-pub use worker::SkWorker;
+pub use package::SkPackage;
+pub use package_model::SkPackageModel;
+pub use package_type::SkPackageType;

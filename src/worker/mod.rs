@@ -18,6 +18,7 @@
 mod appstream;
 /// Handling of Flatpak installations with its remotes
 mod installation;
+mod package;
 /// Execution of Flatpak (dry-run) transactions, and state tracking
 mod transaction;
 
@@ -27,6 +28,7 @@ mod worker_error;
 
 use installation::InstallationManager;
 pub use installation::{InstallationInfo, RemoteInfo};
+pub use package::PackageInfo;
 pub use process::Process;
 use transaction::TransactionManager;
 pub use transaction::{DryRunResult, TransactionError, TransactionProgress};

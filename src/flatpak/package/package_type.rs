@@ -1,5 +1,5 @@
-// Souk - mod.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - package_type.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,15 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod context;
-pub mod installation;
-pub mod package;
-pub mod permissions;
-pub mod sideload;
-pub mod transaction;
-pub mod utils;
+use flatpak::RefKind;
+use glib::Enum;
+use gtk::glib;
 
-mod dbus_proxy;
-mod worker;
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
+#[repr(u32)]
+#[enum_type(name = "SkPackageType")]
+pub enum SkPackageType {
+    App,
+    Runtime,
+}
 
-pub use worker::SkWorker;
+impl From<RefKind> for SkPackageType {
+    fn from(value: RefKind) -> Self {
+        match value {
+            RefKind::App => SkPackageType::App,
+            _ => SkPackageType::Runtime,
+        }
+    }
+}

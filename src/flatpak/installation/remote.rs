@@ -67,7 +67,7 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "id" => obj.id().to_value(),
-                "installation-id" => obj.id().to_value(),
+                "installation-id" => obj.installation_id().to_value(),
                 "name" => obj.name().to_value(),
                 "repository-url" => obj.repository_url().to_value(),
                 "title" => obj.title().to_value(),
@@ -110,6 +110,10 @@ impl SkRemote {
 
     pub fn id(&self) -> String {
         self.imp().id.get().unwrap().to_string()
+    }
+
+    pub fn installation_id(&self) -> String {
+        self.imp().installation_id.get().unwrap().to_string()
     }
 
     pub fn name(&self) -> String {

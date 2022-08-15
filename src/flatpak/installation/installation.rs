@@ -23,6 +23,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::flatpak::installation::{SkRemote, SkRemoteModel};
+use crate::flatpak::package::{SkPackage, SkPackageModel};
 use crate::i18n::i18n;
 use crate::worker::InstallationInfo;
 
@@ -39,6 +40,7 @@ mod imp {
         pub is_user: OnceCell<bool>,
         pub path: OnceCell<File>,
         pub remotes: SkRemoteModel,
+        pub packages: SkPackageModel,
     }
 
     #[glib::object_subclass]
@@ -66,6 +68,13 @@ mod imp {
                         SkRemoteModel::static_type(),
                         ParamFlags::READABLE,
                     ),
+                    ParamSpecObject::new(
+                        "packages",
+                        "",
+                        "",
+                        SkPackageModel::static_type(),
+                        ParamFlags::READABLE,
+                    ),
                 ]
             });
             PROPERTIES.as_ref()
@@ -81,6 +90,7 @@ mod imp {
                 "is-user" => obj.is_user().to_value(),
                 "path" => obj.path().to_value(),
                 "remotes" => obj.remotes().to_value(),
+                "packages" => obj.packages().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -101,9 +111,15 @@ impl SkInstallation {
         imp.is_user.set(info.is_user).unwrap();
         let path = File::for_parse_name(&info.path);
         imp.path.set(path).unwrap();
+
         for remote_info in &info.remotes {
             let remote = SkRemote::new(remote_info);
             imp.remotes.add_remote(&remote);
+        }
+
+        for package_info in &info.packages {
+            let package = SkPackage::new(package_info);
+            imp.packages.add_package(&package);
         }
 
         // Set a fancy user visible title
@@ -171,5 +187,9 @@ impl SkInstallation {
 
     pub fn remotes(&self) -> SkRemoteModel {
         self.imp().remotes.clone()
+    }
+
+    pub fn packages(&self) -> SkPackageModel {
+        self.imp().packages.clone()
     }
 }

@@ -296,7 +296,7 @@ impl SkWorker {
                     .iter()
                     .any(|r| r.name == name || r.repository_url == url);
 
-                let remote_info = RemoteInfo::new(&flatpak_remote, &installation_id);
+                let remote_info = RemoteInfo::new(&flatpak_remote, installation_id);
                 let remote = SkRemote::new(&remote_info);
 
                 return Ok(SkSideloadable::new_repo(
@@ -405,7 +405,6 @@ impl SkWorker {
         imp.installations.remove_all();
 
         // Retrieve default installations / remotes
-        // TODO: Add a way to update them during runtime
         let installations = imp.proxy.installations().await.unwrap();
         for info in installations {
             let installation = SkInstallation::new(&info);
