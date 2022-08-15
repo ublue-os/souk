@@ -76,6 +76,7 @@ impl InstallationManager {
 
     /// Returns all installations
     pub fn installations(&self) -> Vec<InstallationInfo> {
+        self.update_installations();
         let installations = self.installations.lock().unwrap();
         installations.values().cloned().collect()
     }

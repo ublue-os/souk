@@ -107,6 +107,23 @@ impl SkInstallationListBox {
                 let installation = installation.downcast_ref::<SkInstallation>().unwrap();
                 SkInstallationRow::new(installation).upcast()
             });
+
+        worker.installations().connect_items_changed(clone!(@weak self as this => move |_, _, _, _|{
+            if let Some(selected) = this.selected_installation(){
+                let selected_id = selected.id();
+
+                let mut index = 0;
+                while let Some(row) = this.imp().listbox.row_at_index(index) {
+                    let row = row.downcast_ref::<SkInstallationRow>().unwrap();
+                    if row.installation().id() == selected_id{
+                        row.set_selected(true);
+                        return;
+                    }
+
+                    index += 1;
+                }
+            }
+        }));
     }
 
     pub fn set_installation(&self, installation: &SkInstallation) {

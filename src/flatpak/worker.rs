@@ -137,7 +137,7 @@ impl SkWorker {
         // Wait process is ready
         while (imp.proxy.installations().await).is_err() {}
 
-        self.update_installations().await;
+        self.refresh_installations().await;
     }
 
     /// Stops the `souk-worker` process
@@ -400,8 +400,9 @@ impl SkWorker {
     }
 
     /// Updates the available Flatpak installations with its remotes
-    async fn update_installations(&self) {
+    pub async fn refresh_installations(&self) {
         let imp = self.imp();
+        imp.installations.remove_all();
 
         // Retrieve default installations / remotes
         // TODO: Add a way to update them during runtime

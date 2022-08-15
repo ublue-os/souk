@@ -213,6 +213,16 @@ impl SkApplication {
             SkApplication::default().show_filechooser();
         });
         self.set_accels_for_action("app.open", &["<primary>o"]);
+
+        // app.refresh-installations
+        action!(self, "refresh-installations", move |_, _| {
+            let fut = async move {
+                let worker = SkApplication::default().worker();
+                worker.refresh_installations().await;
+            };
+            spawn!(fut);
+        });
+        self.set_accels_for_action("app.refresh-installations", &["<primary>r"]);
     }
 
     fn show_filechooser(&self) {

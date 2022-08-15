@@ -28,6 +28,17 @@
             </child>
           </object>
         </child>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Flatpak</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes" context="shortcut window">Refresh Installations</property>
+                <property name="action_name">app.refresh-installations</property>
+              </object>
+            </child>
+          </object>
+        </child>
       </object>
     </child>
   </object>
