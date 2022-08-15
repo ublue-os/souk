@@ -28,6 +28,7 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkRemote {
         pub id: OnceCell<String>,
+        pub installation_id: OnceCell<String>,
         pub name: OnceCell<String>,
         pub repository_url: OnceCell<String>,
 
@@ -50,6 +51,7 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
                     ParamSpecString::new("id", "", "", None, ParamFlags::READABLE),
+                    ParamSpecString::new("installation-id", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("repository-url", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("title", "", "", None, ParamFlags::READABLE),
@@ -65,6 +67,7 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "id" => obj.id().to_value(),
+                "installation-id" => obj.id().to_value(),
                 "name" => obj.name().to_value(),
                 "repository-url" => obj.repository_url().to_value(),
                 "title" => obj.title().to_value(),
@@ -88,6 +91,9 @@ impl SkRemote {
         let imp = remote.imp();
 
         imp.id.set(info.id.clone()).unwrap();
+        imp.installation_id
+            .set(info.installation_id.clone())
+            .unwrap();
         imp.name.set(info.name.clone()).unwrap();
         imp.repository_url.set(info.repository_url.clone()).unwrap();
 

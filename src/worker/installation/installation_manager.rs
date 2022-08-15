@@ -197,17 +197,20 @@ impl InstallationManager {
         flatpak_installations.append(&mut system_installations);
 
         for flatpak_installation in flatpak_installations {
+            let mut installation_info = InstallationInfo::new(&flatpak_installation);
+
             let mut remote_infos = Vec::new();
             let remotes = flatpak_installation
                 .list_remotes(Cancellable::NONE)
                 .unwrap();
+
             for remote in &remotes {
-                let remote_info = RemoteInfo::new(remote);
+                let remote_info = RemoteInfo::new(remote, &installation_info.id);
                 remote_infos.push(remote_info);
             }
 
-            let info = InstallationInfo::new(&flatpak_installation, remote_infos);
-            installations.insert(info.id.clone(), info);
+            installation_info.remotes = remote_infos;
+            installations.insert(installation_info.id.clone(), installation_info);
         }
     }
 }

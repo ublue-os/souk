@@ -296,7 +296,7 @@ impl SkWorker {
                     .iter()
                     .any(|r| r.name == name || r.repository_url == url);
 
-                let remote_info = RemoteInfo::new(&flatpak_remote);
+                let remote_info = RemoteInfo::new(&flatpak_remote, &installation_id);
                 let remote = SkRemote::new(&remote_info);
 
                 return Ok(SkSideloadable::new_repo(

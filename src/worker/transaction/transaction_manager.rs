@@ -384,10 +384,11 @@ impl TransactionManager {
             .flatpak_installation_by_id(installation_id)?;
 
         // Check if new remotes are added during the transaction
+        let installation_id = installation_id.to_string();
         transaction.connect_add_new_remote(
-            clone!(@weak dry_run_result => @default-return false, move |_, reason, _, name, url|{
+            clone!(@weak dry_run_result, @strong installation_id => @default-return false, move |_, reason, _, name, url|{
                 if reason == TransactionRemoteReason::RuntimeDeps{
-                    let remote = RemoteInfo::new_minimal(name, url);
+                    let remote = RemoteInfo::new_minimal(name, url, &installation_id);
                     dry_run_result.borrow_mut().new_remote = Some(remote).into();
                     return true;
                 }

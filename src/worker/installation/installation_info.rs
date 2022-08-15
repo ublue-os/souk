@@ -37,7 +37,7 @@ pub struct InstallationInfo {
 }
 
 impl InstallationInfo {
-    pub fn new(installation: &Installation, remotes: Vec<RemoteInfo>) -> Self {
+    pub fn new(installation: &Installation) -> Self {
         let name = installation.id().unwrap().to_string();
         let title = installation.display_name().unwrap().to_string();
         let is_user = installation.is_user();
@@ -61,7 +61,7 @@ impl InstallationInfo {
             title,
             is_user,
             path,
-            remotes,
+            remotes: Vec::default(),
         }
     }
 }

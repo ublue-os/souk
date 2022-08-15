@@ -25,6 +25,7 @@ use zbus::zvariant::{Optional, Type};
 #[derive(Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq)]
 pub struct RemoteInfo {
     pub id: String,
+    pub installation_id: String,
     pub name: String,
     pub repository_url: String,
 
@@ -37,17 +38,19 @@ pub struct RemoteInfo {
 }
 
 impl RemoteInfo {
-    pub fn new(remote: &Remote) -> Self {
+    pub fn new(remote: &Remote, installation_id: &str) -> Self {
+        let installation_id = installation_id.to_string();
         let name = remote.name().unwrap().to_string();
         let repository_url = remote.url().unwrap().to_string();
 
-        let id = format!("{}{}", name, repository_url);
+        let id = format!("{}{}{}", installation_id, name, repository_url);
         let mut s = DefaultHasher::new();
         id.hash(&mut s);
         let id = s.finish().to_string();
 
         let mut info = Self {
             id,
+            installation_id,
             name,
             repository_url,
             ..Default::default()
@@ -57,14 +60,15 @@ impl RemoteInfo {
         info
     }
 
-    pub fn new_minimal(name: &str, repository_url: &str) -> Self {
-        let id = format!("{}{}", name, repository_url);
+    pub fn new_minimal(name: &str, repository_url: &str, installation_id: &str) -> Self {
+        let id = format!("{}{}{}", installation_id, name, repository_url);
         let mut s = DefaultHasher::new();
         id.hash(&mut s);
         let id = s.finish().to_string();
 
         Self {
             id,
+            installation_id: installation_id.into(),
             name: name.into(),
             repository_url: repository_url.into(),
             ..Default::default()
@@ -125,6 +129,7 @@ impl Default for RemoteInfo {
     fn default() -> Self {
         Self {
             id: String::default(),
+            installation_id: String::default(),
             name: String::default(),
             repository_url: String::default(),
 

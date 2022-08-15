@@ -37,7 +37,7 @@ mod imp {
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
 
-        /// Package which gets intalled or updated during the sideload process
+        /// Package which gets installed or updated during the sideload process
         pub package: OnceCell<Option<SideloadPackage>>,
         /// Remote which gets added during the sideload process
         pub remote: OnceCell<Option<SkRemote>>,
