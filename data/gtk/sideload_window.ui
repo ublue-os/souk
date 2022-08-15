@@ -309,25 +309,35 @@
                                 <property name="margin_end">12</property>
                                 <property name="tightening_threshold">275</property>
                                 <child>
-                                  <object class="AdwPreferencesGroup">
-                                    <property name="description" translatable="yes">An installation is a location where applications are stored. Depending on this location, an application may be available to all users system-wide or, for example, only to the currently logged-in user.</property>
+                                  <object class="GtkBox">
+                                    <property name="orientation">vertical</property>
                                     <child>
-                                      <object class="SkInstallationListBox" id="installation_listbox">
-                                        <style>
-                                          <class name="content-bin"/>
-                                        </style>
+                                      <object class="AdwPreferencesGroup">
+                                        <property name="description" translatable="yes">An installation is a location where applications are stored. Depending on this location, an application may be available to all users system-wide or, for example, only to the currently logged-in user.</property>
                                       </object>
                                     </child>
-                                    <child type="header-suffix">
-                                      <object class="GtkButton">
-                                        <property name="icon_name">view-refresh-symbolic</property>
-                                        <property name="tooltip_text" translatable="yes">Refresh available installations</property>
-                                        <property name="action_name">app.refresh-installations</property>
-                                        <property name="valign">end</property>
-                                        <property name="margin-start">6</property>
-                                        <style>
-                                          <class name="flat"/>
-                                        </style>
+                                    <child>
+                                      <object class="AdwPreferencesGroup">
+                                        <property name="title" translatable="yes">Available Installations</property>
+                                        <child>
+                                          <object class="SkInstallationListBox" id="installation_listbox">
+                                            <style>
+                                              <class name="content-bin"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                        <child type="header-suffix">
+                                          <object class="GtkButton">
+                                            <property name="icon_name">view-refresh-symbolic</property>
+                                            <property name="tooltip_text" translatable="yes">Refresh available installations</property>
+                                            <property name="action_name">app.refresh-installations</property>
+                                            <property name="valign">end</property>
+                                            <property name="margin-start">6</property>
+                                            <style>
+                                              <class name="flat"/>
+                                            </style>
+                                          </object>
+                                        </child>
                                       </object>
                                     </child>
                                   </object>
