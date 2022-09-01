@@ -1,6 +1,7 @@
 #!/bin/sh
-echo "Running flatpak-bwrap wrapper, redirecting to host."
+echo "Running flatpak-bwrap wrapper, redirecting to host..."
 
+# Inspect which fds are currently opened, and forward them to the host side.
 echo "Open file descriptors:"
 ls -l /proc/$$/fd
 
@@ -16,14 +17,12 @@ for fd in $(ls /proc/$$/fd); do
   esac
 done
 
+# Set DBUS_SESSION_BUS_ADDRESS env variable so the flatpak-spawn --host portal call works.
+# The correct value is listed in the /.flatpak-info file.
 dbus_address=$(cat /.flatpak-info | grep DBUS_SESSION_BUS_ADDRESS)
 export $dbus_address
 
-display=$(cat /.flatpak-info | grep DISPLAY)
-export $display
-
-echo "Set env variable: DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS DISPLAY=$DISPLAY"
-
+# Test if the `bwrap` command is available
 flatpak-spawn --host bwrap --version &> /dev/null
 retval=$?
 
@@ -34,4 +33,5 @@ else
   binary="flatpak-bwrap"
 fi
 
+# The actual call on the host side
 exec flatpak-spawn --host $fds $binary "$@"
