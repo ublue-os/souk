@@ -24,7 +24,7 @@ export $display
 
 echo "Set env variable: DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS DISPLAY=$DISPLAY"
 
-flatpak-spawn --host hash bwrap &> /dev/null
+flatpak-spawn --host bwrap --version &> /dev/null
 retval=$?
 
 if [ $retval -eq 0 ]; then
