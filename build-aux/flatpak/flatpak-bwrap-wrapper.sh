@@ -1,5 +1,5 @@
 #!/bin/sh
-echo "Running flatpak-bwrap wrapper, redirecting to host"
+echo "Running flatpak-bwrap wrapper, redirecting to host."
 
 echo "Open file descriptors:"
 ls -l /proc/$$/fd
@@ -16,8 +16,13 @@ for fd in $(ls /proc/$$/fd); do
   esac
 done
 
-export DISPLAY=:0
-export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+dbus_address=$(cat /.flatpak-info | grep DBUS_SESSION_BUS_ADDRESS)
+export $dbus_address
+
+display=$(cat /.flatpak-info | grep DISPLAY)
+export $display
+
+echo "Set env variable: DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS DISPLAY=$DISPLAY"
 
 flatpak-spawn --host hash bwrap &> /dev/null
 retval=$?
@@ -25,7 +30,7 @@ retval=$?
 if [ $retval -eq 0 ]; then
   binary="bwrap"
 else
-  echo "bwrap is not available, fallback to flatpak-bwrap"
+  echo "Unable to execute bwrap, falling back to flatpak-bwrap"
   binary="flatpak-bwrap"
 fi
 
