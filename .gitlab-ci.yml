@@ -91,7 +91,7 @@ pages:
 
       END
     - mkdir public
-    - cp -r .flatpak-builder/build/${FLATPAK_MODULE}/_flatpak_build/src/doc public/code-doc
+    - cp -r .flatpak-builder/build/${FLATPAK_MODULE}/_flatpak_build/target/doc public/code-doc
     - chmod -R a=rwx public
   artifacts:
     paths:
