@@ -76,3 +76,17 @@ copy_worker_binary = custom_target(
     'cp', 'target' / rust_target / '@0@-worker'.format(meson.project_name()), '@OUTPUT@',
   ]
 )
+
+# docs
+cargo_doc = custom_target(
+  'cargo-doc',
+  build_by_default: false,
+  build_always_stale: true,
+  output: 'doc',
+  console: true,
+  command: [
+    'env', cargo_env,
+    cargo, 'doc',
+    cargo_options + [ '--no-deps', '--lib', '--document-private-items'],
+  ],
+)

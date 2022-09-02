@@ -14,6 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#![doc(
+    html_logo_url = "https://gitlab.gnome.org/haecker-felix/souk/-/raw/main/data/icons/hicolor/scalable/apps/de.haeckerfelix.Souk.svg",
+    html_favicon_url = "https://gitlab.gnome.org/haecker-felix/souk/-/raw/main/data/icons/hicolor/symbolic/apps/de.haeckerfelix.Souk-symbolic.svg"
+)]
+
 #[macro_use]
 extern crate log;
 extern crate pretty_env_logger;

@@ -1,6 +1,7 @@
 stages:
   - check
   - build
+  - doc
 
 variables:
   MANIFEST_PATH: "build-aux/flatpak/de.haeckerfelix.Souk.Devel.json"
@@ -74,3 +75,28 @@ build-aarch64:
   variables:
     BUNDLE: "${FLATPAK_MODULE}_aarch64.flatpak"
     CONFIG_OPTS: "-Dprofile=development"
+
+# Build the docs
+pages:
+  image: '${CI_IMAGE}'
+  stage: doc
+  tags:
+    - flatpak
+  script:
+    - flatpak-builder --user --disable-rofiles-fuse --keep-build-dirs --stop-at=${FLATPAK_MODULE} flatpak_app ${MANIFEST_PATH}
+    - flatpak build-finish --socket=x11 --share=network flatpak_app
+    - >
+      flatpak-builder --user --disable-rofiles-fuse --build-shell=${FLATPAK_MODULE} flatpak_app ${MANIFEST_PATH} <<END
+        ninja src/doc
+
+      END
+    - mkdir public
+    - cp -r .flatpak-builder/build/${FLATPAK_MODULE}/_flatpak_build/src/doc public/code-doc
+    - chmod -R a=rwx public
+  artifacts:
+    paths:
+      - 'public'
+  only:
+    refs:
+      - main
+      - souk-next
