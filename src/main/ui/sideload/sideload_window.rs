@@ -28,8 +28,8 @@ use once_cell::sync::{Lazy, OnceCell};
 
 use super::SkRemoteRow;
 use crate::main::app::SkApplication;
+use crate::main::context::SkContext;
 use crate::main::error::Error;
-use crate::main::flatpak::context::SkContext;
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::flatpak::transaction::SkTransaction;
 use crate::main::i18n::{i18n, i18n_f};

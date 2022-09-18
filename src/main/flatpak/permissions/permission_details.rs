@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use super::SkPermissionSummary;
-use crate::main::flatpak::context::SkContextDetail;
+use crate::main::context::SkContextDetail;
 
 pub trait PermissionDetails {
     fn summary(&self) -> SkPermissionSummary;

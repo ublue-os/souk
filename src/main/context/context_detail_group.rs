@@ -25,7 +25,7 @@ use indexmap::map::IndexMap;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::context::SkContextDetail;
+use crate::main::context::SkContextDetail;
 
 mod imp {
     use super::*;

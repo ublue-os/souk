@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+pub mod context;
+
 /// Consumes the data of the `souk-worker` process, and wraps them into usable
 /// types so that they can easily consumed by the user interface (eg. gobjects
 /// with properties)

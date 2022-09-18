@@ -21,7 +21,7 @@ use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::OnceCell;
 
-use crate::main::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
 use crate::main::ui::utils;
 
 mod imp {

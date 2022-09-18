@@ -19,7 +19,7 @@ use flatpak::Ref;
 use gtk::glib::Bytes;
 use gtk::prelude::*;
 
-use crate::main::flatpak::context::SkContext;
+use crate::main::context::SkContext;
 use crate::main::flatpak::permissions::SkAppPermissions;
 use crate::worker::DryRunResult;
 

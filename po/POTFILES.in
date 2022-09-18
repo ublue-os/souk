@@ -5,7 +5,7 @@ data/gtk/sideload_window.ui
 data/gtk/help_overlay.ui
 data/gtk/window.ui
 
-src/main/flatpak/context/context.rs
+src/main/context/context.rs
 src/main/flatpak/installation/installation.rs
 src/main/flatpak/permissions/types/filesystem_permission.rs
 src/main/flatpak/permissions/types/service_permission.rs

@@ -21,7 +21,7 @@ use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
 use crate::main::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::main::i18n::{i18n, i18n_f};
 

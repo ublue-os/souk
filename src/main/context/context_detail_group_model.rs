@@ -22,7 +22,7 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
-use crate::main::flatpak::context::SkContextDetailGroup;
+use crate::main::context::SkContextDetailGroup;
 
 mod imp {
     use super::*;

@@ -23,7 +23,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::context::{
+use crate::main::context::{
     SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel, SkContextDetailLevel,
     SkContextDetailType,
 };

@@ -22,7 +22,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use super::SkFilesystemPermissionType;
-use crate::main::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
 use crate::main::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::main::i18n::{i18n, i18n_f};
 

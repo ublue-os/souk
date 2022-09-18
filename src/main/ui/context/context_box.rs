@@ -21,7 +21,7 @@ use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
-use crate::main::flatpak::context::{
+use crate::main::context::{
     SkContext, SkContextDetail, SkContextDetailGroup, SkContextDetailLevel, SkContextDetailType,
 };
 use crate::main::ui::context::SkContextDetailRow;

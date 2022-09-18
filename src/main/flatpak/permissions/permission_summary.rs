@@ -18,7 +18,7 @@ use std::fmt::Write;
 
 use gtk::glib;
 
-use crate::main::flatpak::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
 use crate::main::i18n::i18n;
 
 #[glib::flags(name = "SkPermissionSummary")]

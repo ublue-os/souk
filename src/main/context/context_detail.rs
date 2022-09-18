@@ -21,7 +21,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::context::{SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetailLevel, SkContextDetailType};
 
 mod imp {
     use super::*;
