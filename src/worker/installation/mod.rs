@@ -15,9 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod installation_info;
-mod installation_manager;
 mod remote_info;
 
 pub use installation_info::InstallationInfo;
-pub use installation_manager::InstallationManager;
 pub use remote_info::RemoteInfo;

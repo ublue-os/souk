@@ -57,8 +57,10 @@ pub struct DryRunResult {
 
     /// Which runtimes are installed during the installation
     pub runtimes: Vec<DryRunRuntime>,
-    /// Which remote may be added during installation
-    pub new_remote: Optional<RemoteInfo>,
+    /// Which remote are getting added during installation. Tuple of remote
+    /// name, and repository URL.
+    pub remotes: Vec<(String, String)>,
+    pub remotes_info: Vec<RemoteInfo>,
 }
 
 impl DryRunResult {
@@ -85,7 +87,8 @@ impl Default for DryRunResult {
             download_size: 0,
             installed_size: 0,
             runtimes: Vec::default(),
-            new_remote: None.into(),
+            remotes: Vec::default(),
+            remotes_info: Vec::default(),
         }
     }
 }

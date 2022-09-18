@@ -176,16 +176,9 @@
                                           </object>
                                         </child>
                                         <child>
-                                          <object class="GtkBox" id="remote_box">
+                                          <object class="GtkBox" id="remotes_box">
                                             <property name="orientation">vertical</property>
                                             <property name="margin_bottom">12</property>
-                                            <child>
-                                              <object class="AdwPreferencesGroup" id="remote_group">
-                                                <child>
-                                                  <object class="SkRemoteRow" id="remote_row"/>
-                                                </child>
-                                              </object>
-                                            </child>
                                           </object>
                                         </child>
                                         <child>
@@ -198,7 +191,7 @@
                                                 <child>
                                                   <object class="GtkLabel">
                                                     <binding name="label">
-                                                      <lookup name="display_name" type="SkInstallation">
+                                                      <lookup name="title" type="SkInstallation">
                                                         <lookup name="selected_installation" type="SkInstallationListBox">installation_listbox</lookup>
                                                       </lookup>
                                                     </binding>

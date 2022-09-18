@@ -14,33 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-
 use flatpak::prelude::*;
 use flatpak::Installation;
 use gtk::prelude::*;
+use gtk::{gio, glib};
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-use crate::worker::{PackageInfo, RemoteInfo};
-
-#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Default, Debug, Clone)]
+#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Default, Debug, Clone, Hash)]
 pub struct InstallationInfo {
-    pub id: String,
+    /// Flatpak installation id/name. For example `default` or `user`.
     pub name: String,
-    pub title: String,
+    /// Whether a Flatpak installation is for the current user only, or
+    /// system-wide. System-wide installations require elevated privileges to
+    /// make changes.
     pub is_user: bool,
+    /// The path of the Flatpak OSTree repository.
     pub path: String,
-
-    pub remotes: Vec<RemoteInfo>,
-    pub packages: Vec<PackageInfo>,
 }
 
-impl InstallationInfo {
-    pub fn new(installation: &Installation) -> Self {
+impl From<&Installation> for InstallationInfo {
+    fn from(installation: &Installation) -> Self {
         let name = installation.id().unwrap().to_string();
-        let title = installation.display_name().unwrap().to_string();
         let is_user = installation.is_user();
         let path = installation
             .path()
@@ -51,19 +46,35 @@ impl InstallationInfo {
             .unwrap()
             .to_string();
 
-        let id = format!("{}{}{}", name, is_user, path);
-        let mut s = DefaultHasher::new();
-        id.hash(&mut s);
-        let id = s.finish().to_string();
-
         Self {
-            id,
             name,
-            title,
             is_user,
             path,
-            remotes: Vec::default(),
-            packages: Vec::default(),
+        }
+    }
+}
+
+impl From<&InstallationInfo> for Installation {
+    fn from(info: &InstallationInfo) -> Self {
+        if info.name == "user" && info.is_user {
+            let mut user_path = glib::home_dir();
+            user_path.push(".local");
+            user_path.push("share");
+            user_path.push("flatpak");
+            let file = gio::File::for_path(user_path);
+
+            Installation::for_path(&file, true, gio::Cancellable::NONE)
+                .expect("Unable to create Flatpak system installation for path")
+        } else if info.name == "default" && !info.is_user {
+            Installation::new_system(gio::Cancellable::NONE)
+                .expect("Unable to create Flatpak system installation")
+        } else if !info.is_user {
+            Installation::new_system_with_id(Some(&info.name), gio::Cancellable::NONE)
+                .expect("Unable to create Flatpak system installation with id")
+        } else {
+            let path = gio::File::for_parse_name(&info.path);
+            Installation::for_path(&path, info.is_user, gio::Cancellable::NONE)
+                .expect("Unable to create Flatpak user installation for path")
         }
     }
 }

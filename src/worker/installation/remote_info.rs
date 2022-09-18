@@ -14,130 +14,107 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-
 use flatpak::prelude::*;
 use flatpak::Remote;
+use gtk::glib::Error;
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::{Optional, Type};
+use zbus::zvariant::Type;
 
-#[derive(Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq)]
+#[derive(Deserialize, Serialize, Hash, Type, Debug, Clone, Eq, PartialEq, Default)]
 pub struct RemoteInfo {
-    pub id: String,
-    pub installation_id: String,
     pub name: String,
     pub repository_url: String,
 
+    gpg_key: String,
+
     // Optional metadata from .flatpakrepo file
-    pub title: Optional<String>,
-    pub description: Optional<String>,
-    pub comment: Optional<String>,
-    pub homepage: Optional<String>,
-    pub icon: Optional<String>,
+    pub title: String,
+    pub description: String,
+    pub comment: String,
+    pub homepage: String,
+    pub icon: String,
 }
 
 impl RemoteInfo {
-    pub fn new(remote: &Remote, installation_id: &str) -> Self {
-        let installation_id = installation_id.to_string();
-        let name = remote.name().unwrap().to_string();
-        let repository_url = remote.url().unwrap().to_string();
-
-        let id = format!("{}{}{}", installation_id, name, repository_url);
-        let mut s = DefaultHasher::new();
-        id.hash(&mut s);
-        let id = s.finish().to_string();
-
-        let mut info = Self {
-            id,
-            installation_id,
-            name,
-            repository_url,
-            ..Default::default()
-        };
-
-        info.set_flatpak_remote(remote);
-        info
-    }
-
-    pub fn new_minimal(name: &str, repository_url: &str, installation_id: &str) -> Self {
-        let id = format!("{}{}{}", installation_id, name, repository_url);
-        let mut s = DefaultHasher::new();
-        id.hash(&mut s);
-        let id = s.finish().to_string();
-
+    pub fn new(name: &str, url: &str) -> Self {
         Self {
-            id,
-            installation_id: installation_id.into(),
             name: name.into(),
-            repository_url: repository_url.into(),
+            repository_url: url.into(),
             ..Default::default()
         }
     }
 
-    pub fn as_flatpak_remote(&self) -> Remote {
-        let remote = Remote::new(&self.name);
-        remote.set_url(&self.repository_url);
-
-        if let Some(value) = self.title.as_ref() {
-            remote.set_title(value);
-        }
-
-        if let Some(value) = self.description.as_ref() {
-            remote.set_description(value);
-        }
-
-        if let Some(value) = self.comment.as_ref() {
-            remote.set_comment(value);
-        }
-
-        if let Some(value) = self.homepage.as_ref() {
-            remote.set_homepage(value);
-        }
-
-        if let Some(value) = self.icon.as_ref() {
-            remote.set_icon(value);
-        }
-
-        remote
-    }
-
-    pub fn set_flatpak_remote(&mut self, remote: &Remote) {
-        if let Some(value) = remote.title() {
-            self.title = Some(value.into()).into();
-        }
-
-        if let Some(value) = remote.description() {
-            self.description = Some(value.into()).into();
-        }
-
-        if let Some(value) = remote.comment() {
-            self.comment = Some(value.into()).into();
-        }
-
-        if let Some(value) = remote.homepage() {
-            self.homepage = Some(value.into()).into();
-        }
-
-        if let Some(value) = remote.icon() {
-            self.icon = Some(value.into()).into();
-        }
+    pub fn set_gpg_key(&mut self, key: &str) {
+        self.gpg_key = key.into();
     }
 }
 
-impl Default for RemoteInfo {
-    fn default() -> Self {
-        Self {
-            id: String::default(),
-            installation_id: String::default(),
-            name: String::default(),
-            repository_url: String::default(),
+impl From<&Remote> for RemoteInfo {
+    fn from(remote: &Remote) -> Self {
+        let mut info = Self {
+            name: remote.name().unwrap().into(),
+            repository_url: remote.url().unwrap().into(),
+            ..Default::default()
+        };
 
-            title: None.into(),
-            description: None.into(),
-            comment: None.into(),
-            homepage: None.into(),
-            icon: None.into(),
+        if let Some(value) = remote.title() {
+            info.title = value.into();
         }
+
+        if let Some(value) = remote.description() {
+            info.description = value.into();
+        }
+
+        if let Some(value) = remote.comment() {
+            info.comment = value.into();
+        }
+
+        if let Some(value) = remote.homepage() {
+            info.homepage = value.into();
+        }
+
+        if let Some(value) = remote.icon() {
+            info.icon = value.into();
+        }
+
+        info
+    }
+}
+
+impl TryInto<Remote> for RemoteInfo {
+    type Error = Error;
+
+    fn try_into(self) -> Result<Remote, Self::Error> {
+        let remote = Remote::new(&self.name);
+        remote.set_url(&self.repository_url);
+
+        if self.gpg_key.is_empty() {
+            return Err(Error::new(
+                flatpak::Error::Untrusted,
+                "Can't add remote object without gpg key.",
+            ));
+        }
+
+        if !self.title.is_empty() {
+            remote.set_title(&self.title);
+        }
+
+        if !self.description.is_empty() {
+            remote.set_title(&self.description);
+        }
+
+        if !self.comment.is_empty() {
+            remote.set_title(&self.comment);
+        }
+
+        if !self.homepage.is_empty() {
+            remote.set_title(&self.homepage);
+        }
+
+        if !self.icon.is_empty() {
+            remote.set_title(&self.icon);
+        }
+
+        Ok(remote)
     }
 }

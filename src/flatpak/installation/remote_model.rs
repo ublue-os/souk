@@ -17,19 +17,21 @@
 use std::cell::RefCell;
 use std::convert::TryInto;
 
+use flatpak::Remote;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
 use crate::flatpak::installation::SkRemote;
+use crate::worker::RemoteInfo;
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
     pub struct SkRemoteModel {
-        pub map: RefCell<IndexMap<String, SkRemote>>,
+        pub map: RefCell<IndexMap<RemoteInfo, SkRemote>>,
     }
 
     #[glib::object_subclass]
@@ -68,31 +70,59 @@ impl SkRemoteModel {
         glib::Object::new(&[]).unwrap()
     }
 
-    pub fn add_remote(&self, remote: &SkRemote) {
+    pub fn contains_remote(&self, remote: &SkRemote) -> bool {
+        self.snapshot().iter().any(|r| {
+            let r: &SkRemote = r.downcast_ref().unwrap();
+            r.name() == remote.name() || r.repository_url() == remote.repository_url()
+        })
+    }
+
+    pub(super) fn set_remotes(&self, remotes: Vec<Remote>) {
+        let imp = self.imp();
+
+        let mut added_remotes = Vec::new();
+        for remote in remotes {
+            let info = RemoteInfo::from(&remote);
+            self.add_info(&info);
+            added_remotes.push(info);
+        }
+
+        let map = imp.map.borrow().clone();
+        for info in map.keys() {
+            if !added_remotes.contains(info) {
+                self.remove_info(info);
+            }
+        }
+    }
+
+    fn add_info(&self, info: &RemoteInfo) {
         let pos = {
             let mut map = self.imp().map.borrow_mut();
-            if map.contains_key(&remote.id()) {
-                warn!("Remote {:?} already exists in model", remote.id());
+            if map.contains_key(info) {
                 return;
             }
 
-            map.insert(remote.id(), remote.clone());
+            let sk_remote = SkRemote::new(info);
+            map.insert(info.clone(), sk_remote);
             (map.len() - 1) as u32
         };
 
         self.items_changed(pos, 0, 1);
     }
 
-    pub fn remove_remote(&self, remote: &SkRemote) {
+    fn remove_info(&self, info: &RemoteInfo) {
         let pos = {
             let mut map = self.imp().map.borrow_mut();
-            match map.get_index_of(&remote.id()) {
+            match map.get_index_of(info) {
                 Some(pos) => {
-                    map.remove(&remote.id());
+                    map.remove(info);
                     Some(pos)
                 }
                 None => {
-                    warn!("Remote {:?} not found in model", remote.id());
+                    warn!(
+                        "Unable to remove remote {:?}, not found in model",
+                        info.name
+                    );
                     None
                 }
             }
@@ -101,10 +131,6 @@ impl SkRemoteModel {
         if let Some(pos) = pos {
             self.items_changed(pos.try_into().unwrap(), 1, 0);
         }
-    }
-
-    pub fn remote(&self, id: &str) -> Option<SkRemote> {
-        self.imp().map.borrow().get(id).cloned()
     }
 }
 

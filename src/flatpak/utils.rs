@@ -16,6 +16,19 @@
 
 use crate::i18n::i18n;
 
+pub fn normalize_string(string: &str) -> String {
+    string
+        .chars()
+        .flat_map(|x| {
+            if x.is_alphanumeric() {
+                x.to_lowercase()
+            } else {
+                '-'.to_lowercase()
+            }
+        })
+        .collect()
+}
+
 pub fn runtime_ref_to_display_name(ref_: &str) -> String {
     if ref_.ends_with(".Platform") {
         return i18n("System Libraries and Services");

@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use zbus::zvariant::Optional;
-
 use crate::config;
 use crate::worker::{
     DryRunResult, InstallationInfo, TransactionError as WTransactionError,
@@ -30,34 +28,34 @@ trait Worker {
         &self,
         ref_: &str,
         remote: &str,
-        installation_id: &str,
+        installation_info: InstallationInfo,
         no_update: bool,
     ) -> zbus::Result<String>;
 
     fn install_flatpak_bundle(
         &self,
         path: &str,
-        installation_id: &str,
+        installation_info: InstallationInfo,
         no_update: bool,
     ) -> zbus::Result<String>;
 
     fn install_flatpak_bundle_dry_run(
         &self,
         path: &str,
-        installation_id: &str,
+        installation_info: InstallationInfo,
     ) -> Result<DryRunResult, WorkerError>;
 
     fn install_flatpak_ref(
         &self,
         path: &str,
-        installation_id: &str,
+        installation_info: InstallationInfo,
         no_update: bool,
     ) -> zbus::Result<String>;
 
     fn install_flatpak_ref_dry_run(
         &self,
         path: &str,
-        installation_id: &str,
+        installation_info: InstallationInfo,
     ) -> Result<DryRunResult, WorkerError>;
 
     fn cancel_transaction(&self, uuid: &str) -> zbus::Result<()>;
@@ -67,26 +65,6 @@ trait Worker {
 
     #[dbus_proxy(signal)]
     fn transaction_error(&self, error: WTransactionError) -> zbus::Result<()>;
-
-    // Installation
-
-    fn launch_app(
-        &self,
-        installation_id: &str,
-        ref_: &str,
-        commit: &str,
-    ) -> Result<(), WorkerError>;
-
-    fn installations(&self) -> Result<Vec<InstallationInfo>, WorkerError>;
-
-    fn installation_by_id(
-        &self,
-        installation_id: &str,
-    ) -> Result<Optional<InstallationInfo>, WorkerError>;
-
-    fn preferred_installation(&self) -> Result<InstallationInfo, WorkerError>;
-
-    fn add_remote(&self, installation_id: &str, repo_path: &str) -> Result<(), WorkerError>;
 }
 
 impl Default for WorkerProxy<'static> {

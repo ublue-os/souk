@@ -216,11 +216,14 @@ impl SkApplication {
 
         // app.refresh-installations
         action!(self, "refresh-installations", move |_, _| {
-            let fut = async move {
-                let worker = SkApplication::default().worker();
-                worker.refresh_installations().await;
-            };
-            spawn!(fut);
+            let installations = SkApplication::default().worker().installations();
+            if let Err(err) = installations.refresh() {
+                error!(
+                    "Unable to refresh Flatpak installations: {}",
+                    err.to_string()
+                );
+                // TODO: Expose this in UI
+            }
         });
         self.set_accels_for_action("app.refresh-installations", &["<primary>r"]);
     }

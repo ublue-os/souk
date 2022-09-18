@@ -37,6 +37,7 @@ use crate::i18n::{i18n, i18n_f};
 use crate::ui::badge::{SkBadge, SkBadgeType};
 use crate::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::ui::installation::SkInstallationListBox;
+use crate::ui::utils;
 use crate::worker::WorkerError;
 
 mod imp {
@@ -57,7 +58,7 @@ mod imp {
         #[template_child]
         pub package_box: TemplateChild<gtk::Box>,
         #[template_child]
-        pub remote_box: TemplateChild<gtk::Box>,
+        pub remotes_box: TemplateChild<gtk::Box>,
         #[template_child]
         pub details_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
@@ -78,10 +79,6 @@ mod imp {
         pub no_update_source_row: TemplateChild<adw::ActionRow>,
         #[template_child]
         pub replacing_remote_row: TemplateChild<adw::ActionRow>,
-        #[template_child]
-        pub remote_group: TemplateChild<adw::PreferencesGroup>,
-        #[template_child]
-        pub remote_row: TemplateChild<SkRemoteRow>,
 
         #[template_child]
         pub context_box: TemplateChild<SkContextBox>,
@@ -190,8 +187,9 @@ mod imp {
             self.parent_constructed(obj);
 
             let worker = SkApplication::default().worker();
-            let preferred = worker.preferred_installation();
-            self.installation_listbox.set_installation(&preferred);
+            let preferred = worker.installations().preferred();
+            self.installation_listbox
+                .set_selected_installation(&preferred);
 
             obj.setup_widgets();
             obj.setup_actions();
@@ -288,11 +286,10 @@ impl SkSideloadWindow {
         imp.sideload_stack.set_visible_child_name("loading");
 
         let installation = imp.installation_listbox.selected_installation().unwrap();
-        let installation_id = installation.id();
         let file = self.file();
 
         let worker = SkApplication::default().worker();
-        let sideloadable = worker.load_sideloadable(&file, &installation_id).await;
+        let sideloadable = worker.load_sideloadable(&file, &installation).await;
 
         match sideloadable {
             Ok(sideloadable) => {
@@ -409,6 +406,7 @@ impl SkSideloadWindow {
 
             // Badges
             // TODO: Use real data
+            utils::clear_box(&imp.package_badges_box);
             let repo_badge = SkBadge::new(SkBadgeType::Repository, "flathub", true);
             imp.package_badges_box.append(&repo_badge);
 
@@ -513,16 +511,29 @@ impl SkSideloadWindow {
             }
         }
 
-        // Remote / Repository
-        let remote = sideloadable.remote();
-        imp.remote_box.set_visible(remote.is_some());
-        if let Some(remote) = sideloadable.remote() {
-            let msg = if sideloadable.package().is_none() {
-                let name = if let Some(title) = remote.title() {
-                    title
+        // Remotes / Repositories
+        imp.remotes_box
+            .set_visible(!sideloadable.remotes().is_empty());
+        utils::clear_box(&imp.remotes_box);
+
+        if !sideloadable.remotes().is_empty() {
+            let group = adw::PreferencesGroup::new();
+            imp.remotes_box.append(&group);
+
+            for remote in sideloadable.remotes() {
+                let remote_row = SkRemoteRow::new(&remote);
+                group.add(&remote_row);
+            }
+
+            if sideloadable.package().is_none() {
+                let remotes = sideloadable.remotes();
+                let remote = remotes.first().unwrap();
+                let name = if !remote.title().is_empty() {
+                    remote.title()
                 } else {
                     i18n("Software Source")
                 };
+
                 // The other widgets are bound to the package name / icon
                 imp.package_name_label.set_text(&name);
                 imp.package_icon_image.set_icon_name(Some("gear-symbolic"));
@@ -538,14 +549,15 @@ impl SkSideloadWindow {
                     .set_description(Some(&repo_already_done_descr));
 
                 self.set_default_height(430);
-                i18n("New applications can be obtained from this source. Only proceed if you trust this source.")
+                let msg = i18n("New applications can be obtained from this source. Only proceed if you trust this source.");
+                group.set_description(Some(&msg));
             } else {
-                i18n("This package adds a new software source. New applications can be obtained from it. Only proceed with the installation if you trust this source.")
+                let msg = i18n("This package adds a new software source. New applications can be obtained from it. Only proceed with the installation if you trust this source.");
+                group.set_description(Some(&msg));
             };
-            imp.remote_group.set_description(Some(&msg));
-            imp.remote_row.set_remote(&remote);
         }
 
+        // Nothing changes
         if sideloadable.no_changes() {
             imp.sideload_leaflet.set_visible_child_name("already-done");
         } else {
@@ -670,12 +682,13 @@ impl SkSideloadWindow {
     #[template_callback]
     fn launch_app_clicked(&self) {
         let fut = clone!(@weak self as this => async move{
-            let worker = SkApplication::default().worker();
             let sideloadable = this.sideloadable().unwrap();
-            let package = sideloadable.package().unwrap();
-            let installation_id = sideloadable.installation_id();
+            let installation = sideloadable.installation();
 
-            let _ = worker.launch_app(&installation_id, &package.ref_(), &package.commit()).await;
+            let package = sideloadable.package().unwrap();
+            let ref_ = package.ref_().format_ref().unwrap();
+            installation.launch_app(&ref_);
+
             this.close();
         });
         spawn!(fut);

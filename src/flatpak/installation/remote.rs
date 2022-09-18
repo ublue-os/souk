@@ -27,16 +27,16 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkRemote {
-        pub id: OnceCell<String>,
-        pub installation_id: OnceCell<String>,
+        pub info: OnceCell<RemoteInfo>,
+
         pub name: OnceCell<String>,
         pub repository_url: OnceCell<String>,
 
-        pub title: OnceCell<Option<String>>,
-        pub description: OnceCell<Option<String>>,
-        pub comment: OnceCell<Option<String>>,
-        pub homepage: OnceCell<Option<String>>,
-        pub icon: OnceCell<Option<String>>,
+        pub title: OnceCell<String>,
+        pub description: OnceCell<String>,
+        pub comment: OnceCell<String>,
+        pub homepage: OnceCell<String>,
+        pub icon: OnceCell<String>,
     }
 
     #[glib::object_subclass]
@@ -50,8 +50,6 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
-                    ParamSpecString::new("id", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("installation-id", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("repository-url", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("title", "", "", None, ParamFlags::READABLE),
@@ -66,8 +64,6 @@ mod imp {
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "id" => obj.id().to_value(),
-                "installation-id" => obj.installation_id().to_value(),
                 "name" => obj.name().to_value(),
                 "repository-url" => obj.repository_url().to_value(),
                 "title" => obj.title().to_value(),
@@ -90,30 +86,18 @@ impl SkRemote {
         let remote: Self = glib::Object::new(&[]).unwrap();
         let imp = remote.imp();
 
-        imp.id.set(info.id.clone()).unwrap();
-        imp.installation_id
-            .set(info.installation_id.clone())
-            .unwrap();
+        imp.info.set(info.clone()).unwrap();
+
         imp.name.set(info.name.clone()).unwrap();
         imp.repository_url.set(info.repository_url.clone()).unwrap();
 
-        imp.title.set(info.title.clone().into()).unwrap();
-        imp.description
-            .set(info.description.clone().into())
-            .unwrap();
-        imp.comment.set(info.comment.clone().into()).unwrap();
-        imp.homepage.set(info.homepage.clone().into()).unwrap();
-        imp.icon.set(info.icon.clone().into()).unwrap();
+        imp.title.set(info.title.clone()).unwrap();
+        imp.description.set(info.description.clone()).unwrap();
+        imp.comment.set(info.comment.clone()).unwrap();
+        imp.homepage.set(info.homepage.clone()).unwrap();
+        imp.icon.set(info.icon.clone()).unwrap();
 
         remote
-    }
-
-    pub fn id(&self) -> String {
-        self.imp().id.get().unwrap().to_string()
-    }
-
-    pub fn installation_id(&self) -> String {
-        self.imp().installation_id.get().unwrap().to_string()
     }
 
     pub fn name(&self) -> String {
@@ -124,23 +108,27 @@ impl SkRemote {
         self.imp().repository_url.get().unwrap().to_string()
     }
 
-    pub fn title(&self) -> Option<String> {
+    pub fn title(&self) -> String {
         self.imp().title.get().unwrap().clone()
     }
 
-    pub fn description(&self) -> Option<String> {
+    pub fn description(&self) -> String {
         self.imp().description.get().unwrap().clone()
     }
 
-    pub fn comment(&self) -> Option<String> {
+    pub fn comment(&self) -> String {
         self.imp().comment.get().unwrap().clone()
     }
 
-    pub fn homepage(&self) -> Option<String> {
+    pub fn homepage(&self) -> String {
         self.imp().homepage.get().unwrap().clone()
     }
 
-    pub fn icon(&self) -> Option<String> {
+    pub fn icon(&self) -> String {
         self.imp().icon.get().unwrap().clone()
+    }
+
+    pub fn info(&self) -> RemoteInfo {
+        self.imp().info.get().unwrap().clone()
     }
 }

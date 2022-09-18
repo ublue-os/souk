@@ -17,20 +17,28 @@
 use async_std::channel::Sender;
 
 use crate::worker::transaction::DryRunResult;
-use crate::worker::WorkerError;
+use crate::worker::{InstallationInfo, WorkerError};
 
 #[derive(Debug, Clone)]
 pub enum TransactionCommand {
     // uuid, ref_, remote, installation_id, no_update
-    InstallFlatpak(String, String, String, String, bool),
+    InstallFlatpak(String, String, String, InstallationInfo, bool),
     // uuid, path, installation_id, no_update
-    InstallFlatpakBundle(String, String, String, bool),
+    InstallFlatpakBundle(String, String, InstallationInfo, bool),
     // path, installation_id, sender
-    InstallFlatpakBundleDryRun(String, String, Sender<Result<DryRunResult, WorkerError>>),
+    InstallFlatpakBundleDryRun(
+        String,
+        InstallationInfo,
+        Sender<Result<DryRunResult, WorkerError>>,
+    ),
     // uuid, path, installation_id, no_update
-    InstallFlatpakRef(String, String, String, bool),
+    InstallFlatpakRef(String, String, InstallationInfo, bool),
     // path, installation_id, sender
-    InstallFlatpakRefDryRun(String, String, Sender<Result<DryRunResult, WorkerError>>),
+    InstallFlatpakRefDryRun(
+        String,
+        InstallationInfo,
+        Sender<Result<DryRunResult, WorkerError>>,
+    ),
     // uuid,
     CancelTransaction(String),
 }

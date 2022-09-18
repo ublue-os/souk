@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::RefCell;
-
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
@@ -23,6 +21,7 @@ use gtk::gio::File;
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::Lazy;
+use once_cell::unsync::OnceCell;
 
 use crate::flatpak::installation::SkRemote;
 use crate::i18n::i18n;
@@ -38,7 +37,7 @@ mod imp {
         #[template_child]
         pub external_link_image: TemplateChild<gtk::Image>,
 
-        pub remote: RefCell<Option<SkRemote>>,
+        pub remote: OnceCell<SkRemote>,
     }
 
     #[glib::object_subclass]
@@ -64,7 +63,7 @@ mod imp {
                     "",
                     "",
                     SkRemote::static_type(),
-                    ParamFlags::READABLE,
+                    ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                 )]
             });
             PROPERTIES.as_ref()
@@ -79,15 +78,63 @@ mod imp {
 
         fn set_property(
             &self,
-            obj: &Self::Type,
+            _obj: &Self::Type,
             _id: usize,
             value: &glib::Value,
             pspec: &ParamSpec,
         ) {
             match pspec.name() {
-                "remote" => obj.set_remote(value.get().unwrap()),
+                "remote" => self.remote.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
             }
+        }
+
+        fn constructed(&self, obj: &Self::Type) {
+            let remote = obj.remote();
+
+            // Icon
+            if !remote.icon().is_empty() {
+                let file = File::for_uri(&remote.icon());
+                if let Ok(texture) = gtk::gdk::Texture::from_file(&file) {
+                    self.icon_image.set_paintable(Some(&texture));
+                }
+            } else {
+                let icon_name = "package-x-generic-symbolic";
+                self.icon_image.set_icon_name(Some(icon_name));
+            }
+
+            // Title
+            if !remote.title().is_empty() {
+                obj.set_title(&remote.title());
+            } else {
+                obj.set_title(&i18n("Unknown Repository"));
+            }
+
+            // Subtitle
+            let mut subtitle = remote.description();
+            if subtitle != remote.comment() && !remote.comment().is_empty() {
+                subtitle = format!("{} {}", subtitle, remote.comment());
+            }
+            if subtitle.is_empty() {
+                subtitle = format!("<small>{}</small>", remote.repository_url());
+            } else {
+                subtitle = format!(
+                    "{}\n<small><span baseline_shift=\"-16pt\">{}</span></small>",
+                    subtitle,
+                    remote.repository_url()
+                );
+            }
+            obj.set_subtitle(&subtitle);
+
+            // Homepage
+            let has_homepage = !remote.homepage().is_empty();
+            self.external_link_image.set_visible(has_homepage);
+            obj.set_activatable(has_homepage);
+
+            obj.connect_activated(clone!(@weak remote => move|s|{
+                let window: gtk::Window = s.root().unwrap().downcast().unwrap();
+                gtk::show_uri(Some(&window), &remote.homepage(), gtk::gdk::CURRENT_TIME);
+            }));
         }
     }
 
@@ -108,66 +155,11 @@ glib::wrapper! {
 }
 
 impl SkRemoteRow {
-    pub fn remote(&self) -> Option<SkRemote> {
-        self.imp().remote.borrow().clone()
+    pub fn new(remote: &SkRemote) -> Self {
+        glib::Object::new(&[("remote", &remote)]).unwrap()
     }
 
-    pub fn set_remote(&self, remote: &SkRemote) {
-        *self.imp().remote.borrow_mut() = Some(remote.clone());
-
-        self.update_widgets();
-        self.notify("remote");
-    }
-
-    fn update_widgets(&self) {
-        let imp = self.imp();
-        let remote = self.remote().unwrap();
-
-        // Icon
-        if let Some(value) = remote.icon() {
-            let file = File::for_uri(&value);
-            if let Ok(texture) = gtk::gdk::Texture::from_file(&file) {
-                imp.icon_image.set_paintable(Some(&texture));
-            }
-        } else {
-            imp.icon_image
-                .set_icon_name(Some("package-x-generic-symbolic"));
-        }
-
-        // Title
-        if let Some(value) = remote.title() {
-            self.set_title(&value);
-        } else {
-            self.set_title(&i18n("Unknown SkRemote Name"));
-        }
-
-        // Subtitle
-        let mut subtitle = if let Some(value) = remote.description() {
-            value
-        } else {
-            "".to_string()
-        };
-        if let Some(value) = remote.comment() {
-            if subtitle != value && !value.is_empty() {
-                subtitle = format!("{} {}", subtitle, value);
-            }
-        }
-        if subtitle.is_empty() {
-            subtitle = format!("<small>{}</small>", remote.repository_url());
-        } else {
-            subtitle = format!("{}\n\n<small>{}</small>", subtitle, remote.repository_url());
-        }
-        self.set_subtitle(&subtitle);
-
-        // Homepage
-        imp.external_link_image
-            .set_visible(remote.homepage().is_some());
-
-        self.connect_activated(clone!(@weak remote => move|s|{
-            if let Some(homepage) = remote.homepage(){
-                let window: gtk::Window = s.root().unwrap().downcast().unwrap();
-                gtk::show_uri(Some(&window), &homepage, gtk::gdk::CURRENT_TIME);
-            }
-        }));
+    pub fn remote(&self) -> SkRemote {
+        self.imp().remote.get().unwrap().clone()
     }
 }

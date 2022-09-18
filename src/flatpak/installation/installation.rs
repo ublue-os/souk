@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use gio::File;
+use async_std::process::Command;
+use flatpak::prelude::*;
+use flatpak::{Installation, Remote};
+use gio::{Cancellable, File};
 use glib::{ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject, ParamSpecString, ToValue};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -22,8 +25,9 @@ use gtk::{gio, glib};
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
+use crate::error::Error;
 use crate::flatpak::installation::{SkRemote, SkRemoteModel};
-use crate::flatpak::package::{SkPackage, SkPackageModel};
+use crate::flatpak::package::SkPackageModel;
 use crate::i18n::i18n;
 use crate::worker::InstallationInfo;
 
@@ -32,13 +36,15 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkInstallation {
-        pub id: OnceCell<String>,
+        pub info: OnceCell<InstallationInfo>,
+
         pub name: OnceCell<String>,
         pub title: OnceCell<String>,
         pub description: OnceCell<String>,
         pub icon_name: OnceCell<String>,
         pub is_user: OnceCell<bool>,
         pub path: OnceCell<File>,
+
         pub remotes: SkRemoteModel,
         pub packages: SkPackageModel,
     }
@@ -54,9 +60,8 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
-                    ParamSpecString::new("id", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("display-name", "", "", None, ParamFlags::READABLE),
+                    ParamSpecString::new("title", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("description", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("icon-name", "", "", None, ParamFlags::READABLE),
                     ParamSpecBoolean::new("is-user", "", "", false, ParamFlags::READABLE),
@@ -82,9 +87,8 @@ mod imp {
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "id" => obj.id().to_value(),
                 "name" => obj.name().to_value(),
-                "display-name" => obj.title().to_value(),
+                "title" => obj.title().to_value(),
                 "description" => obj.description().to_value(),
                 "icon-name" => obj.icon_name().to_value(),
                 "is-user" => obj.is_user().to_value(),
@@ -106,24 +110,15 @@ impl SkInstallation {
         let installation: Self = glib::Object::new(&[]).unwrap();
         let imp = installation.imp();
 
-        imp.id.set(info.id.clone()).unwrap();
+        imp.info.set(info.clone()).unwrap();
+
         imp.name.set(info.name.clone()).unwrap();
         imp.is_user.set(info.is_user).unwrap();
         let path = File::for_parse_name(&info.path);
         imp.path.set(path).unwrap();
 
-        for remote_info in &info.remotes {
-            let remote = SkRemote::new(remote_info);
-            imp.remotes.add_remote(&remote);
-        }
-
-        for package_info in &info.packages {
-            let package = SkPackage::new(package_info);
-            imp.packages.add_package(&package);
-        }
-
-        // Set a fancy user visible title
-        // We overwrite the default Flatpak ones here using more user friendly terms.
+        // Set a more user friendly installation title, a description and an icon which
+        // can be used in UIs.
         if info.name == "default" && !info.is_user {
             // Default system installation
             let title = i18n("System");
@@ -143,8 +138,13 @@ impl SkInstallation {
 
             imp.icon_name.set("person-symbolic".into()).unwrap();
         } else {
-            // Custom installations
-            imp.title.set(info.title.clone()).unwrap();
+            let title = if let Some(string) = Installation::from(info).display_name() {
+                string.to_string()
+            } else {
+                i18n("Flatpak Installation")
+            };
+
+            imp.title.set(title).unwrap();
             if info.is_user {
                 imp.description.set(i18n("User Installation")).unwrap();
             } else {
@@ -154,11 +154,17 @@ impl SkInstallation {
             imp.icon_name.set("drive-harddisk-symbolic".into()).unwrap();
         }
 
-        installation
-    }
+        // for remote_info in &info.remotes {
+        // let remote = SkRemote::new(remote_info);
+        // imp.remotes.add_remote(&remote);
+        // }
+        //
+        // for package_info in &info.packages {
+        // let package = SkPackage::new(package_info);
+        // imp.packages.add_package(&package);
+        // }
 
-    pub fn id(&self) -> String {
-        self.imp().id.get().unwrap().to_string()
+        installation
     }
 
     pub fn name(&self) -> String {
@@ -191,5 +197,58 @@ impl SkInstallation {
 
     pub fn packages(&self) -> SkPackageModel {
         self.imp().packages.clone()
+    }
+
+    pub fn info(&self) -> InstallationInfo {
+        self.imp().info.get().unwrap().clone()
+    }
+
+    pub fn launch_app(&self, ref_: &str) {
+        debug!("Launch app from installation \"{}\": {}", self.name(), ref_);
+
+        let installation = format!("--installation={}", self.name());
+        if let Err(err) = Command::new("flatpak-spawn")
+            .arg("--host")
+            .arg("flatpak")
+            .arg("run")
+            .arg(installation)
+            .arg(ref_)
+            .spawn()
+        {
+            error!("Unable to launch app: {}", err.to_string());
+        }
+    }
+
+    pub fn add_remote(&self, remote: &SkRemote) -> Result<(), Error> {
+        debug!(
+            "Adding remote \"{}\" to installation \"{}\"",
+            remote.name(),
+            self.name()
+        );
+
+        let flatpak_remote: Remote = remote.to_owned().info().try_into()?;
+
+        let flatpak_installation = Installation::from(&self.info());
+        flatpak_installation.add_remote(&flatpak_remote, false, Cancellable::NONE)?;
+
+        self.refresh()?;
+
+        Ok(())
+    }
+
+    pub fn refresh(&self) -> Result<(), Error> {
+        debug!(
+            "Refresh Flatpak \"{}\" ({}) installation...",
+            self.title(),
+            self.name()
+        );
+
+        let f_inst = Installation::from(&self.info());
+        let remotes = f_inst.list_remotes(Cancellable::NONE)?;
+        self.remotes().set_remotes(remotes);
+
+        // TODO: impl packages
+
+        Ok(())
     }
 }

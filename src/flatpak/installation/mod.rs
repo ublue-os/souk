@@ -16,9 +16,11 @@
 
 #[allow(clippy::module_inception)]
 mod installation;
+mod installation_model;
 mod remote;
 mod remote_model;
 
 pub use installation::SkInstallation;
+pub use installation_model::SkInstallationModel;
 pub use remote::SkRemote;
 pub use remote_model::SkRemoteModel;

@@ -26,7 +26,6 @@ mod dbus_server;
 mod process;
 mod worker_error;
 
-use installation::InstallationManager;
 pub use installation::{InstallationInfo, RemoteInfo};
 pub use package::PackageInfo;
 pub use process::Process;
@@ -39,20 +38,14 @@ pub async fn spawn_dbus_server() {
     use async_std::channel::unbounded;
     debug!("Start souk-worker dbus server...");
 
-    let installation_manager = InstallationManager::new();
-
     // The Flatpak transaction manager is multithreaded, because Flatpak
     // transactions are blocking. Therefore it uses message passing for inter
     // thread communication
     let (command_sender, command_receiver) = unbounded();
     let (message_sender, message_receiver) = unbounded();
-    TransactionManager::start(
-        installation_manager.clone(),
-        message_sender,
-        command_receiver,
-    );
+    TransactionManager::start(message_sender, command_receiver);
 
-    dbus_server::start(installation_manager, command_sender, message_receiver)
+    dbus_server::start(command_sender, message_receiver)
         .await
         .unwrap();
 }

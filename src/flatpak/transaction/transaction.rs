@@ -43,7 +43,6 @@ mod imp {
 
         /// Name of Flatpak remote or bundle filename
         pub origin: OnceCell<String>,
-        pub installation: OnceCell<String>,
 
         /// Cumulative progress of the whole transaction
         pub progress: Cell<f32>,
@@ -101,13 +100,6 @@ mod imp {
                         None,
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
-                    ParamSpecString::new(
-                        "installation",
-                        "",
-                        "",
-                        None,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
                     ParamSpecFloat::new("progress", "", "", 0.0, 1.0, 0.0, ParamFlags::READABLE),
                     ParamSpecObject::new(
                         "current-operation-ref",
@@ -156,12 +148,12 @@ mod imp {
         }
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+            // TODO: Should we re-add the installation info?
             match pspec.name() {
                 "uuid" => obj.uuid().to_value(),
                 "ref" => obj.ref_().to_value(),
                 "type" => obj.type_().to_value(),
                 "origin" => obj.origin().to_value(),
-                "installation" => obj.installation().to_value(),
                 "progress" => obj.progress().to_value(),
                 "current-operation-ref" => obj.current_operation_ref().to_value(),
                 "current-operation-type" => obj.current_operation_type().to_value(),
@@ -184,7 +176,6 @@ mod imp {
                 "ref" => self.ref_.set(value.get().unwrap()).unwrap(),
                 "type" => self.type_.set(value.get().unwrap()).unwrap(),
                 "origin" => self.origin.set(value.get().unwrap()).unwrap(),
-                "installation" => self.installation.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
             }
         }
@@ -212,19 +203,12 @@ glib::wrapper! {
 }
 
 impl SkTransaction {
-    pub fn new(
-        uuid: &str,
-        ref_: &Ref,
-        type_: &SkTransactionType,
-        origin: &str,
-        installation: &str,
-    ) -> Self {
+    pub fn new(uuid: &str, ref_: &Ref, type_: &SkTransactionType, origin: &str) -> Self {
         glib::Object::new(&[
             ("uuid", &uuid),
             ("ref", &ref_),
             ("type", &type_),
             ("origin", &origin),
-            ("installation", &installation),
         ])
         .unwrap()
     }
@@ -243,10 +227,6 @@ impl SkTransaction {
 
     pub fn origin(&self) -> String {
         self.imp().origin.get().unwrap().to_string()
-    }
-
-    pub fn installation(&self) -> String {
-        self.imp().installation.get().unwrap().to_string()
     }
 
     pub fn progress(&self) -> f32 {
