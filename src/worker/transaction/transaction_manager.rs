@@ -38,7 +38,7 @@ use isahc::ReadResponseExt;
 use super::{
     DryRunResult, DryRunRuntime, TransactionCommand, TransactionMessage, TransactionProgress,
 };
-use crate::worker::installation::{InstallationInfo, RemoteInfo};
+use crate::shared::{InstallationInfo, RemoteInfo};
 use crate::worker::{appstream, WorkerError};
 
 #[derive(Debug, Clone, Downgrade)]

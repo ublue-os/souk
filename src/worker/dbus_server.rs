@@ -20,7 +20,7 @@ use uuid::Uuid;
 use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
 
 use crate::config;
-use crate::worker::installation::InstallationInfo;
+use crate::shared::InstallationInfo;
 use crate::worker::transaction::{
     DryRunResult, TransactionCommand, TransactionError, TransactionMessage, TransactionProgress,
 };

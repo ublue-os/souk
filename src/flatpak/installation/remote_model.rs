@@ -24,7 +24,7 @@ use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
 use crate::flatpak::installation::SkRemote;
-use crate::worker::RemoteInfo;
+use crate::shared::RemoteInfo;
 
 mod imp {
     use super::*;

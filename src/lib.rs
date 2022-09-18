@@ -31,6 +31,7 @@ extern crate lazy_static;
 /// types so that they can easily consumed by the user interface (eg. gobjects
 /// with properties)
 pub mod flatpak;
+pub mod shared;
 /// The user interface
 pub mod ui;
 /// Components of the `souk-worker` binary, which does the actual Flatpak and

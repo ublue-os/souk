@@ -16,8 +16,9 @@
 
 use async_std::channel::Sender;
 
+use crate::shared::InstallationInfo;
 use crate::worker::transaction::DryRunResult;
-use crate::worker::{InstallationInfo, WorkerError};
+use crate::worker::WorkerError;
 
 #[derive(Debug, Clone)]
 pub enum TransactionCommand {

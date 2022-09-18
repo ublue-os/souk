@@ -17,8 +17,6 @@
 /// Parsing appstream metadata, creation of xmlb exports
 mod appstream;
 /// Handling of Flatpak installations with its remotes
-mod installation;
-mod package;
 /// Execution of Flatpak (dry-run) transactions, and state tracking
 mod transaction;
 
@@ -26,8 +24,6 @@ mod dbus_server;
 mod process;
 mod worker_error;
 
-pub use installation::{InstallationInfo, RemoteInfo};
-pub use package::PackageInfo;
 pub use process::Process;
 use transaction::TransactionManager;
 pub use transaction::{DryRunResult, TransactionError, TransactionProgress};

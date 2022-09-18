@@ -29,7 +29,7 @@ use crate::error::Error;
 use crate::flatpak::installation::{SkRemote, SkRemoteModel};
 use crate::flatpak::package::SkPackageModel;
 use crate::i18n::i18n;
-use crate::worker::InstallationInfo;
+use crate::shared::InstallationInfo;
 
 mod imp {
     use super::*;
@@ -153,16 +153,6 @@ impl SkInstallation {
 
             imp.icon_name.set("drive-harddisk-symbolic".into()).unwrap();
         }
-
-        // for remote_info in &info.remotes {
-        // let remote = SkRemote::new(remote_info);
-        // imp.remotes.add_remote(&remote);
-        // }
-        //
-        // for package_info in &info.packages {
-        // let package = SkPackage::new(package_info);
-        // imp.packages.add_package(&package);
-        // }
 
         installation
     }

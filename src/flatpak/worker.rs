@@ -31,7 +31,8 @@ use crate::flatpak::installation::{SkInstallation, SkInstallationModel, SkRemote
 use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::flatpak::transaction::{SkTransaction, SkTransactionModel, SkTransactionType};
 use crate::flatpak::utils;
-use crate::worker::{Process, RemoteInfo};
+use crate::shared::RemoteInfo;
+use crate::worker::Process;
 
 mod imp {
     use super::*;

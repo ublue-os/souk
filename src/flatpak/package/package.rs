@@ -24,7 +24,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use super::SkPackageType;
-use crate::worker::PackageInfo;
+use crate::shared::PackageInfo;
 
 mod imp {
     use super::*;

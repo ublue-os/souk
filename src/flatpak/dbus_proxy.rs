@@ -15,8 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::config;
+use crate::shared::InstallationInfo;
 use crate::worker::{
-    DryRunResult, InstallationInfo, TransactionError as WTransactionError,
+    DryRunResult, TransactionError as WTransactionError,
     TransactionProgress as WTransactionProgress, WorkerError,
 };
 

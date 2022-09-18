@@ -20,7 +20,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::worker::RemoteInfo;
+use crate::shared::RemoteInfo;
 
 mod imp {
     use super::*;
