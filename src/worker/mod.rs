@@ -21,10 +21,8 @@ mod appstream;
 mod transaction;
 
 mod dbus_server;
-mod process;
 mod worker_error;
 
-pub use process::Process;
 use transaction::TransactionManager;
 pub use transaction::{DryRunResult, TransactionError, TransactionProgress};
 pub use worker_error::WorkerError;

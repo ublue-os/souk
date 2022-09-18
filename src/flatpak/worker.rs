@@ -32,7 +32,6 @@ use crate::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::flatpak::transaction::{SkTransaction, SkTransactionModel, SkTransactionType};
 use crate::flatpak::utils;
 use crate::shared::RemoteInfo;
-use crate::worker::Process;
 
 mod imp {
     use super::*;
@@ -43,7 +42,6 @@ mod imp {
         pub installations: SkInstallationModel,
 
         pub proxy: WorkerProxy<'static>,
-        pub process: Process,
     }
 
     #[glib::object_subclass]
@@ -118,24 +116,6 @@ impl SkWorker {
     /// Returns all available Flatpak installations
     pub fn installations(&self) -> SkInstallationModel {
         self.imp().installations.clone()
-    }
-
-    /// Starts the `souk-worker` process
-    /// TODO: Automatically start / stop the worker process on demand
-    pub async fn start_process(&self) {
-        let imp = self.imp();
-
-        // Start `souk-worker` process
-        imp.process.spawn();
-
-        // Wait process is ready
-        // TODO: Don't sleep here
-        std::thread::sleep(std::time::Duration::from_millis(500));
-    }
-
-    /// Stops the `souk-worker` process
-    pub fn stop_process(&self) {
-        self.imp().process.kill();
     }
 
     /// Install new Flatpak by ref name

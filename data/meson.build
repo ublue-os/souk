@@ -78,14 +78,25 @@ if glib_compile_schemas.found()
   )
 endif
 
-# DBus service
+# DBus services
 conf = configuration_data()
 conf.set('APP_ID', app_id)
-conf.set('PKGNAME', meson.project_name())
+conf.set('BINARY', meson.project_name())
 conf.set('BINDIR', bindir)
 configure_file(
   input: '@0@.service.in'.format(base_id),
   output: '@0@.service'.format(app_id),
+  configuration: conf,
+  install_dir: join_paths(datadir,'dbus-1', 'services')
+)
+
+conf = configuration_data()
+conf.set('APP_ID', '@0@.Worker'.format(app_id))
+conf.set('BINARY', '@0@-worker'.format(meson.project_name()))
+conf.set('BINDIR', bindir)
+configure_file(
+  input: '@0@.Worker.service.in'.format(base_id),
+  output: '@0@.Worker.service'.format(app_id),
   configuration: conf,
   install_dir: join_paths(datadir,'dbus-1', 'services')
 )

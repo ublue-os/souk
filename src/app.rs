@@ -81,8 +81,6 @@ mod imp {
 
             // Setup `app` level GActions
             app.setup_gactions();
-
-            async_std::task::block_on(self.worker.start_process());
         }
 
         fn activate(&self, app: &Self::Type) {
@@ -125,11 +123,6 @@ mod imp {
 
                 let _ = app.create_sideload_window(file);
             }
-        }
-
-        fn shutdown(&self, app: &Self::Type) {
-            self.parent_shutdown(app);
-            self.worker.stop_process();
         }
     }
 }
