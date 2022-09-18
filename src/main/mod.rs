@@ -14,8 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod info;
+/// Consumes the data of the `souk-worker` process, and wraps them into usable
+/// types so that they can easily consumed by the user interface (eg. gobjects
+/// with properties)
+mod flatpak;
 
-#[rustfmt::skip]
-pub mod config;
-pub mod path;
+/// The user interface
+mod ui;
+
+mod error;
+mod i18n;
+
+mod app;
+pub use app::SkApplication;

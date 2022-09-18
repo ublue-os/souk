@@ -24,6 +24,7 @@ mod dbus_server;
 mod worker_error;
 
 use transaction::TransactionManager;
+// TODO: Don't expose them, or move them into `shared`
 pub use transaction::{DryRunResult, TransactionError, TransactionProgress};
 pub use worker_error::WorkerError;
 

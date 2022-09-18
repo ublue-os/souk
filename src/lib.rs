@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+//! An easy to use Flatpak frontend
+//!
+//! Souk consists of several separate binaries that communicate via DBus.
+//! The individual binaries are clearly separated into corresponding modules
+//! ([`main`] and [`worker`])
+
+// TODO: Add more detailed documentation
+
 #![doc(
     html_logo_url = "https://gitlab.gnome.org/haecker-felix/souk/-/raw/main/data/icons/hicolor/scalable/apps/de.haeckerfelix.Souk.svg",
     html_favicon_url = "https://gitlab.gnome.org/haecker-felix/souk/-/raw/main/data/icons/hicolor/symbolic/apps/de.haeckerfelix.Souk-symbolic.svg"
@@ -21,29 +29,14 @@
 
 #[macro_use]
 extern crate log;
-extern crate pretty_env_logger;
 #[macro_use]
 extern crate gtk_macros;
-#[macro_use]
-extern crate lazy_static;
 
-/// Consumes the data of the `souk-worker` process, and wraps them into usable
-/// types so that they can easily consumed by the user interface (eg. gobjects
-/// with properties)
-pub mod flatpak;
+/// Graphical user interface with relevant Flatpak components
+pub mod main;
+
+/// Components which are used / shared by all binaries
 pub mod shared;
-/// The user interface
-pub mod ui;
-/// Components of the `souk-worker` binary, which does the actual Flatpak and
-/// Appstream work / processing, and communicates via DBus with the main `souk`
-/// process.
+
+/// Performs Flatpak transactions or resource intensive activities
 pub mod worker;
-
-mod app;
-mod error;
-#[rustfmt::skip]
-pub mod config;
-pub mod i18n;
-pub mod path;
-
-pub use app::SkApplication;

@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
 use super::DryRunRuntime;
-use crate::shared::RemoteInfo;
+use crate::shared::info::RemoteInfo;
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone)]
 #[derivative(Debug)]

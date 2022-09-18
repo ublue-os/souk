@@ -19,8 +19,8 @@ use async_std::prelude::*;
 use uuid::Uuid;
 use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
 
-use crate::config;
-use crate::shared::InstallationInfo;
+use crate::shared::config;
+use crate::shared::info::InstallationInfo;
 use crate::worker::transaction::{
     DryRunResult, TransactionCommand, TransactionError, TransactionMessage, TransactionProgress,
 };

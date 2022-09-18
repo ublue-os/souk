@@ -10,7 +10,7 @@ conf.set_quoted('LOCALEDIR', localedir)
 conf.set_quoted('DATADIR', datadir)
 
 configure_file(
-    input: 'config.rs.in',
+    input: './shared/config.rs.in',
     output: 'config.rs',
     configuration: conf
 )

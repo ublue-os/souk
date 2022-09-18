@@ -16,7 +16,7 @@
 
 use async_std::channel::Sender;
 
-use crate::shared::InstallationInfo;
+use crate::shared::info::InstallationInfo;
 use crate::worker::transaction::DryRunResult;
 use crate::worker::WorkerError;
 

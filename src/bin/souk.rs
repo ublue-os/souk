@@ -16,7 +16,8 @@
 
 use gettextrs::*;
 use gtk::{gio, glib};
-use souk::{config, path, SkApplication};
+use souk::main::SkApplication;
+use souk::shared::{config, path};
 
 fn main() {
     // Initialize logger

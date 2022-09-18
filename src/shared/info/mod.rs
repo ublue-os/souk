@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod info;
+mod installation_info;
+mod package_info;
+mod remote_info;
 
-#[rustfmt::skip]
-pub mod config;
-pub mod path;
+pub use installation_info::InstallationInfo;
+pub use package_info::PackageInfo;
+pub use remote_info::RemoteInfo;

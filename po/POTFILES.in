@@ -5,19 +5,19 @@ data/gtk/sideload_window.ui
 data/gtk/help_overlay.ui
 data/gtk/window.ui
 
-src/flatpak/context/context.rs
-src/flatpak/installation/installation.rs
-src/flatpak/permissions/types/filesystem_permission.rs
-src/flatpak/permissions/types/service_permission.rs
-src/flatpak/permissions/types/subsystem_permission.rs
-src/flatpak/permissions/types/device_permission.rs
-src/flatpak/permissions/types/socket_permission.rs
-src/flatpak/permissions/permission_summary.rs
-src/flatpak/utils.rs
-src/ui/about_dialog.rs
-src/ui/sideload/remote_row.rs
-src/ui/sideload/sideload_window.rs
-src/app.rs
+src/main/flatpak/context/context.rs
+src/main/flatpak/installation/installation.rs
+src/main/flatpak/permissions/types/filesystem_permission.rs
+src/main/flatpak/permissions/types/service_permission.rs
+src/main/flatpak/permissions/types/subsystem_permission.rs
+src/main/flatpak/permissions/types/device_permission.rs
+src/main/flatpak/permissions/types/socket_permission.rs
+src/main/flatpak/permissions/permission_summary.rs
+src/main/flatpak/utils.rs
+src/main/ui/about_dialog.rs
+src/main/ui/sideload/remote_row.rs
+src/main/ui/sideload/sideload_window.rs
+src/main/app.rs
 
 data/de.haeckerfelix.Souk.metainfo.xml.in.in
 data/de.haeckerfelix.Souk.desktop.in.in
