@@ -43,7 +43,7 @@ pub enum SkPermissionSummary {
 }
 
 impl SkPermissionSummary {
-    pub fn to_context_detail(&self) -> SkContextDetail {
+    pub fn as_context_detail(&self) -> SkContextDetail {
         let type_ = SkContextDetailType::Icon;
         let type_value = "security-high-symbolic".to_string();
         let level = SkContextDetailLevel::Neutral;

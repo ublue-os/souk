@@ -153,7 +153,7 @@ impl SkContext {
         groups.push(group);
 
         // Summary
-        let summary = summary.to_context_detail();
+        let summary = summary.as_context_detail();
 
         let groups = SkContextDetailGroupModel::new(&groups);
         Self::new(&summary, &groups)
