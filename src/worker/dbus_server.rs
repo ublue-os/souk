@@ -161,12 +161,11 @@ pub async fn start(
     transaction_sender: Sender<TransactionCommand>,
     mut receiver: Receiver<TransactionMessage>,
 ) -> zbus::Result<()> {
-    let name = format!("{}.Worker", config::APP_ID);
     let path = "/de/haeckerfelix/Souk/Worker";
     let worker = Worker { transaction_sender };
 
     let con = ConnectionBuilder::session()?
-        .name(name)?
+        .name(config::WORKER_APP_ID)?
         .serve_at(path, worker)?
         .build()
         .await?;

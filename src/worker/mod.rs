@@ -23,24 +23,9 @@ mod transaction;
 mod dbus_server;
 mod worker_error;
 
+mod app;
+pub use app::SkWorkerApplication;
 use transaction::TransactionManager;
 // TODO: Don't expose them, or move them into `shared`
 pub use transaction::{DryRunResult, TransactionError, TransactionProgress};
 pub use worker_error::WorkerError;
-
-/// Start DBus server. This method gets called from the `souk-worker` binary.
-pub async fn spawn_dbus_server() {
-    use async_std::channel::unbounded;
-    debug!("Start souk-worker dbus server...");
-
-    // The Flatpak transaction manager is multithreaded, because Flatpak
-    // transactions are blocking. Therefore it uses message passing for inter
-    // thread communication
-    let (command_sender, command_receiver) = unbounded();
-    let (message_sender, message_receiver) = unbounded();
-    TransactionManager::start(message_sender, command_receiver);
-
-    dbus_server::start(command_sender, message_receiver)
-        .await
-        .unwrap();
-}

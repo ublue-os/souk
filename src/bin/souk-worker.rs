@@ -14,15 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::env;
-
-use souk::worker;
+use gtk::glib;
+use souk::shared::{config, path};
+use souk::worker::SkWorkerApplication;
 
 fn main() {
-    env::set_var("RUST_LOG", "souk=debug");
+    // Initialize logger
     pretty_env_logger::init();
 
-    async_std::task::block_on(async {
-        worker::spawn_dbus_server().await;
-    });
+    // Initialize paths
+    path::init().expect("Unable to create paths.");
+
+    // Initialize variables
+    glib::set_application_name(config::NAME);
+
+    let ctx = glib::MainContext::default();
+    let _guard = ctx.acquire().unwrap();
+
+    // Run app itself
+    SkWorkerApplication::run();
 }

@@ -135,13 +135,14 @@ glib::wrapper! {
 
 impl SkApplication {
     pub fn run() {
-        info!(
-            "{} ({}) ({})",
+        debug!(
+            "{} ({}) ({}) - Version {} ({})",
             config::NAME,
             config::APP_ID,
-            config::VCS_TAG
+            config::VCS_TAG,
+            config::VERSION,
+            config::PROFILE
         );
-        info!("Version: {} ({})", config::VERSION, config::PROFILE);
 
         // Create new GObject and downcast it into SkApplication
         let app = glib::Object::new::<SkApplication>(&[
