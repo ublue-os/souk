@@ -198,7 +198,7 @@ impl SkInstallation {
 
         let installation = if self.name() == "user" {
             "--user".into()
-        }else{
+        } else {
             format!("--installation={}", self.name())
         };
 
