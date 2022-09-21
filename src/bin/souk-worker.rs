@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::env;
+
 use gtk::glib;
 use souk::shared::{config, path};
 use souk::worker::SkWorkerApplication;
@@ -21,6 +23,14 @@ use souk::worker::SkWorkerApplication;
 fn main() {
     // Initialize logger
     pretty_env_logger::init();
+
+    // We need to overwrite `FLATPAK_BINARY`, otherwise the exported files (eg.
+    // desktop or DBus services) would have the wrong path ("/app/bin/flatpak").
+    //
+    // This only applies to `user` installations, since `system` operations are
+    // getting handled by Flatpak SystemHelper on host side.
+    env::set_var("FLATPAK_BINARY", "/usr/bin/flatpak");
+    env::set_var("FLATPAK_BWRAP", "/app/bin/flatpak-bwrap");
 
     // Initialize paths
     path::init().expect("Unable to create paths.");
