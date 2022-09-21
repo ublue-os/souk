@@ -196,7 +196,12 @@ impl SkInstallation {
     pub fn launch_app(&self, ref_: &str) {
         debug!("Launch app from installation \"{}\": {}", self.name(), ref_);
 
-        let installation = format!("--installation={}", self.name());
+        let installation = if self.name() == "user" {
+            "--user".into()
+        }else{
+            format!("--installation={}", self.name())
+        };
+
         if let Err(err) = Command::new("flatpak-spawn")
             .arg("--host")
             .arg("flatpak")
