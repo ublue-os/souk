@@ -14,25 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use async_std::channel::{unbounded, Receiver, Sender};
+use async_std::channel::{unbounded, Sender};
 use async_std::prelude::*;
 use uuid::Uuid;
-use zbus::{dbus_interface, ConnectionBuilder, SignalContext};
+use zbus::{dbus_interface, SignalContext};
 
-use crate::shared::config;
 use crate::shared::info::InstallationInfo;
 use crate::worker::transaction::{
-    DryRunResult, TransactionCommand, TransactionError, TransactionMessage, TransactionProgress,
+    DryRunResult, FlatpakTask, TransactionError, TransactionProgress,
 };
 use crate::worker::WorkerError;
 
 #[derive(Debug)]
-struct Worker {
-    transaction_sender: Sender<TransactionCommand>,
+pub struct WorkerServer {
+    pub flatpak_task_sender: Sender<FlatpakTask>,
 }
 
 #[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
-impl Worker {
+impl WorkerServer {
     // Transaction
 
     async fn install_flatpak(
@@ -43,8 +42,8 @@ impl Worker {
         no_update: bool,
     ) -> String {
         let uuid = Uuid::new_v4().to_string();
-        self.transaction_sender
-            .send(TransactionCommand::InstallFlatpak(
+        self.flatpak_task_sender
+            .send(FlatpakTask::InstallFlatpak(
                 uuid.clone(),
                 ref_.to_string(),
                 remote.to_string(),
@@ -64,8 +63,8 @@ impl Worker {
         no_update: bool,
     ) -> String {
         let uuid = Uuid::new_v4().to_string();
-        self.transaction_sender
-            .send(TransactionCommand::InstallFlatpakBundle(
+        self.flatpak_task_sender
+            .send(FlatpakTask::InstallFlatpakBundle(
                 uuid.clone(),
                 path.to_string(),
                 installation_info.clone(),
@@ -82,13 +81,13 @@ impl Worker {
         path: &str,
         installation_info: InstallationInfo,
     ) -> Result<DryRunResult, WorkerError> {
-        let (transaction_sender, mut receiver) = unbounded();
+        let (flatpak_task_sender, mut receiver) = unbounded();
 
-        self.transaction_sender
-            .send(TransactionCommand::InstallFlatpakBundleDryRun(
+        self.flatpak_task_sender
+            .send(FlatpakTask::InstallFlatpakBundleDryRun(
                 path.to_string(),
                 installation_info.clone(),
-                transaction_sender,
+                flatpak_task_sender,
             ))
             .await
             .unwrap();
@@ -103,8 +102,8 @@ impl Worker {
         no_update: bool,
     ) -> String {
         let uuid = Uuid::new_v4().to_string();
-        self.transaction_sender
-            .send(TransactionCommand::InstallFlatpakRef(
+        self.flatpak_task_sender
+            .send(FlatpakTask::InstallFlatpakRef(
                 uuid.clone(),
                 path.to_string(),
                 installation_info.clone(),
@@ -121,13 +120,13 @@ impl Worker {
         path: &str,
         installation_info: InstallationInfo,
     ) -> Result<DryRunResult, WorkerError> {
-        let (transaction_sender, mut receiver) = unbounded();
+        let (flatpak_task_sender, mut receiver) = unbounded();
 
-        self.transaction_sender
-            .send(TransactionCommand::InstallFlatpakRefDryRun(
+        self.flatpak_task_sender
+            .send(FlatpakTask::InstallFlatpakRefDryRun(
                 path.to_string(),
                 installation_info.clone(),
-                transaction_sender,
+                flatpak_task_sender,
             ))
             .await
             .unwrap();
@@ -136,58 +135,21 @@ impl Worker {
     }
 
     async fn cancel_transaction(&self, transaction_uuid: &str) {
-        self.transaction_sender
-            .send(TransactionCommand::CancelTransaction(
-                transaction_uuid.to_string(),
-            ))
+        self.flatpak_task_sender
+            .send(FlatpakTask::CancelTransaction(transaction_uuid.to_string()))
             .await
             .unwrap();
     }
 
     #[dbus_interface(signal)]
-    async fn transaction_progress(
+    pub async fn transaction_progress(
         signal_ctxt: &SignalContext<'_>,
         progress: TransactionProgress,
     ) -> zbus::Result<()>;
 
     #[dbus_interface(signal)]
-    async fn transaction_error(
+    pub async fn transaction_error(
         signal_ctxt: &SignalContext<'_>,
         error: TransactionError,
     ) -> zbus::Result<()>;
-}
-
-pub async fn start(
-    transaction_sender: Sender<TransactionCommand>,
-    mut receiver: Receiver<TransactionMessage>,
-) -> zbus::Result<()> {
-    let path = "/de/haeckerfelix/Souk/Worker";
-    let worker = Worker { transaction_sender };
-
-    let con = ConnectionBuilder::session()?
-        .name(config::WORKER_APP_ID)?
-        .serve_at(path, worker)?
-        .build()
-        .await?;
-
-    let signal_ctxt = SignalContext::new(&con, path).unwrap();
-    while let Some(message) = receiver.next().await {
-        match message {
-            TransactionMessage::Progress(progress) => {
-                // Emit `transaction_progress` signal via dbus
-                Worker::transaction_progress(&signal_ctxt, progress)
-                    .await
-                    .unwrap()
-            }
-            TransactionMessage::Error(error) => {
-                // Emit `transaction_error` signal via dbus
-                Worker::transaction_error(&signal_ctxt, error)
-                    .await
-                    .unwrap()
-            }
-        }
-    }
-    debug!("Stopped.");
-
-    Ok(())
 }

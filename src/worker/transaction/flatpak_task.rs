@@ -21,10 +21,10 @@ use crate::worker::transaction::DryRunResult;
 use crate::worker::WorkerError;
 
 #[derive(Debug, Clone)]
-pub enum TransactionCommand {
-    // uuid, ref_, remote, installation_id, no_update
+pub enum FlatpakTask {
+    // task_uuid, ref_, remote, installation_id, no_update
     InstallFlatpak(String, String, String, InstallationInfo, bool),
-    // uuid, path, installation_id, no_update
+    // task_uuid, path, installation_id, no_update
     InstallFlatpakBundle(String, String, InstallationInfo, bool),
     // path, installation_id, sender
     InstallFlatpakBundleDryRun(
@@ -32,7 +32,7 @@ pub enum TransactionCommand {
         InstallationInfo,
         Sender<Result<DryRunResult, WorkerError>>,
     ),
-    // uuid, path, installation_id, no_update
+    // task_uuid, path, installation_id, no_update
     InstallFlatpakRef(String, String, InstallationInfo, bool),
     // path, installation_id, sender
     InstallFlatpakRefDryRun(
@@ -40,6 +40,6 @@ pub enum TransactionCommand {
         InstallationInfo,
         Sender<Result<DryRunResult, WorkerError>>,
     ),
-    // uuid,
+    // task_uuid,
     CancelTransaction(String),
 }

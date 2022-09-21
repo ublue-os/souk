@@ -20,7 +20,8 @@ mod progress;
 pub use error::TransactionError;
 pub use progress::TransactionProgress;
 
-pub enum TransactionMessage {
+#[derive(Debug, Clone)]
+pub enum FlatpakMessage {
     Progress(TransactionProgress),
     Error(TransactionError),
 }

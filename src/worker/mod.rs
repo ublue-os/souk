@@ -25,7 +25,7 @@ mod worker_error;
 
 mod app;
 pub use app::SkWorkerApplication;
-use transaction::TransactionManager;
+use transaction::FlatpakWorker;
 // TODO: Don't expose them, or move them into `shared`
 pub use transaction::{DryRunResult, TransactionError, TransactionProgress};
 pub use worker_error::WorkerError;

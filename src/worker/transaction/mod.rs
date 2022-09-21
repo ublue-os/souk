@@ -17,10 +17,10 @@
 mod dry_run;
 mod message;
 
-mod transaction_command;
-mod transaction_manager;
+mod flatpak_task;
+mod flatpak_worker;
 
 pub use dry_run::{DryRunResult, DryRunRuntime};
-pub use message::{TransactionError, TransactionMessage, TransactionProgress};
-pub use transaction_command::TransactionCommand;
-pub use transaction_manager::TransactionManager;
+pub use flatpak_task::FlatpakTask;
+pub use flatpak_worker::FlatpakWorker;
+pub use message::{FlatpakMessage, TransactionError, TransactionProgress};

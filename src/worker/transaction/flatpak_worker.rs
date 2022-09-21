@@ -1,4 +1,4 @@
-// Souk - transaction_manager.rs
+// Souk - flatpak_worker.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -18,12 +18,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::thread;
 
 use ::appstream::Collection;
-use async_std::channel::{Receiver, Sender};
-use async_std::prelude::*;
-use async_std::task;
+use async_std::channel::Sender;
 use flatpak::prelude::*;
 use flatpak::{
     BundleRef, Installation, Ref, Remote, Transaction, TransactionOperation,
@@ -35,72 +32,49 @@ use glib::{clone, Downgrade, KeyFile};
 use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 
-use super::{
-    DryRunResult, DryRunRuntime, TransactionCommand, TransactionMessage, TransactionProgress,
-};
+use super::{DryRunResult, DryRunRuntime, FlatpakMessage, FlatpakTask, TransactionProgress};
 use crate::shared::info::{InstallationInfo, RemoteInfo};
 use crate::worker::{appstream, WorkerError};
 
 #[derive(Debug, Clone, Downgrade)]
-pub struct TransactionManager {
+pub struct FlatpakWorker {
     transactions: Arc<Mutex<HashMap<String, Cancellable>>>,
-    sender: Arc<Sender<TransactionMessage>>,
+    sender: Arc<Sender<FlatpakMessage>>,
 }
 
-impl TransactionManager {
-    pub fn start(sender: Sender<TransactionMessage>, receiver: Receiver<TransactionCommand>) {
-        let manager = Self {
+impl FlatpakWorker {
+    pub fn new(sender: Sender<FlatpakMessage>) -> Self {
+        Self {
             transactions: Arc::default(),
             sender: Arc::new(sender),
-        };
-
-        thread::spawn(clone!(@strong manager, @strong receiver => move || {
-            let mut receiver = receiver;
-            let fut = async move {
-                while let Some(command) = receiver.next().await {
-                    // TODO: Don't work with raw threads here, but us a scheduler / pool or sth
-                    thread::spawn(clone!(@weak manager => move || {
-                        manager.process_command(command);
-                    }));
-                }
-            };
-            task::block_on(fut);
-        }));
+        }
     }
 
-    fn process_command(&self, command: TransactionCommand) {
-        debug!("Process command: {:?}", command);
-
-        let (result, transaction_uuid) = match command {
-            TransactionCommand::InstallFlatpak(
-                uuid,
-                ref_,
-                remote,
-                installation_info,
-                no_update,
-            ) => (
+    pub fn process_task(&self, task: FlatpakTask) {
+        let (result, transaction_uuid) = match task {
+            FlatpakTask::InstallFlatpak(uuid, ref_, remote, installation_info, no_update) => (
                 self.install_flatpak(&uuid, &ref_, &remote, &installation_info, no_update),
                 uuid,
             ),
-            TransactionCommand::InstallFlatpakBundle(uuid, path, installation_info, no_update) => (
+            FlatpakTask::InstallFlatpakBundle(uuid, path, installation_info, no_update) => (
                 self.install_flatpak_bundle(&uuid, &path, &installation_info, no_update),
                 uuid,
             ),
-            TransactionCommand::InstallFlatpakBundleDryRun(path, installation_info, sender) => {
+            FlatpakTask::InstallFlatpakBundleDryRun(path, installation_info, sender) => {
                 let result = self.install_flatpak_bundle_dry_run(&path, &installation_info);
                 sender.try_send(result).unwrap();
                 return;
             }
-            TransactionCommand::InstallFlatpakRef(uuid, path, installation_info, no_update) => (
+            FlatpakTask::InstallFlatpakRef(uuid, path, installation_info, no_update) => (
                 self.install_flatpak_ref(&uuid, &path, &installation_info, no_update),
                 uuid,
             ),
-            TransactionCommand::InstallFlatpakRefDryRun(path, installation_info, sender) => {
+            FlatpakTask::InstallFlatpakRefDryRun(path, installation_info, sender) => {
                 let result = self.install_flatpak_ref_dry_run(&path, &installation_info);
                 sender.try_send(result).unwrap();
                 return;
             }
-            TransactionCommand::CancelTransaction(uuid) => {
+            FlatpakTask::CancelTransaction(uuid) => {
                 let transactions = self.transactions.lock().unwrap();
                 if let Some(cancellable) = transactions.get(&uuid) {
                     cancellable.cancel();
@@ -118,13 +92,11 @@ impl TransactionManager {
                 let progress = progress.cancelled();
 
                 self.sender
-                    .try_send(TransactionMessage::Progress(progress))
+                    .try_send(FlatpakMessage::Progress(progress))
                     .unwrap();
             } else {
                 let error = super::TransactionError::new(transaction_uuid, err.message());
-                self.sender
-                    .try_send(TransactionMessage::Error(error))
-                    .unwrap();
+                self.sender.try_send(FlatpakMessage::Error(error)).unwrap();
             }
         }
     }
@@ -202,17 +174,20 @@ impl TransactionManager {
             results.installed_size = bundle.installed_size();
 
             // Remotes
-            let bundle_remote =
-                self.retrieve_flatpak_remote(&bundle.runtime_repo_url().unwrap())?;
-            let mut remotes_info = Vec::new();
-            for (name, url) in &results.remotes {
-                if bundle_remote.url().unwrap().as_str() == url {
-                    remotes_info.push(RemoteInfo::from(&bundle_remote));
-                } else {
-                    remotes_info.push(RemoteInfo::new(name, url));
+            if let Some(runtime_repo_url) = bundle.runtime_repo_url() {
+                // Download Flatpak repofile for additional remote metadata
+                let bundle_remote = self.retrieve_flatpak_remote(&runtime_repo_url)?;
+
+                let mut remotes_info = Vec::new();
+                for (name, url) in &results.remotes {
+                    if bundle_remote.url().unwrap().as_str() == url {
+                        remotes_info.push(RemoteInfo::from(&bundle_remote));
+                    } else {
+                        remotes_info.push(RemoteInfo::new(name, url));
+                    }
                 }
+                results.remotes_info = remotes_info;
             }
-            results.remotes_info = remotes_info;
 
             // Icon
             if let Some(bytes) = bundle.icon(128) {
@@ -342,9 +317,9 @@ impl TransactionManager {
                 // Check if all operations are done
                 if progress.operations_count == progress.current_operation{
                     progress = progress.done();
-                    this.sender.try_send(TransactionMessage::Progress(progress)).unwrap();
+                    this.sender.try_send(FlatpakMessage::Progress(progress)).unwrap();
                 }else{
-                    this.sender.try_send(TransactionMessage::Progress(progress)).unwrap();
+                    this.sender.try_send(FlatpakMessage::Progress(progress)).unwrap();
                 }
             }),
         );
@@ -380,13 +355,13 @@ impl TransactionManager {
             Some(transaction_progress),
         );
         self.sender
-            .try_send(TransactionMessage::Progress(progress.clone()))
+            .try_send(FlatpakMessage::Progress(progress.clone()))
             .unwrap();
 
         transaction_progress.connect_changed(
             clone!(@weak self.sender as sender, @strong progress => move |transaction_progress|{
                 let updated = progress.update(transaction_progress);
-                sender.try_send(TransactionMessage::Progress(updated)).unwrap();
+                sender.try_send(FlatpakMessage::Progress(updated)).unwrap();
             }),
         );
     }
