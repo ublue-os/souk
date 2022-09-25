@@ -26,7 +26,7 @@ use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote};
 use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::flatpak::transaction::SkTransaction;
-use crate::main::flatpak::SkWorker;
+use crate::main::worker::SkWorker;
 use crate::worker::DryRunResult;
 
 mod imp {

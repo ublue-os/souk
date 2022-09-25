@@ -20,8 +20,3 @@ pub mod permissions;
 pub mod sideload;
 pub mod transaction;
 pub mod utils;
-
-mod dbus_proxy;
-mod worker;
-
-pub use worker::SkWorker;

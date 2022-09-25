@@ -14,18 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod context;
-
-/// Consumes the data of the `souk-worker` process, and wraps them into usable
-/// types so that they can easily consumed by the user interface (eg. gobjects
-/// with properties)
+mod context;
 mod flatpak;
-
-/// The user interface
 mod ui;
 
+mod app;
+mod dbus_proxy;
 mod error;
 mod i18n;
+mod worker;
 
-mod app;
 pub use app::SkApplication;

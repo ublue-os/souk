@@ -24,8 +24,8 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use once_cell::sync::Lazy;
 
+use crate::main::dbus_proxy::WorkerProxy;
 use crate::main::error::Error;
-use crate::main::flatpak::dbus_proxy::WorkerProxy;
 use crate::main::flatpak::installation::{SkInstallation, SkInstallationModel, SkRemote};
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::flatpak::transaction::{SkTransaction, SkTransactionModel, SkTransactionType};
