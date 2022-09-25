@@ -36,7 +36,7 @@ impl Default for WorkerProxy<'static> {
             WorkerProxy::builder(&session)
                 .destination(name)?
                 // TODO: Don't hardcode path here
-                .path("/de/haeckerfelix/Souk/Worker")?
+                .path(config::DBUS_PATH)?
                 .build()
                 .await
         };

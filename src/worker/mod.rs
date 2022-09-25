@@ -16,16 +16,15 @@
 
 /// Parsing appstream metadata, creation of xmlb exports
 mod appstream;
-/// Handling of Flatpak installations with its remotes
-/// Execution of Flatpak (dry-run) transactions, and state tracking
-mod transaction;
-
-mod dbus_server;
-mod worker_error;
+/// Handling of Flatpak transactions / dry running
+mod flatpak;
 
 mod app;
+mod dbus_server;
+mod error;
+
 pub use app::SkWorkerApplication;
+pub use error::WorkerError;
+
 // TODO: Don't expose them, or move them into `shared`
-pub use transaction::DryRunResult;
-use transaction::FlatpakWorker;
-pub use worker_error::WorkerError;
+pub use self::flatpak::DryRunResult;

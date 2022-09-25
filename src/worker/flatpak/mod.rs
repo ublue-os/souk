@@ -16,7 +16,7 @@
 
 mod dry_run;
 
-mod flatpak_worker;
+mod worker;
 
 pub use dry_run::{DryRunResult, DryRunRuntime};
-pub use flatpak_worker::FlatpakWorker;
+pub use worker::FlatpakWorker;

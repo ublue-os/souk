@@ -30,12 +30,12 @@ use zbus::{Connection, ConnectionBuilder, SignalContext};
 
 use crate::shared::config;
 use crate::shared::task::{Response, Task};
+use crate::worker::appstream::AppstreamWorker;
 use crate::worker::dbus_server::WorkerServer;
-use crate::worker::FlatpakWorker;
+use crate::worker::flatpak::FlatpakWorker;
 
 /// Specifies how many tasks can be executed in parallel
 const WORKER_THREADS: usize = 4;
-const DBUS_PATH: &str = "/de/haeckerfelix/Souk/Worker";
 
 mod imp {
     use super::*;
@@ -46,6 +46,7 @@ mod imp {
         pub response_receiver: Receiver<Response>,
 
         pub flatpak_worker: FlatpakWorker,
+        pub appstream_worker: AppstreamWorker,
 
         pub dbus_connection: RefCell<Option<Connection>>,
         pub thread_pool: RefCell<Option<ThreadPool>>,
@@ -61,7 +62,8 @@ mod imp {
             let (task_sender, task_receiver) = unbounded();
             let (response_sender, response_receiver) = unbounded();
 
-            let flatpak_worker = FlatpakWorker::new(response_sender);
+            let flatpak_worker = FlatpakWorker::new(response_sender.clone());
+            let appstream_worker = AppstreamWorker::new(response_sender);
 
             let dbus_connection = RefCell::default();
             let thread_pool = RefCell::default();
@@ -71,6 +73,7 @@ mod imp {
                 task_receiver,
                 response_receiver,
                 flatpak_worker,
+                appstream_worker,
                 dbus_connection,
                 thread_pool,
             }
@@ -176,7 +179,7 @@ impl SkWorkerApplication {
 
         let con = ConnectionBuilder::session()?
             .name(config::WORKER_APP_ID)?
-            .serve_at(DBUS_PATH, worker)?
+            .serve_at(config::DBUS_PATH, worker)?
             .build()
             .await?;
 
@@ -213,8 +216,8 @@ impl SkWorkerApplication {
                 // Appstream task
                 if let Some(task) = task.appstream_task() {
                     thread_pool.spawn(
-                        clone!(@strong sender, @strong imp.flatpak_worker as worker, @strong task, @strong uuid => async move {
-                            // implement
+                        clone!(@strong sender, @strong imp.appstream_worker as worker, @strong task, @strong uuid => async move {
+                            worker.process_task(task, &uuid);
                             sender.send(()).await.unwrap();
                         }),
                     );
@@ -246,7 +249,7 @@ impl SkWorkerApplication {
         let signal_ctxt = {
             let con = self.imp().dbus_connection.borrow();
             let con = con.as_ref().unwrap();
-            SignalContext::new(con, DBUS_PATH).unwrap()
+            SignalContext::new(con, config::DBUS_PATH).unwrap()
         };
 
         let mut receiver = imp.response_receiver.clone();

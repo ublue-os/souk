@@ -1,3 +1,4 @@
+/* Meson values */
 pub static NAME: &str = @NAME@;
 pub static PKGNAME: &str = @PKGNAME@;
 pub static APP_ID: &str = @APP_ID@;
@@ -7,3 +8,10 @@ pub static PROFILE: &str = @PROFILE@;
 pub static VCS_TAG: &str = @VCS_TAG@;
 pub static LOCALEDIR: &str = @LOCALEDIR@;
 pub static DATADIR: &str = @DATADIR@;
+
+/* Hardcoded values */
+pub static DBUS_PATH: &str = "/de/haeckerfelix/Souk/Worker";
+
+// Unfortunately not usable yet :(
+// https://github.com/rust-lang/rust/issues/52393
+//pub static DBUS_INTERFACE: &str = "de.haeckerfelix.Souk.Worker1";

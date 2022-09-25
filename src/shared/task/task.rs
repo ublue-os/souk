@@ -56,7 +56,7 @@ impl Task {
     }
 
     /// Returns [AppstreamTask] if this is a Flatpak task
-    pub fn appstream_task(&self) -> Option<FlatpakTask> {
-        self.flatpak_task.clone().into()
+    pub fn appstream_task(&self) -> Option<AppstreamTask> {
+        self.appstream_task.clone().into()
     }
 }
