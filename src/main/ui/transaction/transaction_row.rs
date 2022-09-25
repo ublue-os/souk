@@ -141,8 +141,8 @@ impl SkTransactionRow {
         let transaction = self.transaction();
 
         // Title
-        let ref_ = transaction.ref_().format_ref().unwrap().to_string();
-        let title = format!("{:?} {}", transaction.type_(), ref_);
+        // let ref_ = transaction.ref_().format_ref().unwrap().to_string();
+        let title = format!("{:?}", transaction.type_());
         imp.title_label.set_text(&title);
 
         // Subtitle

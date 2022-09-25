@@ -76,7 +76,7 @@ mod imp {
         #[template_child]
         pub warn_group: TemplateChild<adw::PreferencesGroup>,
         #[template_child]
-        pub no_update_source_row: TemplateChild<adw::ActionRow>,
+        pub no_updates_row: TemplateChild<adw::ActionRow>,
         #[template_child]
         pub replacing_remote_row: TemplateChild<adw::ActionRow>,
 
@@ -316,8 +316,11 @@ impl SkSideloadWindow {
                         self.show_error_message(&message);
                     }
                     Error::GLib(err) => self.show_error_message(err.message()),
-                    Error::ZBus(_) => {
-                        let message = i18n("Unable to communicate with worker process.");
+                    Error::ZBus(err) => {
+                        let message = i18n_f(
+                            "Unable to communicate with worker process: {}",
+                            &[&err.to_string()],
+                        );
                         self.show_error_message(&message);
                     }
                 }
@@ -387,8 +390,9 @@ impl SkSideloadWindow {
             }
 
             // Show warn message for packages without update source
-            let no_update_source = !package.has_update_source();
-            imp.no_update_source_row.set_visible(no_update_source);
+            let uninstall_before_install_source = !package.has_update_source();
+            imp.no_updates_row
+                .set_visible(uninstall_before_install_source);
 
             // Show warn message when package is already installed, but from a different
             // remote
@@ -401,7 +405,7 @@ impl SkSideloadWindow {
             }
 
             imp.warn_group.set_visible(
-                !(!imp.no_update_source_row.is_visible() && !imp.replacing_remote_row.is_visible()),
+                !(!imp.no_updates_row.is_visible() && !imp.replacing_remote_row.is_visible()),
             );
 
             // Badges
@@ -672,7 +676,7 @@ impl SkSideloadWindow {
             let worker = SkApplication::default().worker();
 
             imp.cancel_sideload_button.set_sensitive(false);
-            if let Err(err) = worker.cancel_transaction(&uuid).await {
+            if let Err(err) = worker.cancel_task(&uuid).await {
                 this.show_error_message(&err.to_string());
             }
         });

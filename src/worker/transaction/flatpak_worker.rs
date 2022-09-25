@@ -22,144 +22,159 @@ use std::sync::{Arc, Mutex};
 use ::appstream::Collection;
 use async_std::channel::Sender;
 use flatpak::prelude::*;
-use flatpak::{
-    BundleRef, Installation, Ref, Remote, Transaction, TransactionOperation,
-    TransactionOperationType,
-};
+use flatpak::{BundleRef, Installation, Ref, Remote, Transaction, TransactionOperationType};
 use gio::prelude::*;
 use gio::Cancellable;
 use glib::{clone, Downgrade, KeyFile};
 use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 
-use super::{DryRunResult, DryRunRuntime, FlatpakMessage, FlatpakTask, TransactionProgress};
+use super::{DryRunResult, DryRunRuntime};
 use crate::shared::info::{InstallationInfo, RemoteInfo};
+use crate::shared::task::{FlatpakOperationType, FlatpakResponse, FlatpakTask, Response};
 use crate::worker::{appstream, WorkerError};
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct FlatpakWorker {
     transactions: Arc<Mutex<HashMap<String, Cancellable>>>,
-    sender: Arc<Sender<FlatpakMessage>>,
+    sender: Arc<Sender<Response>>,
 }
 
 impl FlatpakWorker {
-    pub fn new(sender: Sender<FlatpakMessage>) -> Self {
+    pub fn new(sender: Sender<Response>) -> Self {
         Self {
             transactions: Arc::default(),
             sender: Arc::new(sender),
         }
     }
 
-    pub fn process_task(&self, task: FlatpakTask) {
-        let (result, transaction_uuid) = match task {
-            FlatpakTask::InstallFlatpak(uuid, ref_, remote, installation_info, no_update) => (
-                self.install_flatpak(&uuid, &ref_, &remote, &installation_info, no_update),
-                uuid,
-            ),
-            FlatpakTask::InstallFlatpakBundle(uuid, path, installation_info, no_update) => (
-                self.install_flatpak_bundle(&uuid, &path, &installation_info, no_update),
-                uuid,
-            ),
-            FlatpakTask::InstallFlatpakBundleDryRun(path, installation_info, sender) => {
-                let result = self.install_flatpak_bundle_dry_run(&path, &installation_info);
-                sender.try_send(result).unwrap();
-                return;
-            }
-            FlatpakTask::InstallFlatpakRef(uuid, path, installation_info, no_update) => (
-                self.install_flatpak_ref(&uuid, &path, &installation_info, no_update),
-                uuid,
-            ),
-            FlatpakTask::InstallFlatpakRefDryRun(path, installation_info, sender) => {
-                let result = self.install_flatpak_ref_dry_run(&path, &installation_info);
-                sender.try_send(result).unwrap();
-                return;
-            }
-            FlatpakTask::CancelTransaction(uuid) => {
-                let transactions = self.transactions.lock().unwrap();
-                if let Some(cancellable) = transactions.get(&uuid) {
-                    cancellable.cancel();
+    pub fn process_task(&self, task: FlatpakTask, task_uuid: &str) {
+        let result = match task.operation_type {
+            FlatpakOperationType::Install => {
+                if task.dry_run {
+                    unimplemented!();
                 } else {
-                    warn!("Unable to cancel transaction: {}", uuid);
+                    self.install_flatpak(
+                        task_uuid,
+                        task.ref_.as_ref().unwrap(),
+                        task.remote.as_ref().unwrap(),
+                        &task.installation,
+                        task.uninstall_before_install,
+                    )
                 }
-                return;
+            }
+            FlatpakOperationType::InstallBundleFile => {
+                if task.dry_run {
+                    self.install_flatpak_bundle_file_dry_run(
+                        task_uuid,
+                        task.path.as_ref().unwrap(),
+                        &task.installation,
+                    )
+                } else {
+                    self.install_flatpak_bundle_file(
+                        task_uuid,
+                        task.path.as_ref().unwrap(),
+                        &task.installation,
+                        task.uninstall_before_install,
+                    )
+                }
+            }
+            FlatpakOperationType::InstallRefFile => {
+                if task.dry_run {
+                    self.install_flatpak_ref_file_dry_run(
+                        task_uuid,
+                        task.path.as_ref().unwrap(),
+                        &task.installation,
+                    )
+                } else {
+                    self.install_flatpak_ref_file(
+                        task_uuid,
+                        task.path.as_ref().unwrap(),
+                        &task.installation,
+                        task.uninstall_before_install,
+                    )
+                }
+            }
+            FlatpakOperationType::Uninstall => {
+                unimplemented!();
             }
         };
+
+        // FlatpakOperationType::CancelTransaction(uuid) => {
+        // let transactions = self.transactions.lock().unwrap();
+        // if let Some(cancellable) = transactions.get(&uuid) {
+        // cancellable.cancel();
+        // } else {
+        // warn!("Unable to cancel transaction: {}", uuid);
+        // }
+        // return;
+        // }
+        // };
 
         if let Err(err) = result {
             // Transaction got cancelled (probably by user)
             if err == WorkerError::GLibCancelled {
-                let progress = TransactionProgress::new(transaction_uuid, None, None, None);
-                let progress = progress.cancelled();
-
-                self.sender
-                    .try_send(FlatpakMessage::Progress(progress))
-                    .unwrap();
+                let response = Response::new_cancelled(task_uuid.into());
+                self.sender.try_send(response).unwrap();
             } else {
-                let error = super::TransactionError::new(transaction_uuid, err.message());
-                self.sender.try_send(FlatpakMessage::Error(error)).unwrap();
+                let response = Response::new_error(task_uuid.into(), err.message());
+                self.sender.try_send(response).unwrap();
             }
         }
     }
 
     fn install_flatpak(
         &self,
-        transaction_uuid: &str,
+        task_uuid: &str,
         ref_: &str,
-        remote: &str,
+        remote: &RemoteInfo,
         installation_info: &InstallationInfo,
-        no_update: bool,
+        uninstall_before_install: bool,
     ) -> Result<(), WorkerError> {
         info!("Install Flatpak: {}", ref_);
 
         let transaction = self.new_transaction(installation_info, false)?;
-        transaction.add_install(remote, ref_, &[])?;
 
-        // There are situations where we can't directly upgrade an already installed
-        // ref, and we have to uninstall the old version first, before we
-        // install the new version. (for example installing a ref from a
-        // different remote, and the gpg signature wouldn't match)
-        if no_update {
+        if uninstall_before_install {
             self.uninstall_ref(ref_, installation_info)?;
         }
+        transaction.add_install(&remote.name, ref_, &[])?;
 
-        self.run_transaction(transaction_uuid.to_string(), transaction)?;
+        self.run_transaction(task_uuid.to_string(), transaction)?;
 
         Ok(())
     }
 
-    fn install_flatpak_bundle(
+    fn install_flatpak_bundle_file(
         &self,
-        transaction_uuid: &str,
+        task_uuid: &str,
         path: &str,
         installation_info: &InstallationInfo,
-        no_update: bool,
+        uninstall_before_install: bool,
     ) -> Result<(), WorkerError> {
         info!("Install Flatpak bundle: {}", path);
         let file = gio::File::for_parse_name(path);
 
         let transaction = self.new_transaction(installation_info, false)?;
-        transaction.add_install_bundle(&file, None)?;
 
-        // There are situations where we can't directly upgrade an already installed
-        // ref, and we have to uninstall the old version first, before we
-        // install the new version. (for example installing a ref from a
-        // different remote, and the gpg signature wouldn't match)
-        if no_update {
+        if uninstall_before_install {
             let bundle = BundleRef::new(&file)?;
             let ref_ = bundle.format_ref().unwrap();
             self.uninstall_ref(&ref_, installation_info)?;
         }
+        transaction.add_install_bundle(&file, None)?;
 
-        self.run_transaction(transaction_uuid.to_string(), transaction)?;
+        self.run_transaction(task_uuid.to_string(), transaction)?;
 
         Ok(())
     }
 
-    fn install_flatpak_bundle_dry_run(
+    fn install_flatpak_bundle_file_dry_run(
         &self,
+        task_uuid: &str,
         path: &str,
         installation_info: &InstallationInfo,
-    ) -> Result<DryRunResult, WorkerError> {
+    ) -> Result<(), WorkerError> {
         info!("Install Flatpak bundle (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
         let bundle = BundleRef::new(&file)?;
@@ -167,67 +182,61 @@ impl FlatpakWorker {
         let transaction = self.new_transaction(installation_info, true)?;
         transaction.add_install_bundle(&file, None)?;
 
-        let results = self.run_dry_run_transaction(transaction, installation_info, false);
+        let mut results = self.run_dry_run_transaction(transaction, installation_info, false)?;
 
-        if let Ok(mut results) = results {
-            // Installed bundle size
-            results.installed_size = bundle.installed_size();
+        // Installed bundle size
+        results.installed_size = bundle.installed_size();
 
-            // Remotes
-            if let Some(runtime_repo_url) = bundle.runtime_repo_url() {
-                // Download Flatpak repofile for additional remote metadata
-                let bundle_remote = self.retrieve_flatpak_remote(&runtime_repo_url)?;
+        // Remotes
+        if let Some(runtime_repo_url) = bundle.runtime_repo_url() {
+            // Download Flatpak repofile for additional remote metadata
+            let bundle_remote = self.retrieve_flatpak_remote(&runtime_repo_url)?;
 
-                let mut remotes_info = Vec::new();
-                for (name, url) in &results.remotes {
-                    if bundle_remote.url().unwrap().as_str() == url {
-                        remotes_info.push(RemoteInfo::from(&bundle_remote));
-                    } else {
-                        remotes_info.push(RemoteInfo::new(name, url));
-                    }
+            let mut remotes_info = Vec::new();
+            for (name, url) in &results.remotes {
+                if bundle_remote.url().unwrap().as_str() == url {
+                    remotes_info.push(RemoteInfo::from(&bundle_remote));
+                } else {
+                    remotes_info.push(RemoteInfo::new(name, url));
                 }
-                results.remotes_info = remotes_info;
             }
-
-            // Icon
-            if let Some(bytes) = bundle.icon(128) {
-                results.icon = bytes.to_vec();
-            }
-
-            // Appstream metadata
-            if let Some(compressed) = bundle.appstream() {
-                let collection = Collection::from_gzipped_bytes(&compressed).unwrap();
-                let component = &collection.components[0];
-
-                let json = serde_json::to_string(component).unwrap();
-                results.appstream_component = Some(json).into();
-            }
-
-            return Ok(results);
+            results.remotes_info = remotes_info;
         }
 
-        results
+        // Icon
+        if let Some(bytes) = bundle.icon(128) {
+            results.icon = bytes.to_vec();
+        }
+
+        // Appstream metadata
+        if let Some(compressed) = bundle.appstream() {
+            let collection = Collection::from_gzipped_bytes(&compressed).unwrap();
+            let component = &collection.components[0];
+
+            let json = serde_json::to_string(component).unwrap();
+            results.appstream_component = Some(json).into();
+        }
+
+        let response = FlatpakResponse::new_dry_run_result(task_uuid.into(), results);
+        self.sender.try_send(response).unwrap();
+
+        Ok(())
     }
 
-    fn install_flatpak_ref(
+    fn install_flatpak_ref_file(
         &self,
-        transaction_uuid: &str,
+        task_uuid: &str,
         path: &str,
         installation_info: &InstallationInfo,
-        no_update: bool,
+        uninstall_before_install: bool,
     ) -> Result<(), WorkerError> {
         info!("Install Flatpak ref: {}", path);
         let file = gio::File::for_parse_name(path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
 
         let transaction = self.new_transaction(installation_info, false)?;
-        transaction.add_install_flatpakref(&bytes)?;
 
-        // There are situations where we can't directly upgrade an already installed
-        // ref, and we have to uninstall the old version first, before we
-        // install the new version. (for example installing a ref from a
-        // different remote, and the gpg signature wouldn't match)
-        if no_update {
+        if uninstall_before_install {
             let keyfile = KeyFile::new();
             keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
             let name = keyfile.value("Flatpak Ref", "Name")?;
@@ -237,17 +246,19 @@ impl FlatpakWorker {
             let ref_ = format!("app/{}/{}/{}", name, arch, branch);
             self.uninstall_ref(&ref_, installation_info)?;
         }
+        transaction.add_install_flatpakref(&bytes)?;
 
-        self.run_transaction(transaction_uuid.to_string(), transaction)?;
+        self.run_transaction(task_uuid.to_string(), transaction)?;
 
         Ok(())
     }
 
-    fn install_flatpak_ref_dry_run(
+    fn install_flatpak_ref_file_dry_run(
         &self,
+        task_uuid: &str,
         path: &str,
         installation_info: &InstallationInfo,
-    ) -> Result<DryRunResult, WorkerError> {
+    ) -> Result<(), WorkerError> {
         info!("Install Flatpak ref (dry run): {}", path);
         let file = gio::File::for_parse_name(path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
@@ -255,72 +266,83 @@ impl FlatpakWorker {
         let transaction = self.new_transaction(installation_info, true)?;
         transaction.add_install_flatpakref(&bytes)?;
 
-        let results = self.run_dry_run_transaction(transaction, installation_info, true);
+        let mut results = self.run_dry_run_transaction(transaction, installation_info, true)?;
 
         // Up to two remotes can be added during a *.flatpakref installation:
         // 1) `Url` value (= the repository where the ref is located)
         // 2) `RuntimeRepo` value (doesn't need to point to the same repository as
         // `Url`)
-        if let Ok(mut results) = results {
-            let mut remotes_info = Vec::new();
+        let mut remotes_info = Vec::new();
 
-            let keyfile = KeyFile::new();
-            keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
-            let mut ref_repo_url = String::new();
+        let keyfile = KeyFile::new();
+        keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
+        let mut ref_repo_url = String::new();
 
-            if let Ok(repo_url) = keyfile.value("Flatpak Ref", "RuntimeRepo") {
-                if !repo_url.is_empty() {
-                    let ref_repo = self.retrieve_flatpak_remote(&repo_url)?;
-                    ref_repo_url = ref_repo.url().unwrap().to_string();
+        if let Ok(repo_url) = keyfile.value("Flatpak Ref", "RuntimeRepo") {
+            if !repo_url.is_empty() {
+                let ref_repo = self.retrieve_flatpak_remote(&repo_url)?;
+                ref_repo_url = ref_repo.url().unwrap().to_string();
 
-                    if results.remotes.iter().any(|(_, url)| url == &ref_repo_url) {
-                        remotes_info.push(RemoteInfo::from(&ref_repo));
-                    }
+                if results.remotes.iter().any(|(_, url)| url == &ref_repo_url) {
+                    remotes_info.push(RemoteInfo::from(&ref_repo));
                 }
             }
-
-            for (name, url) in &results.remotes {
-                if url != &ref_repo_url && !ref_repo_url.is_empty() {
-                    remotes_info.push(RemoteInfo::new(name, url));
-                }
-            }
-            results.remotes_info = remotes_info;
-
-            return Ok(results);
         }
 
-        results
+        for (name, url) in &results.remotes {
+            if url != &ref_repo_url && !ref_repo_url.is_empty() {
+                remotes_info.push(RemoteInfo::new(name, url));
+            }
+        }
+        results.remotes_info = remotes_info;
+
+        let response = FlatpakResponse::new_dry_run_result(task_uuid.into(), results);
+        self.sender.try_send(response).unwrap();
+
+        Ok(())
     }
 
     fn run_transaction(
         &self,
-        transaction_uuid: String,
+        task_uuid: String,
         transaction: Transaction,
     ) -> Result<(), WorkerError> {
         transaction.connect_add_new_remote(move |_, _, _, _, _| true);
 
         transaction.connect_new_operation(
-            clone!(@weak self as this, @strong transaction_uuid => move |transaction, operation, progress| {
-                this.handle_operation(transaction_uuid.clone(), transaction, operation, progress);
+            clone!(@weak self as this, @strong task_uuid => move |transaction, operation, progress| {
+                let response = FlatpakResponse::new_transaction_progress(
+                    task_uuid.clone(),
+                    transaction,
+                    operation,
+                    Some(progress)
+                );
+                this.sender.try_send(response).unwrap();
+
+                progress.set_update_frequency(500);
+                progress.connect_changed(
+                    clone!(@weak this, @strong task_uuid, @weak transaction, @weak operation => move |progress|{
+                        let response = FlatpakResponse::new_transaction_progress(
+                            task_uuid.clone(),
+                            &transaction,
+                            &operation,
+                            Some(progress)
+                        );
+                        this.sender.try_send(response).unwrap();
+                    }),
+                );
             }),
         );
 
         transaction.connect_operation_done(
-            clone!(@weak self as this, @strong transaction_uuid => move |transaction, operation, _commit, _result| {
-                let mut progress = TransactionProgress::new(
-                    transaction_uuid.clone(),
-                    Some(transaction),
-                    Some(operation),
-                    None,
+            clone!(@weak self as this, @strong task_uuid => move |transaction, operation, _commit, _result| {
+                let response = FlatpakResponse::new_transaction_progress(
+                    task_uuid.clone(),
+                    transaction,
+                    operation,
+                    None
                 );
-
-                // Check if all operations are done
-                if progress.operations_count == progress.current_operation{
-                    progress = progress.done();
-                    this.sender.try_send(FlatpakMessage::Progress(progress)).unwrap();
-                }else{
-                    this.sender.try_send(FlatpakMessage::Progress(progress)).unwrap();
-                }
+                this.sender.try_send(response).unwrap();
             }),
         );
 
@@ -328,7 +350,7 @@ impl FlatpakWorker {
         // Own scope so that the mutex gets unlocked again
         {
             let mut transactions = self.transactions.lock().unwrap();
-            transactions.insert(transaction_uuid.clone(), cancellable.clone());
+            transactions.insert(task_uuid.clone(), cancellable.clone());
         }
 
         // Start the actual Flatpak transaction
@@ -336,34 +358,9 @@ impl FlatpakWorker {
         transaction.run(Some(&cancellable))?;
 
         let mut transactions = self.transactions.lock().unwrap();
-        transactions.remove(&transaction_uuid);
+        transactions.remove(&task_uuid);
 
         Ok(())
-    }
-
-    fn handle_operation(
-        &self,
-        transaction_uuid: String,
-        transaction: &Transaction,
-        transaction_operation: &TransactionOperation,
-        transaction_progress: &flatpak::TransactionProgress,
-    ) {
-        let progress = TransactionProgress::new(
-            transaction_uuid,
-            Some(transaction),
-            Some(transaction_operation),
-            Some(transaction_progress),
-        );
-        self.sender
-            .try_send(FlatpakMessage::Progress(progress.clone()))
-            .unwrap();
-
-        transaction_progress.connect_changed(
-            clone!(@weak self.sender as sender, @strong progress => move |transaction_progress|{
-                let updated = progress.update(transaction_progress);
-                sender.try_send(FlatpakMessage::Progress(updated)).unwrap();
-            }),
-        );
     }
 
     fn run_dry_run_transaction(

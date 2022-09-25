@@ -16,7 +16,6 @@
 
 use flatpak::prelude::*;
 use flatpak::{Ref, Remote};
-use futures::future::join;
 use futures_util::stream::StreamExt;
 use gio::File;
 use glib::{clone, KeyFile, ParamFlags, ParamSpec, ParamSpecObject};
@@ -32,6 +31,7 @@ use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::flatpak::transaction::{SkTransaction, SkTransactionModel, SkTransactionType};
 use crate::main::flatpak::utils;
 use crate::shared::info::RemoteInfo;
+use crate::shared::task::{FlatpakTask, Task};
 
 mod imp {
     use super::*;
@@ -94,9 +94,7 @@ mod imp {
             }
 
             let fut = clone!(@weak obj => async move {
-                let progress = obj.receive_transaction_progress();
-                let error = obj.receive_transaction_error();
-                join(progress, error).await;
+                obj.receive_task_response().await;
             });
             gtk_macros::spawn!(fut);
         }
@@ -122,73 +120,138 @@ impl SkWorker {
     pub async fn install_flatpak(
         &self,
         ref_: &Ref,
-        remote: &str,
+        remote: &SkRemote,
         installation: &SkInstallation,
-        no_update: bool,
+        uninstall_before_install: bool,
+        dry_run: bool,
     ) -> Result<SkTransaction, Error> {
         let ref_string = ref_.format_ref().unwrap().to_string();
 
-        let transaction_uuid = self
-            .imp()
-            .proxy
-            .install_flatpak(&ref_string, remote, installation.info(), no_update)
-            .await?;
+        let task = FlatpakTask::new_install(
+            &installation.info(),
+            &remote.info(),
+            &ref_string,
+            uninstall_before_install,
+            dry_run,
+        );
 
         let type_ = SkTransactionType::Install;
-        let transaction = SkTransaction::new(&transaction_uuid, ref_, &type_, remote);
-        self.add_transaction(&transaction);
+        let transaction = SkTransaction::new(&task.uuid, &type_, &remote.name());
+        self.run_task(task, &transaction).await?;
 
         Ok(transaction)
     }
 
     /// Install new Flatpak by bundle file
-    pub async fn install_flatpak_bundle(
+    pub async fn install_flatpak_bundle_file(
         &self,
-        ref_: &Ref,
         file: &File,
         installation: &SkInstallation,
-        no_update: bool,
+        uninstall_before_install: bool,
+        dry_run: bool,
     ) -> Result<SkTransaction, Error> {
         let path = file.path().unwrap();
         let filename_string = path.file_name().unwrap().to_str().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
-        let transaction_uuid = self
-            .imp()
-            .proxy
-            .install_flatpak_bundle(&path_string, installation.info(), no_update)
-            .await?;
+        let task = FlatpakTask::new_install_bundle_file(
+            &installation.info(),
+            &path_string,
+            uninstall_before_install,
+            dry_run,
+        );
 
         let type_ = SkTransactionType::Install;
-        let transaction = SkTransaction::new(&transaction_uuid, ref_, &type_, filename_string);
-        self.add_transaction(&transaction);
+        let transaction = SkTransaction::new(&task.uuid, &type_, filename_string);
+        self.run_task(task, &transaction).await?;
 
         Ok(transaction)
     }
 
     /// Install new Flatpak by ref file
-    pub async fn install_flatpak_ref(
+    pub async fn install_flatpak_ref_file(
         &self,
-        ref_: &Ref,
         file: &File,
         installation: &SkInstallation,
-        no_update: bool,
+        uninstall_before_install: bool,
+        dry_run: bool,
     ) -> Result<SkTransaction, Error> {
         let path = file.path().unwrap();
         let filename_string = path.file_name().unwrap().to_str().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
-        let transaction_uuid = self
-            .imp()
-            .proxy
-            .install_flatpak_ref(&path_string, installation.info(), no_update)
-            .await?;
+        let task = FlatpakTask::new_install_ref_file(
+            &installation.info(),
+            &path_string,
+            uninstall_before_install,
+            dry_run,
+        );
 
         let type_ = SkTransactionType::Install;
-        let transaction = SkTransaction::new(&transaction_uuid, ref_, &type_, filename_string);
-        self.add_transaction(&transaction);
+        let transaction = SkTransaction::new(&task.uuid, &type_, filename_string);
+        self.run_task(task, &transaction).await?;
 
         Ok(transaction)
+    }
+
+    async fn run_task(&self, task: Task, transaction: &SkTransaction) -> Result<(), Error> {
+        // Remove finished transactions from model
+        transaction.connect_local(
+            "done",
+            false,
+            clone!(@weak self as this => @default-return None, move |t|{
+                let transaction: SkTransaction = t[0].get().unwrap();
+                this.transactions().remove_transaction(&transaction);
+                None
+            }),
+        );
+        transaction.connect_local(
+            "cancelled",
+            false,
+            clone!(@weak self as this => @default-return None, move |t|{
+                let transaction: SkTransaction = t[0].get().unwrap();
+                this.transactions().remove_transaction(&transaction);
+                None
+            }),
+        );
+        transaction.connect_local(
+            "error",
+            false,
+            clone!(@weak self as this => @default-return None, move |t|{
+                let transaction: SkTransaction = t[0].get().unwrap();
+                this.transactions().remove_transaction(&transaction);
+                None
+            }),
+        );
+
+        self.transactions().add_transaction(transaction);
+        dbg!(&task);
+        self.imp().proxy.run_task(task).await?;
+        debug!("sent task");
+
+        Ok(())
+    }
+
+    /// Cancel a worker task
+    pub async fn cancel_task(&self, task_uuid: &str) -> Result<(), Error> {
+        self.imp().proxy.cancel_task(task_uuid).await?;
+        Ok(())
+    }
+
+    /// Handle incoming task responses from worker process
+    async fn receive_task_response(&self) {
+        let mut response = self.imp().proxy.receive_task_response().await.unwrap();
+
+        while let Some(response) = response.next().await {
+            let response = response.args().unwrap().response;
+            debug!("Task response: {:#?}", response);
+
+            let task_uuid = response.uuid.clone();
+            match self.transactions().transaction(&task_uuid) {
+                Some(task) => task.handle_response(&response),
+                None => warn!("Received response for unknown task!"),
+            }
+        }
     }
 
     /// Opens a sideloadable Flatpak file and load it into a `SkSideloadable`
@@ -198,21 +261,19 @@ impl SkWorker {
         file: &File,
         installation: &SkInstallation,
     ) -> Result<SkSideloadable, Error> {
-        let proxy = &self.imp().proxy;
-        let path = file.path().unwrap();
-        let path_string = path.to_str().unwrap().to_string();
-
         let type_ = SkSideloadType::determine_type(file);
         let dry_run_result = match type_ {
             SkSideloadType::Bundle => {
-                proxy
-                    .install_flatpak_bundle_dry_run(&path_string, installation.info())
-                    .await?
+                let task = self
+                    .install_flatpak_bundle_file(file, installation, false, true)
+                    .await?;
+                task.await_dry_run_result().await.unwrap()
             }
             SkSideloadType::Ref => {
-                proxy
-                    .install_flatpak_ref_dry_run(&path_string, installation.info())
-                    .await?
+                let task = self
+                    .install_flatpak_ref_file(file, installation, false, true)
+                    .await?;
+                task.await_dry_run_result().await.unwrap()
             }
             SkSideloadType::Repo => {
                 let bytes = file.load_bytes(gio::Cancellable::NONE)?.0;
@@ -257,87 +318,6 @@ impl SkWorker {
             dry_run_result,
             installation,
         ))
-    }
-
-    fn add_transaction(&self, transaction: &SkTransaction) {
-        // Remove finished transactions from model
-        transaction.connect_local(
-            "done",
-            false,
-            clone!(@weak self as this => @default-return None, move |t|{
-                let transaction: SkTransaction = t[0].get().unwrap();
-                this.transactions().remove_transaction(&transaction);
-                None
-            }),
-        );
-        transaction.connect_local(
-            "cancelled",
-            false,
-            clone!(@weak self as this => @default-return None, move |t|{
-                let transaction: SkTransaction = t[0].get().unwrap();
-                this.transactions().remove_transaction(&transaction);
-                None
-            }),
-        );
-        transaction.connect_local(
-            "error",
-            false,
-            clone!(@weak self as this => @default-return None, move |t|{
-                let transaction: SkTransaction = t[0].get().unwrap();
-                this.transactions().remove_transaction(&transaction);
-                None
-            }),
-        );
-
-        self.transactions().add_transaction(transaction);
-    }
-
-    /// Cancel a Flatpak transaction
-    pub async fn cancel_transaction(&self, transaction_uuid: &str) -> Result<(), Error> {
-        self.imp()
-            .proxy
-            .cancel_transaction(transaction_uuid)
-            .await?;
-        Ok(())
-    }
-
-    /// Handle incoming progress messages from worker process
-    async fn receive_transaction_progress(&self) {
-        let mut progress = self
-            .imp()
-            .proxy
-            .receive_transaction_progress()
-            .await
-            .unwrap();
-
-        while let Some(progress) = progress.next().await {
-            let progress = progress.args().unwrap().progress;
-            debug!("Transaction progress: {:#?}", progress);
-
-            let uuid = progress.transaction_uuid.clone();
-
-            match self.transactions().transaction(&uuid) {
-                Some(transaction) => transaction.handle_progress(&progress),
-                None => warn!("Received progress for unknown transaction!"),
-            }
-        }
-    }
-
-    /// Handle incoming error messages from worker process
-    async fn receive_transaction_error(&self) {
-        let mut error = self.imp().proxy.receive_transaction_error().await.unwrap();
-
-        while let Some(error) = error.next().await {
-            let error = error.args().unwrap().error;
-            error!("Transaction error: {:#?}", error.message);
-
-            let uuid = error.transaction_uuid.clone();
-
-            match self.transactions().transaction(&uuid) {
-                Some(transaction) => transaction.handle_error(&error),
-                None => warn!("Received error for unknown transaction!"),
-            }
-        }
     }
 }
 

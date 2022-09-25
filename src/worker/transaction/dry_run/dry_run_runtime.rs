@@ -17,7 +17,7 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-#[derive(Default, Deserialize, Serialize, Type, Debug, Clone)]
+#[derive(Default, Deserialize, Serialize, Type, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DryRunRuntime {
     pub ref_: String,
     pub operation_type: String,

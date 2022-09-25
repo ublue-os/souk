@@ -1,5 +1,5 @@
-// Souk - process.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - operation_type.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,18 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-/// Parsing appstream metadata, creation of xmlb exports
-mod appstream;
-/// Handling of Flatpak installations with its remotes
-/// Execution of Flatpak (dry-run) transactions, and state tracking
-mod transaction;
+use serde::{Deserialize, Serialize};
+use zbus::zvariant::Type;
 
-mod dbus_server;
-mod worker_error;
-
-mod app;
-pub use app::SkWorkerApplication;
-// TODO: Don't expose them, or move them into `shared`
-pub use transaction::DryRunResult;
-use transaction::FlatpakWorker;
-pub use worker_error::WorkerError;
+#[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+pub enum FlatpakOperationType {
+    #[default]
+    Install,
+    InstallBundleFile,
+    InstallRefFile,
+    Uninstall,
+}

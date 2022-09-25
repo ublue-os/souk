@@ -151,7 +151,7 @@
                                                 <child>
                                                   <object class="AdwPreferencesGroup" id="warn_group">
                                                     <child>
-                                                      <object class="AdwActionRow" id="no_update_source_row">
+                                                      <object class="AdwActionRow" id="no_updates_row">
                                                         <property name="visible">False</property>
                                                         <property name="title" translatable="yes">No Automatic Updates</property>
                                                         <property name="subtitle" translatable="yes">This package will not receive automatic updates. New versions with possible bug / security fixes have to be downloaded and installed manually.</property>

@@ -1,5 +1,5 @@
-// Souk - error.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - task.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,17 +17,8 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-#[derive(Deserialize, Serialize, Type, Default, Debug, Clone)]
-pub struct TransactionError {
-    pub transaction_uuid: String,
-    pub message: String,
-}
-
-impl TransactionError {
-    pub fn new(transaction_uuid: String, message: String) -> Self {
-        Self {
-            transaction_uuid,
-            message,
-        }
-    }
+#[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+pub struct AppstreamTask {
+    // implement
+    pub dummy: String,
 }

@@ -16,6 +16,7 @@
 
 use std::cell::{Cell, RefCell};
 
+use async_std::channel::{unbounded, Receiver, Sender};
 use flatpak::Ref;
 use glib::subclass::Signal;
 use glib::{
@@ -29,7 +30,8 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::flatpak::transaction::SkTransactionType;
-use crate::worker::{TransactionError, TransactionProgress};
+use crate::shared::task::{Response, ResponseType};
+use crate::worker::DryRunResult;
 
 mod imp {
     use super::*;
@@ -38,7 +40,6 @@ mod imp {
     pub struct SkTransaction {
         pub uuid: OnceCell<String>,
 
-        pub ref_: OnceCell<Ref>,
         pub type_: OnceCell<SkTransactionType>,
 
         /// Name of Flatpak remote or bundle filename
@@ -58,6 +59,11 @@ mod imp {
         pub current_operation: Cell<i32>,
         /// The total count of operations in the transaction
         pub operations_count: Cell<i32>,
+
+        // Gets called when task finished (done/error/cancelled)
+        pub finished_sender: OnceCell<Sender<()>>,
+        pub finished_receiver: OnceCell<Receiver<()>>,
+        pub dry_run_result: RefCell<Option<DryRunResult>>,
     }
 
     #[glib::object_subclass]
@@ -76,13 +82,6 @@ mod imp {
                         "",
                         "",
                         None,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecObject::new(
-                        "ref",
-                        "",
-                        "",
-                        Ref::static_type(),
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
                     ParamSpecEnum::new(
@@ -151,7 +150,6 @@ mod imp {
             // TODO: Should we re-add the installation info?
             match pspec.name() {
                 "uuid" => obj.uuid().to_value(),
-                "ref" => obj.ref_().to_value(),
                 "type" => obj.type_().to_value(),
                 "origin" => obj.origin().to_value(),
                 "progress" => obj.progress().to_value(),
@@ -173,7 +171,6 @@ mod imp {
         ) {
             match pspec.name() {
                 "uuid" => self.uuid.set(value.get().unwrap()).unwrap(),
-                "ref" => self.ref_.set(value.get().unwrap()).unwrap(),
                 "type" => self.type_.set(value.get().unwrap()).unwrap(),
                 "origin" => self.origin.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
@@ -195,6 +192,12 @@ mod imp {
             });
             SIGNALS.as_ref()
         }
+
+        fn constructed(&self, _obj: &Self::Type) {
+            let (finished_sender, finished_receiver) = unbounded();
+            self.finished_sender.set(finished_sender).unwrap();
+            self.finished_receiver.set(finished_receiver).unwrap();
+        }
     }
 }
 
@@ -203,22 +206,13 @@ glib::wrapper! {
 }
 
 impl SkTransaction {
-    pub fn new(uuid: &str, ref_: &Ref, type_: &SkTransactionType, origin: &str) -> Self {
-        glib::Object::new(&[
-            ("uuid", &uuid),
-            ("ref", &ref_),
-            ("type", &type_),
-            ("origin", &origin),
-        ])
-        .unwrap()
+    // TODO: Include original Task object
+    pub fn new(uuid: &str, type_: &SkTransactionType, origin: &str) -> Self {
+        glib::Object::new(&[("uuid", &uuid), ("type", &type_), ("origin", &origin)]).unwrap()
     }
 
     pub fn uuid(&self) -> String {
         self.imp().uuid.get().unwrap().to_string()
-    }
-
-    pub fn ref_(&self) -> Ref {
-        self.imp().ref_.get().unwrap().clone()
     }
 
     pub fn type_(&self) -> SkTransactionType {
@@ -253,47 +247,60 @@ impl SkTransaction {
         self.imp().operations_count.get()
     }
 
-    pub fn handle_progress(&self, progress: &TransactionProgress) {
+    pub fn handle_response(&self, response: &Response) {
         let imp = self.imp();
 
-        if progress.is_done {
-            imp.progress.set(1.0);
-            self.notify("progress");
+        match response.type_ {
+            ResponseType::Done => {
+                if let Some(flatpak_response) = response.flatpak_response() {
+                    if let Some(dry_run_result) = flatpak_response.dry_run_result.into() {
+                        *imp.dry_run_result.borrow_mut() = Some(dry_run_result);
+                    }
 
-            self.emit_by_name::<()>("done", &[]);
-            return;
+                    imp.progress.set(flatpak_response.progress as f32 / 100.0);
+                    self.notify("progress");
+                }
+
+                imp.progress.set(1.0);
+                self.notify("progress");
+                self.emit_by_name::<()>("done", &[]);
+                imp.finished_sender.get().unwrap().try_send(()).unwrap();
+            }
+            ResponseType::Update => {
+                if let Some(flatpak_response) = response.flatpak_response() {
+                    imp.progress.set(flatpak_response.progress as f32 / 100.0);
+                    self.notify("progress");
+                }
+            }
+            ResponseType::Cancelled => {
+                self.emit_by_name::<()>("cancelled", &[]);
+                imp.finished_sender.get().unwrap().try_send(()).unwrap();
+            }
+            ResponseType::Error => {
+                let error = response.error_response().unwrap();
+                self.emit_by_name::<()>("error", &[&error]);
+                imp.finished_sender.get().unwrap().try_send(()).unwrap();
+            }
         }
 
-        if progress.is_cancelled {
-            self.emit_by_name::<()>("cancelled", &[]);
-            return;
-        }
+        //*imp.current_operation_type.borrow_mut() = progress.type_.clone();
+        // self.notify("current-operation-type");
 
-        let global_progress = (progress.current_operation as f32 - 1.0
-            + (progress.progress as f32 / 100.0))
-            / progress.operations_count as f32;
-        imp.progress.set(global_progress as f32);
-        self.notify("progress");
+        // let p = response.progress as f32 / 100.0;
+        // imp.current_operation_progress.set(p);
+        // self.notify("current-operation-progress");
 
-        let ref_ = Ref::parse(&progress.ref_).unwrap();
-        *imp.current_operation_ref.borrow_mut() = Some(ref_);
-        self.notify("current-operation-ref");
+        // imp.current_operation.set(progress.current_operation);
+        // self.notify("current-operation");
 
-        *imp.current_operation_type.borrow_mut() = progress.type_.clone();
-        self.notify("current-operation-type");
-
-        let p = progress.progress as f32 / 100.0;
-        imp.current_operation_progress.set(p);
-        self.notify("current-operation-progress");
-
-        imp.current_operation.set(progress.current_operation);
-        self.notify("current-operation");
-
-        imp.operations_count.set(progress.operations_count);
-        self.notify("operations-count");
+        // imp.operations_count.set(progress.operations_count);
+        // self.notify("operations-count");
     }
 
-    pub fn handle_error(&self, error: &TransactionError) {
-        self.emit_by_name::<()>("error", &[&error.message.to_value()]);
+    // TODO: Make this generic for all result types
+    pub async fn await_dry_run_result(&self) -> Option<DryRunResult> {
+        let imp = self.imp();
+        imp.finished_receiver.get().unwrap().recv().await.unwrap();
+        imp.dry_run_result.borrow().to_owned()
     }
 }

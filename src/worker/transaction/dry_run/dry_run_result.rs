@@ -22,7 +22,7 @@ use zbus::zvariant::{Optional, Type};
 use super::DryRunRuntime;
 use crate::shared::info::RemoteInfo;
 
-#[derive(Derivative, Deserialize, Serialize, Type, Clone)]
+#[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash)]
 #[derivative(Debug)]
 pub struct DryRunResult {
     pub ref_: String,

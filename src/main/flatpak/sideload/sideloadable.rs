@@ -141,27 +141,27 @@ impl SkSideloadable {
 
     pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTransaction>, Error> {
         if let Some(package) = self.package() {
-            let no_update = package.is_replacing_remote().is_some();
+            let uninstall_before_install = package.is_replacing_remote().is_some();
 
             let transaction = match self.type_() {
                 SkSideloadType::Bundle => {
                     let transaction = worker
-                        .install_flatpak_bundle(
-                            &package.ref_(),
+                        .install_flatpak_bundle_file(
                             &self.file(),
                             &self.installation(),
-                            no_update,
+                            uninstall_before_install,
+                            false,
                         )
                         .await?;
                     Some(transaction)
                 }
                 SkSideloadType::Ref => {
                     let transaction = worker
-                        .install_flatpak_ref(
-                            &package.ref_(),
+                        .install_flatpak_ref_file(
                             &self.file(),
                             &self.installation(),
-                            no_update,
+                            uninstall_before_install,
+                            false,
                         )
                         .await?;
                     Some(transaction)

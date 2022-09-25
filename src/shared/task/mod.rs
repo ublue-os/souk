@@ -1,5 +1,5 @@
-// Souk - process.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - mod.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,18 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-/// Parsing appstream metadata, creation of xmlb exports
 mod appstream;
-/// Handling of Flatpak installations with its remotes
-/// Execution of Flatpak (dry-run) transactions, and state tracking
-mod transaction;
+mod flatpak;
 
-mod dbus_server;
-mod worker_error;
+mod response;
+#[allow(clippy::module_inception)]
+mod task;
 
-mod app;
-pub use app::SkWorkerApplication;
-// TODO: Don't expose them, or move them into `shared`
-pub use transaction::DryRunResult;
-use transaction::FlatpakWorker;
-pub use worker_error::WorkerError;
+pub use response::{Response, ResponseType};
+pub use task::Task;
+
+pub use self::appstream::{AppstreamResponse, AppstreamTask};
+pub use self::flatpak::{FlatpakOperationType, FlatpakResponse, FlatpakTask};

@@ -15,12 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod dry_run;
-mod message;
 
-mod flatpak_task;
 mod flatpak_worker;
 
 pub use dry_run::{DryRunResult, DryRunRuntime};
-pub use flatpak_task::FlatpakTask;
 pub use flatpak_worker::FlatpakWorker;
-pub use message::{FlatpakMessage, TransactionError, TransactionProgress};

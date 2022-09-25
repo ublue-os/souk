@@ -20,7 +20,6 @@ use std::time::Duration;
 use adw::subclass::prelude::*;
 use async_std::channel::{unbounded, Receiver, Sender};
 use async_std::prelude::*;
-use futures::future::join_all;
 use gio::subclass::prelude::ApplicationImpl;
 use glib::clone;
 use gtk::prelude::*;
@@ -30,8 +29,8 @@ use rusty_pool::ThreadPool;
 use zbus::{Connection, ConnectionBuilder, SignalContext};
 
 use crate::shared::config;
+use crate::shared::task::{Response, Task};
 use crate::worker::dbus_server::WorkerServer;
-use crate::worker::transaction::{FlatpakMessage, FlatpakTask};
 use crate::worker::FlatpakWorker;
 
 /// Specifies how many tasks can be executed in parallel
@@ -42,13 +41,13 @@ mod imp {
     use super::*;
 
     pub struct SkWorkerApplication {
+        pub task_sender: Sender<Task>,
+        pub task_receiver: Receiver<Task>,
+        pub response_receiver: Receiver<Response>,
+
         pub flatpak_worker: FlatpakWorker,
-        pub flatpak_task_sender: Sender<FlatpakTask>,
-        pub flatpak_task_receiver: Receiver<FlatpakTask>,
-        pub flatpak_message_receiver: Receiver<FlatpakMessage>,
 
         pub dbus_connection: RefCell<Option<Connection>>,
-
         pub thread_pool: RefCell<Option<ThreadPool>>,
     }
 
@@ -59,20 +58,19 @@ mod imp {
         type Type = super::SkWorkerApplication;
 
         fn new() -> Self {
-            // Channel for sending tasks to the Flatpak worker
-            let (flatpak_task_sender, flatpak_task_receiver) = unbounded();
-            // Channel for receiving update messages from running Flatpak tasks
-            let (flatpak_message_sender, flatpak_message_receiver) = unbounded();
-            let flatpak_worker = FlatpakWorker::new(flatpak_message_sender);
+            let (task_sender, task_receiver) = unbounded();
+            let (response_sender, response_receiver) = unbounded();
+
+            let flatpak_worker = FlatpakWorker::new(response_sender);
 
             let dbus_connection = RefCell::default();
             let thread_pool = RefCell::default();
 
             Self {
+                task_sender,
+                task_receiver,
+                response_receiver,
                 flatpak_worker,
-                flatpak_task_sender,
-                flatpak_task_receiver,
-                flatpak_message_receiver,
                 dbus_connection,
                 thread_pool,
             }
@@ -97,7 +95,7 @@ mod imp {
                 }
 
                 let f1 = app.receive_tasks();
-                let f2 = app.receive_messages();
+                let f2 = app.receive_responses();
                 futures::join!(f1, f2);
             });
             spawn!(fut);
@@ -173,10 +171,8 @@ impl SkWorkerApplication {
     async fn start_dbus_server(&self) -> zbus::Result<()> {
         debug!("Start DBus server...");
 
-        let flatpak_task_sender = self.imp().flatpak_task_sender.clone();
-        let worker = WorkerServer {
-            flatpak_task_sender,
-        };
+        let task_sender = self.imp().task_sender.clone();
+        let worker = WorkerServer { task_sender };
 
         let con = ConnectionBuilder::session()?
             .name(config::WORKER_APP_ID)?
@@ -188,59 +184,7 @@ impl SkWorkerApplication {
         Ok(())
     }
 
-    async fn receive_tasks(&self) {
-        let imp = self.imp();
-
-        let mut flatpak_receiver = imp.flatpak_task_receiver.clone();
-        let flatpak_tasks = async move {
-            while let Some(task) = flatpak_receiver.next().await {
-                self.start_task(task).await;
-            }
-        };
-
-        // Insert other kinds of tasks here, eg. appstream stuff
-
-        let receiver = vec![flatpak_tasks];
-        join_all(receiver).await;
-
-        debug!("Stopped receiving tasks.");
-    }
-
-    /// Receives status/update messages, and reports them back to the main
-    /// binary as a DBus signal
-    // TODO: Make this generic, and not Flatpak specific
-    async fn receive_messages(&self) {
-        let imp = self.imp();
-
-        let signal_ctxt = {
-            let con = self.imp().dbus_connection.borrow();
-            let con = con.as_ref().unwrap();
-            SignalContext::new(con, DBUS_PATH).unwrap()
-        };
-
-        let mut receiver = imp.flatpak_message_receiver.clone();
-        while let Some(message) = receiver.next().await {
-            match message {
-                FlatpakMessage::Progress(progress) => {
-                    // Emit `transaction_progress` signal via dbus
-                    WorkerServer::transaction_progress(&signal_ctxt, progress)
-                        .await
-                        .unwrap()
-                }
-                FlatpakMessage::Error(error) => {
-                    // Emit `transaction_error` signal via dbus
-                    WorkerServer::transaction_error(&signal_ctxt, error)
-                        .await
-                        .unwrap()
-                }
-            }
-        }
-
-        debug!("Stopped receiving messages.");
-    }
-
-    // TODO: Make the task here generic, and not Flatpak specific
-    async fn start_task(&self, task: FlatpakTask) {
+    async fn start_task(&self, task: Task) {
         let imp = self.imp();
         let (sender, mut receiver) = unbounded();
 
@@ -254,12 +198,27 @@ impl SkWorkerApplication {
         {
             let thread_pool = imp.thread_pool.borrow();
             if let Some(thread_pool) = &*thread_pool {
-                thread_pool.spawn(
-                    clone!(@strong imp.flatpak_worker as worker, @strong task => async move {
-                        worker.process_task(task);
-                        sender.send(true).await.unwrap();
-                    }),
-                );
+                let uuid = task.uuid.clone();
+
+                // Flatpak task
+                if let Some(task) = task.flatpak_task() {
+                    thread_pool.spawn(
+                        clone!(@strong sender, @strong imp.flatpak_worker as worker, @strong task, @strong uuid => async move {
+                            worker.process_task(task, &uuid);
+                            sender.send(()).await.unwrap();
+                        }),
+                    );
+                }
+
+                // Appstream task
+                if let Some(task) = task.appstream_task() {
+                    thread_pool.spawn(
+                        clone!(@strong sender, @strong imp.flatpak_worker as worker, @strong task, @strong uuid => async move {
+                            // implement
+                            sender.send(()).await.unwrap();
+                        }),
+                    );
+                }
             } else {
                 error!("Unable to start task, thread pool is not available.");
                 return;
@@ -268,6 +227,36 @@ impl SkWorkerApplication {
 
         receiver.next().await;
         self.release();
+    }
+
+    async fn receive_tasks(&self) {
+        let imp = self.imp();
+
+        let mut task_receiver = imp.task_receiver.clone();
+        while let Some(task) = task_receiver.next().await {
+            self.start_task(task).await;
+        }
+
+        debug!("Stopped receiving tasks.");
+    }
+
+    async fn receive_responses(&self) {
+        let imp = self.imp();
+
+        let signal_ctxt = {
+            let con = self.imp().dbus_connection.borrow();
+            let con = con.as_ref().unwrap();
+            SignalContext::new(con, DBUS_PATH).unwrap()
+        };
+
+        let mut receiver = imp.response_receiver.clone();
+        while let Some(response) = receiver.next().await {
+            WorkerServer::task_response(&signal_ctxt, response)
+                .await
+                .unwrap()
+        }
+
+        debug!("Stopped receiving responses.");
     }
 }
 

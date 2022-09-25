@@ -14,142 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use async_std::channel::{unbounded, Sender};
-use async_std::prelude::*;
-use uuid::Uuid;
+use async_std::channel::Sender;
 use zbus::{dbus_interface, SignalContext};
 
-use crate::shared::info::InstallationInfo;
-use crate::worker::transaction::{
-    DryRunResult, FlatpakTask, TransactionError, TransactionProgress,
-};
-use crate::worker::WorkerError;
+use crate::shared::task::{Response, Task};
 
 #[derive(Debug)]
 pub struct WorkerServer {
-    pub flatpak_task_sender: Sender<FlatpakTask>,
+    pub task_sender: Sender<Task>,
 }
 
 #[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
 impl WorkerServer {
-    // Transaction
-
-    async fn install_flatpak(
-        &self,
-        ref_: &str,
-        remote: &str,
-        installation_info: InstallationInfo,
-        no_update: bool,
-    ) -> String {
-        let uuid = Uuid::new_v4().to_string();
-        self.flatpak_task_sender
-            .send(FlatpakTask::InstallFlatpak(
-                uuid.clone(),
-                ref_.to_string(),
-                remote.to_string(),
-                installation_info.clone(),
-                no_update,
-            ))
-            .await
-            .unwrap();
-
-        uuid
+    async fn run_task(&self, task: Task) {
+        self.task_sender.send(task).await.unwrap();
     }
 
-    async fn install_flatpak_bundle(
-        &self,
-        path: &str,
-        installation_info: InstallationInfo,
-        no_update: bool,
-    ) -> String {
-        let uuid = Uuid::new_v4().to_string();
-        self.flatpak_task_sender
-            .send(FlatpakTask::InstallFlatpakBundle(
-                uuid.clone(),
-                path.to_string(),
-                installation_info.clone(),
-                no_update,
-            ))
-            .await
-            .unwrap();
-
-        uuid
-    }
-
-    async fn install_flatpak_bundle_dry_run(
-        &self,
-        path: &str,
-        installation_info: InstallationInfo,
-    ) -> Result<DryRunResult, WorkerError> {
-        let (flatpak_task_sender, mut receiver) = unbounded();
-
-        self.flatpak_task_sender
-            .send(FlatpakTask::InstallFlatpakBundleDryRun(
-                path.to_string(),
-                installation_info.clone(),
-                flatpak_task_sender,
-            ))
-            .await
-            .unwrap();
-
-        receiver.next().await.unwrap()
-    }
-
-    async fn install_flatpak_ref(
-        &self,
-        path: &str,
-        installation_info: InstallationInfo,
-        no_update: bool,
-    ) -> String {
-        let uuid = Uuid::new_v4().to_string();
-        self.flatpak_task_sender
-            .send(FlatpakTask::InstallFlatpakRef(
-                uuid.clone(),
-                path.to_string(),
-                installation_info.clone(),
-                no_update,
-            ))
-            .await
-            .unwrap();
-
-        uuid
-    }
-
-    async fn install_flatpak_ref_dry_run(
-        &self,
-        path: &str,
-        installation_info: InstallationInfo,
-    ) -> Result<DryRunResult, WorkerError> {
-        let (flatpak_task_sender, mut receiver) = unbounded();
-
-        self.flatpak_task_sender
-            .send(FlatpakTask::InstallFlatpakRefDryRun(
-                path.to_string(),
-                installation_info.clone(),
-                flatpak_task_sender,
-            ))
-            .await
-            .unwrap();
-
-        receiver.next().await.unwrap()
-    }
-
-    async fn cancel_transaction(&self, transaction_uuid: &str) {
-        self.flatpak_task_sender
-            .send(FlatpakTask::CancelTransaction(transaction_uuid.to_string()))
-            .await
-            .unwrap();
+    async fn cancel_task(&self, _task_uuid: &str) {
+        // TODO: self.flatpak_task_sender
+        //     .send(FlatpakTask::CancelTransaction(transaction_uuid.
+        // to_string()))     .await
+        //     .unwrap();
     }
 
     #[dbus_interface(signal)]
-    pub async fn transaction_progress(
+    pub async fn task_response(
         signal_ctxt: &SignalContext<'_>,
-        progress: TransactionProgress,
-    ) -> zbus::Result<()>;
-
-    #[dbus_interface(signal)]
-    pub async fn transaction_error(
-        signal_ctxt: &SignalContext<'_>,
-        error: TransactionError,
+        response: Response,
     ) -> zbus::Result<()>;
 }

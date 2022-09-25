@@ -15,57 +15,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::shared::config;
-use crate::shared::info::InstallationInfo;
-use crate::worker::{
-    DryRunResult, TransactionError as WTransactionError,
-    TransactionProgress as WTransactionProgress, WorkerError,
-};
+use crate::shared::task::{Response, Task};
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
-    // Transaction
+    fn run_task(&self, task: Task) -> zbus::Result<()>;
 
-    fn install_flatpak(
-        &self,
-        ref_: &str,
-        remote: &str,
-        installation_info: InstallationInfo,
-        no_update: bool,
-    ) -> zbus::Result<String>;
-
-    fn install_flatpak_bundle(
-        &self,
-        path: &str,
-        installation_info: InstallationInfo,
-        no_update: bool,
-    ) -> zbus::Result<String>;
-
-    fn install_flatpak_bundle_dry_run(
-        &self,
-        path: &str,
-        installation_info: InstallationInfo,
-    ) -> Result<DryRunResult, WorkerError>;
-
-    fn install_flatpak_ref(
-        &self,
-        path: &str,
-        installation_info: InstallationInfo,
-        no_update: bool,
-    ) -> zbus::Result<String>;
-
-    fn install_flatpak_ref_dry_run(
-        &self,
-        path: &str,
-        installation_info: InstallationInfo,
-    ) -> Result<DryRunResult, WorkerError>;
-
-    fn cancel_transaction(&self, uuid: &str) -> zbus::Result<()>;
+    fn cancel_task(&self, task_uuid: &str) -> zbus::Result<()>;
 
     #[dbus_proxy(signal)]
-    fn transaction_progress(&self, progress: WTransactionProgress) -> zbus::Result<()>;
-
-    #[dbus_proxy(signal)]
-    fn transaction_error(&self, error: WTransactionError) -> zbus::Result<()>;
+    fn task_response(&self, response: Response) -> zbus::Result<()>;
 }
 
 impl Default for WorkerProxy<'static> {
@@ -76,6 +35,7 @@ impl Default for WorkerProxy<'static> {
 
             WorkerProxy::builder(&session)
                 .destination(name)?
+                // TODO: Don't hardcode path here
                 .path("/de/haeckerfelix/Souk/Worker")?
                 .build()
                 .await
