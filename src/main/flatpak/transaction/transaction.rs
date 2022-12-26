@@ -30,7 +30,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::flatpak::transaction::SkTransactionType;
-use crate::shared::task::{Response, ResponseType};
+use crate::shared::task::{Response, ResponseType, Task};
 use crate::worker::DryRunResult;
 
 mod imp {
@@ -38,9 +38,7 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkTransaction {
-        pub uuid: OnceCell<String>,
-
-        pub type_: OnceCell<SkTransactionType>,
+        pub data: OnceCell<Task>,
 
         /// Name of Flatpak remote or bundle filename
         pub origin: OnceCell<String>,
@@ -77,28 +75,16 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
-                    ParamSpecString::new(
-                        "uuid",
-                        "",
-                        "",
-                        None,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
+                    ParamSpecString::new("uuid", "", "", None, ParamFlags::READABLE),
                     ParamSpecEnum::new(
                         "type",
                         "",
                         "",
                         SkTransactionType::static_type(),
                         SkTransactionType::None as i32,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                        ParamFlags::READABLE,
                     ),
-                    ParamSpecString::new(
-                        "origin",
-                        "",
-                        "",
-                        None,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
+                    ParamSpecString::new("origin", "", "", None, ParamFlags::READABLE),
                     ParamSpecFloat::new("progress", "", "", 0.0, 1.0, 0.0, ParamFlags::READABLE),
                     ParamSpecObject::new(
                         "current-operation-ref",
@@ -162,21 +148,6 @@ mod imp {
             }
         }
 
-        fn set_property(
-            &self,
-            _obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
-            match pspec.name() {
-                "uuid" => self.uuid.set(value.get().unwrap()).unwrap(),
-                "type" => self.type_.set(value.get().unwrap()).unwrap(),
-                "origin" => self.origin.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
-        }
-
         fn signals() -> &'static [Signal] {
             static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
                 vec![
@@ -206,17 +177,24 @@ glib::wrapper! {
 }
 
 impl SkTransaction {
-    // TODO: Include original Task object
-    pub fn new(uuid: &str, type_: &SkTransactionType, origin: &str) -> Self {
-        glib::Object::new(&[("uuid", &uuid), ("type", &type_), ("origin", &origin)]).unwrap()
+    pub fn new(data: Task) -> Self {
+        let task: Self = glib::Object::new(&[]).unwrap();
+        task.imp().data.set(data).unwrap();
+
+        task
+    }
+
+    /// Returns the original shared [Task] struct
+    pub fn data(&self) -> Task {
+        self.imp().data.get().unwrap().clone()
     }
 
     pub fn uuid(&self) -> String {
-        self.imp().uuid.get().unwrap().to_string()
+        self.imp().data.get().unwrap().uuid.clone()
     }
 
     pub fn type_(&self) -> SkTransactionType {
-        *self.imp().type_.get().unwrap()
+        SkTransactionType::None
     }
 
     pub fn origin(&self) -> String {

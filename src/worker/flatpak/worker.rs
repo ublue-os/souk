@@ -100,17 +100,6 @@ impl FlatpakWorker {
             }
         };
 
-        // FlatpakOperationType::CancelTransaction(uuid) => {
-        // let transactions = self.transactions.lock().unwrap();
-        // if let Some(cancellable) = transactions.get(&uuid) {
-        // cancellable.cancel();
-        // } else {
-        // warn!("Unable to cancel transaction: {}", uuid);
-        // }
-        // return;
-        // }
-        // };
-
         if let Err(err) = result {
             // Transaction got cancelled (probably by user)
             if err == WorkerError::GLibCancelled {
@@ -120,6 +109,15 @@ impl FlatpakWorker {
                 let response = Response::new_error(task_uuid.into(), err.message());
                 self.sender.try_send(response).unwrap();
             }
+        }
+    }
+
+    pub fn cancel_task(&self, task_uuid: &str) {
+        let transactions = self.transactions.lock().unwrap();
+        if let Some(cancellable) = transactions.get(task_uuid) {
+            cancellable.cancel();
+        } else {
+            warn!("Unable to cancel flatpak task: {}", task_uuid);
         }
     }
 

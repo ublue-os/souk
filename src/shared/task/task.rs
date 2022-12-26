@@ -25,6 +25,8 @@ pub struct Task {
     /// Each task has a unique UUID that can be used for identification. This is
     /// required, for example, if a running task should be cancelled.
     pub uuid: String,
+    /// Whether the task can be cancelled
+    pub cancellable: bool,
 
     // This should have been an enum, unfortunately not supported by zbus / dbus
     flatpak_task: Optional<FlatpakTask>,
@@ -32,19 +34,21 @@ pub struct Task {
 }
 
 impl Task {
-    pub fn new_flatpak(task: FlatpakTask) -> Self {
+    pub fn new_flatpak(task: FlatpakTask, cancellable: bool) -> Self {
         let uuid = Uuid::new_v4().to_string();
         Self {
             uuid,
+            cancellable,
             flatpak_task: Some(task).into(),
             appstream_task: None.into(),
         }
     }
 
-    pub fn new_appstream(task: AppstreamTask) -> Self {
+    pub fn new_appstream(task: AppstreamTask, cancellable: bool) -> Self {
         let uuid = Uuid::new_v4().to_string();
         Self {
             uuid,
+            cancellable,
             flatpak_task: None.into(),
             appstream_task: Some(task).into(),
         }

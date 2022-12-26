@@ -22,6 +22,7 @@ use crate::shared::task::{Response, Task};
 #[derive(Debug)]
 pub struct WorkerServer {
     pub task_sender: Sender<Task>,
+    pub cancel_sender: Sender<Task>,
 }
 
 #[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
@@ -30,11 +31,8 @@ impl WorkerServer {
         self.task_sender.send(task).await.unwrap();
     }
 
-    async fn cancel_task(&self, _task_uuid: &str) {
-        // TODO: self.flatpak_task_sender
-        //     .send(FlatpakTask::CancelTransaction(transaction_uuid.
-        // to_string()))     .await
-        //     .unwrap();
+    async fn cancel_task(&self, task: Task) {
+        self.cancel_sender.send(task).await.unwrap();
     }
 
     #[dbus_interface(signal)]

@@ -672,11 +672,11 @@ impl SkSideloadWindow {
     fn cancel_sideload_clicked(&self) {
         let fut = clone!(@weak self as this => async move{
             let imp = this.imp();
-            let uuid = imp.transaction.get().unwrap().uuid();
+            let task = imp.transaction.get().unwrap();
             let worker = SkApplication::default().worker();
 
             imp.cancel_sideload_button.set_sensitive(false);
-            if let Err(err) = worker.cancel_task(&uuid).await {
+            if let Err(err) = worker.cancel_task(&task).await {
                 this.show_error_message(&err.to_string());
             }
         });

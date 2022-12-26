@@ -21,7 +21,7 @@ use crate::shared::task::{Response, Task};
 trait Worker {
     fn run_task(&self, task: Task) -> zbus::Result<()>;
 
-    fn cancel_task(&self, task_uuid: &str) -> zbus::Result<()>;
+    fn cancel_task(&self, task: Task) -> zbus::Result<()>;
 
     #[dbus_proxy(signal)]
     fn task_response(&self, response: Response) -> zbus::Result<()>;

@@ -37,4 +37,8 @@ impl AppstreamWorker {
     pub fn process_task(&self, _task: AppstreamTask, _task_uuid: &str) {
         unimplemented!()
     }
+
+    pub fn cancel_task(&self, _task_uuid: &str) {
+        unimplemented!()
+    }
 }

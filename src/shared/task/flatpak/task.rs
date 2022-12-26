@@ -62,7 +62,7 @@ impl FlatpakTask {
             ..Default::default()
         };
 
-        Task::new_flatpak(flatpak_task)
+        Task::new_flatpak(flatpak_task, true)
     }
 
     pub fn new_install_ref_file(
@@ -80,7 +80,7 @@ impl FlatpakTask {
             ..Default::default()
         };
 
-        Task::new_flatpak(flatpak_task)
+        Task::new_flatpak(flatpak_task, true)
     }
 
     pub fn new_install_bundle_file(
@@ -98,7 +98,7 @@ impl FlatpakTask {
             ..Default::default()
         };
 
-        Task::new_flatpak(flatpak_task)
+        Task::new_flatpak(flatpak_task, true)
     }
 
     pub fn new_uninstall(installation: &InstallationInfo, remote: &RemoteInfo, ref_: &str) -> Task {
@@ -112,7 +112,7 @@ impl FlatpakTask {
             ..Default::default()
         };
 
-        Task::new_flatpak(flatpak_task)
+        Task::new_flatpak(flatpak_task, false)
     }
 }
 

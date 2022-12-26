@@ -28,10 +28,10 @@ use crate::main::dbus_proxy::WorkerProxy;
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkInstallation, SkInstallationModel, SkRemote};
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
-use crate::main::flatpak::transaction::{SkTransaction, SkTransactionModel, SkTransactionType};
+use crate::main::flatpak::transaction::{SkTransaction, SkTransactionModel};
 use crate::main::flatpak::utils;
 use crate::shared::info::RemoteInfo;
-use crate::shared::task::{FlatpakTask, Task};
+use crate::shared::task::FlatpakTask;
 
 mod imp {
     use super::*;
@@ -127,7 +127,7 @@ impl SkWorker {
     ) -> Result<SkTransaction, Error> {
         let ref_string = ref_.format_ref().unwrap().to_string();
 
-        let task = FlatpakTask::new_install(
+        let task_data = FlatpakTask::new_install(
             &installation.info(),
             &remote.info(),
             &ref_string,
@@ -135,11 +135,10 @@ impl SkWorker {
             dry_run,
         );
 
-        let type_ = SkTransactionType::Install;
-        let transaction = SkTransaction::new(&task.uuid, &type_, &remote.name());
-        self.run_task(task, &transaction).await?;
+        let task = SkTransaction::new(task_data);
+        self.run_task(&task).await?;
 
-        Ok(transaction)
+        Ok(task)
     }
 
     /// Install new Flatpak by bundle file
@@ -151,21 +150,19 @@ impl SkWorker {
         dry_run: bool,
     ) -> Result<SkTransaction, Error> {
         let path = file.path().unwrap();
-        let filename_string = path.file_name().unwrap().to_str().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
-        let task = FlatpakTask::new_install_bundle_file(
+        let task_data = FlatpakTask::new_install_bundle_file(
             &installation.info(),
             &path_string,
             uninstall_before_install,
             dry_run,
         );
 
-        let type_ = SkTransactionType::Install;
-        let transaction = SkTransaction::new(&task.uuid, &type_, filename_string);
-        self.run_task(task, &transaction).await?;
+        let task = SkTransaction::new(task_data);
+        self.run_task(&task).await?;
 
-        Ok(transaction)
+        Ok(task)
     }
 
     /// Install new Flatpak by ref file
@@ -177,64 +174,60 @@ impl SkWorker {
         dry_run: bool,
     ) -> Result<SkTransaction, Error> {
         let path = file.path().unwrap();
-        let filename_string = path.file_name().unwrap().to_str().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
-        let task = FlatpakTask::new_install_ref_file(
+        let task_data = FlatpakTask::new_install_ref_file(
             &installation.info(),
             &path_string,
             uninstall_before_install,
             dry_run,
         );
 
-        let type_ = SkTransactionType::Install;
-        let transaction = SkTransaction::new(&task.uuid, &type_, filename_string);
-        self.run_task(task, &transaction).await?;
+        let task = SkTransaction::new(task_data);
+        self.run_task(&task).await?;
 
-        Ok(transaction)
+        Ok(task)
     }
 
-    async fn run_task(&self, task: Task, transaction: &SkTransaction) -> Result<(), Error> {
-        // Remove finished transactions from model
-        transaction.connect_local(
+    async fn run_task(&self, task: &SkTransaction) -> Result<(), Error> {
+        // Remove finished tasks from model
+        task.connect_local(
             "done",
             false,
             clone!(@weak self as this => @default-return None, move |t|{
-                let transaction: SkTransaction = t[0].get().unwrap();
-                this.transactions().remove_transaction(&transaction);
+                let task: SkTransaction = t[0].get().unwrap();
+                this.transactions().remove_transaction(&task);
                 None
             }),
         );
-        transaction.connect_local(
+        task.connect_local(
             "cancelled",
             false,
             clone!(@weak self as this => @default-return None, move |t|{
-                let transaction: SkTransaction = t[0].get().unwrap();
-                this.transactions().remove_transaction(&transaction);
+                let task: SkTransaction = t[0].get().unwrap();
+                this.transactions().remove_transaction(&task);
                 None
             }),
         );
-        transaction.connect_local(
+        task.connect_local(
             "error",
             false,
             clone!(@weak self as this => @default-return None, move |t|{
-                let transaction: SkTransaction = t[0].get().unwrap();
-                this.transactions().remove_transaction(&transaction);
+                let task: SkTransaction = t[0].get().unwrap();
+                this.transactions().remove_transaction(&task);
                 None
             }),
         );
 
-        self.transactions().add_transaction(transaction);
-        dbg!(&task);
-        self.imp().proxy.run_task(task).await?;
-        debug!("sent task");
+        self.transactions().add_transaction(task);
+        self.imp().proxy.run_task(task.data()).await?;
 
         Ok(())
     }
 
     /// Cancel a worker task
-    pub async fn cancel_task(&self, task_uuid: &str) -> Result<(), Error> {
-        self.imp().proxy.cancel_task(task_uuid).await?;
+    pub async fn cancel_task(&self, task: &SkTransaction) -> Result<(), Error> {
+        self.imp().proxy.cancel_task(task.data()).await?;
         Ok(())
     }
 

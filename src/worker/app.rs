@@ -43,6 +43,8 @@ mod imp {
     pub struct SkWorkerApplication {
         pub task_sender: Sender<Task>,
         pub task_receiver: Receiver<Task>,
+        pub cancel_sender: Sender<Task>,
+        pub cancel_receiver: Receiver<Task>,
         pub response_receiver: Receiver<Response>,
 
         pub flatpak_worker: FlatpakWorker,
@@ -60,6 +62,7 @@ mod imp {
 
         fn new() -> Self {
             let (task_sender, task_receiver) = unbounded();
+            let (cancel_sender, cancel_receiver) = unbounded();
             let (response_sender, response_receiver) = unbounded();
 
             let flatpak_worker = FlatpakWorker::new(response_sender.clone());
@@ -71,6 +74,8 @@ mod imp {
             Self {
                 task_sender,
                 task_receiver,
+                cancel_sender,
+                cancel_receiver,
                 response_receiver,
                 flatpak_worker,
                 appstream_worker,
@@ -98,8 +103,9 @@ mod imp {
                 }
 
                 let f1 = app.receive_tasks();
-                let f2 = app.receive_responses();
-                futures::join!(f1, f2);
+                let f2 = app.receive_cancel_requests();
+                let f3 = app.receive_responses();
+                futures::join!(f1, f2, f3);
             });
             spawn!(fut);
         }
@@ -175,7 +181,11 @@ impl SkWorkerApplication {
         debug!("Start DBus server...");
 
         let task_sender = self.imp().task_sender.clone();
-        let worker = WorkerServer { task_sender };
+        let cancel_sender = self.imp().cancel_sender.clone();
+        let worker = WorkerServer {
+            task_sender,
+            cancel_sender,
+        };
 
         let con = ConnectionBuilder::session()?
             .name(config::WORKER_APP_ID)?
@@ -232,6 +242,26 @@ impl SkWorkerApplication {
         self.release();
     }
 
+    async fn cancel_task(&self, task: Task) {
+        let imp = self.imp();
+        debug!("Cancel task: {:#?}", task);
+
+        if !task.cancellable {
+            warn!("Task {} is not cancellable.", task.uuid);
+            return;
+        }
+
+        // Flatpak task
+        if task.flatpak_task().is_some() {
+            imp.flatpak_worker.cancel_task(&task.uuid);
+        }
+
+        // Appstream task
+        if task.appstream_task().is_some() {
+            imp.appstream_worker.cancel_task(&task.uuid);
+        }
+    }
+
     async fn receive_tasks(&self) {
         let imp = self.imp();
 
@@ -241,6 +271,17 @@ impl SkWorkerApplication {
         }
 
         debug!("Stopped receiving tasks.");
+    }
+
+    async fn receive_cancel_requests(&self) {
+        let imp = self.imp();
+
+        let mut cancel_receiver = imp.cancel_receiver.clone();
+        while let Some(task) = cancel_receiver.next().await {
+            self.cancel_task(task).await;
+        }
+
+        debug!("Stopped receiving cancel requests.");
     }
 
     async fn receive_responses(&self) {
