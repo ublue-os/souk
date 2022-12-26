@@ -50,7 +50,6 @@ mod imp {
     #[glib::object_subclass]
     impl ObjectSubclass for SkServicePermission {
         const NAME: &'static str = "SkServicePermission";
-        type ParentType = glib::Object;
         type Type = super::SkServicePermission;
     }
 

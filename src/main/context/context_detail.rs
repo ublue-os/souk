@@ -38,7 +38,6 @@ mod imp {
     #[glib::object_subclass]
     impl ObjectSubclass for SkContextDetail {
         const NAME: &'static str = "SkContextDetail";
-        type ParentType = glib::Object;
         type Type = super::SkContextDetail;
     }
 

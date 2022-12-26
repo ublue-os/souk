@@ -52,7 +52,6 @@ mod imp {
     #[glib::object_subclass]
     impl ObjectSubclass for SkInstallation {
         const NAME: &'static str = "SkInstallation";
-        type ParentType = glib::Object;
         type Type = super::SkInstallation;
     }
 

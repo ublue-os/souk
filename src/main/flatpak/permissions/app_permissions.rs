@@ -55,7 +55,6 @@ mod imp {
     #[glib::object_subclass]
     impl ObjectSubclass for SkAppPermissions {
         const NAME: &'static str = "SkAppPermissions";
-        type ParentType = glib::Object;
         type Type = super::SkAppPermissions;
     }
 

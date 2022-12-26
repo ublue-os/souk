@@ -45,7 +45,6 @@ mod imp {
     #[glib::object_subclass]
     impl ObjectSubclass for SkPackage {
         const NAME: &'static str = "SkPackage";
-        type ParentType = glib::Object;
         type Type = super::SkPackage;
     }
 

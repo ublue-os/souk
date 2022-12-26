@@ -49,7 +49,6 @@ mod imp {
     #[glib::object_subclass]
     impl ObjectSubclass for SkSideloadable {
         const NAME: &'static str = "SkSideloadable";
-        type ParentType = glib::Object;
         type Type = super::SkSideloadable;
     }
 
