@@ -18,5 +18,4 @@ pub mod installation;
 pub mod package;
 pub mod permissions;
 pub mod sideload;
-pub mod transaction;
 pub mod utils;

@@ -21,7 +21,7 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
-use crate::main::flatpak::transaction::SkTransaction;
+use crate::main::task::SkTask;
 use crate::main::ui::transaction::SkTransactionRow;
 use crate::shared::config;
 
@@ -95,10 +95,10 @@ impl SkApplicationWindow {
         }
 
         // Active transactions listbox
-        let model = app.worker().transactions();
+        let model = app.worker().tasks();
         imp.transactions_listbox
             .bind_model(Some(&model), |transaction| {
-                let transaction: SkTransaction = transaction.clone().downcast().unwrap();
+                let transaction: SkTask = transaction.clone().downcast().unwrap();
                 SkTransactionRow::new(&transaction).upcast()
             });
         model.connect_items_changed(clone!(@weak self as this => move |model, _, _, _|{

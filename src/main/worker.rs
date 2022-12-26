@@ -28,8 +28,8 @@ use crate::main::dbus_proxy::WorkerProxy;
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkInstallation, SkInstallationModel, SkRemote};
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
-use crate::main::flatpak::transaction::{SkTransaction, SkTransactionModel};
 use crate::main::flatpak::utils;
+use crate::main::task::{SkTask, SkTaskModel};
 use crate::shared::info::RemoteInfo;
 use crate::shared::task::FlatpakTask;
 
@@ -38,7 +38,7 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkWorker {
-        pub transactions: SkTransactionModel,
+        pub tasks: SkTaskModel,
         pub installations: SkInstallationModel,
 
         pub proxy: WorkerProxy<'static>,
@@ -55,10 +55,10 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
                     ParamSpecObject::new(
-                        "transactions",
+                        "tasks",
                         "",
                         "",
-                        SkTransactionModel::static_type(),
+                        SkTaskModel::static_type(),
                         ParamFlags::READABLE,
                     ),
                     ParamSpecObject::new(
@@ -75,7 +75,7 @@ mod imp {
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "transactions" => obj.transactions().to_value(),
+                "tasks" => obj.tasks().to_value(),
                 "installations" => obj.installations().to_value(),
                 _ => unimplemented!(),
             }
@@ -105,9 +105,9 @@ glib::wrapper! {
 }
 
 impl SkWorker {
-    /// Returns all current active Flatpak transactions
-    pub fn transactions(&self) -> SkTransactionModel {
-        self.imp().transactions.clone()
+    /// Returns all current active tasks
+    pub fn tasks(&self) -> SkTaskModel {
+        self.imp().tasks.clone()
     }
 
     /// Returns all available Flatpak installations
@@ -123,7 +123,7 @@ impl SkWorker {
         installation: &SkInstallation,
         uninstall_before_install: bool,
         dry_run: bool,
-    ) -> Result<SkTransaction, Error> {
+    ) -> Result<SkTask, Error> {
         let ref_string = ref_.format_ref().unwrap().to_string();
 
         let task_data = FlatpakTask::new_install(
@@ -134,7 +134,7 @@ impl SkWorker {
             dry_run,
         );
 
-        let task = SkTransaction::new(task_data);
+        let task = SkTask::new(task_data);
         self.run_task(&task).await?;
 
         Ok(task)
@@ -147,7 +147,7 @@ impl SkWorker {
         installation: &SkInstallation,
         uninstall_before_install: bool,
         dry_run: bool,
-    ) -> Result<SkTransaction, Error> {
+    ) -> Result<SkTask, Error> {
         let path = file.path().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
@@ -158,7 +158,7 @@ impl SkWorker {
             dry_run,
         );
 
-        let task = SkTransaction::new(task_data);
+        let task = SkTask::new(task_data);
         self.run_task(&task).await?;
 
         Ok(task)
@@ -171,7 +171,7 @@ impl SkWorker {
         installation: &SkInstallation,
         uninstall_before_install: bool,
         dry_run: bool,
-    ) -> Result<SkTransaction, Error> {
+    ) -> Result<SkTask, Error> {
         let path = file.path().unwrap();
         let path_string = path.to_str().unwrap().to_string();
 
@@ -182,20 +182,20 @@ impl SkWorker {
             dry_run,
         );
 
-        let task = SkTransaction::new(task_data);
+        let task = SkTask::new(task_data);
         self.run_task(&task).await?;
 
         Ok(task)
     }
 
-    async fn run_task(&self, task: &SkTransaction) -> Result<(), Error> {
+    async fn run_task(&self, task: &SkTask) -> Result<(), Error> {
         // Remove finished tasks from model
         task.connect_local(
             "done",
             false,
             clone!(@weak self as this => @default-return None, move |t|{
-                let task: SkTransaction = t[0].get().unwrap();
-                this.transactions().remove_transaction(&task);
+                let task: SkTask = t[0].get().unwrap();
+                this.tasks().remove_task(&task);
                 None
             }),
         );
@@ -203,8 +203,8 @@ impl SkWorker {
             "cancelled",
             false,
             clone!(@weak self as this => @default-return None, move |t|{
-                let task: SkTransaction = t[0].get().unwrap();
-                this.transactions().remove_transaction(&task);
+                let task: SkTask = t[0].get().unwrap();
+                this.tasks().remove_task(&task);
                 None
             }),
         );
@@ -212,20 +212,20 @@ impl SkWorker {
             "error",
             false,
             clone!(@weak self as this => @default-return None, move |t|{
-                let task: SkTransaction = t[0].get().unwrap();
-                this.transactions().remove_transaction(&task);
+                let task: SkTask = t[0].get().unwrap();
+                this.tasks().remove_task(&task);
                 None
             }),
         );
 
-        self.transactions().add_transaction(task);
+        self.tasks().add_task(task);
         self.imp().proxy.run_task(task.data()).await?;
 
         Ok(())
     }
 
     /// Cancel a worker task
-    pub async fn cancel_task(&self, task: &SkTransaction) -> Result<(), Error> {
+    pub async fn cancel_task(&self, task: &SkTask) -> Result<(), Error> {
         self.imp().proxy.cancel_task(task.data()).await?;
         Ok(())
     }
@@ -239,7 +239,7 @@ impl SkWorker {
             debug!("Task response: {:#?}", response);
 
             let task_uuid = response.uuid.clone();
-            match self.transactions().transaction(&task_uuid) {
+            match self.tasks().task(&task_uuid) {
                 Some(task) => task.handle_response(&response),
                 None => warn!("Received response for unknown task!"),
             }

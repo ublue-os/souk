@@ -1,4 +1,4 @@
-// Souk - transaction.rs
+// Souk - task.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::transaction::SkTransactionType;
+use crate::main::task::SkTaskType;
 use crate::shared::task::{Response, ResponseType, Task};
 use crate::worker::DryRunResult;
 
@@ -37,13 +37,13 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct SkTransaction {
+    pub struct SkTask {
         pub data: OnceCell<Task>,
 
         /// Name of Flatpak remote or bundle filename
         pub origin: OnceCell<String>,
 
-        /// Cumulative progress of the whole transaction
+        /// Cumulative progress of the complete task
         pub progress: Cell<f32>,
 
         /// Ref of current Flatpak operation (dependencies, locales, ...)
@@ -55,7 +55,7 @@ mod imp {
 
         /// The current operation index
         pub current_operation: Cell<i32>,
-        /// The total count of operations in the transaction
+        /// The total count of operations in the task
         pub operations_count: Cell<i32>,
 
         // Gets called when task finished (done/error/cancelled)
@@ -65,12 +65,12 @@ mod imp {
     }
 
     #[glib::object_subclass]
-    impl ObjectSubclass for SkTransaction {
-        const NAME: &'static str = "SkTransaction";
-        type Type = super::SkTransaction;
+    impl ObjectSubclass for SkTask {
+        const NAME: &'static str = "SkTask";
+        type Type = super::SkTask;
     }
 
-    impl ObjectImpl for SkTransaction {
+    impl ObjectImpl for SkTask {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
@@ -79,8 +79,8 @@ mod imp {
                         "type",
                         "",
                         "",
-                        SkTransactionType::static_type(),
-                        SkTransactionType::None as i32,
+                        SkTaskType::static_type(),
+                        SkTaskType::None as i32,
                         ParamFlags::READABLE,
                     ),
                     ParamSpecString::new("origin", "", "", None, ParamFlags::READABLE),
@@ -172,10 +172,10 @@ mod imp {
 }
 
 glib::wrapper! {
-    pub struct SkTransaction(ObjectSubclass<imp::SkTransaction>);
+    pub struct SkTask(ObjectSubclass<imp::SkTask>);
 }
 
-impl SkTransaction {
+impl SkTask {
     pub fn new(data: Task) -> Self {
         let task: Self = glib::Object::new(&[]).unwrap();
         task.imp().data.set(data).unwrap();
@@ -192,8 +192,8 @@ impl SkTransaction {
         self.imp().data.get().unwrap().uuid.clone()
     }
 
-    pub fn type_(&self) -> SkTransactionType {
-        SkTransactionType::None
+    pub fn type_(&self) -> SkTaskType {
+        SkTaskType::None
     }
 
     pub fn origin(&self) -> String {

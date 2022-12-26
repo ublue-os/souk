@@ -1,4 +1,4 @@
-// Shortwave - transaction_model.rs
+// Shortwave - task_model.rs
 // Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -22,28 +22,28 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
-use crate::main::flatpak::transaction::SkTransaction;
+use crate::main::task::SkTask;
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct SkTransactionModel {
-        pub map: RefCell<IndexMap<String, SkTransaction>>,
+    pub struct SkTaskModel {
+        pub map: RefCell<IndexMap<String, SkTask>>,
     }
 
     #[glib::object_subclass]
-    impl ObjectSubclass for SkTransactionModel {
-        const NAME: &'static str = "SkTransactionModel";
-        type Type = super::SkTransactionModel;
+    impl ObjectSubclass for SkTaskModel {
+        const NAME: &'static str = "SkTaskModel";
+        type Type = super::SkTaskModel;
         type Interfaces = (gio::ListModel,);
     }
 
-    impl ObjectImpl for SkTransactionModel {}
+    impl ObjectImpl for SkTaskModel {}
 
-    impl ListModelImpl for SkTransactionModel {
+    impl ListModelImpl for SkTaskModel {
         fn item_type(&self, _list_model: &Self::Type) -> glib::Type {
-            SkTransaction::static_type()
+            SkTask::static_type()
         }
 
         fn n_items(&self, _list_model: &Self::Type) -> u32 {
@@ -60,42 +60,39 @@ mod imp {
 }
 
 glib::wrapper! {
-    pub struct SkTransactionModel(ObjectSubclass<imp::SkTransactionModel>) @implements gio::ListModel;
+    pub struct SkTaskModel(ObjectSubclass<imp::SkTaskModel>) @implements gio::ListModel;
 }
 
-impl SkTransactionModel {
+impl SkTaskModel {
     pub fn new() -> Self {
         glib::Object::new(&[]).unwrap()
     }
 
-    pub fn add_transaction(&self, transaction: &SkTransaction) {
+    pub fn add_task(&self, task: &SkTask) {
         let pos = {
             let mut map = self.imp().map.borrow_mut();
-            if map.contains_key(&transaction.uuid()) {
-                warn!(
-                    "Transaction {:?} already exists in model",
-                    transaction.uuid()
-                );
+            if map.contains_key(&task.uuid()) {
+                warn!("Task {:?} already exists in model", task.uuid());
                 return;
             }
 
-            map.insert(transaction.uuid(), transaction.clone());
+            map.insert(task.uuid(), task.clone());
             (map.len() - 1) as u32
         };
 
         self.items_changed(pos, 0, 1);
     }
 
-    pub fn remove_transaction(&self, transaction: &SkTransaction) {
+    pub fn remove_task(&self, task: &SkTask) {
         let pos = {
             let mut map = self.imp().map.borrow_mut();
-            match map.get_index_of(&transaction.uuid()) {
+            match map.get_index_of(&task.uuid()) {
                 Some(pos) => {
-                    map.remove(&transaction.uuid());
+                    map.remove(&task.uuid());
                     Some(pos)
                 }
                 None => {
-                    warn!("Transaction {:?} not found in model", transaction.uuid());
+                    warn!("Task {:?} not found in model", task.uuid());
                     None
                 }
             }
@@ -106,12 +103,12 @@ impl SkTransactionModel {
         }
     }
 
-    pub fn transaction(&self, uuid: &str) -> Option<SkTransaction> {
+    pub fn task(&self, uuid: &str) -> Option<SkTask> {
         self.imp().map.borrow().get(uuid).cloned()
     }
 }
 
-impl Default for SkTransactionModel {
+impl Default for SkTaskModel {
     fn default() -> Self {
         Self::new()
     }

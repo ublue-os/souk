@@ -25,7 +25,7 @@ use super::SideloadPackage;
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote};
 use crate::main::flatpak::sideload::SkSideloadType;
-use crate::main::flatpak::transaction::SkTransaction;
+use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
 use crate::worker::DryRunResult;
 
@@ -138,13 +138,13 @@ impl SkSideloadable {
         *self.imp().no_changes.get().unwrap()
     }
 
-    pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTransaction>, Error> {
+    pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTask>, Error> {
         if let Some(package) = self.package() {
             let uninstall_before_install = package.is_replacing_remote().is_some();
 
-            let transaction = match self.type_() {
+            let task = match self.type_() {
                 SkSideloadType::Bundle => {
-                    let transaction = worker
+                    let task = worker
                         .install_flatpak_bundle_file(
                             &self.file(),
                             &self.installation(),
@@ -152,10 +152,10 @@ impl SkSideloadable {
                             false,
                         )
                         .await?;
-                    Some(transaction)
+                    Some(task)
                 }
                 SkSideloadType::Ref => {
-                    let transaction = worker
+                    let task = worker
                         .install_flatpak_ref_file(
                             &self.file(),
                             &self.installation(),
@@ -163,12 +163,12 @@ impl SkSideloadable {
                             false,
                         )
                         .await?;
-                    Some(transaction)
+                    Some(task)
                 }
                 _ => None,
             };
 
-            return Ok(transaction);
+            return Ok(task);
         } else if self.type_() == SkSideloadType::Repo {
             let remotes = self.remotes();
             // There can be only *one* Flatpak repository in a *.flatpakrepo file

@@ -16,6 +16,7 @@
 
 mod context;
 mod flatpak;
+mod task;
 mod ui;
 
 mod app;

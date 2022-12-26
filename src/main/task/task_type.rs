@@ -1,5 +1,5 @@
-// Souk - mod.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - task_type.rs
+// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,11 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#[allow(clippy::module_inception)]
-mod transaction;
-mod transaction_model;
-mod transaction_type;
+use glib::Enum;
+use gtk::glib;
 
-pub use transaction::SkTransaction;
-pub use transaction_model::SkTransactionModel;
-pub use transaction_type::SkTransactionType;
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
+#[repr(u32)]
+#[enum_type(name = "SkTaskType")]
+pub enum SkTaskType {
+    Install,
+    Update,
+    Uninstall,
+    None,
+}

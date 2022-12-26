@@ -21,7 +21,7 @@ use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::OnceCell;
 
-use crate::main::flatpak::transaction::SkTransaction;
+use crate::main::task::SkTask;
 
 mod imp {
     use super::*;
@@ -41,7 +41,7 @@ mod imp {
         pub progress_bar: TemplateChild<gtk::ProgressBar>,
 
         pub popover_menu: OnceCell<gtk::PopoverMenu>,
-        pub transaction: OnceCell<SkTransaction>,
+        pub transaction: OnceCell<SkTask>,
     }
 
     #[glib::object_subclass]
@@ -67,7 +67,7 @@ mod imp {
                     "transaction",
                     "",
                     "",
-                    SkTransaction::static_type(),
+                    SkTask::static_type(),
                     ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                 )]
             });
@@ -112,7 +112,7 @@ glib::wrapper! {
 }
 
 impl SkTransactionRow {
-    pub fn new(transaction: &SkTransaction) -> Self {
+    pub fn new(transaction: &SkTask) -> Self {
         glib::Object::new(&[("transaction", transaction)]).unwrap()
     }
 
@@ -132,7 +132,7 @@ impl SkTransactionRow {
         self.update_labels();
     }
 
-    pub fn transaction(&self) -> SkTransaction {
+    pub fn transaction(&self) -> SkTask {
         self.imp().transaction.get().unwrap().clone()
     }
 

@@ -31,8 +31,8 @@ use crate::main::app::SkApplication;
 use crate::main::context::SkContext;
 use crate::main::error::Error;
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
-use crate::main::flatpak::transaction::SkTransaction;
 use crate::main::i18n::{i18n, i18n_f};
+use crate::main::task::SkTask;
 use crate::main::ui::badge::{SkBadge, SkBadgeType};
 use crate::main::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::main::ui::installation::SkInstallationListBox;
@@ -116,7 +116,7 @@ mod imp {
         pub file: OnceCell<File>,
         pub sideloadable: RefCell<Option<SkSideloadable>>,
 
-        pub transaction: OnceCell<SkTransaction>,
+        pub task: OnceCell<SkTask>,
     }
 
     #[glib::object_subclass]
@@ -590,16 +590,16 @@ impl SkSideloadWindow {
 
         match sideloadable.type_() {
             SkSideloadType::Bundle | SkSideloadType::Ref => {
-                let transaction = match sideloadable.sideload(&worker).await {
-                    Ok(transaction) => transaction.unwrap(),
+                let task = match sideloadable.sideload(&worker).await {
+                    Ok(task) => task.unwrap(),
                     Err(err) => {
                         self.show_error_message(&err.to_string());
                         return;
                     }
                 };
 
-                self.handle_sideload_transaction(&transaction);
-                imp.transaction.set(transaction).unwrap();
+                self.handle_sideload_task(&task);
+                imp.task.set(task).unwrap();
             }
             SkSideloadType::Repo => {
                 match sideloadable.sideload(&worker).await {
@@ -611,27 +611,26 @@ impl SkSideloadWindow {
         }
     }
 
-    fn handle_sideload_transaction(&self, transaction: &SkTransaction) {
+    fn handle_sideload_task(&self, task: &SkTask) {
         let imp = self.imp();
         imp.sideload_leaflet.set_visible_child_name("progress");
 
-        transaction
-            .bind_property("progress", &imp.progress_bar.get(), "fraction")
+        task.bind_property("progress", &imp.progress_bar.get(), "fraction")
             .flags(glib::BindingFlags::SYNC_CREATE)
             .build();
 
-        transaction.connect_local(
+        task.connect_local(
             "notify::current-operation",
             false,
-            clone!(@weak self as this, @weak transaction => @default-return None, move |_|{
+            clone!(@weak self as this, @weak task => @default-return None, move |_|{
                 let imp = this.imp();
 
                 let msg = format!(
                     "{} {} ({}/{})",
-                    transaction.current_operation_type(),
-                    transaction.current_operation_ref().unwrap().name().unwrap(),
-                    transaction.current_operation(),
-                    transaction.operations_count()
+                    task.current_operation_type(),
+                    task.current_operation_ref().unwrap().name().unwrap(),
+                    task.current_operation(),
+                    task.operations_count()
                 );
 
                 imp.progress_label.set_text(&msg);
@@ -639,7 +638,7 @@ impl SkSideloadWindow {
             }),
         );
 
-        transaction.connect_local(
+        task.connect_local(
             "done",
             false,
             clone!(@weak self as this => @default-return None, move |_|{
@@ -648,7 +647,7 @@ impl SkSideloadWindow {
             }),
         );
 
-        transaction.connect_local(
+        task.connect_local(
             "cancelled",
             false,
             clone!(@weak self as this => @default-return None, move |_|{
@@ -657,7 +656,7 @@ impl SkSideloadWindow {
             }),
         );
 
-        transaction.connect_local(
+        task.connect_local(
             "error",
             false,
             clone!(@weak self as this => @default-return None, move |error|{
@@ -672,7 +671,7 @@ impl SkSideloadWindow {
     fn cancel_sideload_clicked(&self) {
         let fut = clone!(@weak self as this => async move{
             let imp = this.imp();
-            let task = imp.transaction.get().unwrap();
+            let task = imp.task.get().unwrap();
             let worker = SkApplication::default().worker();
 
             imp.cancel_sideload_button.set_sensitive(false);
