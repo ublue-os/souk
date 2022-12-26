@@ -22,6 +22,9 @@
 
 // TODO: Add more detailed documentation
 
+// Needed, otherwise rust complains about the `main` module. In our case it's fine, since it's not
+// related to the main.rs / main function.
+#![allow(special_module_name)]
 #![doc(
     html_logo_url = "https://gitlab.gnome.org/haecker-felix/souk/-/raw/main/data/icons/hicolor/scalable/apps/de.haeckerfelix.Souk.svg",
     html_favicon_url = "https://gitlab.gnome.org/haecker-felix/souk/-/raw/main/data/icons/hicolor/symbolic/apps/de.haeckerfelix.Souk-symbolic.svg"
