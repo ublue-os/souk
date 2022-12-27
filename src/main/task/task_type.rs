@@ -21,8 +21,13 @@ use gtk::glib;
 #[repr(u32)]
 #[enum_type(name = "SkTaskType")]
 pub enum SkTaskType {
-    Install,
-    Update,
-    Uninstall,
+    /// A Flatpak package (with all related refs) gets installed
+    FlatpakInstall,
+    /// A Flatpak package (with all related refs) gets uninstalled
+    FlatpakUninstall,
+    /// One or more Flatpak packages are getting updated
+    FlatpakUpdate,
+    /// Never should be get used (placeholder)
     None,
+    // Appstream...,
 }
