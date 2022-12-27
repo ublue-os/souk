@@ -675,7 +675,7 @@ impl SkSideloadWindow {
             let worker = SkApplication::default().worker();
 
             imp.cancel_sideload_button.set_sensitive(false);
-            if let Err(err) = worker.cancel_task(&task).await {
+            if let Err(err) = worker.cancel_task(task).await {
                 this.show_error_message(&err.to_string());
             }
         });

@@ -241,7 +241,7 @@ impl FlatpakWorker {
             let branch = keyfile.value("Flatpak Ref", "Branch")?;
             let arch = flatpak::functions::default_arch().unwrap();
 
-            let ref_ = format!("app/{}/{}/{}", name, arch, branch);
+            let ref_ = format!("app/{name}/{arch}/{branch}");
             self.uninstall_ref(&ref_, installation_info)?;
         }
         transaction.add_install_flatpakref(&bytes)?;

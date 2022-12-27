@@ -197,7 +197,7 @@ impl SkContext {
             let subtitle = i18n_f("{} ({}) – Requires additional extra data from an external source with unknown size", &[&package_ref_name, &package_ref_branch]);
             SkContextDetail::new_neutral_text("  ???  ", &title, &subtitle)
         } else {
-            let subtitle = format!("{} ({})", package_ref_name, package_ref_branch);
+            let subtitle = format!("{package_ref_name} ({package_ref_branch})");
             SkContextDetail::new_neutral_size(size, &title, &subtitle)
         };
         package_details.push(detail);
@@ -213,7 +213,7 @@ impl SkContext {
             if runtime.operation_type == "update" {
                 title = i18n_f("{} (Update)", &[&title]);
             }
-            let subtitle = format!("{} ({})", ref_name, ref_branch);
+            let subtitle = format!("{ref_name} ({ref_branch})");
 
             let size = if download_size {
                 runtime.download_size

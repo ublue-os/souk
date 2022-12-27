@@ -60,7 +60,7 @@ impl WorkerError {
             Self::Network(message) => message.into(),
             Self::IO(message) => message.into(),
             Self::DryRunRuntimeNotFound(runtime) => {
-                format!("Unable to find required runtime {}", runtime)
+                format!("Unable to find required runtime {runtime}")
             }
             Self::GLibCancelled => "The operation got cancelled.".into(),
             Self::GLib(message) => message.into(),

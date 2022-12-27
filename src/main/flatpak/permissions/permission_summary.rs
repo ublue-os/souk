@@ -90,7 +90,7 @@ impl SkPermissionSummary {
 
         let mut description = String::new();
         for d in descriptions {
-            write!(&mut description, "{} ", d).unwrap();
+            write!(&mut description, "{d} ").unwrap();
         }
 
         SkContextDetail::new(type_, &type_value, level, &title, &description)

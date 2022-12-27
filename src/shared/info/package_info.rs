@@ -39,7 +39,7 @@ impl PackageInfo {
         let commit = ref_.commit().unwrap().to_string();
         let ref_ = ref_.format_ref().unwrap().to_string();
 
-        let id = format!("{}{}{}{}", installation_id, remote_id, ref_, commit);
+        let id = format!("{installation_id}{remote_id}{ref_}{commit}");
         let mut s = DefaultHasher::new();
         id.hash(&mut s);
         let id = s.finish().to_string();
