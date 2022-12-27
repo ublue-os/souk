@@ -17,11 +17,9 @@
 use std::cell::{Cell, RefCell};
 
 use async_std::channel::{unbounded, Receiver, Sender};
-use flatpak::Ref;
 use glib::subclass::Signal;
 use glib::{
-    ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecInt, ParamSpecObject,
-    ParamSpecString, ToValue,
+    ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecString, ToValue,
 };
 use gtk::glib;
 use gtk::prelude::*;
@@ -29,7 +27,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::task::SkTaskType;
+use crate::main::task::{SkTaskStepModel, SkTaskType};
 use crate::shared::task::{Response, ResponseType, Task};
 use crate::worker::DryRunResult;
 
@@ -40,23 +38,12 @@ mod imp {
     pub struct SkTask {
         pub data: OnceCell<Task>,
 
-        /// Name of Flatpak remote or bundle filename
-        pub origin: OnceCell<String>,
-
-        /// Cumulative progress of the complete task
+        /// Type of this task
+        pub type_: OnceCell<SkTaskType>,
+        /// Cumulative progress of the complete task (with all steps)
         pub progress: Cell<f32>,
-
-        /// Ref of current Flatpak operation (dependencies, locales, ...)
-        pub current_operation_ref: RefCell<Option<Ref>>,
-        /// Name of the current Flatpak operation (eg. "install",
-        /// "install-bundle", "update", ...)
-        pub current_operation_type: RefCell<String>,
-        pub current_operation_progress: Cell<f32>,
-
-        /// The current operation index
-        pub current_operation: Cell<i32>,
-        /// The total count of operations in the task
-        pub operations_count: Cell<i32>,
+        /// All steps of this task
+        pub steps: SkTaskStepModel,
 
         // Gets called when task finished (done/error/cancelled)
         pub finished_sender: OnceCell<Sender<()>>,
@@ -80,50 +67,15 @@ mod imp {
                         "",
                         "",
                         SkTaskType::static_type(),
-                        SkTaskType::None as i32,
+                        SkTaskType::default() as i32,
                         ParamFlags::READABLE,
                     ),
-                    ParamSpecString::new("origin", "", "", None, ParamFlags::READABLE),
                     ParamSpecFloat::new("progress", "", "", 0.0, 1.0, 0.0, ParamFlags::READABLE),
                     ParamSpecObject::new(
-                        "current-operation-ref",
+                        "steps",
                         "",
                         "",
-                        Ref::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecString::new(
-                        "current-operation-type",
-                        "",
-                        "",
-                        None,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecFloat::new(
-                        "current-operation-progress",
-                        "",
-                        "",
-                        0.0,
-                        1.0,
-                        0.0,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecInt::new(
-                        "current-operation",
-                        "",
-                        "",
-                        0,
-                        i32::MAX,
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecInt::new(
-                        "operations-count",
-                        "",
-                        "",
-                        0,
-                        i32::MAX,
-                        0,
+                        SkTaskStepModel::static_type(),
                         ParamFlags::READABLE,
                     ),
                 ]
@@ -132,17 +84,11 @@ mod imp {
         }
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            // TODO: Should we re-add the installation info?
             match pspec.name() {
                 "uuid" => obj.uuid().to_value(),
                 "type" => obj.type_().to_value(),
-                "origin" => obj.origin().to_value(),
                 "progress" => obj.progress().to_value(),
-                "current-operation-ref" => obj.current_operation_ref().to_value(),
-                "current-operation-type" => obj.current_operation_type().to_value(),
-                "current-operation-progress" => obj.current_operation_progress().to_value(),
-                "current-operation" => obj.current_operation().to_value(),
-                "operations-count" => obj.operations_count().to_value(),
+                "steps" => obj.steps().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -196,32 +142,12 @@ impl SkTask {
         SkTaskType::None
     }
 
-    pub fn origin(&self) -> String {
-        self.imp().origin.get().unwrap().to_string()
-    }
-
     pub fn progress(&self) -> f32 {
         self.imp().progress.get()
     }
 
-    pub fn current_operation_ref(&self) -> Option<Ref> {
-        self.imp().current_operation_ref.borrow().as_ref().cloned()
-    }
-
-    pub fn current_operation_type(&self) -> String {
-        self.imp().current_operation_type.borrow().to_string()
-    }
-
-    pub fn current_operation_progress(&self) -> f32 {
-        self.imp().current_operation_progress.get()
-    }
-
-    pub fn current_operation(&self) -> i32 {
-        self.imp().current_operation.get()
-    }
-
-    pub fn operations_count(&self) -> i32 {
-        self.imp().operations_count.get()
+    pub fn steps(&self) -> SkTaskStepModel {
+        self.imp().steps.clone()
     }
 
     pub fn handle_response(&self, response: &Response) {
@@ -275,6 +201,8 @@ impl SkTask {
     }
 
     // TODO: Make this generic for all result types
+    // Do we need to expose the raw DryRunResult object? Why we can't return the
+    // SkSideloadable?
     pub async fn await_dry_run_result(&self) -> Option<DryRunResult> {
         let imp = self.imp();
         imp.finished_receiver.get().unwrap().recv().await.unwrap();

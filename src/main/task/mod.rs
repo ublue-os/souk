@@ -16,9 +16,15 @@
 
 #[allow(clippy::module_inception)]
 mod task;
+mod task_activity;
 mod task_model;
+mod task_step;
+mod task_step_model;
 mod task_type;
 
 pub use task::SkTask;
+pub use task_activity::SkTaskActivity;
 pub use task_model::SkTaskModel;
+pub use task_step::SkTaskStep;
+pub use task_step_model::SkTaskStepModel;
 pub use task_type::SkTaskType;

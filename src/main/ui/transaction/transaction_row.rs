@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use flatpak::prelude::*;
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -146,19 +145,20 @@ impl SkTransactionRow {
         imp.title_label.set_text(&title);
 
         // Subtitle
-        if let Some(operation_ref) = transaction.current_operation_ref() {
-            let ref_ = operation_ref.format_ref().unwrap().to_string();
-            let subtitle = format!("{} {}", transaction.current_operation_type(), ref_);
-            imp.subtitle_label.set_text(&subtitle);
-        }
-
+        // if let Some(operation_ref) = transaction.current_operation_ref() {
+        // let ref_ = operation_ref.format_ref().unwrap().to_string();
+        // let subtitle = format!("{} {}", transaction.current_operation_type(),
+        // ref_); imp.subtitle_label.set_text(&subtitle);
+        // }
+        //
         // Steps label
-        let steps = format!(
-            "{}/{}",
-            transaction.current_operation(),
-            transaction.operations_count()
-        );
-        imp.steps_label.set_text(&steps);
+        //
+        // let steps = format!(
+        // "{}/{}",
+        // transaction.current_operation(),
+        // transaction.operations_count()
+        // );
+        // imp.steps_label.set_text(&steps);
     }
 
     fn bind_property<T: IsA<gtk::Widget>>(

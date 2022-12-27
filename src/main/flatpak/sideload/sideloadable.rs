@@ -29,6 +29,9 @@ use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
 use crate::worker::DryRunResult;
 
+// TODO: Refactor this into something similar to PackageInfo <-> SkPackage
+// This should have a id, similar to PackageInfo, RemoteInfo, ...
+// The counterpart to PackageInfo probably would be DryRunResult?
 mod imp {
     use super::*;
 
@@ -178,3 +181,4 @@ impl SkSideloadable {
         Ok(None)
     }
 }
+

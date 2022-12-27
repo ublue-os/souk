@@ -1,5 +1,5 @@
-// Souk - task_type.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - task_activity.rs
+// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,21 +19,19 @@ use gtk::glib;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkTaskType")]
-pub enum SkTaskType {
-    /// A Flatpak package (with all related refs) gets installed
-    FlatpakInstall,
-    /// A Flatpak package (with all related refs) gets uninstalled
-    FlatpakUninstall,
-    /// One or more Flatpak packages are getting updated
-    FlatpakUpdate,
-    /// Never should be get used (placeholder)
-    None,
-    // Appstream...,
+#[enum_type(name = "SkTaskActivity")]
+pub enum SkTaskActivity {
+    Waiting,
+    Preparing,
+    Processing,
+    Install,
+    InstallBundle,
+    Remove,
+    Update,
 }
 
-impl Default for SkTaskType {
+impl Default for SkTaskActivity {
     fn default() -> Self {
-        SkTaskType::None
+        SkTaskActivity::Waiting
     }
 }

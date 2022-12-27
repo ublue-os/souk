@@ -24,6 +24,8 @@ use crate::main::flatpak::permissions::SkAppPermissions;
 use crate::worker::DryRunResult;
 
 // TODO: This should be a gobject with properties
+// TODO: Maybe we can split the metadata stuff into a own object which can be
+// shared later with real packages
 #[derive(Debug, Default, Clone)]
 pub struct SideloadPackage {
     pub dry_run_result: DryRunResult,
