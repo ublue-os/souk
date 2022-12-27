@@ -39,7 +39,6 @@ mod imp {
         pub name: OnceCell<String>,
         pub architecture: OnceCell<String>,
         pub branch: OnceCell<String>,
-        pub commit: OnceCell<String>,
     }
 
     #[glib::object_subclass]
@@ -66,7 +65,6 @@ mod imp {
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("architecture", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("branch", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("commit", "", "", None, ParamFlags::READABLE),
                 ]
             });
             PROPERTIES.as_ref()
@@ -81,7 +79,6 @@ mod imp {
                 "name" => obj.name().to_value(),
                 "architecture" => obj.architecture().to_value(),
                 "branch" => obj.branch().to_value(),
-                "commit" => obj.commit().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -115,7 +112,6 @@ impl SkPackage {
         imp.branch
             .set(flatpak_ref.branch().unwrap().to_string())
             .unwrap();
-        imp.commit.set(info.commit.clone()).unwrap();
 
         package
     }
@@ -146,9 +142,5 @@ impl SkPackage {
 
     pub fn branch(&self) -> String {
         self.imp().branch.get().unwrap().clone()
-    }
-
-    pub fn commit(&self) -> String {
-        self.imp().commit.get().unwrap().clone()
     }
 }
