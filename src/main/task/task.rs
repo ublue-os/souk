@@ -46,6 +46,9 @@ mod imp {
         /// All steps of this task
         pub steps: SkTaskStepModel,
 
+        download_rate_watch: OnceCell<gtk::ExpressionWatch>,
+        activity_watch: OnceCell<gtk::ExpressionWatch>,
+
         // Gets called when task finished (done/error/cancelled)
         pub finished_sender: OnceCell<Sender<()>>,
         pub finished_receiver: OnceCell<Receiver<()>>,
@@ -130,7 +133,7 @@ mod imp {
         }
 
         fn constructed(&self, obj: &Self::Type) {
-            let _ = self
+            let watch = self
                 .steps
                 .property_expression("current")
                 .chain_property::<SkTaskStep>("download-rate")
@@ -138,7 +141,9 @@ mod imp {
                     glib::Object::NONE,
                     clone!(@weak obj => move|| obj.notify("download-rate")),
                 );
-            let _ = self
+            self.download_rate_watch.set(watch).unwrap();
+
+            let watch = self
                 .steps
                 .property_expression("current")
                 .chain_property::<SkTaskStep>("activity")
@@ -146,10 +151,16 @@ mod imp {
                     glib::Object::NONE,
                     clone!(@weak obj => move|| obj.notify("activity")),
                 );
+            self.activity_watch.set(watch).unwrap();
 
             let (finished_sender, finished_receiver) = unbounded();
             self.finished_sender.set(finished_sender).unwrap();
             self.finished_receiver.set(finished_receiver).unwrap();
+        }
+
+        fn dispose(&self, _obj: &Self::Type) {
+            self.download_rate_watch.get().unwrap().unwatch();
+            self.activity_watch.get().unwrap().unwatch();
         }
     }
 }
