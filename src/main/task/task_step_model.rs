@@ -105,11 +105,16 @@ impl SkTaskStepModel {
     }
 
     /// Updates the data of a SkStep, and sets it as `current` step
-    pub(super) fn update_step(&self, updated: &TaskStep) {
-        let task_step: SkTaskStep = self.item(updated.index).unwrap().downcast().unwrap();
-        task_step.update(updated);
+    pub(super) fn update_step(&self, updated: Option<&TaskStep>) {
+        if let Some(updated) = updated {
+            let task_step: SkTaskStep = self.item(updated.index).unwrap().downcast().unwrap();
+            task_step.update(updated);
 
-        *self.imp().current.borrow_mut() = Some(task_step);
+            *self.imp().current.borrow_mut() = Some(task_step);
+        } else {
+            *self.imp().current.borrow_mut() = None;
+        }
+
         self.notify("current");
     }
 

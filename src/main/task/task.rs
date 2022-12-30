@@ -215,7 +215,7 @@ impl SkTask {
             }
             TaskResponseType::Update => {
                 let updated_step = response.update_response.as_ref().unwrap();
-                self.steps().update_step(updated_step);
+                self.steps().update_step(Some(updated_step));
 
                 let progress = ((updated_step.index * 100) + updated_step.progress as u32) as f32
                     / (self.steps().n_items() as f32 * 100.0);
@@ -227,6 +227,10 @@ impl SkTask {
             }
             TaskResponseType::Result => {
                 let result = response.result_response.as_ref().unwrap();
+
+                // Unset `current` property of SkTaskStepModel
+                self.steps().update_step(None);
+
                 match result.type_ {
                     TaskResultType::Done => {
                         imp.progress.set(1.0);
