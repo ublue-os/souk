@@ -14,15 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod appstream;
-mod flatpak;
-
+mod appstream_task;
+mod flatpak_task;
 mod response;
 #[allow(clippy::module_inception)]
 mod task;
+mod task_result;
+mod task_step;
 
+pub use appstream_task::AppstreamTask;
+pub use flatpak_task::{FlatpakOperationType, FlatpakTask};
 pub use response::{Response, ResponseType};
 pub use task::Task;
-
-pub use self::appstream::{AppstreamResponse, AppstreamTask};
-pub use self::flatpak::{FlatpakOperationType, FlatpakResponse, FlatpakTask};
+pub use task_result::{TaskResult, TaskResultType};
+pub use task_step::TaskStep;

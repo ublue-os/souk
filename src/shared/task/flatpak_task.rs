@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
 use crate::shared::info::{InstallationInfo, RemoteInfo};
-use crate::shared::task::{FlatpakOperationType, Task};
+use crate::shared::task::Task;
 
 #[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
 pub struct FlatpakTask {
@@ -128,4 +128,13 @@ impl Default for FlatpakTask {
             uninstall_before_install: false,
         }
     }
+}
+
+#[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+pub enum FlatpakOperationType {
+    #[default]
+    Install,
+    InstallBundleFile,
+    InstallRefFile,
+    Uninstall,
 }

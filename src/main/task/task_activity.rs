@@ -16,22 +16,26 @@
 
 use glib::Enum;
 use gtk::glib;
+use strum_macros::{EnumString, ToString};
 
-#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum, EnumString, ToString)]
+#[strum(serialize_all = "kebab-case")]
 #[repr(u32)]
 #[enum_type(name = "SkTaskActivity")]
 pub enum SkTaskActivity {
-    Waiting,
+    None,
+    Pending,
     Preparing,
     Processing,
     Install,
     InstallBundle,
-    Remove,
+    Uninstall,
     Update,
+    Done,
 }
 
 impl Default for SkTaskActivity {
     fn default() -> Self {
-        SkTaskActivity::Waiting
+        SkTaskActivity::None
     }
 }

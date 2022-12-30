@@ -14,42 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 
-use flatpak::prelude::*;
-use flatpak::Ref;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-#[derive(Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq)]
-pub struct PackageInfo {
-    pub id: String,
-    pub installation_id: String,
-    pub remote_id: String,
+use crate::shared::info::{InstallationInfo, RemoteInfo};
 
+#[derive(Default, Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq, Hash)]
+pub struct PackageInfo {
     pub ref_: String,
-    pub commit: String,
+    pub installation: InstallationInfo,
+    pub remote: RemoteInfo,
 }
 
 impl PackageInfo {
-    pub fn new(ref_: &Ref, installation_id: &str, remote_id: &str) -> Self {
-        let installation_id = installation_id.to_string();
-        let remote_id = remote_id.to_string();
-        let commit = ref_.commit().unwrap().to_string();
-        let ref_ = ref_.format_ref().unwrap().to_string();
-
-        let id = format!("{installation_id}{remote_id}{ref_}{commit}");
-        let mut s = DefaultHasher::new();
-        id.hash(&mut s);
-        let id = s.finish().to_string();
-
+    pub fn new(ref_: String, installation: InstallationInfo, remote: RemoteInfo) -> Self {
         Self {
-            id,
-            installation_id,
-            remote_id,
             ref_,
-            commit,
+            installation,
+            remote,
         }
     }
 }

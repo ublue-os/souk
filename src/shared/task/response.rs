@@ -17,96 +17,61 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::shared::task::{AppstreamResponse, FlatpakResponse};
+use crate::shared::task::{TaskResult, TaskStep};
 
-#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+#[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
+// TODO: Rename to TaskResponse
 pub struct Response {
     /// The UUID of the corresponding task
     pub uuid: String,
     pub type_: ResponseType,
 
     // This should have been an enum, unfortunately not supported by zbus / dbus
-    flatpak_response: Optional<FlatpakResponse>,
-    appstream_response: Optional<AppstreamResponse>,
-    error_response: Optional<String>,
+    pub initial_response: Optional<Vec<TaskStep>>,
+    pub update_response: Optional<TaskStep>,
+    pub result_response: Optional<TaskResult>,
 }
 
 impl Response {
-    pub fn new_done(uuid: String) -> Self {
+    pub fn new_initial(uuid: String, steps: Vec<TaskStep>) -> Self {
         Self {
             uuid,
-            type_: ResponseType::Done,
-            flatpak_response: None.into(),
-            appstream_response: None.into(),
-            error_response: None.into(),
+            type_: ResponseType::Initial,
+            initial_response: Some(steps).into(),
+            update_response: None.into(),
+            result_response: None.into(),
         }
     }
 
-    pub fn new_cancelled(uuid: String) -> Self {
+    pub fn new_update(uuid: String, step: TaskStep) -> Self {
         Self {
             uuid,
-            type_: ResponseType::Cancelled,
-            flatpak_response: None.into(),
-            appstream_response: None.into(),
-            error_response: None.into(),
+            type_: ResponseType::Update,
+            initial_response: None.into(),
+            update_response: Some(step).into(),
+            result_response: None.into(),
         }
     }
 
-    pub fn new_error(uuid: String, error: String) -> Self {
+    pub fn new_result(uuid: String, result: TaskResult) -> Self {
         Self {
             uuid,
-            type_: ResponseType::Error,
-            flatpak_response: None.into(),
-            appstream_response: None.into(),
-            error_response: Some(error).into(),
+            type_: ResponseType::Result,
+            initial_response: None.into(),
+            update_response: None.into(),
+            result_response: Some(result).into(),
         }
-    }
-
-    pub fn new_flatpak(uuid: String, type_: ResponseType, response: FlatpakResponse) -> Self {
-        Self {
-            uuid,
-            type_,
-            flatpak_response: Some(response).into(),
-            appstream_response: None.into(),
-            error_response: None.into(),
-        }
-    }
-
-    pub fn new_appstream(uuid: String, type_: ResponseType, response: AppstreamResponse) -> Self {
-        Self {
-            uuid,
-            type_,
-            flatpak_response: None.into(),
-            appstream_response: Some(response).into(),
-            error_response: None.into(),
-        }
-    }
-
-    /// Returns [FlatpakResponse] if this is a Flatpak response.
-    pub fn flatpak_response(&self) -> Option<FlatpakResponse> {
-        self.flatpak_response.clone().into()
-    }
-
-    /// Returns [AppstreamResponse] if this is a Flatpak response
-    pub fn appstream_response(&self) -> Option<FlatpakResponse> {
-        self.flatpak_response.clone().into()
-    }
-
-    /// Returns a [String] if this is a error response
-    pub fn error_response(&self) -> Option<String> {
-        self.error_response.clone().into()
     }
 }
 
 #[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum ResponseType {
-    /// Response contains updates / progress information of a running task.
+    /// Initial (first) response of a task. This includes a detailed list of all
+    /// steps, see [TaskResponse.initial_response].
+    Initial,
+    /// Update response of a task, contains updated information of a single
+    /// step, see [TaskResponse.update_response].
     Update,
-    /// Task successfully completed.
-    Done,
-    /// Task has been canceled (eg. by user).
-    Cancelled,
-    /// Task was terminated due to an error. See [Response] `error_response`
-    /// field for reason / message.
-    Error,
+    /// Task ended. See [TaskResponse.result_response] for more details.
+    Result,
 }

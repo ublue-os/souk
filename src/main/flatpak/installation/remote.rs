@@ -22,6 +22,7 @@ use once_cell::unsync::OnceCell;
 
 use crate::shared::info::RemoteInfo;
 
+// TODO: Should there be an property for the related installation?
 mod imp {
     use super::*;
 

@@ -31,7 +31,7 @@ use isahc::ReadResponseExt;
 
 use super::{DryRunResult, DryRunRuntime};
 use crate::shared::info::{InstallationInfo, RemoteInfo};
-use crate::shared::task::{FlatpakOperationType, FlatpakResponse, FlatpakTask, Response};
+use crate::shared::task::{FlatpakOperationType, FlatpakTask, Response, TaskResult, TaskStep};
 use crate::worker::{appstream, WorkerError};
 
 #[derive(Debug, Clone, Downgrade)]
@@ -103,10 +103,12 @@ impl FlatpakWorker {
         if let Err(err) = result {
             // Transaction got cancelled (probably by user)
             if err == WorkerError::GLibCancelled {
-                let response = Response::new_cancelled(task_uuid.into());
+                let result = TaskResult::new_cancelled();
+                let response = Response::new_result(task_uuid.into(), result);
                 self.sender.try_send(response).unwrap();
             } else {
-                let response = Response::new_error(task_uuid.into(), err.message());
+                let result = TaskResult::new_error(err.message());
+                let response = Response::new_result(task_uuid.into(), result);
                 self.sender.try_send(response).unwrap();
             }
         }
@@ -215,7 +217,8 @@ impl FlatpakWorker {
             results.appstream_component = Some(json).into();
         }
 
-        let response = FlatpakResponse::new_dry_run_result(task_uuid.into(), results);
+        let task_result = TaskResult::new_dry_run(results);
+        let response = Response::new_result(task_uuid.to_string(), task_result);
         self.sender.try_send(response).unwrap();
 
         Ok(())
@@ -294,7 +297,8 @@ impl FlatpakWorker {
         }
         results.remotes_info = remotes_info;
 
-        let response = FlatpakResponse::new_dry_run_result(task_uuid.into(), results);
+        let task_result = TaskResult::new_dry_run(results);
+        let response = Response::new_result(task_uuid.to_string(), task_result);
         self.sender.try_send(response).unwrap();
 
         Ok(())
@@ -307,25 +311,43 @@ impl FlatpakWorker {
     ) -> Result<(), WorkerError> {
         transaction.connect_add_new_remote(move |_, _, _, _, _| true);
 
+        transaction.connect_ready(
+            clone!(@strong task_uuid, @weak self.sender as sender => @default-return true, move |transaction|{
+                let mut steps = Vec::new();
+                for operation in transaction.operations(){
+                    let step = TaskStep::new_flatpak(transaction, &operation, None, false);
+                    steps.push(step);
+                }
+
+                let response = Response::new_initial(task_uuid.clone(), steps);
+                sender.try_send(response).unwrap();
+
+                // Real transaction -> start (unlike dryrun)
+                true
+            }),
+        );
+
         transaction.connect_new_operation(
             clone!(@weak self as this, @strong task_uuid => move |transaction, operation, progress| {
-                let response = FlatpakResponse::new_transaction_progress(
-                    task_uuid.clone(),
+                let task_step = TaskStep::new_flatpak(
                     transaction,
                     operation,
-                    Some(progress)
+                    Some(progress),
+                    false
                 );
+                let response = Response::new_update(task_uuid.to_string(), task_step);
                 this.sender.try_send(response).unwrap();
 
                 progress.set_update_frequency(500);
                 progress.connect_changed(
                     clone!(@weak this, @strong task_uuid, @weak transaction, @weak operation => move |progress|{
-                        let response = FlatpakResponse::new_transaction_progress(
-                            task_uuid.clone(),
+                        let task_step = TaskStep::new_flatpak(
                             &transaction,
                             &operation,
-                            Some(progress)
+                            Some(progress),
+                            false,
                         );
+                        let response = Response::new_update(task_uuid.to_string(), task_step);
                         this.sender.try_send(response).unwrap();
                     }),
                 );
@@ -333,14 +355,27 @@ impl FlatpakWorker {
         );
 
         transaction.connect_operation_done(
-            clone!(@weak self as this, @strong task_uuid => move |transaction, operation, _commit, _result| {
-                let response = FlatpakResponse::new_transaction_progress(
-                    task_uuid.clone(),
-                    transaction,
-                    operation,
-                    None
-                );
+            clone!(@weak self as this, @strong task_uuid => move |transaction, operation, _, _| {
+                let task_step = TaskStep::new_flatpak(
+                            transaction,
+                            operation,
+                            None,
+                            true,
+                        );
+                let response = Response::new_update(task_uuid.to_string(), task_step);
                 this.sender.try_send(response).unwrap();
+
+                // Check if this was the last operation ("step") -> whole task is done
+                let index = transaction
+                    .operations()
+                    .iter()
+                    .position(|o| o == operation)
+                    .unwrap();
+                if index +1 == transaction.operations().len() {
+                    let result = TaskResult::new_done();
+                    let response = Response::new_result(task_uuid.to_string(), result);
+                    this.sender.try_send(response).unwrap();
+                }
             }),
         );
 

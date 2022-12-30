@@ -15,18 +15,21 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::cell::{Cell, RefCell};
+use std::str::FromStr;
 
 use glib::{
-    ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecUInt, ToValue,
+    ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecUInt64, ToValue,
 };
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
+use once_cell::unsync::OnceCell;
 
 use crate::main::flatpak::package::SkPackage;
 use crate::main::flatpak::sideload::SkSideloadable;
 use crate::main::task::SkTaskActivity;
+use crate::shared::task::TaskStep;
 
 mod imp {
     use super::*;
@@ -37,12 +40,14 @@ mod imp {
         pub progress: Cell<f32>,
         /// Download rate of this step, in bytes per second (if something gets
         /// downloaded)
-        pub download_rate: Cell<u32>,
-        /// The current activity of this step
+        pub download_rate: Cell<u64>,
+        /// The *current* activity of this step (note: it's the *current*
+        /// activity, not the targeted activity, so it doesn't have to match the
+        /// Flatpak operation name, eg. because it's "pending")
         pub activity: RefCell<SkTaskActivity>,
         /// The related package. This is only set if this is not a sideloading
         /// task.
-        pub package: RefCell<Option<SkPackage>>,
+        pub package: OnceCell<SkPackage>,
         /// The related package. This is only set if this is a sideloading task.
         pub sideloadable: RefCell<Option<SkSideloadable>>,
     }
@@ -58,12 +63,12 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
                     ParamSpecFloat::new("progress", "", "", 0.0, 1.0, 0.0, ParamFlags::READABLE),
-                    ParamSpecUInt::new(
+                    ParamSpecUInt64::new(
                         "download-rate",
                         "",
                         "",
                         0,
-                        u32::MAX,
+                        u64::MAX,
                         0,
                         ParamFlags::READABLE,
                     ),
@@ -72,7 +77,7 @@ mod imp {
                         "",
                         "",
                         SkTaskActivity::static_type(),
-                        SkTaskActivity::Waiting as i32,
+                        SkTaskActivity::default() as i32,
                         ParamFlags::READABLE,
                     ),
                     ParamSpecObject::new(
@@ -112,18 +117,47 @@ glib::wrapper! {
 }
 
 impl SkTaskStep {
-    pub fn new() -> Self {
+    pub fn new(task_step: &TaskStep) -> Self {
         let step: Self = glib::Object::new(&[]).unwrap();
-        // task.imp().data.set(data).unwrap();
+        let imp = step.imp();
+
+        *imp.activity.borrow_mut() = SkTaskActivity::from_str(&task_step.activity).unwrap();
+
+        if let Some(package_info) = task_step.package_info.clone().into() {
+            let package = SkPackage::new(&package_info);
+            imp.package.set(package).unwrap();
+        }
+
+        // TODO: sideloadable/sideloadpackage
 
         step
+    }
+
+    pub(super) fn update(&self, task_step: &TaskStep) {
+        let imp = self.imp();
+
+        if self.progress() != task_step.progress as f32 {
+            imp.progress.set(task_step.progress as f32 / 100.0);
+            self.notify("progress");
+        }
+
+        if self.download_rate() != task_step.download_rate {
+            imp.download_rate.set(task_step.download_rate);
+            self.notify("download-rate");
+        }
+
+        let activity = SkTaskActivity::from_str(&task_step.activity).unwrap();
+        if self.activity() != activity {
+            *imp.activity.borrow_mut() = activity;
+            self.notify("activity");
+        }
     }
 
     pub fn progress(&self) -> f32 {
         self.imp().progress.get()
     }
 
-    pub fn download_rate(&self) -> u32 {
+    pub fn download_rate(&self) -> u64 {
         self.imp().download_rate.get()
     }
 
@@ -132,60 +166,10 @@ impl SkTaskStep {
     }
 
     pub fn package(&self) -> Option<SkPackage> {
-        self.imp().package.borrow().as_ref().cloned()
+        self.imp().package.get().cloned()
     }
 
     pub fn sideloadable(&self) -> Option<SkSideloadable> {
         self.imp().sideloadable.borrow().as_ref().cloned()
     }
-
-    // pub fn handle_response(&self, response: &Response) {
-    // let imp = self.imp();
-    //
-    // match response.type_ {
-    // ResponseType::Done => {
-    // if let Some(flatpak_response) = response.flatpak_response() {
-    // if let Some(dry_run_result) = flatpak_response.dry_run_result.into() {
-    // imp.dry_run_result.borrow_mut() = Some(dry_run_result);
-    // }
-    //
-    // imp.progress.set(flatpak_response.progress as f32 / 100.0);
-    // self.notify("progress");
-    // }
-    //
-    // imp.progress.set(1.0);
-    // self.notify("progress");
-    // self.emit_by_name::<()>("done", &[]);
-    // imp.finished_sender.get().unwrap().try_send(()).unwrap();
-    // }
-    // ResponseType::Update => {
-    // if let Some(flatpak_response) = response.flatpak_response() {
-    // imp.progress.set(flatpak_response.progress as f32 / 100.0);
-    // self.notify("progress");
-    // }
-    // }
-    // ResponseType::Cancelled => {
-    // self.emit_by_name::<()>("cancelled", &[]);
-    // imp.finished_sender.get().unwrap().try_send(()).unwrap();
-    // }
-    // ResponseType::Error => {
-    // let error = response.error_response().unwrap();
-    // self.emit_by_name::<()>("error", &[&error]);
-    // imp.finished_sender.get().unwrap().try_send(()).unwrap();
-    // }
-    // }
-    //
-    // imp.current_operation_type.borrow_mut() = progress.type_.clone();
-    // self.notify("current-operation-type");
-    //
-    // let p = response.progress as f32 / 100.0;
-    // imp.current_operation_progress.set(p);
-    // self.notify("current-operation-progress");
-    //
-    // imp.current_operation.set(progress.current_operation);
-    // self.notify("current-operation");
-    //
-    // imp.operations_count.set(progress.operations_count);
-    // self.notify("operations-count");
-    // }
 }

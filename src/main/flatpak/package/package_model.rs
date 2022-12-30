@@ -20,7 +20,7 @@ use std::convert::TryInto;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use indexmap::map::IndexMap;
+use indexmap::set::IndexSet;
 
 use crate::main::flatpak::package::SkPackage;
 
@@ -29,7 +29,7 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkPackageModel {
-        pub map: RefCell<IndexMap<String, SkPackage>>,
+        pub packages: RefCell<IndexSet<SkPackage>>,
     }
 
     #[glib::object_subclass]
@@ -47,14 +47,14 @@ mod imp {
         }
 
         fn n_items(&self, _list_model: &Self::Type) -> u32 {
-            self.map.borrow().len() as u32
+            self.packages.borrow().len() as u32
         }
 
         fn item(&self, _list_model: &Self::Type, position: u32) -> Option<glib::Object> {
-            self.map
+            self.packages
                 .borrow()
                 .get_index(position.try_into().unwrap())
-                .map(|(_, o)| o.clone().upcast::<glib::Object>())
+                .map(|o| o.clone().upcast::<glib::Object>())
         }
     }
 }
@@ -70,14 +70,14 @@ impl SkPackageModel {
 
     pub fn add_package(&self, package: &SkPackage) {
         let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            if map.contains_key(&package.id()) {
-                warn!("Package {:?} already exists in model", package.id());
+            let mut packages = self.imp().packages.borrow_mut();
+            if packages.contains(package) {
+                warn!("Package {:?} already exists in model", package.name());
                 return;
             }
 
-            map.insert(package.id(), package.clone());
-            (map.len() - 1) as u32
+            packages.insert(package.clone());
+            (packages.len() - 1) as u32
         };
 
         self.items_changed(pos, 0, 1);
@@ -85,14 +85,14 @@ impl SkPackageModel {
 
     pub fn remove_package(&self, package: &SkPackage) {
         let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            match map.get_index_of(&package.id()) {
+            let mut packages = self.imp().packages.borrow_mut();
+            match packages.get_index_of(package) {
                 Some(pos) => {
-                    map.remove(&package.id());
+                    packages.remove(package);
                     Some(pos)
                 }
                 None => {
-                    warn!("Package {:?} not found in model", package.id());
+                    warn!("Package {:?} not found in model", package.name());
                     None
                 }
             }
@@ -101,10 +101,6 @@ impl SkPackageModel {
         if let Some(pos) = pos {
             self.items_changed(pos.try_into().unwrap(), 1, 0);
         }
-    }
-
-    pub fn package(&self, id: &str) -> Option<SkPackage> {
-        self.imp().map.borrow().get(id).cloned()
     }
 }
 

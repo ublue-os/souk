@@ -26,15 +26,12 @@ use once_cell::unsync::OnceCell;
 use super::SkPackageType;
 use crate::shared::info::PackageInfo;
 
+// TODO: Add remote/installation properties
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
     pub struct SkPackage {
-        pub id: OnceCell<String>,
-        pub installation_id: OnceCell<String>,
-        pub remote_id: OnceCell<String>,
-
         pub type_: OnceCell<SkPackageType>,
         pub name: OnceCell<String>,
         pub architecture: OnceCell<String>,
@@ -51,9 +48,6 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
-                    ParamSpecString::new("id", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("installation-id", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("remote-id", "", "", None, ParamFlags::READABLE),
                     ParamSpecEnum::new(
                         "type",
                         "",
@@ -72,9 +66,6 @@ mod imp {
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "id" => obj.id().to_value(),
-                "installation-id" => obj.installation_id().to_value(),
-                "remote-id" => obj.remote_id().to_value(),
                 "type" => obj.type_().to_value(),
                 "name" => obj.name().to_value(),
                 "architecture" => obj.architecture().to_value(),
@@ -94,12 +85,6 @@ impl SkPackage {
         let package: Self = glib::Object::new(&[]).unwrap();
         let imp = package.imp();
 
-        imp.id.set(info.id.clone()).unwrap();
-        imp.installation_id
-            .set(info.installation_id.clone())
-            .unwrap();
-        imp.remote_id.set(info.remote_id.clone()).unwrap();
-
         let flatpak_ref = Ref::parse(&info.ref_).unwrap();
 
         imp.type_.set(flatpak_ref.kind().into()).unwrap();
@@ -114,18 +99,6 @@ impl SkPackage {
             .unwrap();
 
         package
-    }
-
-    pub fn id(&self) -> String {
-        self.imp().id.get().unwrap().to_string()
-    }
-
-    pub fn installation_id(&self) -> String {
-        self.imp().installation_id.get().unwrap().to_string()
-    }
-
-    pub fn remote_id(&self) -> String {
-        self.imp().remote_id.get().unwrap().to_string()
     }
 
     pub fn type_(&self) -> SkPackageType {

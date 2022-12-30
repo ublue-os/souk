@@ -19,7 +19,8 @@ use std::cell::{Cell, RefCell};
 use async_std::channel::{unbounded, Receiver, Sender};
 use glib::subclass::Signal;
 use glib::{
-    ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecString, ToValue,
+    clone, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecString,
+    ParamSpecUInt64, ToValue,
 };
 use gtk::glib;
 use gtk::prelude::*;
@@ -27,8 +28,8 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::task::{SkTaskStepModel, SkTaskType};
-use crate::shared::task::{Response, ResponseType, Task};
+use crate::main::task::{SkTaskActivity, SkTaskStep, SkTaskStepModel, SkTaskType};
+use crate::shared::task::{Response, ResponseType, Task, TaskResultType};
 use crate::worker::DryRunResult;
 
 mod imp {
@@ -78,6 +79,23 @@ mod imp {
                         SkTaskStepModel::static_type(),
                         ParamFlags::READABLE,
                     ),
+                    ParamSpecUInt64::new(
+                        "download-rate",
+                        "",
+                        "",
+                        0,
+                        u64::MAX,
+                        0,
+                        ParamFlags::READABLE,
+                    ),
+                    ParamSpecEnum::new(
+                        "activity",
+                        "",
+                        "",
+                        SkTaskActivity::static_type(),
+                        SkTaskActivity::default() as i32,
+                        ParamFlags::READABLE,
+                    ),
                 ]
             });
             PROPERTIES.as_ref()
@@ -89,6 +107,8 @@ mod imp {
                 "type" => obj.type_().to_value(),
                 "progress" => obj.progress().to_value(),
                 "steps" => obj.steps().to_value(),
+                "download-rate" => obj.download_rate().to_value(),
+                "activity" => obj.activity().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -109,7 +129,24 @@ mod imp {
             SIGNALS.as_ref()
         }
 
-        fn constructed(&self, _obj: &Self::Type) {
+        fn constructed(&self, obj: &Self::Type) {
+            let _ = self
+                .steps
+                .property_expression("current")
+                .chain_property::<SkTaskStep>("download-rate")
+                .watch(
+                    glib::Object::NONE,
+                    clone!(@weak obj => move|| obj.notify("download-rate")),
+                );
+            let _ = self
+                .steps
+                .property_expression("current")
+                .chain_property::<SkTaskStep>("activity")
+                .watch(
+                    glib::Object::NONE,
+                    clone!(@weak obj => move|| obj.notify("activity")),
+                );
+
             let (finished_sender, finished_receiver) = unbounded();
             self.finished_sender.set(finished_sender).unwrap();
             self.finished_receiver.set(finished_receiver).unwrap();
@@ -150,54 +187,75 @@ impl SkTask {
         self.imp().steps.clone()
     }
 
+    /// Returns the download rate of the current active [SkTaskStep]
+    pub fn download_rate(&self) -> u64 {
+        if let Some(step) = self.steps().current() {
+            step.download_rate()
+        } else {
+            0
+        }
+    }
+
+    /// Returns the activity of the current active [SkTaskStep]
+    pub fn activity(&self) -> SkTaskActivity {
+        if let Some(step) = self.steps().current() {
+            step.activity()
+        } else {
+            SkTaskActivity::None
+        }
+    }
+
     pub fn handle_response(&self, response: &Response) {
         let imp = self.imp();
 
         match response.type_ {
-            ResponseType::Done => {
-                if let Some(flatpak_response) = response.flatpak_response() {
-                    if let Some(dry_run_result) = flatpak_response.dry_run_result.into() {
-                        *imp.dry_run_result.borrow_mut() = Some(dry_run_result);
-                    }
-
-                    imp.progress.set(flatpak_response.progress as f32 / 100.0);
-                    self.notify("progress");
-                }
-
-                imp.progress.set(1.0);
-                self.notify("progress");
-                self.emit_by_name::<()>("done", &[]);
-                imp.finished_sender.get().unwrap().try_send(()).unwrap();
+            ResponseType::Initial => {
+                let steps = response.initial_response.as_ref().unwrap();
+                self.steps().set_steps(steps);
             }
             ResponseType::Update => {
-                if let Some(flatpak_response) = response.flatpak_response() {
-                    imp.progress.set(flatpak_response.progress as f32 / 100.0);
+                let updated_step = response.update_response.as_ref().unwrap();
+                self.steps().update_step(updated_step);
+
+                let progress = ((updated_step.index * 100) + updated_step.progress as u32) as f32
+                    / (self.steps().n_items() as f32 * 100.0);
+                dbg!(&progress);
+                if self.progress() != progress {
+                    self.imp().progress.set(progress);
                     self.notify("progress");
                 }
             }
-            ResponseType::Cancelled => {
-                self.emit_by_name::<()>("cancelled", &[]);
-                imp.finished_sender.get().unwrap().try_send(()).unwrap();
-            }
-            ResponseType::Error => {
-                let error = response.error_response().unwrap();
-                self.emit_by_name::<()>("error", &[&error]);
-                imp.finished_sender.get().unwrap().try_send(()).unwrap();
+            ResponseType::Result => {
+                let result = response.result_response.as_ref().unwrap();
+                match result.type_ {
+                    TaskResultType::Done => {
+                        imp.progress.set(1.0);
+                        self.notify("progress");
+                        self.emit_by_name::<()>("done", &[]);
+                        imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                    }
+                    TaskResultType::DoneDryRun => {
+                        let dry_run_result = result.dry_run.as_ref().unwrap().clone();
+                        *imp.dry_run_result.borrow_mut() = Some(dry_run_result);
+
+                        imp.progress.set(1.0);
+                        self.notify("progress");
+                        self.emit_by_name::<()>("done", &[]);
+                        imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                    }
+                    TaskResultType::Error => {
+                        let error = result.error.as_ref().unwrap().clone();
+                        self.emit_by_name::<()>("error", &[&error]);
+                        imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                    }
+                    TaskResultType::Cancelled => {
+                        self.emit_by_name::<()>("cancelled", &[]);
+                        imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                    }
+                    _ => warn!("Unknown response type"),
+                }
             }
         }
-
-        //*imp.current_operation_type.borrow_mut() = progress.type_.clone();
-        // self.notify("current-operation-type");
-
-        // let p = response.progress as f32 / 100.0;
-        // imp.current_operation_progress.set(p);
-        // self.notify("current-operation-progress");
-
-        // imp.current_operation.set(progress.current_operation);
-        // self.notify("current-operation");
-
-        // imp.operations_count.set(progress.operations_count);
-        // self.notify("operations-count");
     }
 
     // TODO: Make this generic for all result types

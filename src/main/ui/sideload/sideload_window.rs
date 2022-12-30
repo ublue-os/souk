@@ -619,25 +619,17 @@ impl SkSideloadWindow {
             .flags(glib::BindingFlags::SYNC_CREATE)
             .build();
 
-        // TODO
-        // task.connect_local(
-        // "notify::current-operation",
-        // false,
-        // clone!(@weak self as this, @weak task => @default-return None, move |_|{
-        // let imp = this.imp();
-        //
-        // let msg = format!(
-        // "{} {} ({}/{})",
-        // task.current_operation_type(),
-        // task.current_operation_ref().unwrap().name().unwrap(),
-        // task.current_operation(),
-        // task.operations_count()
-        // );
-        //
-        // imp.progress_label.set_text(&msg);
-        // None
-        // }),
-        // );
+        task.connect_notify_local(
+            None,
+            clone!(@weak self as this => move |task, _|{
+                let download_rate = format!("{}/s", glib::format_size(task.download_rate()));
+                let activity = task.activity().to_string();
+                let text = format!("{activity}... ({download_rate})");
+
+                this.imp().progress_label.set_label(&text);
+                // TODO: Implement proper progressbar widget which can be used with SkTask / SkTaskStep
+            }),
+        );
 
         task.connect_local(
             "done",
