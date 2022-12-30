@@ -1,20 +1,18 @@
 #!/bin/sh
 echo "Running fusermount wrapper, redirecting to host..."
-
-# Set DBUS_SESSION_BUS_ADDRESS env variable so the flatpak-spawn --host portal call works.
-# The correct value is listed in the /.flatpak-info file.
-dbus_address=$(cat /.flatpak-info | grep DBUS_SESSION_BUS_ADDRESS)
-export $dbus_address
+export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/flatpak/bus
 
 # Test if the `fusermount` command is available
-flatpak-spawn --host fusermount --version &> /dev/null
+echo "Checking if fusermount is available on host system..."
+flatpak-spawn --host fusermount --version
 retval=$?
 
 if [ $retval -eq 0 ]; then
+  echo "Using fusermount."
   binary="fusermount"
 else
   # Some distros don't ship `fusermount` anymore, but `fusermount3` like Alpine
-  echo "Unable to execute fusermount, trying fusermount3"
+  echo "Unable to execute fusermount, trying to use fusermount3."
   binary="fusermount3"
 fi
 
