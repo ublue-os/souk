@@ -250,23 +250,21 @@ impl SkApplication {
         all_filter.add_pattern("*");
         dialog.add_filter(&all_filter);
 
-        dialog.connect_response(
-            clone!(@strong dialog, @weak self as this => move |_, resp| {
-                if resp == gtk::ResponseType::Accept {
-                    let mut files = Vec::new();
-                    for pos in 0..dialog.files().n_items() {
-                    let file = dialog.files()
-                        .item(pos)
-                        .unwrap()
-                        .downcast::<gio::File>()
-                        .unwrap();
-                        files.push(file);
-                    }
-
-                    this.open(&files, "");
+        dialog.connect_response(clone!(@weak dialog, @weak self as this => move |_, resp| {
+            if resp == gtk::ResponseType::Accept {
+                let mut files = Vec::new();
+                for pos in 0..dialog.files().n_items() {
+                let file = dialog.files()
+                    .item(pos)
+                    .unwrap()
+                    .downcast::<gio::File>()
+                    .unwrap();
+                    files.push(file);
                 }
-            }),
-        );
+
+                this.open(&files, "");
+            }
+        }));
 
         dialog.show();
     }
