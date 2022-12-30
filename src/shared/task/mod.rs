@@ -16,15 +16,15 @@
 
 mod appstream_task;
 mod flatpak_task;
-mod response;
 #[allow(clippy::module_inception)]
 mod task;
+mod task_response;
 mod task_result;
 mod task_step;
 
 pub use appstream_task::AppstreamTask;
 pub use flatpak_task::{FlatpakOperationType, FlatpakTask};
-pub use response::{Response, ResponseType};
 pub use task::Task;
+pub use task_response::{TaskResponse, TaskResponseType};
 pub use task_result::{TaskResult, TaskResultType};
 pub use task_step::TaskStep;

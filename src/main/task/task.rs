@@ -29,7 +29,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::task::{SkTaskActivity, SkTaskStep, SkTaskStepModel, SkTaskType};
-use crate::shared::task::{Response, ResponseType, Task, TaskResultType};
+use crate::shared::task::{Task, TaskResponse, TaskResponseType, TaskResultType};
 use crate::worker::DryRunResult;
 
 mod imp {
@@ -205,15 +205,15 @@ impl SkTask {
         }
     }
 
-    pub fn handle_response(&self, response: &Response) {
+    pub fn handle_response(&self, response: &TaskResponse) {
         let imp = self.imp();
 
         match response.type_ {
-            ResponseType::Initial => {
+            TaskResponseType::Initial => {
                 let steps = response.initial_response.as_ref().unwrap();
                 self.steps().set_steps(steps);
             }
-            ResponseType::Update => {
+            TaskResponseType::Update => {
                 let updated_step = response.update_response.as_ref().unwrap();
                 self.steps().update_step(updated_step);
 
@@ -225,7 +225,7 @@ impl SkTask {
                     self.notify("progress");
                 }
             }
-            ResponseType::Result => {
+            TaskResponseType::Result => {
                 let result = response.result_response.as_ref().unwrap();
                 match result.type_ {
                     TaskResultType::Done => {

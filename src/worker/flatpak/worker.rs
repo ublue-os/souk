@@ -31,17 +31,17 @@ use isahc::ReadResponseExt;
 
 use super::{DryRunResult, DryRunRuntime};
 use crate::shared::info::{InstallationInfo, RemoteInfo};
-use crate::shared::task::{FlatpakOperationType, FlatpakTask, Response, TaskResult, TaskStep};
+use crate::shared::task::{FlatpakOperationType, FlatpakTask, TaskResponse, TaskResult, TaskStep};
 use crate::worker::{appstream, WorkerError};
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct FlatpakWorker {
     transactions: Arc<Mutex<HashMap<String, Cancellable>>>,
-    sender: Arc<Sender<Response>>,
+    sender: Arc<Sender<TaskResponse>>,
 }
 
 impl FlatpakWorker {
-    pub fn new(sender: Sender<Response>) -> Self {
+    pub fn new(sender: Sender<TaskResponse>) -> Self {
         Self {
             transactions: Arc::default(),
             sender: Arc::new(sender),
@@ -104,11 +104,11 @@ impl FlatpakWorker {
             // Transaction got cancelled (probably by user)
             if err == WorkerError::GLibCancelled {
                 let result = TaskResult::new_cancelled();
-                let response = Response::new_result(task_uuid.into(), result);
+                let response = TaskResponse::new_result(task_uuid.into(), result);
                 self.sender.try_send(response).unwrap();
             } else {
                 let result = TaskResult::new_error(err.message());
-                let response = Response::new_result(task_uuid.into(), result);
+                let response = TaskResponse::new_result(task_uuid.into(), result);
                 self.sender.try_send(response).unwrap();
             }
         }
@@ -217,8 +217,8 @@ impl FlatpakWorker {
             results.appstream_component = Some(json).into();
         }
 
-        let task_result = TaskResult::new_dry_run(results);
-        let response = Response::new_result(task_uuid.to_string(), task_result);
+        let result = TaskResult::new_dry_run(results);
+        let response = TaskResponse::new_result(task_uuid.to_string(), result);
         self.sender.try_send(response).unwrap();
 
         Ok(())
@@ -297,8 +297,8 @@ impl FlatpakWorker {
         }
         results.remotes_info = remotes_info;
 
-        let task_result = TaskResult::new_dry_run(results);
-        let response = Response::new_result(task_uuid.to_string(), task_result);
+        let result = TaskResult::new_dry_run(results);
+        let response = TaskResponse::new_result(task_uuid.to_string(), result);
         self.sender.try_send(response).unwrap();
 
         Ok(())
@@ -319,7 +319,7 @@ impl FlatpakWorker {
                     steps.push(step);
                 }
 
-                let response = Response::new_initial(task_uuid.clone(), steps);
+                let response = TaskResponse::new_initial(task_uuid.clone(), steps);
                 sender.try_send(response).unwrap();
 
                 // Real transaction -> start (unlike dryrun)
@@ -335,7 +335,7 @@ impl FlatpakWorker {
                     Some(progress),
                     false
                 );
-                let response = Response::new_update(task_uuid.to_string(), task_step);
+                let response = TaskResponse::new_update(task_uuid.to_string(), task_step);
                 this.sender.try_send(response).unwrap();
 
                 progress.set_update_frequency(500);
@@ -347,7 +347,7 @@ impl FlatpakWorker {
                             Some(progress),
                             false,
                         );
-                        let response = Response::new_update(task_uuid.to_string(), task_step);
+                        let response = TaskResponse::new_update(task_uuid.to_string(), task_step);
                         this.sender.try_send(response).unwrap();
                     }),
                 );
@@ -362,7 +362,7 @@ impl FlatpakWorker {
                             None,
                             true,
                         );
-                let response = Response::new_update(task_uuid.to_string(), task_step);
+                let response = TaskResponse::new_update(task_uuid.to_string(), task_step);
                 this.sender.try_send(response).unwrap();
 
                 // Check if this was the last operation ("step") -> whole task is done
@@ -373,7 +373,7 @@ impl FlatpakWorker {
                     .unwrap();
                 if index +1 == transaction.operations().len() {
                     let result = TaskResult::new_done();
-                    let response = Response::new_result(task_uuid.to_string(), result);
+                    let response = TaskResponse::new_result(task_uuid.to_string(), result);
                     this.sender.try_send(response).unwrap();
                 }
             }),

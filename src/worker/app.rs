@@ -29,7 +29,7 @@ use rusty_pool::ThreadPool;
 use zbus::{Connection, ConnectionBuilder, SignalContext};
 
 use crate::shared::config;
-use crate::shared::task::{Response, Task};
+use crate::shared::task::{Task, TaskResponse};
 use crate::worker::appstream::AppstreamWorker;
 use crate::worker::dbus_server::WorkerServer;
 use crate::worker::flatpak::FlatpakWorker;
@@ -45,7 +45,7 @@ mod imp {
         pub task_receiver: Receiver<Task>,
         pub cancel_sender: Sender<Task>,
         pub cancel_receiver: Receiver<Task>,
-        pub response_receiver: Receiver<Response>,
+        pub response_receiver: Receiver<TaskResponse>,
 
         pub flatpak_worker: FlatpakWorker,
         pub appstream_worker: AppstreamWorker,

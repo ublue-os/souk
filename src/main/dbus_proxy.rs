@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::shared::config;
-use crate::shared::task::{Response, Task};
+use crate::shared::task::{Task, TaskResponse as TaskResponse_};
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
@@ -24,7 +24,7 @@ trait Worker {
     fn cancel_task(&self, task: Task) -> zbus::Result<()>;
 
     #[dbus_proxy(signal)]
-    fn task_response(&self, response: Response) -> zbus::Result<()>;
+    fn task_response(&self, task_response: TaskResponse_) -> zbus::Result<()>;
 }
 
 impl Default for WorkerProxy<'static> {

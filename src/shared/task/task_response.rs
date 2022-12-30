@@ -1,4 +1,4 @@
-// Souk - response.rs
+// Souk - task_response.rs
 // Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -21,10 +21,10 @@ use crate::shared::task::{TaskResult, TaskStep};
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
 // TODO: Rename to TaskResponse
-pub struct Response {
+pub struct TaskResponse {
     /// The UUID of the corresponding task
     pub uuid: String,
-    pub type_: ResponseType,
+    pub type_: TaskResponseType,
 
     // This should have been an enum, unfortunately not supported by zbus / dbus
     pub initial_response: Optional<Vec<TaskStep>>,
@@ -32,11 +32,11 @@ pub struct Response {
     pub result_response: Optional<TaskResult>,
 }
 
-impl Response {
+impl TaskResponse {
     pub fn new_initial(uuid: String, steps: Vec<TaskStep>) -> Self {
         Self {
             uuid,
-            type_: ResponseType::Initial,
+            type_: TaskResponseType::Initial,
             initial_response: Some(steps).into(),
             update_response: None.into(),
             result_response: None.into(),
@@ -46,7 +46,7 @@ impl Response {
     pub fn new_update(uuid: String, step: TaskStep) -> Self {
         Self {
             uuid,
-            type_: ResponseType::Update,
+            type_: TaskResponseType::Update,
             initial_response: None.into(),
             update_response: Some(step).into(),
             result_response: None.into(),
@@ -56,7 +56,7 @@ impl Response {
     pub fn new_result(uuid: String, result: TaskResult) -> Self {
         Self {
             uuid,
-            type_: ResponseType::Result,
+            type_: TaskResponseType::Result,
             initial_response: None.into(),
             update_response: None.into(),
             result_response: Some(result).into(),
@@ -65,7 +65,7 @@ impl Response {
 }
 
 #[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
-pub enum ResponseType {
+pub enum TaskResponseType {
     /// Initial (first) response of a task. This includes a detailed list of all
     /// steps, see [TaskResponse.initial_response].
     Initial,

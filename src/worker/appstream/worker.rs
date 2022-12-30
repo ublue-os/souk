@@ -20,15 +20,15 @@ use async_std::channel::Sender;
 use glib::Downgrade;
 use gtk::glib;
 
-use crate::shared::task::{AppstreamTask, Response};
+use crate::shared::task::{AppstreamTask, TaskResponse};
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct AppstreamWorker {
-    sender: Arc<Sender<Response>>,
+    sender: Arc<Sender<TaskResponse>>,
 }
 
 impl AppstreamWorker {
-    pub fn new(sender: Sender<Response>) -> Self {
+    pub fn new(sender: Sender<TaskResponse>) -> Self {
         Self {
             sender: Arc::new(sender),
         }

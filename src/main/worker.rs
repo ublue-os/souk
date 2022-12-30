@@ -235,7 +235,7 @@ impl SkWorker {
         let mut response = self.imp().proxy.receive_task_response().await.unwrap();
 
         while let Some(response) = response.next().await {
-            let response = response.args().unwrap().response;
+            let response = response.args().unwrap().task_response;
             debug!("Task response: {:#?}", response);
 
             let task_uuid = response.uuid.clone();

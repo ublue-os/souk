@@ -17,7 +17,7 @@
 use async_std::channel::Sender;
 use zbus::{dbus_interface, SignalContext};
 
-use crate::shared::task::{Response, Task};
+use crate::shared::task::{Task, TaskResponse};
 
 #[derive(Debug)]
 pub struct WorkerServer {
@@ -38,6 +38,6 @@ impl WorkerServer {
     #[dbus_interface(signal)]
     pub async fn task_response(
         signal_ctxt: &SignalContext<'_>,
-        response: Response,
+        task_response: TaskResponse,
     ) -> zbus::Result<()>;
 }
