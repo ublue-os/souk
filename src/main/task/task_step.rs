@@ -27,7 +27,6 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::flatpak::package::SkPackage;
-use crate::main::flatpak::sideload::SkSideloadable;
 use crate::main::task::SkTaskActivity;
 use crate::shared::task::TaskStep;
 
@@ -47,9 +46,7 @@ mod imp {
         pub activity: RefCell<SkTaskActivity>,
         /// The related package. This is only set if this is not a sideloading
         /// task.
-        pub package: OnceCell<SkPackage>,
-        /// The related package. This is only set if this is a sideloading task.
-        pub sideloadable: RefCell<Option<SkSideloadable>>,
+        pub package: OnceCell<Option<SkPackage>>,
     }
 
     #[glib::object_subclass]
@@ -87,13 +84,6 @@ mod imp {
                         SkPackage::static_type(),
                         ParamFlags::READABLE,
                     ),
-                    ParamSpecObject::new(
-                        "sideloadable",
-                        "",
-                        "",
-                        SkSideloadable::static_type(),
-                        ParamFlags::READABLE,
-                    ),
                 ]
             });
             PROPERTIES.as_ref()
@@ -105,7 +95,6 @@ mod imp {
                 "download-rate" => obj.download_rate().to_value(),
                 "activity" => obj.activity().to_value(),
                 "package" => obj.package().to_value(),
-                "sideloadable" => obj.sideloadable().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -125,10 +114,10 @@ impl SkTaskStep {
 
         if let Some(package_info) = task_step.package_info.clone().into() {
             let package = SkPackage::new(&package_info);
-            imp.package.set(package).unwrap();
+            imp.package.set(Some(package)).unwrap();
+        } else {
+            imp.package.set(None).unwrap();
         }
-
-        // TODO: sideloadable/sideloadpackage
 
         step
     }
@@ -166,10 +155,6 @@ impl SkTaskStep {
     }
 
     pub fn package(&self) -> Option<SkPackage> {
-        self.imp().package.get().cloned()
-    }
-
-    pub fn sideloadable(&self) -> Option<SkSideloadable> {
-        self.imp().sideloadable.borrow().as_ref().cloned()
+        self.imp().package.get().unwrap().clone()
     }
 }

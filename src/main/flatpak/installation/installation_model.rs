@@ -18,7 +18,6 @@ use std::cell::RefCell;
 use std::convert::TryInto;
 
 use flatpak::functions::system_installations;
-use flatpak::prelude::*;
 use flatpak::Installation;
 use gtk::gio::Cancellable;
 use gtk::prelude::*;
