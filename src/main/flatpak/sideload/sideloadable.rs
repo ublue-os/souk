@@ -86,18 +86,18 @@ impl SkSideloadable {
         imp.installation.set(installation.clone()).unwrap();
 
         // TODO-REMOVE: dry_run_result
-        let dry_run_result = SideloadPackage {
+        let sideload_package = SideloadPackage {
             dry_run_result: dry_run_result.clone(),
         };
-        imp.dry_run_result
-            .set(Some(dry_run_result.clone()))
-            .unwrap();
+        imp.dry_run_result.set(Some(sideload_package)).unwrap();
 
         // package
+        let package = SkPackage::new(&dry_run_result.package);
+        imp.package.set(Some(package)).unwrap();
 
         // remotes
         let mut remotes = Vec::new();
-        for remote_info in &dry_run_result.dry_run_result.remotes_info {
+        for remote_info in &dry_run_result.added_remotes {
             let remote = SkRemote::new(remote_info);
             remotes.push(remote);
         }
@@ -119,6 +119,7 @@ impl SkSideloadable {
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(SkSideloadType::Repo).unwrap();
         imp.dry_run_result.set(None).unwrap();
+        imp.package.set(None).unwrap();
         imp.remotes.set(vec![remote.clone()]).unwrap();
         imp.no_changes.set(already_added).unwrap();
         imp.installation.set(installation.clone()).unwrap();
@@ -140,6 +141,10 @@ impl SkSideloadable {
 
     pub fn dry_run_result(&self) -> Option<SideloadPackage> {
         self.imp().dry_run_result.get().unwrap().to_owned()
+    }
+
+    pub fn package(&self) -> Option<SkPackage> {
+        self.imp().package.get().unwrap().to_owned()
     }
 
     pub fn remotes(&self) -> Vec<SkRemote> {

@@ -282,7 +282,7 @@ impl SkTask {
         imp.finished_receiver.get().unwrap().recv().await.unwrap();
 
         if let Some(err) = self.result_error() {
-            Err(Error::Task(err.to_string()))
+            Err(Error::Task(err))
         } else {
             Ok(())
         }

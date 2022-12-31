@@ -33,7 +33,7 @@ pub struct SideloadPackage {
 
 impl SideloadPackage {
     pub fn ref_(&self) -> Ref {
-        let ref_ = self.dry_run_result.ref_.clone();
+        let ref_ = self.dry_run_result.package.ref_.clone();
         Ref::parse(&ref_).unwrap()
     }
 

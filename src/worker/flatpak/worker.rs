@@ -30,7 +30,7 @@ use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 
 use super::{DryRunResult, DryRunRuntime};
-use crate::shared::info::{InstallationInfo, RemoteInfo};
+use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
 use crate::shared::task::{FlatpakOperationType, FlatpakTask, TaskResponse, TaskResult, TaskStep};
 use crate::worker::{appstream, WorkerError};
 
@@ -192,15 +192,12 @@ impl FlatpakWorker {
             // Download Flatpak repofile for additional remote metadata
             let bundle_remote = self.retrieve_flatpak_remote(&runtime_repo_url)?;
 
-            let mut remotes_info = Vec::new();
-            for (name, url) in &results.remotes {
-                if bundle_remote.url().unwrap().as_str() == url {
-                    remotes_info.push(RemoteInfo::from_flatpak(&bundle_remote, None));
-                } else {
-                    remotes_info.push(RemoteInfo::new(name.into(), url.into(), None));
+            for remote_info in &mut results.added_remotes {
+                if bundle_remote.url().unwrap().as_str() == remote_info.repository_url {
+                    remote_info.update_metadata(&bundle_remote);
+                    break;
                 }
             }
-            results.remotes_info = remotes_info;
         }
 
         // Icon
@@ -271,31 +268,25 @@ impl FlatpakWorker {
 
         // Up to two remotes can be added during a *.flatpakref installation:
         // 1) `Url` value (= the repository where the ref is located)
-        // 2) `RuntimeRepo` value (doesn't need to point to the same repository as
+        // 2) `RuntimeRepo` value (doesn't need to point to the same repo as
         // `Url`)
-        let mut remotes_info = Vec::new();
 
         let keyfile = KeyFile::new();
         keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
-        let mut ref_repo_url = String::new();
 
         if let Ok(repo_url) = keyfile.value("Flatpak Ref", "RuntimeRepo") {
             if !repo_url.is_empty() {
                 let ref_repo = self.retrieve_flatpak_remote(&repo_url)?;
-                ref_repo_url = ref_repo.url().unwrap().to_string();
+                let ref_repo_url = ref_repo.url().unwrap().to_string();
 
-                if results.remotes.iter().any(|(_, url)| url == &ref_repo_url) {
-                    remotes_info.push(RemoteInfo::from_flatpak(&ref_repo, None));
+                for remote_info in &mut results.added_remotes {
+                    if ref_repo_url == remote_info.repository_url {
+                        remote_info.update_metadata(&ref_repo);
+                        break;
+                    }
                 }
             }
         }
-
-        for (name, url) in &results.remotes {
-            if url != &ref_repo_url && !ref_repo_url.is_empty() {
-                remotes_info.push(RemoteInfo::new(name.into(), url.into(), None));
-            }
-        }
-        results.remotes_info = remotes_info;
 
         let result = TaskResult::new_dry_run(results);
         let response = TaskResponse::new_result(task_uuid.to_string(), result);
@@ -411,7 +402,8 @@ impl FlatpakWorker {
         let installation_info = installation_info.clone();
         transaction.connect_add_new_remote(
             clone!(@weak dry_run_result, @strong installation_info => @default-return false, move |_, _, _, name, url|{
-                dry_run_result.borrow_mut().remotes.push((name.into(), url.into()));
+                let remote_info = RemoteInfo::new(name.into(), url.into(), None);
+                dry_run_result.borrow_mut().added_remotes.push(remote_info);
                 true
             }),
         );
@@ -421,13 +413,26 @@ impl FlatpakWorker {
             clone!(@weak dry_run_result, @weak real_installation, @strong load_remote_appstream => @default-return false, move |transaction|{
                 let operation_count = transaction.operations().len();
                 for (pos, operation) in transaction.operations().iter().enumerate () {
-                    // Check if it's the last operation, which is the actual app / runtime
+                    // Check if it's the last operation, which is the targeted app / runtime
                     if (pos+1) ==  operation_count {
                         let operation_commit = operation.commit().unwrap().to_string();
                         let operation_metadata = operation.metadata().unwrap().to_data().to_string();
                         let operation_old_metadata = operation.metadata().map(|m| m.to_data().to_string());
+                        let operation_ref = operation.get_ref().unwrap().to_string();
 
-                        dry_run_result.borrow_mut().ref_ = operation.get_ref().unwrap().to_string();
+                        // Retrieve remote
+                        let remote_name = operation.remote().unwrap().to_string();
+                        let remote_info = if let Ok(f_remote) = real_installation.remote_by_name(&remote_name, Cancellable::NONE){
+                            RemoteInfo::from_flatpak(&f_remote, Some(&real_installation))
+                        } else {
+                            let f_remote = transaction.installation().unwrap().remote_by_name(&remote_name, Cancellable::NONE).unwrap();
+                            RemoteInfo::from_flatpak(&f_remote, None)
+                        };
+
+                        // Package
+                        let package_info = PackageInfo::new(operation_ref, remote_info);
+                        dry_run_result.borrow_mut().package = package_info;
+
                         dry_run_result.borrow_mut().metainfo = operation_metadata;
                         dry_run_result.borrow_mut().old_metainfo = operation_old_metadata.into();
                         dry_run_result.borrow_mut().download_size = operation.download_size();

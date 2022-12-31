@@ -20,12 +20,13 @@ use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
 use super::DryRunRuntime;
-use crate::shared::info::RemoteInfo;
+use crate::shared::info::{PackageInfo, RemoteInfo};
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash)]
 #[derivative(Debug)]
 pub struct DryRunResult {
-    pub ref_: String,
+    /// The affected package
+    pub package: PackageInfo,
 
     #[derivative(Debug = "ignore")]
     pub icon: Vec<u8>,
@@ -56,11 +57,8 @@ pub struct DryRunResult {
 
     /// Which runtimes are installed during the installation
     pub runtimes: Vec<DryRunRuntime>,
-
-    /// Which remote are getting added during installation. Tuple of remote
-    /// name, and repository URL.
-    pub remotes: Vec<(String, String)>,
-    pub remotes_info: Vec<RemoteInfo>,
+    /// Which remotes are getting added during installation
+    pub added_remotes: Vec<RemoteInfo>,
 }
 
 impl DryRunResult {
@@ -74,7 +72,7 @@ impl DryRunResult {
 impl Default for DryRunResult {
     fn default() -> Self {
         Self {
-            ref_: String::default(),
+            package: PackageInfo::default(),
             icon: Vec::default(),
             appstream_component: None.into(),
             metainfo: String::new(),
@@ -86,8 +84,7 @@ impl Default for DryRunResult {
             download_size: 0,
             installed_size: 0,
             runtimes: Vec::default(),
-            remotes: Vec::default(),
-            remotes_info: Vec::default(),
+            added_remotes: Vec::default(),
         }
     }
 }

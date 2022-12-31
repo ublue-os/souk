@@ -188,7 +188,7 @@ impl SkContext {
         };
         let mut package_size = size;
 
-        let package_ref = Ref::parse(&dry_run.ref_).unwrap();
+        let package_ref = Ref::parse(&dry_run.package.ref_).unwrap();
         let package_ref_name = package_ref.name().unwrap().to_string();
         let package_ref_branch = package_ref.branch().unwrap().to_string();
 

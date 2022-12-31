@@ -19,7 +19,6 @@ use std::cell::RefCell;
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use flatpak::prelude::*;
-use flatpak::RefKind;
 use gio::{File, ListStore};
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::subclass::prelude::*;
@@ -30,6 +29,7 @@ use super::SkRemoteRow;
 use crate::main::app::SkApplication;
 use crate::main::context::SkContext;
 use crate::main::error::Error;
+use crate::main::flatpak::package::SkPackageType;
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::task::SkTask;
@@ -365,10 +365,13 @@ impl SkSideloadWindow {
         let repo_error_title = i18n("Adding Source Failed");
 
         // Package
-        let package = sideloadable.dry_run_result();
-        imp.package_box.set_visible(package.is_some());
-        if let Some(package) = package {
-            if package.is_update() {
+        let has_package = sideloadable.package().is_some();
+        imp.package_box.set_visible(has_package);
+        if let Some(package) = sideloadable.package() {
+            // TODO-REMOVE: Kill that
+            let dry_run_result = sideloadable.dry_run_result().unwrap();
+
+            if dry_run_result.is_update() {
                 imp.start_button.set_label(&update_start_button);
                 imp.details_title.set_title(&update_details_title);
                 imp.progress_title.set_title(&update_progress_title);
@@ -389,18 +392,18 @@ impl SkSideloadWindow {
                 .set_description(Some(&app_already_done_descr));
 
             // Only display launch button if it's an app
-            if package.ref_().kind() == RefKind::App {
+            if package.type_() == SkPackageType::App {
                 imp.launch_button.set_visible(true);
             }
 
             // Show warn message for packages without update source
-            let uninstall_before_install_source = !package.has_update_source();
+            let uninstall_before_install_source = !dry_run_result.has_update_source();
             imp.no_updates_row
                 .set_visible(uninstall_before_install_source);
 
             // Show warn message when package is already installed, but from a different
             // remote
-            if let Some(remote) = package.is_replacing_remote().as_ref() {
+            if let Some(remote) = dry_run_result.is_replacing_remote().as_ref() {
                 imp.replacing_remote_row.set_visible(true);
                 let msg = i18n_f("This package is already installed from \"{}\", during the installation the old version will be uninstalled first", &[remote]);
                 imp.replacing_remote_row.set_subtitle(&msg);
@@ -413,26 +416,24 @@ impl SkSideloadWindow {
             );
 
             // Badges
-            // TODO: Use real data
             utils::clear_box(&imp.package_badges_box);
-            let repo_badge = SkBadge::new(SkBadgeType::Repository, "flathub", true);
-            imp.package_badges_box.append(&repo_badge);
 
-            if "branch" != "stable" {
-                let branch_badge = SkBadge::new(SkBadgeType::Branch, "beta", true);
-                imp.package_badges_box.append(&branch_badge);
-            }
+            let branch_badge = SkBadge::new(SkBadgeType::Branch, &package.branch(), true);
+            imp.package_badges_box.append(&branch_badge);
+
+            let repo_badge = SkBadge::new(SkBadgeType::Repository, &package.remote().name(), true);
+            imp.package_badges_box.append(&repo_badge);
 
             // Context information
             let contexts = ListStore::new(SkContext::static_type());
 
-            let download_size_context = package.download_size_context();
+            let download_size_context = dry_run_result.download_size_context();
             contexts.append(&download_size_context);
 
-            let installed_size_context = package.installed_size_context();
+            let installed_size_context = dry_run_result.installed_size_context();
             contexts.append(&installed_size_context);
 
-            let permissions_context = package.permissions_context();
+            let permissions_context = dry_run_result.permissions_context();
             contexts.append(&permissions_context);
 
             imp.package_context_listbox.bind_model(
@@ -453,11 +454,11 @@ impl SkSideloadWindow {
             );
 
             // Setup general package appstream metadata
-            if let Some(component) = package.appstream() {
+            if let Some(component) = dry_run_result.appstream() {
                 let name = component.name.get_default().unwrap();
                 imp.package_name_label.set_text(name);
 
-                if let Some(paintable) = package.icon() {
+                if let Some(paintable) = dry_run_result.icon() {
                     imp.package_icon_image.set_paintable(Some(&paintable));
                 } else {
                     let it = gtk::IconTheme::new();
@@ -489,7 +490,7 @@ impl SkSideloadWindow {
                 imp.package_version_label.set_text(&version);
             } else {
                 // Fallback if there's no appstream metadata
-                let name = package.ref_().name().unwrap();
+                let name = package.name();
                 imp.package_name_label.set_text(&name);
 
                 let it = gtk::IconTheme::new();
@@ -513,7 +514,7 @@ impl SkSideloadWindow {
             // We don't support updating .flatpakrefs through sideloading, since the
             // installation would fail with "x is already installed". Only bundles can be
             // updated.
-            if package.is_update() && sideloadable.type_() == SkSideloadType::Ref {
+            if dry_run_result.is_update() && sideloadable.type_() == SkSideloadType::Ref {
                 imp.sideload_leaflet.set_visible_child_name("already-done");
                 return;
             }

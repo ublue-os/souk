@@ -61,32 +61,36 @@ impl RemoteInfo {
             installation: installation.into(),
             ..Default::default()
         };
-
-        if let Some(value) = remote.title() {
-            info.title = value.into();
-        }
-
-        if let Some(value) = remote.description() {
-            info.description = value.into();
-        }
-
-        if let Some(value) = remote.comment() {
-            info.comment = value.into();
-        }
-
-        if let Some(value) = remote.homepage() {
-            info.homepage = value.into();
-        }
-
-        if let Some(value) = remote.icon() {
-            info.icon = value.into();
-        }
+        info.update_metadata(remote);
 
         info
     }
 
     pub fn set_gpg_key(&mut self, key: &str) {
         self.gpg_key = key.into();
+    }
+
+    /// Updates the optional metadata fields using a Flatpak [Remote] object
+    pub fn update_metadata(&mut self, remote: &Remote) {
+        if let Some(value) = remote.title() {
+            self.title = value.into();
+        }
+
+        if let Some(value) = remote.description() {
+            self.description = value.into();
+        }
+
+        if let Some(value) = remote.comment() {
+            self.comment = value.into();
+        }
+
+        if let Some(value) = remote.homepage() {
+            self.homepage = value.into();
+        }
+
+        if let Some(value) = remote.icon() {
+            self.icon = value.into();
+        }
     }
 }
 
