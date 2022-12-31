@@ -17,8 +17,10 @@
 use async_std::process::Command;
 use flatpak::prelude::*;
 use flatpak::{Installation, Remote};
-use gio::{Cancellable, File};
-use glib::{ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject, ParamSpecString, ToValue};
+use gio::{Cancellable, File, FileMonitor};
+use glib::{
+    clone, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject, ParamSpecString, ToValue,
+};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
@@ -37,6 +39,7 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkInstallation {
         pub info: OnceCell<InstallationInfo>,
+        pub monitor: OnceCell<FileMonitor>,
 
         pub name: OnceCell<String>,
         pub title: OnceCell<String>,
@@ -110,6 +113,19 @@ impl SkInstallation {
         let imp = installation.imp();
 
         imp.info.set(info.clone()).unwrap();
+
+        // Create file monitor to detect changes in the installation (eg. ref
+        // in/uninstall, remote changes)
+        let f_inst = Installation::from(info);
+        let monitor = f_inst.create_monitor(Cancellable::NONE).unwrap();
+        monitor.connect_changed(clone!(@weak installation as this => move |_,_,_,_|{
+            debug!("Detected change in Flatpak installation.");
+            if let Err(err) = this.refresh(){
+                error!("Unable to refresh Flatpak installation: {}", err.to_string());
+                // TODO: Should this be exposed in the UI?
+            }
+        }));
+        imp.monitor.set(monitor).unwrap();
 
         imp.name.set(info.name.clone()).unwrap();
         imp.is_user.set(info.is_user).unwrap();
@@ -221,10 +237,10 @@ impl SkInstallation {
             self.name()
         );
 
-        let flatpak_remote: Remote = remote.to_owned().info().try_into()?;
+        let f_remote: Remote = remote.to_owned().info().try_into()?;
 
-        let flatpak_installation = Installation::from(&self.info());
-        flatpak_installation.add_remote(&flatpak_remote, false, Cancellable::NONE)?;
+        let f_inst = Installation::from(&self.info());
+        f_inst.add_remote(&f_remote, false, Cancellable::NONE)?;
 
         self.refresh()?;
 
