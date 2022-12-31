@@ -246,18 +246,15 @@ impl SkWorker {
         installation: &SkInstallation,
     ) -> Result<SkSideloadable, Error> {
         let type_ = SkSideloadType::determine_type(file);
-        let dry_run_result = match type_ {
+
+        let task = match type_ {
             SkSideloadType::Bundle => {
-                let task = self
-                    .install_flatpak_bundle_file(file, installation, false, true)
-                    .await?;
-                task.await_dry_run_result().await.unwrap()
+                self.install_flatpak_bundle_file(file, installation, false, true)
+                    .await?
             }
             SkSideloadType::Ref => {
-                let task = self
-                    .install_flatpak_ref_file(file, installation, false, true)
-                    .await?;
-                task.await_dry_run_result().await.unwrap()
+                self.install_flatpak_ref_file(file, installation, false, true)
+                    .await?
             }
             SkSideloadType::Repo => {
                 let bytes = file.load_bytes(gio::Cancellable::NONE)?.0;
@@ -295,13 +292,20 @@ impl SkWorker {
             _ => return Err(Error::UnsupportedSideloadType),
         };
 
-        debug!("Dry run results: {:#?}", dry_run_result);
-        Ok(SkSideloadable::new_package(
-            file,
-            type_,
-            dry_run_result,
-            installation,
-        ))
+        task.await_result().await?;
+
+        if let Some(dry_run_result) = task.result_dry_run() {
+            debug!("Dry run results: {:#?}", dry_run_result);
+            Ok(SkSideloadable::new_package(
+                file,
+                type_,
+                dry_run_result,
+                installation,
+            ))
+        } else {
+            // Never should happen (in theory)
+            Err(Error::UnsupportedSideloadType)
+        }
     }
 }
 

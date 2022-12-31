@@ -311,6 +311,10 @@ impl SkSideloadWindow {
 
                 match err {
                     Error::Worker(_) => (),
+                    Error::Task(err) => {
+                        let message = i18n_f("Task failed: {}", &[&err]);
+                        self.show_error_message(&message);
+                    }
                     Error::UnsupportedSideloadType => {
                         let message = i18n("Unknown or unsupported file format.");
                         self.show_error_message(&message);

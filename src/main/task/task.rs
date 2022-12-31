@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 
 use async_std::channel::{unbounded, Receiver, Sender};
 use glib::subclass::Signal;
@@ -28,6 +28,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
+use crate::main::error::Error;
 use crate::main::task::{SkTaskActivity, SkTaskStep, SkTaskStepModel, SkTaskType};
 use crate::shared::task::{Task, TaskResponse, TaskResponseType, TaskResultType};
 use crate::worker::DryRunResult;
@@ -52,7 +53,9 @@ mod imp {
         // Gets called when task finished (done/error/cancelled)
         pub finished_sender: OnceCell<Sender<()>>,
         pub finished_receiver: OnceCell<Receiver<()>>,
-        pub dry_run_result: RefCell<Option<DryRunResult>>,
+
+        pub result_dry_run: OnceCell<DryRunResult>,
+        pub result_error: OnceCell<String>,
     }
 
     #[glib::object_subclass]
@@ -249,8 +252,8 @@ impl SkTask {
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                     }
                     TaskResultType::DoneDryRun => {
-                        let dry_run_result = result.dry_run.as_ref().unwrap().clone();
-                        *imp.dry_run_result.borrow_mut() = Some(dry_run_result);
+                        let result_dry_run = result.dry_run.as_ref().unwrap().clone();
+                        imp.result_dry_run.set(result_dry_run).unwrap();
 
                         imp.progress.set(1.0);
                         self.notify("progress");
@@ -258,8 +261,10 @@ impl SkTask {
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                     }
                     TaskResultType::Error => {
-                        let error = result.error.as_ref().unwrap().clone();
-                        self.emit_by_name::<()>("error", &[&error]);
+                        let result_error = result.error.as_ref().unwrap().clone();
+                        imp.result_error.set(result_error.clone()).unwrap();
+
+                        self.emit_by_name::<()>("error", &[&result_error]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                     }
                     TaskResultType::Cancelled => {
@@ -272,12 +277,22 @@ impl SkTask {
         }
     }
 
-    // TODO: Make this generic for all result types
-    // Do we need to expose the raw DryRunResult object? Why we can't return the
-    // SkSideloadable?
-    pub async fn await_dry_run_result(&self) -> Option<DryRunResult> {
+    pub async fn await_result(&self) -> Result<(), Error> {
         let imp = self.imp();
         imp.finished_receiver.get().unwrap().recv().await.unwrap();
-        imp.dry_run_result.borrow().to_owned()
+
+        if let Some(err) = self.result_error() {
+            Err(Error::Task(err.to_string()))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn result_dry_run(&self) -> Option<DryRunResult> {
+        self.imp().result_dry_run.get().cloned()
+    }
+
+    pub fn result_error(&self) -> Option<String> {
+        self.imp().result_error.get().cloned()
     }
 }

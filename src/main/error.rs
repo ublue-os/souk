@@ -23,6 +23,9 @@ pub enum Error {
     #[error("Souk worker error")]
     Worker(#[from] WorkerError),
 
+    #[error("Souk task error")]
+    Task(String),
+
     #[error("Unsupported sideload type")]
     UnsupportedSideloadType,
 
