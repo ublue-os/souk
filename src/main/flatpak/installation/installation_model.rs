@@ -129,10 +129,7 @@ impl SkInstallationModel {
         let mut preferred = None;
 
         for sk_inst in map.values() {
-            // TODO: Don't convert to Flatpak Installation, use the `packages` property of
-            // SkInstallation directly
-            let f_inst = Installation::from(&sk_inst.info());
-            let count = f_inst.list_installed_refs(Cancellable::NONE).unwrap().len();
+            let count = sk_inst.packages().n_items();
 
             if count >= top_count {
                 top_count = count;
