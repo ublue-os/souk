@@ -116,6 +116,10 @@ impl SkInstallationModel {
         Ok(())
     }
 
+    pub fn installation(&self, info: &InstallationInfo) -> Option<SkInstallation> {
+        self.imp().map.borrow().get(info).cloned()
+    }
+
     /// Returns the [`SkInstallation`] with the most installed refs.
     pub fn preferred(&self) -> SkInstallation {
         let imp = self.imp();

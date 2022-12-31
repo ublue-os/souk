@@ -230,7 +230,6 @@ impl SkTask {
 
                 let progress = ((updated_step.index * 100) + updated_step.progress as u32) as f32
                     / (self.steps().n_items() as f32 * 100.0);
-                dbg!(&progress);
                 if self.progress() != progress {
                     self.imp().progress.set(progress);
                     self.notify("progress");

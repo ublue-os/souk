@@ -15,15 +15,18 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use flatpak::prelude::*;
-use flatpak::Remote;
+use flatpak::{Installation, Remote};
 use gtk::glib::Error;
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::Type;
+use zbus::zvariant::{Optional, Type};
 
-#[derive(Deserialize, Serialize, Hash, Type, Debug, Clone, Eq, PartialEq, Default)]
+use super::InstallationInfo;
+
+#[derive(Deserialize, Serialize, Hash, Type, Debug, Clone, Eq, PartialEq)]
 pub struct RemoteInfo {
     pub name: String,
     pub repository_url: String,
+    pub installation: Optional<InstallationInfo>,
 
     gpg_key: String,
 
@@ -36,24 +39,26 @@ pub struct RemoteInfo {
 }
 
 impl RemoteInfo {
-    pub fn new(name: &str, url: &str) -> Self {
+    pub fn new(
+        name: String,
+        repository_url: String,
+        installation: Option<InstallationInfo>,
+    ) -> Self {
         Self {
-            name: name.into(),
-            repository_url: url.into(),
+            name,
+            repository_url,
+            installation: installation.into(),
             ..Default::default()
         }
     }
 
-    pub fn set_gpg_key(&mut self, key: &str) {
-        self.gpg_key = key.into();
-    }
-}
+    pub fn from_flatpak(remote: &Remote, installation: Option<&Installation>) -> Self {
+        let installation: Option<InstallationInfo> = installation.map(|i| i.into());
 
-impl From<&Remote> for RemoteInfo {
-    fn from(remote: &Remote) -> Self {
         let mut info = Self {
             name: remote.name().unwrap().into(),
             repository_url: remote.url().unwrap().into(),
+            installation: installation.into(),
             ..Default::default()
         };
 
@@ -79,6 +84,26 @@ impl From<&Remote> for RemoteInfo {
 
         info
     }
+
+    pub fn set_gpg_key(&mut self, key: &str) {
+        self.gpg_key = key.into();
+    }
+}
+
+impl Default for RemoteInfo {
+    fn default() -> Self {
+        Self {
+            name: String::default(),
+            repository_url: String::default(),
+            installation: None.into(),
+            gpg_key: String::default(),
+            title: String::default(),
+            description: String::default(),
+            comment: String::default(),
+            homepage: String::default(),
+            icon: String::default(),
+        }
+    }
 }
 
 impl TryInto<Remote> for RemoteInfo {
@@ -91,7 +116,7 @@ impl TryInto<Remote> for RemoteInfo {
         if self.gpg_key.is_empty() {
             return Err(Error::new(
                 flatpak::Error::Untrusted,
-                "Can't add remote object without gpg key.",
+                "Can't create Flatpak remote object without gpg key.",
             ));
         }
 
@@ -100,19 +125,19 @@ impl TryInto<Remote> for RemoteInfo {
         }
 
         if !self.description.is_empty() {
-            remote.set_title(&self.description);
+            remote.set_description(&self.description);
         }
 
         if !self.comment.is_empty() {
-            remote.set_title(&self.comment);
+            remote.set_comment(&self.comment);
         }
 
         if !self.homepage.is_empty() {
-            remote.set_title(&self.homepage);
+            remote.set_homepage(&self.homepage);
         }
 
         if !self.icon.is_empty() {
-            remote.set_title(&self.icon);
+            remote.set_icon(&self.icon);
         }
 
         Ok(remote)

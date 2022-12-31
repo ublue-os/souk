@@ -17,7 +17,6 @@
 use std::cell::RefCell;
 use std::convert::TryInto;
 
-use flatpak::Remote;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
@@ -70,6 +69,10 @@ impl SkRemoteModel {
         glib::Object::new(&[]).unwrap()
     }
 
+    pub fn remote(&self, info: &RemoteInfo) -> Option<SkRemote> {
+        self.imp().map.borrow().get(info).cloned()
+    }
+
     pub fn contains_remote(&self, remote: &SkRemote) -> bool {
         self.snapshot().iter().any(|r| {
             let r: &SkRemote = r.downcast_ref().unwrap();
@@ -77,19 +80,16 @@ impl SkRemoteModel {
         })
     }
 
-    pub(super) fn set_remotes(&self, remotes: Vec<Remote>) {
+    pub(super) fn set_remotes(&self, remotes: Vec<RemoteInfo>) {
         let imp = self.imp();
 
-        let mut added_remotes = Vec::new();
-        for remote in remotes {
-            let info = RemoteInfo::from(&remote);
-            self.add_info(&info);
-            added_remotes.push(info);
+        for remote in &remotes {
+            self.add_info(remote);
         }
 
         let map = imp.map.borrow().clone();
         for info in map.keys() {
-            if !added_remotes.contains(info) {
+            if !remotes.contains(info) {
                 self.remove_info(info);
             }
         }

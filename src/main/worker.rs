@@ -84,14 +84,6 @@ mod imp {
         fn constructed(&self, obj: &Self::Type) {
             self.parent_constructed(obj);
 
-            if let Err(err) = self.installations.refresh() {
-                error!(
-                    "Unable to refresh Flatpak installations: {}",
-                    err.to_string()
-                );
-                // TODO: Expose this in UI
-            }
-
             let fut = clone!(@weak obj => async move {
                 obj.receive_task_response().await;
             });
@@ -286,7 +278,7 @@ impl SkWorker {
                 };
 
                 let flatpak_remote = Remote::from_file(&remote_name, &bytes)?;
-                let mut remote_info = RemoteInfo::from(&flatpak_remote);
+                let mut remote_info = RemoteInfo::from_flatpak(&flatpak_remote, None);
                 remote_info.set_gpg_key(&key);
                 let sk_remote = SkRemote::new(&remote_info);
 

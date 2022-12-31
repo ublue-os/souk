@@ -100,6 +100,9 @@ mod imp {
             let window = app.create_window();
             let _ = self.window.set(window.downgrade());
             info!("Created application window.");
+
+            // Trigger refresh of all available Flatpak installations/remotes
+            app.activate_action("refresh-installations", None);
         }
 
         fn open(&self, app: &Self::Type, files: &[gio::File], hint: &str) {

@@ -195,9 +195,9 @@ impl FlatpakWorker {
             let mut remotes_info = Vec::new();
             for (name, url) in &results.remotes {
                 if bundle_remote.url().unwrap().as_str() == url {
-                    remotes_info.push(RemoteInfo::from(&bundle_remote));
+                    remotes_info.push(RemoteInfo::from_flatpak(&bundle_remote, None));
                 } else {
-                    remotes_info.push(RemoteInfo::new(name, url));
+                    remotes_info.push(RemoteInfo::new(name.into(), url.into(), None));
                 }
             }
             results.remotes_info = remotes_info;
@@ -285,14 +285,14 @@ impl FlatpakWorker {
                 ref_repo_url = ref_repo.url().unwrap().to_string();
 
                 if results.remotes.iter().any(|(_, url)| url == &ref_repo_url) {
-                    remotes_info.push(RemoteInfo::from(&ref_repo));
+                    remotes_info.push(RemoteInfo::from_flatpak(&ref_repo, None));
                 }
             }
         }
 
         for (name, url) in &results.remotes {
             if url != &ref_repo_url && !ref_repo_url.is_empty() {
-                remotes_info.push(RemoteInfo::new(name, url));
+                remotes_info.push(RemoteInfo::new(name.into(), url.into(), None));
             }
         }
         results.remotes_info = remotes_info;

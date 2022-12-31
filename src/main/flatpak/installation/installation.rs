@@ -29,7 +29,7 @@ use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};
 use crate::main::flatpak::package::SkPackageModel;
 use crate::main::i18n::i18n;
-use crate::shared::info::InstallationInfo;
+use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
 
 mod imp {
     use super::*;
@@ -105,7 +105,7 @@ glib::wrapper! {
 }
 
 impl SkInstallation {
-    pub fn new(info: &InstallationInfo) -> Self {
+    pub(super) fn new(info: &InstallationInfo) -> Self {
         let installation: Self = glib::Object::new(&[]).unwrap();
         let imp = installation.imp();
 
@@ -192,6 +192,7 @@ impl SkInstallation {
         self.imp().info.get().unwrap().clone()
     }
 
+    // TODO: Use SkPackage instead of ref string
     pub fn launch_app(&self, ref_: &str) {
         debug!("Launch app from installation \"{}\": {}", self.name(), ref_);
 
@@ -238,10 +239,25 @@ impl SkInstallation {
         );
 
         let f_inst = Installation::from(&self.info());
-        let remotes = f_inst.list_remotes(Cancellable::NONE)?;
+
+        let f_remotes = f_inst.list_remotes(Cancellable::NONE)?;
+        let mut remotes = Vec::new();
+        for f_remote in &f_remotes {
+            let remote_info = RemoteInfo::from_flatpak(f_remote, Some(&f_inst));
+            remotes.push(remote_info);
+        }
         self.remotes().set_remotes(remotes);
 
-        // TODO: impl packages
+        let f_packages = f_inst.list_installed_refs(Cancellable::NONE)?;
+        let mut packages = Vec::new();
+        for f_package in &f_packages {
+            let f_remote = f_inst
+                .remote_by_name(&f_package.origin().unwrap(), Cancellable::NONE)
+                .unwrap();
+            let package_info = PackageInfo::from_flatpak(f_package, &f_remote, &f_inst);
+            packages.push(package_info);
+        }
+        self.packages().set_packages(packages);
 
         Ok(())
     }

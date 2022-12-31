@@ -16,24 +16,32 @@
 
 use std::hash::Hash;
 
+use flatpak::prelude::*;
+use flatpak::{Installation, InstalledRef, Remote};
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-use crate::shared::info::{InstallationInfo, RemoteInfo};
+use crate::shared::info::RemoteInfo;
 
 #[derive(Default, Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PackageInfo {
     pub ref_: String,
-    pub installation: InstallationInfo,
     pub remote: RemoteInfo,
 }
 
 impl PackageInfo {
-    pub fn new(ref_: String, installation: InstallationInfo, remote: RemoteInfo) -> Self {
-        Self {
-            ref_,
-            installation,
-            remote,
-        }
+    pub fn new(ref_: String, remote: RemoteInfo) -> Self {
+        Self { ref_, remote }
+    }
+
+    pub fn from_flatpak(
+        installed_ref: &InstalledRef,
+        remote: &Remote,
+        installation: &Installation,
+    ) -> Self {
+        let ref_ = installed_ref.format_ref().unwrap().to_string();
+        let remote = RemoteInfo::from_flatpak(remote, Some(installation));
+
+        Self { ref_, remote }
     }
 }

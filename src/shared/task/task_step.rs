@@ -20,7 +20,7 @@ use gtk::gio;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
+use crate::shared::info::{PackageInfo, RemoteInfo};
 
 #[derive(Default, Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
 pub struct TaskStep {
@@ -66,15 +66,13 @@ impl TaskStep {
         let ref_ = operation.get_ref().unwrap();
 
         let installation = transaction.installation().unwrap();
-        let installation_info = InstallationInfo::from(&installation);
-
         let remote_name = operation.remote().unwrap();
         let remote = installation
             .remote_by_name(&remote_name, gio::Cancellable::NONE)
             .unwrap();
-        let remote_info = RemoteInfo::from(&remote);
+        let remote_info = RemoteInfo::from_flatpak(&remote, Some(&installation));
 
-        let package_info = PackageInfo::new(ref_.to_string(), installation_info, remote_info);
+        let package_info = PackageInfo::new(ref_.to_string(), remote_info);
 
         Self {
             index,

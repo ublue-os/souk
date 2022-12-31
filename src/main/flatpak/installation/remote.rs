@@ -14,15 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{ParamFlags, ParamSpec, ParamSpecString, ToValue};
+use glib::{ParamFlags, ParamSpec, ParamSpecObject, ParamSpecString, ToValue};
 use gtk::glib;
+use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
+use super::SkInstallation;
+use crate::main::SkApplication;
 use crate::shared::info::RemoteInfo;
 
-// TODO: Should there be an property for the related installation?
 mod imp {
     use super::*;
 
@@ -32,6 +34,7 @@ mod imp {
 
         pub name: OnceCell<String>,
         pub repository_url: OnceCell<String>,
+        pub installation: OnceCell<Option<SkInstallation>>,
 
         pub title: OnceCell<String>,
         pub description: OnceCell<String>,
@@ -52,6 +55,13 @@ mod imp {
                 vec![
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("repository-url", "", "", None, ParamFlags::READABLE),
+                    ParamSpecObject::new(
+                        "installation",
+                        "",
+                        "",
+                        SkInstallation::static_type(),
+                        ParamFlags::READABLE,
+                    ),
                     ParamSpecString::new("title", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("description", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("comment", "", "", None, ParamFlags::READABLE),
@@ -66,6 +76,7 @@ mod imp {
             match pspec.name() {
                 "name" => obj.name().to_value(),
                 "repository-url" => obj.repository_url().to_value(),
+                "installation" => obj.installation().to_value(),
                 "title" => obj.title().to_value(),
                 "description" => obj.description().to_value(),
                 "comment" => obj.comment().to_value(),
@@ -91,6 +102,16 @@ impl SkRemote {
         imp.name.set(info.name.clone()).unwrap();
         imp.repository_url.set(info.repository_url.clone()).unwrap();
 
+        if let Some(inst_info) = &info.installation.clone().into() {
+            let installations = SkApplication::default().worker().installations();
+            let installation = installations
+                .installation(inst_info)
+                .expect("Unknown Flatpak installation");
+            imp.installation.set(Some(installation)).unwrap();
+        } else {
+            imp.installation.set(None).unwrap();
+        }
+
         imp.title.set(info.title.clone()).unwrap();
         imp.description.set(info.description.clone()).unwrap();
         imp.comment.set(info.comment.clone()).unwrap();
@@ -106,6 +127,10 @@ impl SkRemote {
 
     pub fn repository_url(&self) -> String {
         self.imp().repository_url.get().unwrap().to_string()
+    }
+
+    pub fn installation(&self) -> Option<SkInstallation> {
+        self.imp().installation.get().unwrap().clone()
     }
 
     pub fn title(&self) -> String {

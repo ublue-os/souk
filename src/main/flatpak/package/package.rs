@@ -16,7 +16,7 @@
 
 use flatpak::prelude::*;
 use flatpak::Ref;
-use glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecString, ToValue};
+use glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecString, ToValue};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -24,18 +24,22 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use super::SkPackageType;
+use crate::main::flatpak::installation::SkRemote;
+use crate::main::SkApplication;
 use crate::shared::info::PackageInfo;
 
-// TODO: Add remote/installation properties
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
     pub struct SkPackage {
+        pub info: OnceCell<PackageInfo>,
+
         pub type_: OnceCell<SkPackageType>,
         pub name: OnceCell<String>,
         pub architecture: OnceCell<String>,
         pub branch: OnceCell<String>,
+        pub remote: OnceCell<SkRemote>,
     }
 
     #[glib::object_subclass]
@@ -59,6 +63,13 @@ mod imp {
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("architecture", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("branch", "", "", None, ParamFlags::READABLE),
+                    ParamSpecObject::new(
+                        "remote",
+                        "",
+                        "",
+                        SkRemote::static_type(),
+                        ParamFlags::READABLE,
+                    ),
                 ]
             });
             PROPERTIES.as_ref()
@@ -70,6 +81,7 @@ mod imp {
                 "name" => obj.name().to_value(),
                 "architecture" => obj.architecture().to_value(),
                 "branch" => obj.branch().to_value(),
+                "remote" => obj.remote().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -85,18 +97,38 @@ impl SkPackage {
         let package: Self = glib::Object::new(&[]).unwrap();
         let imp = package.imp();
 
-        let flatpak_ref = Ref::parse(&info.ref_).unwrap();
+        imp.info.set(info.clone()).unwrap();
 
+        let flatpak_ref = Ref::parse(&info.ref_).unwrap();
         imp.type_.set(flatpak_ref.kind().into()).unwrap();
-        imp.name
-            .set(flatpak_ref.name().unwrap().to_string())
-            .unwrap();
-        imp.architecture
-            .set(flatpak_ref.arch().unwrap().to_string())
-            .unwrap();
-        imp.branch
-            .set(flatpak_ref.branch().unwrap().to_string())
-            .unwrap();
+
+        let name = flatpak_ref.name().unwrap().to_string();
+        imp.name.set(name).unwrap();
+
+        let architecture = flatpak_ref.arch().unwrap().to_string();
+        imp.architecture.set(architecture).unwrap();
+
+        let branch = flatpak_ref.branch().unwrap().to_string();
+        imp.branch.set(branch).unwrap();
+
+        if let Some(inst_info) = &info.remote.installation.clone().into() {
+            let installations = SkApplication::default().worker().installations();
+            let installation = installations
+                .installation(inst_info)
+                .expect("Unknown Flatpak installation");
+
+            let remote = installation.remotes().remote(&info.remote);
+
+            if let Some(remote) = remote {
+                imp.remote.set(remote).unwrap();
+            } else {
+                error!("Flatpak remote {} is not available in installations model, unable to reuse remote object", info.remote.name);
+                imp.remote.set(SkRemote::new(&info.remote)).unwrap();
+            }
+        } else {
+            let remote = SkRemote::new(&info.remote);
+            imp.remote.set(remote).unwrap();
+        }
 
         package
     }
@@ -115,5 +147,13 @@ impl SkPackage {
 
     pub fn branch(&self) -> String {
         self.imp().branch.get().unwrap().clone()
+    }
+
+    pub fn remote(&self) -> SkRemote {
+        self.imp().remote.get().unwrap().clone()
+    }
+
+    pub fn info(&self) -> PackageInfo {
+        self.imp().info.get().unwrap().clone()
     }
 }
