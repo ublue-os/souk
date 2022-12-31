@@ -123,13 +123,13 @@ glib::wrapper! {
 }
 
 impl SkAppPermissions {
-    pub fn from_metainfo(metainfo: &str) -> Self {
+    pub fn from_metadata(metadata: &str) -> Self {
         let permissions: Self = glib::Object::new(&[]).unwrap();
         let imp = permissions.imp();
 
         let keyfile = KeyFile::new();
         keyfile
-            .load_from_data(metainfo, KeyFileFlags::NONE)
+            .load_from_data(metadata, KeyFileFlags::NONE)
             .unwrap();
 
         let filesystems = ListStore::new(SkFilesystemPermission::static_type());

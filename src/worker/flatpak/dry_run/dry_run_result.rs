@@ -33,11 +33,11 @@ pub struct DryRunResult {
     /// Json serialized appstream component
     #[derivative(Debug = "ignore")]
     pub appstream_component: Optional<String>,
-    /// Flatpak metainfo
+    /// Flatpak metadata
     #[derivative(Debug = "ignore")]
-    pub metainfo: String,
+    pub metadata: String,
     #[derivative(Debug = "ignore")]
-    pub old_metainfo: Optional<String>,
+    pub old_metadata: Optional<String>,
 
     /// Whether the package with the exact commit is already installed
     pub is_already_installed: bool,
@@ -64,7 +64,7 @@ pub struct DryRunResult {
 impl DryRunResult {
     pub fn has_extra_data(&self) -> bool {
         let keyfile = KeyFile::new();
-        let _ = keyfile.load_from_data(&self.metainfo, KeyFileFlags::NONE);
+        let _ = keyfile.load_from_data(&self.metadata, KeyFileFlags::NONE);
         keyfile.has_group("Extra Data")
     }
 }
@@ -75,8 +75,8 @@ impl Default for DryRunResult {
             package: PackageInfo::default(),
             icon: Vec::default(),
             appstream_component: None.into(),
-            metainfo: String::new(),
-            old_metainfo: None.into(),
+            metadata: String::new(),
+            old_metadata: None.into(),
             is_already_installed: false,
             is_update: false,
             has_update_source: true,

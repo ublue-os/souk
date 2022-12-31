@@ -433,8 +433,8 @@ impl FlatpakWorker {
                         let package_info = PackageInfo::new(operation_ref, remote_info);
                         dry_run_result.borrow_mut().package = package_info;
 
-                        dry_run_result.borrow_mut().metainfo = operation_metadata;
-                        dry_run_result.borrow_mut().old_metainfo = operation_old_metadata.into();
+                        dry_run_result.borrow_mut().metadata = operation_metadata;
+                        dry_run_result.borrow_mut().old_metadata = operation_old_metadata.into();
                         dry_run_result.borrow_mut().download_size = operation.download_size();
                         dry_run_result.borrow_mut().installed_size = operation.installed_size();
 

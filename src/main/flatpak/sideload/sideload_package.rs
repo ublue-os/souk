@@ -31,7 +31,7 @@ pub struct SideloadPackage {
 }
 
 impl SideloadPackage {
-    // Metadata information
+    // Appstream information
     pub fn icon(&self) -> Option<gdk::Paintable> {
         let icon = self.dry_run_result.icon.clone();
         let bytes = Bytes::from_owned(icon);
@@ -42,7 +42,7 @@ impl SideloadPackage {
         }
     }
 
-    // Metadata information
+    // Appstream information
     pub fn appstream(&self) -> Option<Component> {
         if let Some(appstream) = self.dry_run_result.appstream_component.as_ref() {
             serde_json::from_str(appstream).ok()
@@ -51,21 +51,21 @@ impl SideloadPackage {
         }
     }
 
-    pub fn metainfo(&self) -> String {
-        self.dry_run_result.metainfo.clone()
+    pub fn metadata(&self) -> String {
+        self.dry_run_result.metadata.clone()
     }
 
-    pub fn old_metainfo(&self) -> Option<String> {
-        self.dry_run_result.old_metainfo.clone().into()
+    pub fn old_metadata(&self) -> Option<String> {
+        self.dry_run_result.old_metadata.clone().into()
     }
 
     pub fn permissions(&self) -> SkAppPermissions {
-        SkAppPermissions::from_metainfo(&self.metainfo())
+        SkAppPermissions::from_metadata(&self.metadata())
     }
 
     pub fn old_permissions(&self) -> Option<SkAppPermissions> {
-        self.old_metainfo()
-            .map(|m| SkAppPermissions::from_metainfo(&m))
+        self.old_metadata()
+            .map(|m| SkAppPermissions::from_metadata(&m))
     }
 
     pub fn permissions_context(&self) -> SkContext {
