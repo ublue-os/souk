@@ -26,7 +26,6 @@ use crate::shared::info::RemoteInfo;
 #[derivative(Debug)]
 pub struct DryRunResult {
     pub ref_: String,
-    pub commit: String,
 
     #[derivative(Debug = "ignore")]
     pub icon: Vec<u8>,
@@ -57,6 +56,7 @@ pub struct DryRunResult {
 
     /// Which runtimes are installed during the installation
     pub runtimes: Vec<DryRunRuntime>,
+
     /// Which remote are getting added during installation. Tuple of remote
     /// name, and repository URL.
     pub remotes: Vec<(String, String)>,
@@ -75,7 +75,6 @@ impl Default for DryRunResult {
     fn default() -> Self {
         Self {
             ref_: String::default(),
-            commit: String::default(),
             icon: Vec::default(),
             appstream_component: None.into(),
             metainfo: String::new(),

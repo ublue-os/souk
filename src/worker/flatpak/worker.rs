@@ -428,7 +428,6 @@ impl FlatpakWorker {
                         let operation_old_metadata = operation.metadata().map(|m| m.to_data().to_string());
 
                         dry_run_result.borrow_mut().ref_ = operation.get_ref().unwrap().to_string();
-                        dry_run_result.borrow_mut().commit = operation_commit.clone();
                         dry_run_result.borrow_mut().metainfo = operation_metadata;
                         dry_run_result.borrow_mut().old_metainfo = operation_old_metadata.into();
                         dry_run_result.borrow_mut().download_size = operation.download_size();

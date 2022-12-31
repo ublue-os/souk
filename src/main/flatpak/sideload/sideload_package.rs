@@ -37,10 +37,6 @@ impl SideloadPackage {
         Ref::parse(&ref_).unwrap()
     }
 
-    pub fn commit(&self) -> String {
-        self.dry_run_result.commit.clone()
-    }
-
     pub fn icon(&self) -> Option<gdk::Paintable> {
         let icon = self.dry_run_result.icon.clone();
         let bytes = Bytes::from_owned(icon);

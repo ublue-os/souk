@@ -365,7 +365,7 @@ impl SkSideloadWindow {
         let repo_error_title = i18n("Adding Source Failed");
 
         // Package
-        let package = sideloadable.package();
+        let package = sideloadable.dry_run_result();
         imp.package_box.set_visible(package.is_some());
         if let Some(package) = package {
             if package.is_update() {
@@ -533,7 +533,7 @@ impl SkSideloadWindow {
                 group.add(&remote_row);
             }
 
-            if sideloadable.package().is_none() {
+            if sideloadable.dry_run_result().is_none() {
                 let remotes = sideloadable.remotes();
                 let remote = remotes.first().unwrap();
                 let name = if !remote.title().is_empty() {
@@ -685,7 +685,7 @@ impl SkSideloadWindow {
             let sideloadable = this.sideloadable().unwrap();
             let installation = sideloadable.installation();
 
-            let package = sideloadable.package().unwrap();
+            let package = sideloadable.dry_run_result().unwrap();
             let ref_ = package.ref_().format_ref().unwrap();
             installation.launch_app(&ref_);
 

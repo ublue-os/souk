@@ -24,6 +24,7 @@ use once_cell::unsync::OnceCell;
 use super::SideloadPackage;
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote};
+use crate::main::flatpak::package::SkPackage;
 use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
@@ -40,8 +41,12 @@ mod imp {
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
 
-        /// Package which gets targeted during the sideload process
-        pub package: OnceCell<Option<SideloadPackage>>,
+        /// TODO-REMOVE: dry_run_result which gets targeted during the sideload
+        /// process
+        pub dry_run_result: OnceCell<Option<SideloadPackage>>,
+
+        /// Package which gets installed during the sideload process
+        pub package: OnceCell<Option<SkPackage>>,
         /// Remotes which are getting added during the sideload process
         pub remotes: OnceCell<Vec<SkRemote>>,
 
@@ -80,15 +85,19 @@ impl SkSideloadable {
             .unwrap();
         imp.installation.set(installation.clone()).unwrap();
 
-        // package
-        let package = SideloadPackage {
+        // TODO-REMOVE: dry_run_result
+        let dry_run_result = SideloadPackage {
             dry_run_result: dry_run_result.clone(),
         };
-        imp.package.set(Some(package)).unwrap();
+        imp.dry_run_result
+            .set(Some(dry_run_result.clone()))
+            .unwrap();
+
+        // package
 
         // remotes
         let mut remotes = Vec::new();
-        for remote_info in &dry_run_result.remotes_info {
+        for remote_info in &dry_run_result.dry_run_result.remotes_info {
             let remote = SkRemote::new(remote_info);
             remotes.push(remote);
         }
@@ -109,7 +118,7 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(SkSideloadType::Repo).unwrap();
-        imp.package.set(None).unwrap();
+        imp.dry_run_result.set(None).unwrap();
         imp.remotes.set(vec![remote.clone()]).unwrap();
         imp.no_changes.set(already_added).unwrap();
         imp.installation.set(installation.clone()).unwrap();
@@ -129,8 +138,8 @@ impl SkSideloadable {
         self.imp().installation.get().unwrap().clone()
     }
 
-    pub fn package(&self) -> Option<SideloadPackage> {
-        self.imp().package.get().unwrap().to_owned()
+    pub fn dry_run_result(&self) -> Option<SideloadPackage> {
+        self.imp().dry_run_result.get().unwrap().to_owned()
     }
 
     pub fn remotes(&self) -> Vec<SkRemote> {
@@ -142,8 +151,8 @@ impl SkSideloadable {
     }
 
     pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTask>, Error> {
-        if let Some(package) = self.package() {
-            let uninstall_before_install = package.is_replacing_remote().is_some();
+        if let Some(dry_run_result) = self.dry_run_result() {
+            let uninstall_before_install = dry_run_result.is_replacing_remote().is_some();
 
             let task = match self.type_() {
                 SkSideloadType::Bundle => {
