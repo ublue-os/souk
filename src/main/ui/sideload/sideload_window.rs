@@ -18,7 +18,6 @@ use std::cell::RefCell;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use flatpak::prelude::*;
 use gio::{File, ListStore};
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::subclass::prelude::*;
@@ -686,9 +685,8 @@ impl SkSideloadWindow {
             let sideloadable = this.sideloadable().unwrap();
             let installation = sideloadable.installation();
 
-            let package = sideloadable.dry_run_result().unwrap();
-            let ref_ = package.ref_().format_ref().unwrap();
-            installation.launch_app(&ref_);
+            let package = sideloadable.package().unwrap();
+            installation.launch_app(&package);
 
             this.close();
         });

@@ -29,7 +29,7 @@ use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};
-use crate::main::flatpak::package::SkPackageModel;
+use crate::main::flatpak::package::{SkPackage, SkPackageModel};
 use crate::main::i18n::i18n;
 use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
 
@@ -208,9 +208,12 @@ impl SkInstallation {
         self.imp().info.get().unwrap().clone()
     }
 
-    // TODO: Use SkPackage instead of ref string
-    pub fn launch_app(&self, ref_: &str) {
-        debug!("Launch app from installation \"{}\": {}", self.name(), ref_);
+    pub fn launch_app(&self, app: &SkPackage) {
+        debug!(
+            "Launch app from installation \"{}\": {}",
+            self.name(),
+            app.name()
+        );
 
         let installation = if self.name() == "user" {
             "--user".into()
@@ -223,7 +226,7 @@ impl SkInstallation {
             .arg("flatpak")
             .arg("run")
             .arg(installation)
-            .arg(ref_)
+            .arg(app.name())
             .spawn()
         {
             error!("Unable to launch app: {}", err.to_string());

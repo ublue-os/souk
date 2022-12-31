@@ -15,7 +15,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use appstream::Component;
-use flatpak::Ref;
 use gtk::glib::Bytes;
 use gtk::prelude::*;
 
@@ -32,11 +31,7 @@ pub struct SideloadPackage {
 }
 
 impl SideloadPackage {
-    pub fn ref_(&self) -> Ref {
-        let ref_ = self.dry_run_result.package.ref_.clone();
-        Ref::parse(&ref_).unwrap()
-    }
-
+    // Metadata information
     pub fn icon(&self) -> Option<gdk::Paintable> {
         let icon = self.dry_run_result.icon.clone();
         let bytes = Bytes::from_owned(icon);
@@ -47,6 +42,7 @@ impl SideloadPackage {
         }
     }
 
+    // Metadata information
     pub fn appstream(&self) -> Option<Component> {
         if let Some(appstream) = self.dry_run_result.appstream_component.as_ref() {
             serde_json::from_str(appstream).ok()
@@ -84,18 +80,22 @@ impl SideloadPackage {
         SkContext::installed_size(&self.dry_run_result)
     }
 
+    // DryRun information
     pub fn has_update_source(&self) -> bool {
         self.dry_run_result.has_update_source
     }
 
+    // DryRun information
     pub fn is_replacing_remote(&self) -> Option<String> {
         self.dry_run_result.is_replacing_remote.as_ref().cloned()
     }
 
+    // DryRun information
     pub fn is_already_installed(&self) -> bool {
         self.dry_run_result.is_already_installed
     }
 
+    // DryRun information
     pub fn is_update(&self) -> bool {
         self.dry_run_result.is_update
     }
