@@ -17,7 +17,7 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::worker::DryRunResult;
+use crate::shared::dry_run::DryRunResult;
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
 pub struct TaskResult {

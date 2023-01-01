@@ -16,7 +16,7 @@
 
 use crate::main::context::SkContext;
 use crate::main::flatpak::permissions::SkAppPermissions;
-use crate::worker::DryRunResult;
+use crate::shared::dry_run::DryRunResult;
 
 // TODO: This should be a gobject with properties
 // TODO: Maybe we can split the metadata stuff into a own object which can be

@@ -1,5 +1,5 @@
 // Souk - process.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,3 @@ mod error;
 
 pub use app::SkWorkerApplication;
 pub use error::WorkerError;
-
-// TODO: Don't expose them, or move them into `shared`
-pub use self::flatpak::DryRunResult;

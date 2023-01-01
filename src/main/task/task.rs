@@ -30,8 +30,8 @@ use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
 use crate::main::task::{SkTaskActivity, SkTaskStep, SkTaskStepModel, SkTaskType};
+use crate::shared::dry_run::DryRunResult;
 use crate::shared::task::{Task, TaskResponse, TaskResponseType, TaskResultType};
-use crate::worker::DryRunResult;
 
 mod imp {
     use super::*;

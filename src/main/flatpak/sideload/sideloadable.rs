@@ -28,7 +28,7 @@ use crate::main::flatpak::package::{SkPackage, SkPackageAppstream};
 use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
-use crate::worker::DryRunResult;
+use crate::shared::dry_run::DryRunResult;
 
 // TODO: Refactor this into something similar to PackageInfo <-> SkPackage
 // This should have a id, similar to PackageInfo, RemoteInfo, ...
