@@ -1,5 +1,5 @@
 // Souk - dry_run_runtime.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,9 +17,11 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
+use crate::shared::info::PackageInfo;
+
 #[derive(Default, Deserialize, Serialize, Type, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DryRunRuntime {
-    pub ref_: String,
+    pub package: PackageInfo,
     pub operation_type: String,
     pub download_size: u64,
     pub installed_size: u64,

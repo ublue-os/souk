@@ -205,7 +205,7 @@ impl SkContext {
         // Runtimes
         let mut runtime_details = Vec::new();
         for runtime in &runtimes {
-            let ref_ = Ref::parse(&runtime.ref_).unwrap();
+            let ref_ = Ref::parse(&runtime.package.ref_).unwrap();
             let ref_name = ref_.name().unwrap().to_string();
             let ref_branch = ref_.branch().unwrap().to_string();
 

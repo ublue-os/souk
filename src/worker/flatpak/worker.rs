@@ -413,21 +413,22 @@ impl FlatpakWorker {
             clone!(@weak dry_run_result, @weak real_installation, @strong load_remote_appstream => @default-return false, move |transaction|{
                 let operation_count = transaction.operations().len();
                 for (pos, operation) in transaction.operations().iter().enumerate () {
+                    let operation_ref = operation.get_ref().unwrap().to_string();
+
+                    // Retrieve remote
+                    let remote_name = operation.remote().unwrap().to_string();
+                    let remote_info = if let Ok(f_remote) = real_installation.remote_by_name(&remote_name, Cancellable::NONE){
+                        RemoteInfo::from_flatpak(&f_remote, Some(&real_installation))
+                    } else {
+                        let f_remote = transaction.installation().unwrap().remote_by_name(&remote_name, Cancellable::NONE).unwrap();
+                        RemoteInfo::from_flatpak(&f_remote, None)
+                    };
+
                     // Check if it's the last operation, which is the targeted app / runtime
                     if (pos+1) ==  operation_count {
                         let operation_commit = operation.commit().unwrap().to_string();
                         let operation_metadata = operation.metadata().unwrap().to_data().to_string();
                         let operation_old_metadata = operation.metadata().map(|m| m.to_data().to_string());
-                        let operation_ref = operation.get_ref().unwrap().to_string();
-
-                        // Retrieve remote
-                        let remote_name = operation.remote().unwrap().to_string();
-                        let remote_info = if let Ok(f_remote) = real_installation.remote_by_name(&remote_name, Cancellable::NONE){
-                            RemoteInfo::from_flatpak(&f_remote, Some(&real_installation))
-                        } else {
-                            let f_remote = transaction.installation().unwrap().remote_by_name(&remote_name, Cancellable::NONE).unwrap();
-                            RemoteInfo::from_flatpak(&f_remote, None)
-                        };
 
                         // Package
                         let package_info = PackageInfo::new(operation_ref, remote_info);
@@ -509,8 +510,10 @@ impl FlatpakWorker {
                             }
                         }
                     }else{
+                        let package = PackageInfo::new(operation_ref, remote_info);
+
                         let runtime = DryRunRuntime{
-                            ref_: operation.get_ref().unwrap().to_string(),
+                            package,
                             operation_type: operation.operation_type().to_str().unwrap().to_string(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
