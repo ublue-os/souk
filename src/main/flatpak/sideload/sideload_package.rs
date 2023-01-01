@@ -1,5 +1,5 @@
 // Souk - sideload_package.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,10 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use appstream::Component;
-use gtk::glib::Bytes;
-use gtk::prelude::*;
-
 use crate::main::context::SkContext;
 use crate::main::flatpak::permissions::SkAppPermissions;
 use crate::worker::DryRunResult;
@@ -31,53 +27,40 @@ pub struct SideloadPackage {
 }
 
 impl SideloadPackage {
-    // Appstream information
-    pub fn icon(&self) -> Option<gdk::Paintable> {
-        let icon = self.dry_run_result.icon.clone();
-        let bytes = Bytes::from_owned(icon);
-        if let Ok(paintable) = gdk::Texture::from_bytes(&bytes) {
-            Some(paintable.upcast())
-        } else {
-            None
-        }
+    // DryRun information
+    pub fn download_size_context(&self) -> SkContext {
+        SkContext::download_size(&self.dry_run_result)
     }
 
-    // Appstream information
-    pub fn appstream(&self) -> Option<Component> {
-        if let Some(appstream) = self.dry_run_result.appstream_component.as_ref() {
-            serde_json::from_str(appstream).ok()
-        } else {
-            None
-        }
+    // DryRun information
+    pub fn installed_size_context(&self) -> SkContext {
+        SkContext::installed_size(&self.dry_run_result)
     }
 
+    // DryRun information
     pub fn metadata(&self) -> String {
         self.dry_run_result.metadata.clone()
     }
 
+    // DryRun information
     pub fn old_metadata(&self) -> Option<String> {
         self.dry_run_result.old_metadata.clone().into()
     }
 
+    // DryRun information
     pub fn permissions(&self) -> SkAppPermissions {
         SkAppPermissions::from_metadata(&self.metadata())
     }
 
+    // DryRun information
     pub fn old_permissions(&self) -> Option<SkAppPermissions> {
         self.old_metadata()
             .map(|m| SkAppPermissions::from_metadata(&m))
     }
 
+    // DryRun information
     pub fn permissions_context(&self) -> SkContext {
         SkContext::permissions(&self.permissions())
-    }
-
-    pub fn download_size_context(&self) -> SkContext {
-        SkContext::download_size(&self.dry_run_result)
-    }
-
-    pub fn installed_size_context(&self) -> SkContext {
-        SkContext::installed_size(&self.dry_run_result)
     }
 
     // DryRun information

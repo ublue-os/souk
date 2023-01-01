@@ -16,9 +16,11 @@
 
 #[allow(clippy::module_inception)]
 mod package;
+mod package_appstream;
 mod package_model;
 mod package_type;
 
 pub use package::SkPackage;
+pub use package_appstream::SkPackageAppstream;
 pub use package_model::SkPackageModel;
 pub use package_type::SkPackageType;

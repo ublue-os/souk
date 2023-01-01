@@ -22,6 +22,9 @@
     <file preprocess="xml-stripblanks" alias="repo-generic-symbolic.svg">icons/hicolor/scalable/emblems/repo-generic-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="repo-gnome-symbolic.svg">icons/hicolor/scalable/emblems/repo-gnome-symbolic.svg</file>
   </gresource>
+  <gresource prefix="/de/haeckerfelix/Souk/icons/128x128/emblems/">
+    <file preprocess="xml-stripblanks" alias="system-component.svg">icons/hicolor/scalable/emblems/system-component.svg</file>
+  </gresource>
   <gresource prefix="/de/haeckerfelix/Souk/icons/16x16/status/">
     <file preprocess="xml-stripblanks" alias="external-link-symbolic.svg">icons/hicolor/scalable/status/external-link-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="gear-symbolic.svg">icons/hicolor/scalable/status/gear-symbolic.svg</file>

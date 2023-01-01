@@ -1,5 +1,5 @@
 // Souk - window.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -452,63 +452,12 @@ impl SkSideloadWindow {
                 }),
             );
 
-            // Setup general package appstream metadata
-            if let Some(component) = dry_run_result.appstream() {
-                let name = component.name.get_default().unwrap();
-                imp.package_name_label.set_text(name);
-
-                if let Some(paintable) = dry_run_result.icon() {
-                    imp.package_icon_image.set_paintable(Some(&paintable));
-                } else {
-                    let it = gtk::IconTheme::new();
-                    let paintable = it.lookup_icon(
-                        "dialog-question",
-                        &[],
-                        128,
-                        self.scale_factor(),
-                        gtk::TextDirection::None,
-                        gtk::IconLookupFlags::FORCE_SYMBOLIC,
-                    );
-                    imp.package_icon_image.set_paintable(Some(&paintable));
-                }
-
-                let developer = if let Some(developer_name) = component.developer_name {
-                    developer_name.get_default().unwrap().clone()
-                } else {
-                    i18n("Unknown Developer")
-                };
-                imp.package_developer_label.set_text(&developer);
-
-                let mut releases = component.releases;
-                releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
-                let version = if let Some(release) = releases.get(0) {
-                    i18n_f("Version {}", &[&release.version.clone()])
-                } else {
-                    i18n("Unknown Version")
-                };
-                imp.package_version_label.set_text(&version);
-            } else {
-                // Fallback if there's no appstream metadata
-                let name = package.name();
-                imp.package_name_label.set_text(&name);
-
-                let it = gtk::IconTheme::new();
-                let paintable = it.lookup_icon(
-                    "dialog-question",
-                    &[],
-                    128,
-                    self.scale_factor(),
-                    gtk::TextDirection::None,
-                    gtk::IconLookupFlags::FORCE_SYMBOLIC,
-                );
-                imp.package_icon_image.set_paintable(Some(&paintable));
-
-                let developer = i18n("Unknown Developer");
-                imp.package_developer_label.set_text(&developer);
-
-                let version = i18n("Unknown Version");
-                imp.package_version_label.set_text(&version);
-            }
+            // Appstream information
+            let asi = sideloadable.package_appstream().unwrap();
+            imp.package_name_label.set_text(&asi.name());
+            imp.package_icon_image.set_paintable(Some(&asi.icon()));
+            imp.package_developer_label.set_text(&asi.developer_name());
+            imp.package_version_label.set_text(&asi.version_text());
 
             // We don't support updating .flatpakrefs through sideloading, since the
             // installation would fail with "x is already installed". Only bundles can be

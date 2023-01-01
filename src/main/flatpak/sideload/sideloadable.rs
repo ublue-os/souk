@@ -1,5 +1,5 @@
 // Souk - sideloadable.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ use once_cell::unsync::OnceCell;
 use super::SideloadPackage;
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote};
-use crate::main::flatpak::package::SkPackage;
+use crate::main::flatpak::package::{SkPackage, SkPackageAppstream};
 use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
@@ -47,6 +47,8 @@ mod imp {
 
         /// Package which gets installed during the sideload process
         pub package: OnceCell<Option<SkPackage>>,
+        pub package_appstream: OnceCell<Option<SkPackageAppstream>>,
+
         /// Remotes which are getting added during the sideload process
         pub remotes: OnceCell<Vec<SkRemote>>,
 
@@ -95,6 +97,9 @@ impl SkSideloadable {
         let package = SkPackage::new(&dry_run_result.package);
         imp.package.set(Some(package)).unwrap();
 
+        let package_appstream = SkPackageAppstream::from_dry_run(&dry_run_result);
+        imp.package_appstream.set(Some(package_appstream)).unwrap();
+
         // remotes
         let mut remotes = Vec::new();
         for remote_info in &dry_run_result.added_remotes {
@@ -120,6 +125,7 @@ impl SkSideloadable {
         imp.type_.set(SkSideloadType::Repo).unwrap();
         imp.dry_run_result.set(None).unwrap();
         imp.package.set(None).unwrap();
+        imp.package_appstream.set(None).unwrap();
         imp.remotes.set(vec![remote.clone()]).unwrap();
         imp.no_changes.set(already_added).unwrap();
         imp.installation.set(installation.clone()).unwrap();
@@ -145,6 +151,10 @@ impl SkSideloadable {
 
     pub fn package(&self) -> Option<SkPackage> {
         self.imp().package.get().unwrap().to_owned()
+    }
+
+    pub fn package_appstream(&self) -> Option<SkPackageAppstream> {
+        self.imp().package_appstream.get().unwrap().to_owned()
     }
 
     pub fn remotes(&self) -> Vec<SkRemote> {
