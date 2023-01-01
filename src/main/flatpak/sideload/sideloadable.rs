@@ -28,11 +28,11 @@ use crate::main::flatpak::package::{SkPackage, SkPackageAppstream};
 use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
-use crate::shared::dry_run::DryRunResult;
+use crate::shared::dry_run::DryRun;
 
 // TODO: Refactor this into something similar to PackageInfo <-> SkPackage
 // This should have a id, similar to PackageInfo, RemoteInfo, ...
-// The counterpart to PackageInfo probably would be DryRunResult?
+// The counterpart to PackageInfo probably would be DryRun?
 mod imp {
     use super::*;
 
@@ -41,9 +41,9 @@ mod imp {
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
 
-        /// TODO-REMOVE: dry_run_result which gets targeted during the sideload
+        /// TODO-REMOVE: dry_run which gets targeted during the sideload
         /// process
-        pub dry_run_result: OnceCell<Option<SideloadPackage>>,
+        pub dry_run: OnceCell<Option<SideloadPackage>>,
 
         /// Package which gets installed during the sideload process
         pub package: OnceCell<Option<SkPackage>>,
@@ -74,7 +74,7 @@ impl SkSideloadable {
     pub fn new_package(
         file: &File,
         type_: SkSideloadType,
-        dry_run_result: DryRunResult,
+        dry_run: DryRun,
         installation: &SkInstallation,
     ) -> Self {
         let sideloadable: Self = glib::Object::new(&[]).unwrap();
@@ -82,27 +82,25 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(type_).unwrap();
-        imp.no_changes
-            .set(dry_run_result.is_already_installed)
-            .unwrap();
+        imp.no_changes.set(dry_run.is_already_installed).unwrap();
         imp.installation.set(installation.clone()).unwrap();
 
-        // TODO-REMOVE: dry_run_result
+        // TODO-REMOVE: dry_run
         let sideload_package = SideloadPackage {
-            dry_run_result: dry_run_result.clone(),
+            dry_run: dry_run.clone(),
         };
-        imp.dry_run_result.set(Some(sideload_package)).unwrap();
+        imp.dry_run.set(Some(sideload_package)).unwrap();
 
         // package
-        let package = SkPackage::new(&dry_run_result.package);
+        let package = SkPackage::new(&dry_run.package);
         imp.package.set(Some(package)).unwrap();
 
-        let package_appstream = SkPackageAppstream::from_dry_run(&dry_run_result);
+        let package_appstream = SkPackageAppstream::from_dry_run(&dry_run);
         imp.package_appstream.set(Some(package_appstream)).unwrap();
 
         // remotes
         let mut remotes = Vec::new();
-        for remote_info in &dry_run_result.added_remotes {
+        for remote_info in &dry_run.added_remotes {
             let remote = SkRemote::new(remote_info);
             remotes.push(remote);
         }
@@ -123,7 +121,7 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(SkSideloadType::Repo).unwrap();
-        imp.dry_run_result.set(None).unwrap();
+        imp.dry_run.set(None).unwrap();
         imp.package.set(None).unwrap();
         imp.package_appstream.set(None).unwrap();
         imp.remotes.set(vec![remote.clone()]).unwrap();
@@ -145,8 +143,8 @@ impl SkSideloadable {
         self.imp().installation.get().unwrap().clone()
     }
 
-    pub fn dry_run_result(&self) -> Option<SideloadPackage> {
-        self.imp().dry_run_result.get().unwrap().to_owned()
+    pub fn dry_run(&self) -> Option<SideloadPackage> {
+        self.imp().dry_run.get().unwrap().to_owned()
     }
 
     pub fn package(&self) -> Option<SkPackage> {
@@ -166,8 +164,8 @@ impl SkSideloadable {
     }
 
     pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTask>, Error> {
-        if let Some(dry_run_result) = self.dry_run_result() {
-            let uninstall_before_install = dry_run_result.is_replacing_remote().is_some();
+        if let Some(dry_run) = self.dry_run() {
+            let uninstall_before_install = dry_run.is_replacing_remote().is_some();
 
             let task = match self.type_() {
                 SkSideloadType::Bundle => {

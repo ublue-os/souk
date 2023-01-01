@@ -17,12 +17,12 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::shared::dry_run::DryRunResult;
+use crate::shared::dry_run::DryRun;
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
 pub struct TaskResult {
     pub type_: TaskResultType,
-    pub dry_run: Optional<DryRunResult>,
+    pub dry_run: Optional<DryRun>,
     pub error: Optional<String>,
 }
 
@@ -35,7 +35,7 @@ impl TaskResult {
         }
     }
 
-    pub fn new_dry_run(dry_run: DryRunResult) -> Self {
+    pub fn new_dry_run(dry_run: DryRun) -> Self {
         Self {
             type_: TaskResultType::DoneDryRun,
             dry_run: Some(dry_run).into(),
@@ -74,7 +74,7 @@ impl Default for TaskResult {
 pub enum TaskResultType {
     /// Task completed successfully.
     Done,
-    /// Task completed successfully, with an [DryRunResult] as result
+    /// Task completed successfully, with an [DryRun] as result
     DoneDryRun,
     /// Task failed. See [ResponseType.error] for more details.
     Error,

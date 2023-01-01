@@ -368,9 +368,9 @@ impl SkSideloadWindow {
         imp.package_box.set_visible(has_package);
         if let Some(package) = sideloadable.package() {
             // TODO-REMOVE: Kill that
-            let dry_run_result = sideloadable.dry_run_result().unwrap();
+            let dry_run = sideloadable.dry_run().unwrap();
 
-            if dry_run_result.is_update() {
+            if dry_run.is_update() {
                 imp.start_button.set_label(&update_start_button);
                 imp.details_title.set_title(&update_details_title);
                 imp.progress_title.set_title(&update_progress_title);
@@ -396,13 +396,13 @@ impl SkSideloadWindow {
             }
 
             // Show warn message for packages without update source
-            let uninstall_before_install_source = !dry_run_result.has_update_source();
+            let uninstall_before_install_source = !dry_run.has_update_source();
             imp.no_updates_row
                 .set_visible(uninstall_before_install_source);
 
             // Show warn message when package is already installed, but from a different
             // remote
-            if let Some(remote) = dry_run_result.is_replacing_remote().as_ref() {
+            if let Some(remote) = dry_run.is_replacing_remote().as_ref() {
                 imp.replacing_remote_row.set_visible(true);
                 let msg = i18n_f("This package is already installed from \"{}\", during the installation the old version will be uninstalled first", &[remote]);
                 imp.replacing_remote_row.set_subtitle(&msg);
@@ -426,13 +426,13 @@ impl SkSideloadWindow {
             // Context information
             let contexts = ListStore::new(SkContext::static_type());
 
-            let download_size_context = dry_run_result.download_size_context();
+            let download_size_context = dry_run.download_size_context();
             contexts.append(&download_size_context);
 
-            let installed_size_context = dry_run_result.installed_size_context();
+            let installed_size_context = dry_run.installed_size_context();
             contexts.append(&installed_size_context);
 
-            let permissions_context = dry_run_result.permissions_context();
+            let permissions_context = dry_run.permissions_context();
             contexts.append(&permissions_context);
 
             imp.package_context_listbox.bind_model(
@@ -462,7 +462,7 @@ impl SkSideloadWindow {
             // We don't support updating .flatpakrefs through sideloading, since the
             // installation would fail with "x is already installed". Only bundles can be
             // updated.
-            if dry_run_result.is_update() && sideloadable.type_() == SkSideloadType::Ref {
+            if dry_run.is_update() && sideloadable.type_() == SkSideloadType::Ref {
                 imp.sideload_leaflet.set_visible_child_name("already-done");
                 return;
             }
@@ -482,7 +482,7 @@ impl SkSideloadWindow {
                 group.add(&remote_row);
             }
 
-            if sideloadable.dry_run_result().is_none() {
+            if sideloadable.dry_run().is_none() {
                 let remotes = sideloadable.remotes();
                 let remote = remotes.first().unwrap();
                 let name = if !remote.title().is_empty() {

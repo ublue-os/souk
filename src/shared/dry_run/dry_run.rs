@@ -1,5 +1,5 @@
-// Souk - dry_run_result.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - dry_run
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ use crate::shared::info::{PackageInfo, RemoteInfo};
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash)]
 #[derivative(Debug)]
-pub struct DryRunResult {
+pub struct DryRun {
     /// The affected package
     pub package: PackageInfo,
 
@@ -61,7 +61,7 @@ pub struct DryRunResult {
     pub added_remotes: Vec<RemoteInfo>,
 }
 
-impl DryRunResult {
+impl DryRun {
     pub fn has_extra_data(&self) -> bool {
         let keyfile = KeyFile::new();
         let _ = keyfile.load_from_data(&self.metadata, KeyFileFlags::NONE);
@@ -69,7 +69,7 @@ impl DryRunResult {
     }
 }
 
-impl Default for DryRunResult {
+impl Default for DryRun {
     fn default() -> Self {
         Self {
             package: PackageInfo::default(),

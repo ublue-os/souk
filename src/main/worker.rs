@@ -294,12 +294,12 @@ impl SkWorker {
 
         task.await_result().await?;
 
-        if let Some(dry_run_result) = task.result_dry_run() {
-            debug!("Dry run results: {:#?}", dry_run_result);
+        if let Some(dry_run) = task.result_dry_run() {
+            debug!("Dry run results: {:#?}", dry_run);
             Ok(SkSideloadable::new_package(
                 file,
                 type_,
-                dry_run_result,
+                dry_run,
                 installation,
             ))
         } else {

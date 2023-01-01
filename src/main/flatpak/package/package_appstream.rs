@@ -29,7 +29,7 @@ use once_cell::unsync::OnceCell;
 
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::SkApplication;
-use crate::shared::dry_run::DryRunResult;
+use crate::shared::dry_run::DryRun;
 use crate::shared::info::PackageInfo;
 
 mod imp {
@@ -83,7 +83,7 @@ glib::wrapper! {
 }
 
 impl SkPackageAppstream {
-    pub fn from_dry_run(dry_run: &DryRunResult) -> Self {
+    pub fn from_dry_run(dry_run: &DryRun) -> Self {
         let appstream: Self = glib::Object::new(&[]).unwrap();
         let imp = appstream.imp();
 

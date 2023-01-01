@@ -29,7 +29,7 @@ use glib::{clone, Downgrade, KeyFile};
 use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 
-use crate::shared::dry_run::{DryRunResult, DryRunRuntime};
+use crate::shared::dry_run::{DryRun, DryRunRuntime};
 use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
 use crate::shared::task::{FlatpakOperationType, FlatpakTask, TaskResponse, TaskResult, TaskStep};
 use crate::worker::{appstream, WorkerError};
@@ -394,24 +394,26 @@ impl FlatpakWorker {
         installation_info: &InstallationInfo,
         // Whether to load the AppStream data from the Remote
         load_remote_appstream: bool,
-    ) -> Result<DryRunResult, WorkerError> {
-        let dry_run_result = Rc::new(RefCell::new(DryRunResult::default()));
+    ) -> Result<DryRun, WorkerError> {
+        let result = Rc::new(RefCell::new(DryRun::default()));
         let real_installation = Installation::from(installation_info);
 
         // Check if new remotes are added during the transaction
         let installation_info = installation_info.clone();
         transaction.connect_add_new_remote(
-            clone!(@weak dry_run_result, @strong installation_info => @default-return false, move |_, _, _, name, url|{
+            clone!(@weak result, @strong installation_info => @default-return false, move |_, _, _, name, url|{
                 let remote_info = RemoteInfo::new(name.into(), url.into(), None);
-                dry_run_result.borrow_mut().added_remotes.push(remote_info);
+                result.borrow_mut().added_remotes.push(remote_info);
                 true
             }),
         );
 
         // Ready -> Everything got resolved, so we can check the transaction operations
         transaction.connect_ready(
-            clone!(@weak dry_run_result, @weak real_installation, @strong load_remote_appstream => @default-return false, move |transaction|{
+            clone!(@weak result, @weak real_installation, @strong load_remote_appstream => @default-return false, move |transaction|{
+                let mut result = result.borrow_mut();
                 let operation_count = transaction.operations().len();
+
                 for (pos, operation) in transaction.operations().iter().enumerate () {
                     let operation_ref = operation.get_ref().unwrap().to_string();
 
@@ -432,15 +434,15 @@ impl FlatpakWorker {
 
                         // Package
                         let package_info = PackageInfo::new(operation_ref, remote_info);
-                        dry_run_result.borrow_mut().package = package_info;
+                        result.package = package_info;
 
-                        dry_run_result.borrow_mut().metadata = operation_metadata;
-                        dry_run_result.borrow_mut().old_metadata = operation_old_metadata.into();
-                        dry_run_result.borrow_mut().download_size = operation.download_size();
-                        dry_run_result.borrow_mut().installed_size = operation.installed_size();
+                        result.metadata = operation_metadata;
+                        result.old_metadata = operation_old_metadata.into();
+                        result.download_size = operation.download_size();
+                        result.installed_size = operation.installed_size();
 
                         if operation.operation_type() == TransactionOperationType::InstallBundle{
-                            dry_run_result.borrow_mut().has_update_source = false;
+                            result.has_update_source = false;
                         }
 
                         // Check if ref is already installed
@@ -461,15 +463,15 @@ impl FlatpakWorker {
                             // If yes, it the already installed ref needs to get uninstalled first,
                             // before the new one can get installed.
                             if installed_origin != operation_remote {
-                                dry_run_result.borrow_mut().is_replacing_remote = Some(installed_origin.to_string()).into();
+                                result.is_replacing_remote = Some(installed_origin.to_string()).into();
                             }
 
                             if installed.commit().unwrap() == operation_commit {
                                 // Commit is the same -> ref is already installed
-                                dry_run_result.borrow_mut().is_already_installed = true;
+                                result.is_already_installed = true;
                             }else{
                                 // Commit differs -> is update
-                                dry_run_result.borrow_mut().is_update = true;
+                                result.is_update = true;
                             }
                         }
 
@@ -497,13 +499,13 @@ impl FlatpakWorker {
                             if let Some(component) = appstream::utils::component_from_remote(&ref_, &remote){
                                 // Appstream
                                 let json = serde_json::to_string(&component).unwrap();
-                                dry_run_result.borrow_mut().appstream_component = Some(json).into();
+                                result.appstream_component = Some(json).into();
 
                                 // Icon
                                 let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
                                 let icon = appstream_dir.child(format!("icons/128x128/{}.png", ref_.name().unwrap()));
                                 if let Ok((bytes, _)) = icon.load_bytes(Cancellable::NONE){
-                                    dry_run_result.borrow_mut().icon = bytes.to_vec();
+                                    result.icon = bytes.to_vec();
                                 }
                             }else{
                                 warn!("Couldn't find appstream component.");
@@ -518,7 +520,7 @@ impl FlatpakWorker {
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
                         };
-                        dry_run_result.borrow_mut().runtimes.push(runtime);
+                        result.runtimes.push(runtime);
                     }
                 }
 
@@ -546,8 +548,8 @@ impl FlatpakWorker {
             }
         }
 
-        let results = dry_run_result.borrow().clone();
-        Ok(results)
+        let result = result.borrow().clone();
+        Ok(result)
     }
 
     fn new_transaction(

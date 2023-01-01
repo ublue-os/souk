@@ -30,7 +30,7 @@ use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
 use crate::main::task::{SkTaskActivity, SkTaskStep, SkTaskStepModel, SkTaskType};
-use crate::shared::dry_run::DryRunResult;
+use crate::shared::dry_run::DryRun;
 use crate::shared::task::{Task, TaskResponse, TaskResponseType, TaskResultType};
 
 mod imp {
@@ -54,7 +54,7 @@ mod imp {
         pub finished_sender: OnceCell<Sender<()>>,
         pub finished_receiver: OnceCell<Receiver<()>>,
 
-        pub result_dry_run: OnceCell<DryRunResult>,
+        pub result_dry_run: OnceCell<DryRun>,
         pub result_error: OnceCell<String>,
     }
 
@@ -288,7 +288,7 @@ impl SkTask {
         }
     }
 
-    pub fn result_dry_run(&self) -> Option<DryRunResult> {
+    pub fn result_dry_run(&self) -> Option<DryRun> {
         self.imp().result_dry_run.get().cloned()
     }
 

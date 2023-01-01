@@ -31,7 +31,7 @@ use crate::main::flatpak::permissions::types::{SkFilesystemPermission, SkService
 use crate::main::flatpak::permissions::{PermissionDetails, SkAppPermissions, SkPermissionSummary};
 use crate::main::flatpak::utils;
 use crate::main::i18n::{i18n, i18n_f};
-use crate::shared::dry_run::DryRunResult;
+use crate::shared::dry_run::DryRun;
 
 mod imp {
     use super::*;
@@ -158,15 +158,15 @@ impl SkContext {
         Self::new(&summary, &groups)
     }
 
-    pub fn download_size(dry_run: &DryRunResult) -> Self {
+    pub fn download_size(dry_run: &DryRun) -> Self {
         Self::size_context(dry_run, true)
     }
 
-    pub fn installed_size(dry_run: &DryRunResult) -> Self {
+    pub fn installed_size(dry_run: &DryRun) -> Self {
         Self::size_context(dry_run, false)
     }
 
-    fn size_context(dry_run: &DryRunResult, download_size: bool) -> Self {
+    fn size_context(dry_run: &DryRun, download_size: bool) -> Self {
         let mut groups = Vec::new();
         let mut runtime_size: u64 = 0;
 

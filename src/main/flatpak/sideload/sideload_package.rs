@@ -16,35 +16,35 @@
 
 use crate::main::context::SkContext;
 use crate::main::flatpak::permissions::SkAppPermissions;
-use crate::shared::dry_run::DryRunResult;
+use crate::shared::dry_run::DryRun;
 
 // TODO: This should be a gobject with properties
 // TODO: Maybe we can split the metadata stuff into a own object which can be
 // shared later with real packages
 #[derive(Debug, Default, Clone)]
 pub struct SideloadPackage {
-    pub dry_run_result: DryRunResult,
+    pub dry_run: DryRun,
 }
 
 impl SideloadPackage {
     // DryRun information
     pub fn download_size_context(&self) -> SkContext {
-        SkContext::download_size(&self.dry_run_result)
+        SkContext::download_size(&self.dry_run)
     }
 
     // DryRun information
     pub fn installed_size_context(&self) -> SkContext {
-        SkContext::installed_size(&self.dry_run_result)
+        SkContext::installed_size(&self.dry_run)
     }
 
     // DryRun information
     pub fn metadata(&self) -> String {
-        self.dry_run_result.metadata.clone()
+        self.dry_run.metadata.clone()
     }
 
     // DryRun information
     pub fn old_metadata(&self) -> Option<String> {
-        self.dry_run_result.old_metadata.clone().into()
+        self.dry_run.old_metadata.clone().into()
     }
 
     // DryRun information
@@ -65,21 +65,21 @@ impl SideloadPackage {
 
     // DryRun information
     pub fn has_update_source(&self) -> bool {
-        self.dry_run_result.has_update_source
+        self.dry_run.has_update_source
     }
 
     // DryRun information
     pub fn is_replacing_remote(&self) -> Option<String> {
-        self.dry_run_result.is_replacing_remote.as_ref().cloned()
+        self.dry_run.is_replacing_remote.as_ref().cloned()
     }
 
     // DryRun information
     pub fn is_already_installed(&self) -> bool {
-        self.dry_run_result.is_already_installed
+        self.dry_run.is_already_installed
     }
 
     // DryRun information
     pub fn is_update(&self) -> bool {
-        self.dry_run_result.is_update
+        self.dry_run.is_update
     }
 }
