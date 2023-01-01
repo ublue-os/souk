@@ -28,6 +28,16 @@ pub struct DryRun {
     /// The affected package
     pub package: PackageInfo,
 
+    /// Size information of the actual package (size information about the
+    /// runtimes are in `runtimes`)
+    pub download_size: u64,
+    pub installed_size: u64,
+
+    /// Which runtimes are installed during the installation
+    pub runtimes: Vec<DryRunRuntime>,
+    /// Which remotes are getting added during installation
+    pub added_remotes: Vec<RemoteInfo>,
+
     #[derivative(Debug = "ignore")]
     pub icon: Vec<u8>,
     /// Json serialized appstream component
@@ -48,17 +58,7 @@ pub struct DryRun {
     pub has_update_source: bool,
     /// Whether the package is already installed from a different remote, and
     /// the old app needs to get uninstalled first
-    pub is_replacing_remote: Optional<String>,
-
-    /// Size information of the actual package (size information about the
-    /// runtimes are in `runtimes`)
-    pub download_size: u64,
-    pub installed_size: u64,
-
-    /// Which runtimes are installed during the installation
-    pub runtimes: Vec<DryRunRuntime>,
-    /// Which remotes are getting added during installation
-    pub added_remotes: Vec<RemoteInfo>,
+    pub is_replacing_remote: Optional<RemoteInfo>,
 }
 
 impl DryRun {
@@ -73,6 +73,10 @@ impl Default for DryRun {
     fn default() -> Self {
         Self {
             package: PackageInfo::default(),
+            runtimes: Vec::default(),
+            download_size: 0,
+            installed_size: 0,
+            added_remotes: Vec::default(),
             icon: Vec::default(),
             appstream_component: None.into(),
             metadata: String::new(),
@@ -81,10 +85,6 @@ impl Default for DryRun {
             is_update: false,
             has_update_source: true,
             is_replacing_remote: None.into(),
-            download_size: 0,
-            installed_size: 0,
-            runtimes: Vec::default(),
-            added_remotes: Vec::default(),
         }
     }
 }

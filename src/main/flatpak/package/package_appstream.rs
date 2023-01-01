@@ -27,9 +27,9 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
+use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::SkApplication;
-use crate::shared::dry_run::DryRun;
 use crate::shared::info::PackageInfo;
 
 mod imp {
@@ -83,21 +83,24 @@ glib::wrapper! {
 }
 
 impl SkPackageAppstream {
-    pub fn from_dry_run(dry_run: &DryRun) -> Self {
+    pub fn from_dry_run(dry_run: &SkDryRun) -> Self {
         let appstream: Self = glib::Object::new(&[]).unwrap();
         let imp = appstream.imp();
 
         // Appstream Component
         let text = dry_run
+            .data()
             .appstream_component
             .as_ref()
             .cloned()
             .unwrap_or_default();
-        let c = serde_json::from_str(&text).unwrap_or(Self::fallback_component(&dry_run.package));
+
+        let fallback = dry_run.package().info();
+        let c = serde_json::from_str(&text).unwrap_or(Self::fallback_component(&fallback));
         imp.component.set(c).unwrap();
 
         // Icon
-        let icon = dry_run.icon.clone();
+        let icon = dry_run.data().icon;
         let bytes = Bytes::from_owned(icon);
         let icon: Paintable = if let Ok(texture) = gdk::Texture::from_bytes(&bytes) {
             texture.upcast()

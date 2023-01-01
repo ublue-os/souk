@@ -1,5 +1,5 @@
-// Shortwave - remote_model.rs
-// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Shortwave - dry_run_runtime_model.rs
+// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,29 +22,29 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
-use crate::main::flatpak::installation::SkRemote;
-use crate::shared::info::RemoteInfo;
+use crate::main::flatpak::dry_run::SkDryRunRuntime;
+use crate::shared::dry_run::DryRunRuntime;
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct SkRemoteModel {
-        pub map: RefCell<IndexMap<RemoteInfo, SkRemote>>,
+    pub struct SkDryRunRuntimeModel {
+        pub map: RefCell<IndexMap<DryRunRuntime, SkDryRunRuntime>>,
     }
 
     #[glib::object_subclass]
-    impl ObjectSubclass for SkRemoteModel {
-        const NAME: &'static str = "SkRemoteModel";
-        type Type = super::SkRemoteModel;
+    impl ObjectSubclass for SkDryRunRuntimeModel {
+        const NAME: &'static str = "SkDryRunRuntimeModel";
+        type Type = super::SkDryRunRuntimeModel;
         type Interfaces = (gio::ListModel,);
     }
 
-    impl ObjectImpl for SkRemoteModel {}
+    impl ObjectImpl for SkDryRunRuntimeModel {}
 
-    impl ListModelImpl for SkRemoteModel {
+    impl ListModelImpl for SkDryRunRuntimeModel {
         fn item_type(&self, _list_model: &Self::Type) -> glib::Type {
-            SkRemote::static_type()
+            SkDryRunRuntime::static_type()
         }
 
         fn n_items(&self, _list_model: &Self::Type) -> u32 {
@@ -61,67 +61,56 @@ mod imp {
 }
 
 glib::wrapper! {
-    pub struct SkRemoteModel(ObjectSubclass<imp::SkRemoteModel>) @implements gio::ListModel;
+    pub struct SkDryRunRuntimeModel(ObjectSubclass<imp::SkDryRunRuntimeModel>) @implements gio::ListModel;
 }
 
-impl SkRemoteModel {
+impl SkDryRunRuntimeModel {
     pub fn new() -> Self {
         glib::Object::new(&[]).unwrap()
     }
 
-    pub fn remote(&self, info: &RemoteInfo) -> Option<SkRemote> {
-        self.imp().map.borrow().get(info).cloned()
-    }
-
-    pub fn contains_remote(&self, remote: &SkRemote) -> bool {
-        self.snapshot().iter().any(|r| {
-            let r: &SkRemote = r.downcast_ref().unwrap();
-            r.name() == remote.name() || r.repository_url() == remote.repository_url()
-        })
-    }
-
-    pub fn set_remotes(&self, remotes: Vec<RemoteInfo>) {
+    pub fn set_runtimes(&self, runtimes: Vec<DryRunRuntime>) {
         let imp = self.imp();
 
-        for remote in &remotes {
-            self.add_info(remote);
+        for runtime in &runtimes {
+            self.add_data(runtime);
         }
 
         let map = imp.map.borrow().clone();
-        for info in map.keys() {
-            if !remotes.contains(info) {
-                self.remove_info(info);
+        for data in map.keys() {
+            if !runtimes.contains(data) {
+                self.remove_data(data);
             }
         }
     }
 
-    fn add_info(&self, info: &RemoteInfo) {
+    fn add_data(&self, data: &DryRunRuntime) {
         let pos = {
             let mut map = self.imp().map.borrow_mut();
-            if map.contains_key(info) {
+            if map.contains_key(data) {
                 return;
             }
 
-            let sk_remote = SkRemote::new(info);
-            map.insert(info.clone(), sk_remote);
+            let sk_runtime = SkDryRunRuntime::new(data.clone());
+            map.insert(data.clone(), sk_runtime);
             (map.len() - 1) as u32
         };
 
         self.items_changed(pos, 0, 1);
     }
 
-    fn remove_info(&self, info: &RemoteInfo) {
+    fn remove_data(&self, data: &DryRunRuntime) {
         let pos = {
             let mut map = self.imp().map.borrow_mut();
-            match map.get_index_of(info) {
+            match map.get_index_of(data) {
                 Some(pos) => {
-                    map.remove(info);
+                    map.remove(data);
                     Some(pos)
                 }
                 None => {
                     warn!(
-                        "Unable to remove remote {:?}, not found in model",
-                        info.name
+                        "Unable to remove runtime {:?}, not found in model",
+                        data.package.ref_
                     );
                     None
                 }
@@ -134,7 +123,7 @@ impl SkRemoteModel {
     }
 }
 
-impl Default for SkRemoteModel {
+impl Default for SkDryRunRuntimeModel {
     fn default() -> Self {
         Self::new()
     }

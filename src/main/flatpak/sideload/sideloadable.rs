@@ -18,39 +18,32 @@ use core::fmt::Debug;
 
 use gtk::gio::File;
 use gtk::glib;
+use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use once_cell::unsync::OnceCell;
 
-use super::SideloadPackage;
 use crate::main::error::Error;
-use crate::main::flatpak::installation::{SkInstallation, SkRemote};
-use crate::main::flatpak::package::{SkPackage, SkPackageAppstream};
+use crate::main::flatpak::dry_run::SkDryRun;
+use crate::main::flatpak::installation::{SkInstallation, SkRemote, SkRemoteModel};
 use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
-use crate::shared::dry_run::DryRun;
 
-// TODO: Refactor this into something similar to PackageInfo <-> SkPackage
-// This should have a id, similar to PackageInfo, RemoteInfo, ...
-// The counterpart to PackageInfo probably would be DryRun?
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
     pub struct SkSideloadable {
+        // TODO: Gobjectify those values
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
 
-        /// TODO-REMOVE: dry_run which gets targeted during the sideload
-        /// process
-        pub dry_run: OnceCell<Option<SideloadPackage>>,
-
-        /// Package which gets installed during the sideload process
-        pub package: OnceCell<Option<SkPackage>>,
-        pub package_appstream: OnceCell<Option<SkPackageAppstream>>,
+        /// Package which gets installed during sideload process (evaluated as
+        /// [SkDryRun])
+        pub package_dry_run: OnceCell<Option<SkDryRun>>,
 
         /// Remotes which are getting added during the sideload process
-        pub remotes: OnceCell<Vec<SkRemote>>,
+        pub remotes: OnceCell<SkRemoteModel>,
 
         pub no_changes: OnceCell<bool>,
         pub installation: OnceCell<SkInstallation>,
@@ -74,7 +67,7 @@ impl SkSideloadable {
     pub fn new_package(
         file: &File,
         type_: SkSideloadType,
-        dry_run: DryRun,
+        dry_run: SkDryRun,
         installation: &SkInstallation,
     ) -> Self {
         let sideloadable: Self = glib::Object::new(&[]).unwrap();
@@ -82,29 +75,14 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(type_).unwrap();
-        imp.no_changes.set(dry_run.is_already_installed).unwrap();
+        imp.no_changes.set(dry_run.is_already_installed()).unwrap();
         imp.installation.set(installation.clone()).unwrap();
 
-        // TODO-REMOVE: dry_run
-        let sideload_package = SideloadPackage {
-            dry_run: dry_run.clone(),
-        };
-        imp.dry_run.set(Some(sideload_package)).unwrap();
-
-        // package
-        let package = SkPackage::new(&dry_run.package);
-        imp.package.set(Some(package)).unwrap();
-
-        let package_appstream = SkPackageAppstream::from_dry_run(&dry_run);
-        imp.package_appstream.set(Some(package_appstream)).unwrap();
-
         // remotes
-        let mut remotes = Vec::new();
-        for remote_info in &dry_run.added_remotes {
-            let remote = SkRemote::new(remote_info);
-            remotes.push(remote);
-        }
-        imp.remotes.set(remotes).unwrap();
+        imp.remotes.set(dry_run.added_remotes()).unwrap();
+
+        // package dry run
+        imp.package_dry_run.set(Some(dry_run)).unwrap();
 
         sideloadable
     }
@@ -121,12 +99,13 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(SkSideloadType::Repo).unwrap();
-        imp.dry_run.set(None).unwrap();
-        imp.package.set(None).unwrap();
-        imp.package_appstream.set(None).unwrap();
-        imp.remotes.set(vec![remote.clone()]).unwrap();
+        imp.package_dry_run.set(None).unwrap();
         imp.no_changes.set(already_added).unwrap();
         imp.installation.set(installation.clone()).unwrap();
+
+        let remotes = SkRemoteModel::new();
+        remotes.set_remotes(vec![remote.info()]);
+        imp.remotes.set(remotes).unwrap();
 
         sideloadable
     }
@@ -143,19 +122,11 @@ impl SkSideloadable {
         self.imp().installation.get().unwrap().clone()
     }
 
-    pub fn dry_run(&self) -> Option<SideloadPackage> {
-        self.imp().dry_run.get().unwrap().to_owned()
+    pub fn package_dry_run(&self) -> Option<SkDryRun> {
+        self.imp().package_dry_run.get().unwrap().to_owned()
     }
 
-    pub fn package(&self) -> Option<SkPackage> {
-        self.imp().package.get().unwrap().to_owned()
-    }
-
-    pub fn package_appstream(&self) -> Option<SkPackageAppstream> {
-        self.imp().package_appstream.get().unwrap().to_owned()
-    }
-
-    pub fn remotes(&self) -> Vec<SkRemote> {
+    pub fn remotes(&self) -> SkRemoteModel {
         self.imp().remotes.get().unwrap().to_owned()
     }
 
@@ -164,7 +135,7 @@ impl SkSideloadable {
     }
 
     pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTask>, Error> {
-        if let Some(dry_run) = self.dry_run() {
+        if let Some(dry_run) = self.package_dry_run() {
             let uninstall_before_install = dry_run.is_replacing_remote().is_some();
 
             let task = match self.type_() {
@@ -197,8 +168,8 @@ impl SkSideloadable {
         } else if self.type_() == SkSideloadType::Repo {
             let remotes = self.remotes();
             // There can be only *one* Flatpak repository in a *.flatpakrepo file
-            let remote = remotes.first().unwrap();
-            self.installation().add_remote(remote)?;
+            let remote: SkRemote = remotes.item(0).unwrap().downcast().unwrap();
+            self.installation().add_remote(&remote)?;
         }
         Ok(None)
     }

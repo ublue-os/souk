@@ -1,5 +1,5 @@
 // Souk - worker.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -295,7 +295,7 @@ impl SkWorker {
         task.await_result().await?;
 
         if let Some(dry_run) = task.result_dry_run() {
-            debug!("Dry run results: {:#?}", dry_run);
+            debug!("Dry run results: {:#?}", dry_run.data());
             Ok(SkSideloadable::new_package(
                 file,
                 type_,

@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,8 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod sideload_type;
-mod sideloadable;
+#[allow(clippy::module_inception)]
+mod dry_run;
+mod dry_run_runtime;
+mod dry_run_runtime_model;
 
-pub use sideload_type::SkSideloadType;
-pub use sideloadable::SkSideloadable;
+pub use dry_run::SkDryRun;
+pub use dry_run_runtime::SkDryRunRuntime;
+pub use dry_run_runtime_model::SkDryRunRuntimeModel;

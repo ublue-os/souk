@@ -28,6 +28,7 @@ use super::SkRemoteRow;
 use crate::main::app::SkApplication;
 use crate::main::context::SkContext;
 use crate::main::error::Error;
+use crate::main::flatpak::installation::SkRemote;
 use crate::main::flatpak::package::SkPackageType;
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::i18n::{i18n, i18n_f};
@@ -331,6 +332,7 @@ impl SkSideloadWindow {
         }
     }
 
+    // TODO: Refactor this mess...
     fn update_widgets(&self) {
         let imp = self.imp();
         let sideloadable = self.sideloadable().unwrap();
@@ -364,11 +366,11 @@ impl SkSideloadWindow {
         let repo_error_title = i18n("Adding Source Failed");
 
         // Package
-        let has_package = sideloadable.package().is_some();
+        let has_package = sideloadable.package_dry_run().is_some();
         imp.package_box.set_visible(has_package);
-        if let Some(package) = sideloadable.package() {
-            // TODO-REMOVE: Kill that
-            let dry_run = sideloadable.dry_run().unwrap();
+
+        if let Some(dry_run) = sideloadable.package_dry_run() {
+            let package = dry_run.package();
 
             if dry_run.is_update() {
                 imp.start_button.set_label(&update_start_button);
@@ -404,7 +406,7 @@ impl SkSideloadWindow {
             // remote
             if let Some(remote) = dry_run.is_replacing_remote().as_ref() {
                 imp.replacing_remote_row.set_visible(true);
-                let msg = i18n_f("This package is already installed from \"{}\", during the installation the old version will be uninstalled first", &[remote]);
+                let msg = i18n_f("This package is already installed from \"{}\", during the installation the old version will be uninstalled first", &[&remote.name()]);
                 imp.replacing_remote_row.set_subtitle(&msg);
             } else {
                 imp.replacing_remote_row.set_visible(false);
@@ -453,7 +455,7 @@ impl SkSideloadWindow {
             );
 
             // Appstream information
-            let asi = sideloadable.package_appstream().unwrap();
+            let asi = dry_run.appstream();
             imp.package_name_label.set_text(&asi.name());
             imp.package_icon_image.set_paintable(Some(&asi.icon()));
             imp.package_developer_label.set_text(&asi.developer_name());
@@ -470,21 +472,22 @@ impl SkSideloadWindow {
 
         // Remotes / Repositories
         imp.remotes_box
-            .set_visible(!sideloadable.remotes().is_empty());
+            .set_visible(!sideloadable.remotes().snapshot().is_empty());
         utils::clear_box(&imp.remotes_box);
 
-        if !sideloadable.remotes().is_empty() {
+        if !sideloadable.remotes().snapshot().is_empty() {
             let group = adw::PreferencesGroup::new();
             imp.remotes_box.append(&group);
 
-            for remote in sideloadable.remotes() {
+            for object in sideloadable.remotes().snapshot() {
+                let remote: SkRemote = object.downcast().unwrap();
                 let remote_row = SkRemoteRow::new(&remote);
                 group.add(&remote_row);
             }
 
-            if sideloadable.dry_run().is_none() {
+            if sideloadable.package_dry_run().is_none() {
                 let remotes = sideloadable.remotes();
-                let remote = remotes.first().unwrap();
+                let remote: SkRemote = remotes.item(0).unwrap().downcast().unwrap();
                 let name = if !remote.title().is_empty() {
                     remote.title()
                 } else {
@@ -634,7 +637,7 @@ impl SkSideloadWindow {
             let sideloadable = this.sideloadable().unwrap();
             let installation = sideloadable.installation();
 
-            let package = sideloadable.package().unwrap();
+            let package = sideloadable.package_dry_run().unwrap().package();
             installation.launch_app(&package);
 
             this.close();

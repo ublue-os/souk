@@ -1,5 +1,5 @@
 // Souk - task.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,8 +29,8 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
+use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::task::{SkTaskActivity, SkTaskStep, SkTaskStepModel, SkTaskType};
-use crate::shared::dry_run::DryRun;
 use crate::shared::task::{Task, TaskResponse, TaskResponseType, TaskResultType};
 
 mod imp {
@@ -54,7 +54,7 @@ mod imp {
         pub finished_sender: OnceCell<Sender<()>>,
         pub finished_receiver: OnceCell<Receiver<()>>,
 
-        pub result_dry_run: OnceCell<DryRun>,
+        pub result_dry_run: OnceCell<SkDryRun>,
         pub result_error: OnceCell<String>,
     }
 
@@ -180,11 +180,6 @@ impl SkTask {
         task
     }
 
-    /// Returns the original shared [Task] struct
-    pub fn data(&self) -> Task {
-        self.imp().data.get().unwrap().clone()
-    }
-
     pub fn uuid(&self) -> String {
         self.imp().data.get().unwrap().uuid.clone()
     }
@@ -252,7 +247,8 @@ impl SkTask {
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                     }
                     TaskResultType::DoneDryRun => {
-                        let result_dry_run = result.dry_run.as_ref().unwrap().clone();
+                        let dry_run = result.dry_run.as_ref().unwrap().clone();
+                        let result_dry_run = SkDryRun::new(dry_run);
                         imp.result_dry_run.set(result_dry_run).unwrap();
 
                         imp.progress.set(1.0);
@@ -288,11 +284,16 @@ impl SkTask {
         }
     }
 
-    pub fn result_dry_run(&self) -> Option<DryRun> {
+    pub fn result_dry_run(&self) -> Option<SkDryRun> {
         self.imp().result_dry_run.get().cloned()
     }
 
     pub fn result_error(&self) -> Option<String> {
         self.imp().result_error.get().cloned()
+    }
+
+    /// Returns the original shared [Task] struct
+    pub fn data(&self) -> Task {
+        self.imp().data.get().unwrap().clone()
     }
 }

@@ -1,5 +1,5 @@
 // Souk - app_permissions.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,9 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use gio::ListStore;
-use glib::{
-    KeyFile, KeyFileFlags, ParamFlags, ParamSpec, ParamSpecFlags, ParamSpecObject, ToValue,
-};
+use glib::{KeyFile, ParamFlags, ParamSpec, ParamSpecFlags, ParamSpecObject, ToValue};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
@@ -123,14 +121,9 @@ glib::wrapper! {
 }
 
 impl SkAppPermissions {
-    pub fn from_metadata(metadata: &str) -> Self {
+    pub fn from_metadata(keyfile: &KeyFile) -> Self {
         let permissions: Self = glib::Object::new(&[]).unwrap();
         let imp = permissions.imp();
-
-        let keyfile = KeyFile::new();
-        keyfile
-            .load_from_data(metadata, KeyFileFlags::NONE)
-            .unwrap();
 
         let filesystems = ListStore::new(SkFilesystemPermission::static_type());
         if let Ok(filesystem_list) = keyfile.string_list("Context", "filesystems") {
