@@ -1,5 +1,5 @@
 // Souk - installation.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,8 +45,6 @@ mod imp {
         pub title: OnceCell<String>,
         pub description: OnceCell<String>,
         pub icon_name: OnceCell<String>,
-        pub is_user: OnceCell<bool>,
-        pub path: OnceCell<File>,
 
         pub remotes: SkRemoteModel,
         pub packages: SkPackageModel,
@@ -113,6 +111,7 @@ impl SkInstallation {
         let imp = installation.imp();
 
         imp.info.set(info.clone()).unwrap();
+        imp.name.set(info.name.clone()).unwrap();
 
         // Create file monitor to detect changes in the installation (eg. ref
         // in/uninstall, remote changes)
@@ -126,11 +125,6 @@ impl SkInstallation {
             }
         }));
         imp.monitor.set(monitor).unwrap();
-
-        imp.name.set(info.name.clone()).unwrap();
-        imp.is_user.set(info.is_user).unwrap();
-        let path = File::for_parse_name(&info.path);
-        imp.path.set(path).unwrap();
 
         // Set a more user friendly installation title, a description and an icon which
         // can be used in UIs.
@@ -189,11 +183,11 @@ impl SkInstallation {
     }
 
     pub fn is_user(&self) -> bool {
-        *self.imp().is_user.get().unwrap()
+        self.info().is_user
     }
 
     pub fn path(&self) -> File {
-        self.imp().path.get().unwrap().clone()
+        File::for_parse_name(&self.info().path)
     }
 
     pub fn remotes(&self) -> SkRemoteModel {

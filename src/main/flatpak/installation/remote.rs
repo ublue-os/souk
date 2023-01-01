@@ -1,5 +1,5 @@
 // Souk - remote.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,16 +31,7 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkRemote {
         pub info: OnceCell<RemoteInfo>,
-
-        pub name: OnceCell<String>,
-        pub repository_url: OnceCell<String>,
         pub installation: OnceCell<Option<SkInstallation>>,
-
-        pub title: OnceCell<String>,
-        pub description: OnceCell<String>,
-        pub comment: OnceCell<String>,
-        pub homepage: OnceCell<String>,
-        pub icon: OnceCell<String>,
     }
 
     #[glib::object_subclass]
@@ -99,9 +90,6 @@ impl SkRemote {
 
         imp.info.set(info.clone()).unwrap();
 
-        imp.name.set(info.name.clone()).unwrap();
-        imp.repository_url.set(info.repository_url.clone()).unwrap();
-
         if let Some(inst_info) = &info.installation.clone().into() {
             let installations = SkApplication::default().worker().installations();
             let installation = installations
@@ -112,21 +100,15 @@ impl SkRemote {
             imp.installation.set(None).unwrap();
         }
 
-        imp.title.set(info.title.clone()).unwrap();
-        imp.description.set(info.description.clone()).unwrap();
-        imp.comment.set(info.comment.clone()).unwrap();
-        imp.homepage.set(info.homepage.clone()).unwrap();
-        imp.icon.set(info.icon.clone()).unwrap();
-
         remote
     }
 
     pub fn name(&self) -> String {
-        self.imp().name.get().unwrap().to_string()
+        self.info().name
     }
 
     pub fn repository_url(&self) -> String {
-        self.imp().repository_url.get().unwrap().to_string()
+        self.info().repository_url
     }
 
     pub fn installation(&self) -> Option<SkInstallation> {
@@ -134,23 +116,23 @@ impl SkRemote {
     }
 
     pub fn title(&self) -> String {
-        self.imp().title.get().unwrap().clone()
+        self.info().title
     }
 
     pub fn description(&self) -> String {
-        self.imp().description.get().unwrap().clone()
+        self.info().description
     }
 
     pub fn comment(&self) -> String {
-        self.imp().comment.get().unwrap().clone()
+        self.info().comment
     }
 
     pub fn homepage(&self) -> String {
-        self.imp().homepage.get().unwrap().clone()
+        self.info().homepage
     }
 
     pub fn icon(&self) -> String {
-        self.imp().icon.get().unwrap().clone()
+        self.info().icon
     }
 
     pub fn info(&self) -> RemoteInfo {

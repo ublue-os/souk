@@ -1,5 +1,5 @@
 // Souk - package.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,11 +34,7 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkPackage {
         pub info: OnceCell<PackageInfo>,
-
-        pub type_: OnceCell<SkPackageType>,
-        pub name: OnceCell<String>,
-        pub architecture: OnceCell<String>,
-        pub branch: OnceCell<String>,
+        pub flatpak_ref: OnceCell<Ref>,
         pub remote: OnceCell<SkRemote>,
     }
 
@@ -100,16 +96,7 @@ impl SkPackage {
         imp.info.set(info.clone()).unwrap();
 
         let flatpak_ref = Ref::parse(&info.ref_).unwrap();
-        imp.type_.set(flatpak_ref.kind().into()).unwrap();
-
-        let name = flatpak_ref.name().unwrap().to_string();
-        imp.name.set(name).unwrap();
-
-        let architecture = flatpak_ref.arch().unwrap().to_string();
-        imp.architecture.set(architecture).unwrap();
-
-        let branch = flatpak_ref.branch().unwrap().to_string();
-        imp.branch.set(branch).unwrap();
+        imp.flatpak_ref.set(flatpak_ref).unwrap();
 
         if let Some(inst_info) = &info.remote.installation.clone().into() {
             let installations = SkApplication::default().worker().installations();
@@ -134,19 +121,37 @@ impl SkPackage {
     }
 
     pub fn type_(&self) -> SkPackageType {
-        *self.imp().type_.get().unwrap()
+        self.imp().flatpak_ref.get().unwrap().kind().into()
     }
 
     pub fn name(&self) -> String {
-        self.imp().name.get().unwrap().to_string()
+        self.imp()
+            .flatpak_ref
+            .get()
+            .unwrap()
+            .name()
+            .unwrap()
+            .to_string()
     }
 
     pub fn architecture(&self) -> String {
-        self.imp().architecture.get().unwrap().to_string()
+        self.imp()
+            .flatpak_ref
+            .get()
+            .unwrap()
+            .arch()
+            .unwrap()
+            .to_string()
     }
 
     pub fn branch(&self) -> String {
-        self.imp().branch.get().unwrap().clone()
+        self.imp()
+            .flatpak_ref
+            .get()
+            .unwrap()
+            .branch()
+            .unwrap()
+            .to_string()
     }
 
     pub fn remote(&self) -> SkRemote {
