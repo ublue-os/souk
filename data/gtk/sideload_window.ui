@@ -98,7 +98,7 @@
                                                 <property name="spacing">12</property>
                                                 <child>
                                                   <object class="GtkBox">
-                                                    <property name="spacing">24</property>
+                                                    <property name="spacing">12</property>
                                                     <property name="margin_bottom">12</property>
                                                     <child>
                                                       <object class="GtkImage" id="package_icon_image">
