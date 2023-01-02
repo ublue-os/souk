@@ -103,6 +103,9 @@
                                                     <child>
                                                       <object class="GtkImage" id="package_icon_image">
                                                         <property name="pixel_size">128</property>
+                                                        <style>
+                                                          <class name="icon-dropshadow"/>
+                                                        </style>
                                                       </object>
                                                     </child>
                                                     <child>
@@ -115,7 +118,7 @@
                                                             <property name="ellipsize">end</property>
                                                             <property name="xalign">0</property>
                                                             <style>
-                                                            <class name="title-2"/>
+                                                              <class name="title-2"/>
                                                             </style>
                                                           </object>
                                                         </child>
@@ -386,6 +389,9 @@
                                     </child>
                                   </object>
                                 </child>
+                                <style>
+                                  <class name="icon-dropshadow"/>
+                                </style>
                               </object>
                             </child>
                           </object>
@@ -424,6 +430,9 @@
                                     </style>
                                   </object>
                                 </child>
+                                <style>
+                                  <class name="icon-dropshadow"/>
+                                </style>
                               </object>
                             </child>
                           </object>
@@ -502,6 +511,9 @@
                                     </child>
                                   </object>
                                 </child>
+                                <style>
+                                  <class name="icon-dropshadow"/>
+                                </style>
                               </object>
                             </child>
                           </object>
