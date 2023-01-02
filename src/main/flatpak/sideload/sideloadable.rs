@@ -16,10 +16,12 @@
 
 use core::fmt::Debug;
 
+use glib::{ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecEnum, ParamSpecObject, ToValue};
 use gtk::gio::File;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
+use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
@@ -34,7 +36,6 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkSideloadable {
-        // TODO: Gobjectify those values
         pub file: OnceCell<File>,
         pub type_: OnceCell<SkSideloadType>,
 
@@ -55,7 +56,58 @@ mod imp {
         type Type = super::SkSideloadable;
     }
 
-    impl ObjectImpl for SkSideloadable {}
+    impl ObjectImpl for SkSideloadable {
+        fn properties() -> &'static [ParamSpec] {
+            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
+                vec![
+                    ParamSpecObject::new("file", "", "", File::static_type(), ParamFlags::READABLE),
+                    ParamSpecEnum::new(
+                        "type",
+                        "",
+                        "",
+                        SkSideloadType::static_type(),
+                        SkSideloadType::None as i32,
+                        ParamFlags::READABLE,
+                    ),
+                    ParamSpecObject::new(
+                        "package-dry-run",
+                        "",
+                        "",
+                        SkDryRun::static_type(),
+                        ParamFlags::READABLE,
+                    ),
+                    ParamSpecObject::new(
+                        "remotes",
+                        "",
+                        "",
+                        SkRemoteModel::static_type(),
+                        ParamFlags::READABLE,
+                    ),
+                    ParamSpecBoolean::new("no-changes", "", "", false, ParamFlags::READABLE),
+                    ParamSpecObject::new(
+                        "installation",
+                        "",
+                        "",
+                        SkInstallation::static_type(),
+                        ParamFlags::READABLE,
+                    ),
+                ]
+            });
+            PROPERTIES.as_ref()
+        }
+
+        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+            match pspec.name() {
+                "file" => obj.file().to_value(),
+                "type" => obj.type_().to_value(),
+                "package-dry-run" => obj.package_dry_run().to_value(),
+                "remotes" => obj.remotes().to_value(),
+                "no-changes" => obj.no_changes().to_value(),
+                "installation" => obj.installation().to_value(),
+                _ => unimplemented!(),
+            }
+        }
+    }
 }
 
 glib::wrapper! {
