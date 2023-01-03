@@ -126,8 +126,8 @@ impl SkDebugWindow {
                 text.set_text(&task.uuid());
             }
 
-            if let Ok(_step) = listrow.item().unwrap().downcast::<SkTaskStep>() {
-                text.set_text(&format!("Step {}", listrow.position()));
+            if let Ok(step) = listrow.item().unwrap().downcast::<SkTaskStep>() {
+                text.set_text(&format!("Step {}", step.index()));
             }
         });
 

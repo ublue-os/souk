@@ -16,12 +16,11 @@
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::{clone, subclass};
+use glib::subclass;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
-use crate::main::task::SkTask;
 use crate::shared::config;
 
 mod imp {
@@ -84,7 +83,6 @@ impl SkApplicationWindow {
 
     fn setup_widgets(&self) {
         let imp = self.imp();
-        let app = SkApplication::default();
 
         // Add devel style class for development or beta builds
         if config::PROFILE == "development" || config::PROFILE == "beta" {

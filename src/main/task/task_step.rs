@@ -1,5 +1,5 @@
 // Souk - task_step.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,7 +18,8 @@ use std::cell::{Cell, RefCell};
 use std::str::FromStr;
 
 use glib::{
-    ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecUInt64, ToValue,
+    ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecUInt,
+    ParamSpecUInt64, ToValue,
 };
 use gtk::glib;
 use gtk::prelude::*;
@@ -35,6 +36,8 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkTaskStep {
+        /// Index of this step
+        pub index: OnceCell<u32>,
         /// Progress of this step
         pub progress: Cell<f32>,
         /// Download rate of this step, in bytes per second (if something gets
@@ -59,6 +62,7 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
+                    ParamSpecUInt::new("index", "", "", 0, u32::MAX, 0, ParamFlags::READABLE),
                     ParamSpecFloat::new("progress", "", "", 0.0, 1.0, 0.0, ParamFlags::READABLE),
                     ParamSpecUInt64::new(
                         "download-rate",
@@ -91,6 +95,7 @@ mod imp {
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
+                "index" => obj.index().to_value(),
                 "progress" => obj.progress().to_value(),
                 "download-rate" => obj.download_rate().to_value(),
                 "activity" => obj.activity().to_value(),
@@ -110,6 +115,7 @@ impl SkTaskStep {
         let step: Self = glib::Object::new(&[]).unwrap();
         let imp = step.imp();
 
+        imp.index.set(task_step.index).unwrap();
         *imp.activity.borrow_mut() = SkTaskActivity::from_str(&task_step.activity).unwrap();
 
         if let Some(package_info) = task_step.package_info.clone().into() {
@@ -140,6 +146,10 @@ impl SkTaskStep {
             *imp.activity.borrow_mut() = activity;
             self.notify("activity");
         }
+    }
+
+    pub fn index(&self) -> u32 {
+        *self.imp().index.get().unwrap()
     }
 
     pub fn progress(&self) -> f32 {
