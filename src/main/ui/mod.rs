@@ -19,7 +19,6 @@ pub mod context;
 pub mod debug;
 pub mod installation;
 pub mod sideload;
-pub mod transaction;
 
 pub mod about_dialog;
 pub mod utils;

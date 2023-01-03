@@ -22,7 +22,6 @@ use gtk::{gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
 use crate::main::task::SkTask;
-use crate::main::ui::transaction::SkTransactionRow;
 use crate::shared::config;
 
 mod imp {
@@ -33,8 +32,6 @@ mod imp {
     pub struct SkApplicationWindow {
         #[template_child]
         pub status_page: TemplateChild<adw::StatusPage>,
-        #[template_child]
-        pub transactions_listbox: TemplateChild<gtk::ListBox>,
     }
 
     #[glib::object_subclass]
@@ -93,18 +90,6 @@ impl SkApplicationWindow {
         if config::PROFILE == "development" || config::PROFILE == "beta" {
             self.add_css_class("devel");
         }
-
-        // Active transactions listbox
-        let model = app.worker().tasks_active();
-        imp.transactions_listbox
-            .bind_model(Some(&model), |transaction| {
-                let transaction: SkTask = transaction.clone().downcast().unwrap();
-                SkTransactionRow::new(&transaction).upcast()
-            });
-        model.connect_items_changed(clone!(@weak self as this => move |model, _, _, _|{
-            let imp = this.imp();
-            imp.transactions_listbox.set_visible(model.n_items() != 0);
-        }));
 
         // DND support for sideloading
         let drop_target = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);

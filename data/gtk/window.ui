@@ -44,24 +44,6 @@
                 <property name="title" translatable="true">Install Flatpak Packages</property>
                 <property name="description" translatable="true">Open a Flatpak package or repository file from the file manager, or drag and drop them here.</property>
                 <property name="vexpand">True</property>
-                <child>
-                  <object class="AdwClamp">
-                    <child>
-                      <object class="GtkBox">
-                        <property name="orientation">vertical</property>
-                        <property name="spacing">12</property>
-                        <child>
-                          <object class="GtkListBox" id="transactions_listbox">
-                            <property name="visible">False</property>
-                            <style>
-                              <class name="content"/>
-                            </style>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
               </object>
             </child>
           </object>
