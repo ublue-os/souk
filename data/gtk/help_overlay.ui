@@ -39,6 +39,17 @@
             </child>
           </object>
         </child>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Miscellaneous</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes" context="shortcut window">Show Debug Information</property>
+                <property name="action_name">app.debug</property>
+              </object>
+            </child>
+          </object>
+        </child>
       </object>
     </child>
   </object>

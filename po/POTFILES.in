@@ -2,6 +2,7 @@
 # Please keep this file sorted alphabetically.
 
 data/gtk/sideload_window.ui
+data/gtk/debug_window.ui
 data/gtk/help_overlay.ui
 data/gtk/window.ui
 

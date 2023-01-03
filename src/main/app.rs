@@ -1,5 +1,5 @@
 // Souk - app.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ use once_cell::sync::{Lazy, OnceCell};
 
 use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::i18n::i18n;
+use crate::main::ui::debug::SkDebugWindow;
 use crate::main::ui::sideload::SkSideloadWindow;
 use crate::main::ui::{about_dialog, SkApplicationWindow};
 use crate::main::worker::SkWorker;
@@ -223,6 +224,12 @@ impl SkApplication {
             }
         });
         self.set_accels_for_action("app.refresh-installations", &["<primary>r"]);
+
+        // app.debug
+        action!(self, "debug", move |_, _| {
+            SkDebugWindow::new().show();
+        });
+        self.set_accels_for_action("app.debug", &["<primary>d"]);
     }
 
     fn show_filechooser(&self) {

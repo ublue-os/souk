@@ -1,5 +1,5 @@
 // Souk - window.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ impl SkApplicationWindow {
         }
 
         // Active transactions listbox
-        let model = app.worker().tasks();
+        let model = app.worker().tasks_active();
         imp.transactions_listbox
             .bind_model(Some(&model), |transaction| {
                 let transaction: SkTask = transaction.clone().downcast().unwrap();

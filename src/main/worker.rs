@@ -33,12 +33,16 @@ use crate::main::task::{SkTask, SkTaskModel};
 use crate::shared::info::RemoteInfo;
 use crate::shared::task::FlatpakTask;
 
+/// Number of tasks that are completed and still remain in log
+const KEEP_COMPLETED_TASKS: u32 = 5;
+
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
     pub struct SkWorker {
-        pub tasks: SkTaskModel,
+        pub tasks_active: SkTaskModel,
+        pub tasks_completed: SkTaskModel,
         pub installations: SkInstallationModel,
 
         pub proxy: WorkerProxy<'static>,
@@ -55,7 +59,14 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
                     ParamSpecObject::new(
-                        "tasks",
+                        "tasks-active",
+                        "",
+                        "",
+                        SkTaskModel::static_type(),
+                        ParamFlags::READABLE,
+                    ),
+                    ParamSpecObject::new(
+                        "tasks-completed",
                         "",
                         "",
                         SkTaskModel::static_type(),
@@ -75,7 +86,8 @@ mod imp {
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "tasks" => obj.tasks().to_value(),
+                "tasks-active" => obj.tasks_active().to_value(),
+                "tasks-completed" => obj.tasks_completed().to_value(),
                 "installations" => obj.installations().to_value(),
                 _ => unimplemented!(),
             }
@@ -98,8 +110,13 @@ glib::wrapper! {
 
 impl SkWorker {
     /// Returns all current active tasks
-    pub fn tasks(&self) -> SkTaskModel {
-        self.imp().tasks.clone()
+    pub fn tasks_active(&self) -> SkTaskModel {
+        self.imp().tasks_active.clone()
+    }
+
+    /// Returns completed tasks
+    pub fn tasks_completed(&self) -> SkTaskModel {
+        self.imp().tasks_completed.clone()
     }
 
     /// Returns all available Flatpak installations
@@ -187,7 +204,7 @@ impl SkWorker {
             false,
             clone!(@weak self as this => @default-return None, move |t|{
                 let task: SkTask = t[0].get().unwrap();
-                this.tasks().remove_task(&task);
+                this.completed_task(&task);
                 None
             }),
         );
@@ -196,7 +213,7 @@ impl SkWorker {
             false,
             clone!(@weak self as this => @default-return None, move |t|{
                 let task: SkTask = t[0].get().unwrap();
-                this.tasks().remove_task(&task);
+                this.completed_task(&task);
                 None
             }),
         );
@@ -205,12 +222,12 @@ impl SkWorker {
             false,
             clone!(@weak self as this => @default-return None, move |t|{
                 let task: SkTask = t[0].get().unwrap();
-                this.tasks().remove_task(&task);
+                this.completed_task(&task);
                 None
             }),
         );
 
-        self.tasks().add_task(task);
+        self.tasks_active().add_task(task);
         self.imp().proxy.run_task(task.data()).await?;
 
         Ok(())
@@ -231,10 +248,20 @@ impl SkWorker {
             debug!("Task response: {:#?}", response);
 
             let task_uuid = response.uuid.clone();
-            match self.tasks().task(&task_uuid) {
+            match self.tasks_active().task(&task_uuid) {
                 Some(task) => task.handle_response(&response),
-                None => warn!("Received response for unknown task!"),
+                None => warn!("Received response for unknown active task!"),
             }
+        }
+    }
+
+    fn completed_task(&self, task: &SkTask) {
+        self.tasks_active().remove_task(task);
+
+        self.tasks_completed().add_task(task);
+        if self.tasks_completed().n_items() > KEEP_COMPLETED_TASKS {
+            let to_remove = self.tasks_completed().item(0).unwrap().downcast().unwrap();
+            self.tasks_completed().remove_task(&to_remove);
         }
     }
 

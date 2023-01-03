@@ -1,5 +1,5 @@
-// Souk - mod.rs
-// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - debug_window.rs
+// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,16 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod badge;
-pub mod context;
-pub mod debug;
-pub mod installation;
-pub mod sideload;
-pub mod transaction;
+mod debug_window;
 
-pub mod about_dialog;
-pub mod utils;
-
-mod window;
-
-pub use window::SkApplicationWindow;
+pub use debug_window::SkDebugWindow;
