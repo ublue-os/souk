@@ -1,5 +1,5 @@
 // Souk - badge.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ use std::cell::{Cell, RefCell};
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{subclass, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecEnum, ParamSpecString};
-use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
 use crate::main::ui::badge::SkBadgeType;

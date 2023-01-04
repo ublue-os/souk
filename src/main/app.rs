@@ -19,7 +19,6 @@ use gio::subclass::prelude::ApplicationImpl;
 use glib::{clone, ObjectExt, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib::WeakRef;
 use gtk::prelude::*;
-use gtk::subclass::prelude::*;
 use gtk::{gio, glib, FileChooserAction, FileChooserNative};
 use once_cell::sync::{Lazy, OnceCell};
 

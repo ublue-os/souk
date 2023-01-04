@@ -17,4 +17,3 @@
 mod task_progressbar;
 
 pub use task_progressbar::SkTaskProgressBar;
-

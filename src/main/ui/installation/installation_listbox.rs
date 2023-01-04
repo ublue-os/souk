@@ -1,5 +1,5 @@
 // Souk - installation_listbox.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib;
-use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 
 use crate::main::app::SkApplication;

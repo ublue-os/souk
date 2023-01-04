@@ -17,7 +17,6 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::subclass;
-use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;

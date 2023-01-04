@@ -1,5 +1,5 @@
 // Souk - app.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ use async_std::prelude::*;
 use gio::subclass::prelude::ApplicationImpl;
 use glib::clone;
 use gtk::prelude::*;
-use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use rusty_pool::ThreadPool;
 use zbus::{Connection, ConnectionBuilder, SignalContext};

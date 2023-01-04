@@ -14,15 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::Cell;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use adw::{PropertyAnimationTarget, TimedAnimation};
-use glib::{ParamFlags, ParamSpec, ParamSpecDouble, ParamSpecObject};
+use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib;
-use gtk::subclass::prelude::*;
+use once_cell::unsync::OnceCell;
 
 use crate::main::task::SkTask;
 
@@ -32,10 +31,12 @@ mod imp {
     #[derive(Debug, Default)]
     pub struct SkTaskProgressBar {
         pub progressbar: gtk::ProgressBar,
-        pub animation: TimedAnimation,
+        pub animation: OnceCell<TimedAnimation>,
 
         pub task: RefCell<Option<SkTask>>,
         pub fraction: Cell<f64>,
+
+        pub progress_watch: OnceCell<gtk::ExpressionWatch>,
     }
 
     #[glib::object_subclass]
@@ -49,24 +50,13 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             use once_cell::sync::Lazy;
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new(
-                        "task",
-                        "",
-                        "",
-                        SkTask::static_type(),
-                        ParamFlags::READWRITE,
-                    ),
-                    ParamSpecDouble::new(
-                        "fraction",
-                        "",
-                        "",
-                        0.0,
-                        f64::MAX,
-                        0.0,
-                        ParamFlags::READWRITE,
-                    ),
-                ]
+                vec![ParamSpecObject::new(
+                    "task",
+                    "",
+                    "",
+                    SkTask::static_type(),
+                    ParamFlags::READWRITE,
+                )]
             });
             PROPERTIES.as_ref()
         }
@@ -74,7 +64,6 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "task" => obj.task().to_value(),
-                "fraction" => obj.fraction().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -88,7 +77,6 @@ mod imp {
         ) {
             match pspec.name() {
                 "task" => obj.set_task(value.get().unwrap()),
-                "fraction" => obj.set_fraction(value.get().unwrap()),
                 _ => unimplemented!(),
             }
         }
@@ -96,7 +84,22 @@ mod imp {
         fn constructed(&self, obj: &Self::Type) {
             obj.set_child(Some(&self.progressbar));
 
-            //let animation = TimedAnimation::new(&self.progressbar, 0, 0, 500, target)
+            let target = PropertyAnimationTarget::new(&self.progressbar, "fraction");
+            let animation = TimedAnimation::new(&self.progressbar, 0.0, 0.0, 1000, &target);
+            self.animation.set(animation).unwrap();
+
+            let progress_watch = obj
+                .property_expression("task")
+                .chain_property::<SkTask>("progress")
+                .watch(
+                    glib::Object::NONE,
+                    clone!(@weak obj => move|| obj.update_fraction()),
+                );
+            self.progress_watch.set(progress_watch).unwrap();
+        }
+
+        fn dispose(&self, _obj: &Self::Type) {
+            self.progress_watch.get().unwrap().unwatch();
         }
     }
 
@@ -124,24 +127,23 @@ impl SkTaskProgressBar {
         *self.imp().task.borrow_mut() = Some(task.clone());
 
         self.notify("task");
-        self.bind_properties();
     }
 
-    pub fn fraction(&self) -> f64 {
-        self.imp().fraction.get()
-    }
+    pub fn update_fraction(&self) {
+        let animation = self.imp().animation.get().unwrap();
+        let current_value = animation.value();
 
-    pub fn set_fraction(&self, fraction: f64) {
-        self.imp().fraction.set(fraction);
-        self.notify("fraction");
-    }
-
-    fn bind_properties(&self) {
-        let progressbar = &self.imp().progressbar;
-        let task = self.task().unwrap();
-
-        task.bind_property("progress", progressbar, "fraction")
-            .build();
+        if let Some(task) = self.task() {
+            animation.reset();
+            animation.set_value_from(current_value);
+            animation.set_value_to(task.progress() as f64);
+            animation.play();
+        }
     }
 }
 
+impl Default for SkTaskProgressBar {
+    fn default() -> Self {
+        Self::new()
+    }
+}

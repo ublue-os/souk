@@ -20,7 +20,6 @@ use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gio::{File, ListStore};
 use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
-use gtk::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 use once_cell::sync::{Lazy, OnceCell};
 
@@ -572,7 +571,7 @@ impl SkSideloadWindow {
         let imp = self.imp();
 
         imp.sideload_leaflet.set_visible_child_name("progress");
-        imp.progress_bar.set_task(&task);
+        imp.progress_bar.set_task(task);
 
         task.connect_notify_local(
             None,
@@ -582,7 +581,6 @@ impl SkSideloadWindow {
                 let text = format!("{activity}... ({download_rate})");
 
                 this.imp().progress_label.set_label(&text);
-                // TODO: Implement proper progressbar widget which can be used with SkTask / SkTaskStep
             }),
         );
 
@@ -668,4 +666,3 @@ impl SkSideloadWindow {
             .set_description(Some(&message));
     }
 }
-

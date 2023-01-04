@@ -27,4 +27,3 @@ pub mod utils;
 mod window;
 
 pub use window::SkApplicationWindow;
-
