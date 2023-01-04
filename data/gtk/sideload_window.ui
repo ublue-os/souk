@@ -380,7 +380,7 @@
                                         <property name="vexpand">True</property>
                                         <property name="valign">center</property>
                                         <child>
-                                          <object class="GtkProgressBar" id="progress_bar"/>
+                                          <object class="SkTaskProgressBar" id="progress_bar"/>
                                         </child>
                                         <child>
                                           <object class="GtkLabel" id="progress_label"/>

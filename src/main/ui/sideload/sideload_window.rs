@@ -36,6 +36,7 @@ use crate::main::task::SkTask;
 use crate::main::ui::badge::{SkBadge, SkBadgeType};
 use crate::main::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::main::ui::installation::SkInstallationListBox;
+use crate::main::ui::task::SkTaskProgressBar;
 use crate::main::ui::utils;
 use crate::shared::config;
 use crate::worker::WorkerError;
@@ -89,7 +90,7 @@ mod imp {
         #[template_child]
         pub progress_title: TemplateChild<adw::WindowTitle>,
         #[template_child]
-        pub progress_bar: TemplateChild<gtk::ProgressBar>,
+        pub progress_bar: TemplateChild<SkTaskProgressBar>,
         #[template_child]
         pub progress_label: TemplateChild<gtk::Label>,
 
@@ -569,11 +570,9 @@ impl SkSideloadWindow {
 
     fn handle_sideload_task(&self, task: &SkTask) {
         let imp = self.imp();
-        imp.sideload_leaflet.set_visible_child_name("progress");
 
-        task.bind_property("progress", &imp.progress_bar.get(), "fraction")
-            .flags(glib::BindingFlags::SYNC_CREATE)
-            .build();
+        imp.sideload_leaflet.set_visible_child_name("progress");
+        imp.progress_bar.set_task(&task);
 
         task.connect_notify_local(
             None,
@@ -669,3 +668,4 @@ impl SkSideloadWindow {
             .set_description(Some(&message));
     }
 }
+
