@@ -15,6 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::cell::{Cell, RefCell};
+use std::rc::Rc;
+use std::time::Duration;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
@@ -23,7 +25,7 @@ use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib;
 use once_cell::unsync::OnceCell;
 
-use crate::main::task::SkTask;
+use crate::main::task::{SkTask, SkTaskActivity};
 
 mod imp {
     use super::*;
@@ -32,11 +34,13 @@ mod imp {
     pub struct SkTaskProgressBar {
         pub progressbar: gtk::ProgressBar,
         pub animation: OnceCell<TimedAnimation>,
+        pub is_pulsing: Rc<Cell<bool>>,
 
         pub task: RefCell<Option<SkTask>>,
         pub fraction: Cell<f64>,
 
         pub progress_watch: OnceCell<gtk::ExpressionWatch>,
+        pub activity_watch: OnceCell<gtk::ExpressionWatch>,
     }
 
     #[glib::object_subclass]
@@ -82,6 +86,7 @@ mod imp {
         }
 
         fn constructed(&self, obj: &Self::Type) {
+            self.progressbar.set_pulse_step(1.0);
             obj.set_child(Some(&self.progressbar));
 
             let target = PropertyAnimationTarget::new(&self.progressbar, "fraction");
@@ -96,6 +101,15 @@ mod imp {
                     clone!(@weak obj => move|| obj.update_fraction()),
                 );
             self.progress_watch.set(progress_watch).unwrap();
+
+            let activity_watch = obj
+                .property_expression("task")
+                .chain_property::<SkTask>("activity")
+                .watch(
+                    glib::Object::NONE,
+                    clone!(@weak obj => move|| obj.update_activity()),
+                );
+            self.activity_watch.set(activity_watch).unwrap();
         }
 
         fn dispose(&self, _obj: &Self::Type) {
@@ -138,6 +152,34 @@ impl SkTaskProgressBar {
             animation.set_value_from(current_value);
             animation.set_value_to(task.progress() as f64);
             animation.play();
+        }
+    }
+
+    pub fn update_activity(&self) {
+        if let Some(task) = self.task() {
+            let is_pulsing = self.imp().is_pulsing.get();
+
+            // Show a pulse animation, since we don't have any progress information
+            // available when a Flatpak bundle gets installed.
+            if task.activity() == SkTaskActivity::InstallBundle && !is_pulsing {
+                self.imp().is_pulsing.set(true);
+                glib::timeout_add_local(
+                    Duration::from_secs(1),
+                    clone!(@weak self as this => @default-return Continue(false), move || {
+                        let is_pulsing = this.imp().is_pulsing.get();
+
+                        if is_pulsing {
+                            this.imp().progressbar.pulse();
+                        } else {
+                            this.update_fraction();
+                        }
+
+                        Continue(is_pulsing)
+                    }),
+                );
+            } else {
+                self.imp().is_pulsing.set(false);
+            }
         }
     }
 }
