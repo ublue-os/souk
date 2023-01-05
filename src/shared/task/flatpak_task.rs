@@ -17,7 +17,7 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::shared::info::{InstallationInfo, RemoteInfo};
+use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
 use crate::shared::task::Task;
 
 #[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
@@ -47,18 +47,18 @@ pub struct FlatpakTask {
 
 impl FlatpakTask {
     pub fn new_install(
-        installation: &InstallationInfo,
-        remote: &RemoteInfo,
-        ref_: &str,
+        package: &PackageInfo,
         uninstall_before_install: bool,
         dry_run: bool,
     ) -> Task {
+        let installation = package.remote.installation.as_ref().unwrap().clone();
+
         let flatpak_task = Self {
             operation_type: FlatpakOperationType::Install,
-            installation: installation.clone(),
+            installation,
             dry_run,
-            ref_: Some(ref_.to_owned()).into(),
-            remote: Some(remote.to_owned()).into(),
+            ref_: Some(package.ref_.clone()).into(),
+            remote: Some(package.remote.clone()).into(),
             uninstall_before_install,
             ..Default::default()
         };

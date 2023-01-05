@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use flatpak::prelude::*;
-use flatpak::{Ref, Remote};
 use futures_util::stream::StreamExt;
 use gio::File;
 use glib::{clone, KeyFile, ParamFlags, ParamSpec, ParamSpecObject};
@@ -27,6 +25,7 @@ use once_cell::sync::Lazy;
 use crate::main::dbus_proxy::WorkerProxy;
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkInstallation, SkInstallationModel, SkRemote};
+use crate::main::flatpak::package::SkPackage;
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::flatpak::utils;
 use crate::main::task::{SkTask, SkTaskModel};
@@ -127,21 +126,12 @@ impl SkWorker {
     /// Install new Flatpak by ref name
     pub async fn install_flatpak(
         &self,
-        ref_: &Ref,
-        remote: &SkRemote,
-        installation: &SkInstallation,
+        package: SkPackage,
         uninstall_before_install: bool,
         dry_run: bool,
     ) -> Result<SkTask, Error> {
-        let ref_string = ref_.format_ref().unwrap().to_string();
-
-        let task_data = FlatpakTask::new_install(
-            &installation.info(),
-            &remote.info(),
-            &ref_string,
-            uninstall_before_install,
-            dry_run,
-        );
+        let task_data =
+            FlatpakTask::new_install(&package.info(), uninstall_before_install, dry_run);
 
         let task = SkTask::new(task_data);
         self.run_task(&task).await?;
