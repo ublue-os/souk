@@ -1,5 +1,5 @@
-// Souk - task_response.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - task_progress.rs
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,23 +17,24 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::shared::task::{TaskResult, TaskStep};
+use crate::shared::task::{TaskProgress, TaskResult};
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
-// TODO: Rename to TaskResponse
 pub struct TaskResponse {
     /// The UUID of the corresponding task
     pub uuid: String,
     pub type_: TaskResponseType,
 
     // This should have been an enum, unfortunately not supported by zbus / dbus
-    pub initial_response: Optional<Vec<TaskStep>>,
-    pub update_response: Optional<TaskStep>,
+    /// Initial response that provides information about this task and all
+    /// related steps / subtasks
+    pub initial_response: Optional<Vec<TaskProgress>>,
+    pub update_response: Optional<TaskProgress>,
     pub result_response: Optional<TaskResult>,
 }
 
 impl TaskResponse {
-    pub fn new_initial(uuid: String, steps: Vec<TaskStep>) -> Self {
+    pub fn new_initial(uuid: String, steps: Vec<TaskProgress>) -> Self {
         Self {
             uuid,
             type_: TaskResponseType::Initial,
@@ -43,7 +44,7 @@ impl TaskResponse {
         }
     }
 
-    pub fn new_update(uuid: String, step: TaskStep) -> Self {
+    pub fn new_update(uuid: String, step: TaskProgress) -> Self {
         Self {
             uuid,
             type_: TaskResponseType::Update,

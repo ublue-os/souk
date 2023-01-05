@@ -23,7 +23,9 @@ use zbus::zvariant::Type;
 use crate::shared::info::{PackageInfo, RemoteInfo};
 
 #[derive(Default, Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
-pub struct TaskStep {
+pub struct TaskProgress {
+    /// A task can consist of several steps. The index indicates for which step
+    /// this progress information is.
     pub index: u32,
     pub progress: i32,
     pub download_rate: u64,
@@ -31,7 +33,7 @@ pub struct TaskStep {
     pub package_info: PackageInfo,
 }
 
-impl TaskStep {
+impl TaskProgress {
     pub fn new_flatpak(
         transaction: &Transaction,
         operation: &TransactionOperation,

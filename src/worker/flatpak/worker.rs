@@ -31,7 +31,9 @@ use isahc::ReadResponseExt;
 
 use crate::shared::dry_run::{DryRun, DryRunRuntime};
 use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
-use crate::shared::task::{FlatpakOperationType, FlatpakTask, TaskResponse, TaskResult, TaskStep};
+use crate::shared::task::{
+    FlatpakOperationType, FlatpakTask, TaskProgress, TaskResponse, TaskResult,
+};
 use crate::worker::{appstream, WorkerError};
 
 #[derive(Debug, Clone, Downgrade)]
@@ -304,13 +306,13 @@ impl FlatpakWorker {
 
         transaction.connect_ready(
             clone!(@strong task_uuid, @weak self.sender as sender => @default-return true, move |transaction|{
-                let mut steps = Vec::new();
+                let mut task_operations = Vec::new();
                 for operation in transaction.operations(){
-                    let step = TaskStep::new_flatpak(transaction, &operation, None, false);
-                    steps.push(step);
+                    let task_operation = TaskProgress::new_flatpak(transaction, &operation, None, false);
+                    task_operations.push(task_operation);
                 }
 
-                let response = TaskResponse::new_initial(task_uuid.clone(), steps);
+                let response = TaskResponse::new_initial(task_uuid.clone(), task_operations);
                 sender.try_send(response).unwrap();
 
                 // Real transaction -> start (unlike dryrun)
@@ -320,25 +322,25 @@ impl FlatpakWorker {
 
         transaction.connect_new_operation(
             clone!(@weak self as this, @strong task_uuid => move |transaction, operation, progress| {
-                let task_step = TaskStep::new_flatpak(
+                let task_progress = TaskProgress::new_flatpak(
                     transaction,
                     operation,
                     Some(progress),
                     false
                 );
-                let response = TaskResponse::new_update(task_uuid.to_string(), task_step);
+                let response = TaskResponse::new_update(task_uuid.to_string(), task_progress);
                 this.sender.try_send(response).unwrap();
 
                 progress.set_update_frequency(500);
                 progress.connect_changed(
                     clone!(@weak this, @strong task_uuid, @weak transaction, @weak operation => move |progress|{
-                        let task_step = TaskStep::new_flatpak(
+                        let task_progress = TaskProgress::new_flatpak(
                             &transaction,
                             &operation,
                             Some(progress),
                             false,
                         );
-                        let response = TaskResponse::new_update(task_uuid.to_string(), task_step);
+                        let response = TaskResponse::new_update(task_uuid.to_string(), task_progress);
                         this.sender.try_send(response).unwrap();
                     }),
                 );
@@ -347,13 +349,13 @@ impl FlatpakWorker {
 
         transaction.connect_operation_done(
             clone!(@weak self as this, @strong task_uuid => move |transaction, operation, _, _| {
-                let task_step = TaskStep::new_flatpak(
+                let task_progress = TaskProgress::new_flatpak(
                             transaction,
                             operation,
                             None,
                             true,
                         );
-                let response = TaskResponse::new_update(task_uuid.to_string(), task_step);
+                let response = TaskResponse::new_update(task_uuid.to_string(), task_progress);
                 this.sender.try_send(response).unwrap();
 
                 // Check if this was the last operation ("step") -> whole task is done

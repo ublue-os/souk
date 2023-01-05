@@ -1,5 +1,5 @@
 // Shortwave - task_step_model.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ use indexmap::set::IndexSet;
 use once_cell::sync::Lazy;
 
 use crate::main::task::SkTaskStep;
-use crate::shared::task::TaskStep;
+use crate::shared::task::TaskProgress;
 
 mod imp {
     use super::*;
@@ -97,7 +97,7 @@ impl SkTaskStepModel {
         self.imp().current.borrow().clone()
     }
 
-    pub(super) fn set_steps(&self, steps: &Vec<TaskStep>) {
+    pub(super) fn set_steps(&self, steps: &Vec<TaskProgress>) {
         for step in steps {
             let task_step = SkTaskStep::new(step);
             self.add_step(&task_step);
@@ -105,7 +105,7 @@ impl SkTaskStepModel {
     }
 
     /// Updates the data of a SkStep, and sets it as `current` step
-    pub(super) fn update_step(&self, updated: Option<&TaskStep>) {
+    pub(super) fn update_step(&self, updated: Option<&TaskProgress>) {
         if let Some(updated) = updated {
             let task_step: SkTaskStep = self.item(updated.index).unwrap().downcast().unwrap();
             task_step.update(updated);

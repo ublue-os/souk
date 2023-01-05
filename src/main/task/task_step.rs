@@ -29,7 +29,7 @@ use once_cell::unsync::OnceCell;
 
 use crate::main::flatpak::package::SkPackage;
 use crate::main::task::SkTaskActivity;
-use crate::shared::task::TaskStep;
+use crate::shared::task::TaskProgress;
 
 mod imp {
     use super::*;
@@ -111,7 +111,7 @@ glib::wrapper! {
 }
 
 impl SkTaskStep {
-    pub fn new(task_step: &TaskStep) -> Self {
+    pub fn new(task_step: &TaskProgress) -> Self {
         let step: Self = glib::Object::new(&[]).unwrap();
         let imp = step.imp();
 
@@ -128,7 +128,7 @@ impl SkTaskStep {
         step
     }
 
-    pub(super) fn update(&self, task_step: &TaskStep) {
+    pub(super) fn update(&self, task_step: &TaskProgress) {
         let imp = self.imp();
 
         if self.progress() != task_step.progress as f32 {
