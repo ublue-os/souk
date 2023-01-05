@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,13 +18,9 @@
 mod task;
 mod task_activity;
 mod task_model;
-mod task_step;
-mod task_step_model;
 mod task_type;
 
 pub use task::SkTask;
 pub use task_activity::SkTaskActivity;
 pub use task_model::SkTaskModel;
-pub use task_step::SkTaskStep;
-pub use task_step_model::SkTaskStepModel;
 pub use task_type::SkTaskType;

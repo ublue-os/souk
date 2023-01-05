@@ -1,5 +1,5 @@
 // Souk - task.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ use crate::shared::info::{InstallationInfo, RemoteInfo};
 use crate::shared::task::Task;
 
 #[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+// TODO: This could be simplified by using PackageInfo
 pub struct FlatpakTask {
     /// The Flatpak operation of this task
     pub operation_type: FlatpakOperationType,
@@ -132,9 +133,11 @@ impl Default for FlatpakTask {
 
 #[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum FlatpakOperationType {
-    #[default]
     Install,
-    InstallBundleFile,
     InstallRefFile,
+    InstallBundleFile,
+    Update,
     Uninstall,
+    #[default]
+    None,
 }

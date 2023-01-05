@@ -97,9 +97,13 @@ impl FlatpakWorker {
                     )
                 }
             }
+            FlatpakOperationType::Update => {
+                unimplemented!();
+            }
             FlatpakOperationType::Uninstall => {
                 unimplemented!();
             }
+            FlatpakOperationType::None => return,
         };
 
         if let Err(err) = result {

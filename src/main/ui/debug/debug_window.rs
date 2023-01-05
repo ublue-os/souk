@@ -20,7 +20,7 @@ use glib::subclass;
 use gtk::{gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
-use crate::main::task::{SkTask, SkTaskModel, SkTaskStep};
+use crate::main::task::{SkTask, SkTaskModel};
 
 mod imp {
     use super::*;
@@ -85,12 +85,8 @@ impl SkDebugWindow {
         let tasks = gtk::FlattenListModel::new(Some(&tasks));
 
         let tree_model = gtk::TreeListModel::new(&tasks, false, true, |item| {
-            if item.type_().to_string() != "SkTask" {
-                return None;
-            }
-
             let task: &SkTask = item.downcast_ref().unwrap();
-            Some(task.steps().upcast())
+            Some(task.related_tasks().upcast())
         });
 
         let model = gtk::NoSelection::new(Some(&tree_model));
@@ -110,24 +106,19 @@ impl SkDebugWindow {
         });
 
         factory.connect_bind(move |_factory, item| {
-            let listrow = item.item().unwrap().downcast::<gtk::TreeListRow>().unwrap();
-
             let expander = item
                 .child()
                 .unwrap()
                 .downcast::<gtk::TreeExpander>()
                 .unwrap();
 
+            let listrow = item.item().unwrap().downcast::<gtk::TreeListRow>().unwrap();
             expander.set_list_row(Some(&listrow));
+
+            let task = listrow.item().unwrap().downcast::<SkTask>().unwrap();
+
             let text = expander.child().unwrap().downcast::<gtk::Label>().unwrap();
-
-            if let Ok(task) = listrow.item().unwrap().downcast::<SkTask>() {
-                text.set_text(&task.uuid());
-            }
-
-            if let Ok(step) = listrow.item().unwrap().downcast::<SkTaskStep>() {
-                text.set_text(&format!("Step {}", step.index()));
-            }
+            text.set_text(&task.uuid());
         });
 
         let column = gtk::ColumnViewColumn::new(Some("Task"), Some(&factory));

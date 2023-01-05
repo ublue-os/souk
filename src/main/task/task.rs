@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
+use std::str::FromStr;
 
 use async_std::channel::{unbounded, Receiver, Sender};
 use glib::subclass::Signal;
 use glib::{
-    clone, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecString,
-    ParamSpecUInt64, ToValue,
+    ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecString,
+    ParamSpecUInt, ParamSpecUInt64, ToValue,
 };
 use gtk::glib;
 use gtk::prelude::*;
@@ -30,30 +31,35 @@ use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;
-use crate::main::task::{SkTaskActivity, SkTaskStep, SkTaskStepModel, SkTaskType};
-use crate::shared::task::{Task, TaskResponse, TaskResponseType, TaskResultType};
+use crate::main::flatpak::package::SkPackage;
+use crate::main::task::{SkTaskActivity, SkTaskModel, SkTaskType};
+use crate::shared::task::{Task, TaskProgress, TaskResponse, TaskResponseType, TaskResultType};
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
     pub struct SkTask {
-        pub data: OnceCell<Task>,
+        pub data: OnceCell<Option<Task>>,
 
-        /// Type of this task
+        // Static values
+        pub index: OnceCell<u32>,
         pub type_: OnceCell<SkTaskType>,
-        /// Cumulative progress of the complete task (with all steps)
+        pub package: OnceCell<Option<SkPackage>>,
+
+        // Dynamic values
+        pub activity: RefCell<SkTaskActivity>,
         pub progress: Cell<f32>,
-        /// All steps of this task
-        pub steps: SkTaskStepModel,
+        pub download_rate: Cell<u64>,
 
-        download_rate_watch: OnceCell<gtk::ExpressionWatch>,
-        activity_watch: OnceCell<gtk::ExpressionWatch>,
+        pub related_tasks: SkTaskModel,
+        pub related_to: OnceCell<Option<super::SkTask>>,
 
-        // Gets called when task finished (done/error/cancelled)
+        // Gets called when task finishes (done/error/cancelled)
         pub finished_sender: OnceCell<Sender<()>>,
         pub finished_receiver: OnceCell<Receiver<()>>,
 
+        // Possible result values
         pub result_dry_run: OnceCell<SkDryRun>,
         pub result_error: OnceCell<String>,
     }
@@ -69,6 +75,7 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
                     ParamSpecString::new("uuid", "", "", None, ParamFlags::READABLE),
+                    ParamSpecUInt::new("index", "", "", 0, u32::MAX, 0, ParamFlags::READABLE),
                     ParamSpecEnum::new(
                         "type",
                         "",
@@ -77,21 +84,11 @@ mod imp {
                         SkTaskType::default() as i32,
                         ParamFlags::READABLE,
                     ),
-                    ParamSpecFloat::new("progress", "", "", 0.0, 1.0, 0.0, ParamFlags::READABLE),
                     ParamSpecObject::new(
-                        "steps",
+                        "package",
                         "",
                         "",
-                        SkTaskStepModel::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecUInt64::new(
-                        "download-rate",
-                        "",
-                        "",
-                        0,
-                        u64::MAX,
-                        0,
+                        SkPackage::static_type(),
                         ParamFlags::READABLE,
                     ),
                     ParamSpecEnum::new(
@@ -102,6 +99,30 @@ mod imp {
                         SkTaskActivity::default() as i32,
                         ParamFlags::READABLE,
                     ),
+                    ParamSpecFloat::new("progress", "", "", 0.0, 1.0, 0.0, ParamFlags::READABLE),
+                    ParamSpecUInt64::new(
+                        "download-rate",
+                        "",
+                        "",
+                        0,
+                        u64::MAX,
+                        0,
+                        ParamFlags::READABLE,
+                    ),
+                    ParamSpecObject::new(
+                        "related-tasks",
+                        "",
+                        "",
+                        SkTaskModel::static_type(),
+                        ParamFlags::READABLE,
+                    ),
+                    ParamSpecObject::new(
+                        "related-to",
+                        "",
+                        "",
+                        super::SkTask::static_type(),
+                        ParamFlags::READABLE,
+                    ),
                 ]
             });
             PROPERTIES.as_ref()
@@ -110,11 +131,14 @@ mod imp {
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "uuid" => obj.uuid().to_value(),
+                "index" => obj.index().to_value(),
                 "type" => obj.type_().to_value(),
+                "package" => obj.package().to_value(),
+                "activity" => obj.package().to_value(),
                 "progress" => obj.progress().to_value(),
-                "steps" => obj.steps().to_value(),
                 "download-rate" => obj.download_rate().to_value(),
-                "activity" => obj.activity().to_value(),
+                "related-tasks" => obj.related_tasks().to_value(),
+                "related-to" => obj.related_to().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -135,35 +159,10 @@ mod imp {
             SIGNALS.as_ref()
         }
 
-        fn constructed(&self, obj: &Self::Type) {
-            let watch = self
-                .steps
-                .property_expression("current")
-                .chain_property::<SkTaskStep>("download-rate")
-                .watch(
-                    glib::Object::NONE,
-                    clone!(@weak obj => move|| obj.notify("download-rate")),
-                );
-            self.download_rate_watch.set(watch).unwrap();
-
-            let watch = self
-                .steps
-                .property_expression("current")
-                .chain_property::<SkTaskStep>("activity")
-                .watch(
-                    glib::Object::NONE,
-                    clone!(@weak obj => move|| obj.notify("activity")),
-                );
-            self.activity_watch.set(watch).unwrap();
-
+        fn constructed(&self, _obj: &Self::Type) {
             let (finished_sender, finished_receiver) = unbounded();
             self.finished_sender.set(finished_sender).unwrap();
             self.finished_receiver.set(finished_receiver).unwrap();
-        }
-
-        fn dispose(&self, _obj: &Self::Type) {
-            self.download_rate_watch.get().unwrap().unwatch();
-            self.activity_watch.get().unwrap().unwatch();
         }
     }
 }
@@ -175,43 +174,79 @@ glib::wrapper! {
 impl SkTask {
     pub fn new(data: Task) -> Self {
         let task: Self = glib::Object::new(&[]).unwrap();
-        task.imp().data.set(data).unwrap();
+        let imp = task.imp();
+
+        imp.data.set(Some(data.clone())).unwrap();
+        imp.index.set(0).unwrap();
+        imp.type_.set(SkTaskType::from_task_data(&data)).unwrap();
+        // TODO: Implement package
+        imp.package.set(None).unwrap();
+
+        imp.related_to.set(None).unwrap();
+
+        task
+    }
+
+    pub fn new_related(progress: &TaskProgress, related_to: &SkTask) -> Self {
+        let task: Self = glib::Object::new(&[]).unwrap();
+        let imp = task.imp();
+
+        imp.data.set(None).unwrap();
+
+        imp.index.set(progress.index).unwrap();
+        imp.type_.set(progress.type_.clone().into()).unwrap();
+        if let Some(package_info) = progress.package.clone().into() {
+            let package = SkPackage::new(&package_info);
+            imp.package.set(Some(package)).unwrap();
+        } else {
+            imp.package.set(None).unwrap();
+        }
+
+        imp.related_to.set(Some(related_to.clone())).unwrap();
 
         task
     }
 
     pub fn uuid(&self) -> String {
-        self.imp().data.get().unwrap().uuid.clone()
+        let task_data = self.data();
+
+        if let Some(dependent_task) = self.related_to() {
+            format!("{}-{}", dependent_task.uuid(), self.index())
+        } else {
+            task_data.uuid
+        }
+    }
+
+    pub fn index(&self) -> u32 {
+        *self.imp().index.get().unwrap()
     }
 
     pub fn type_(&self) -> SkTaskType {
-        SkTaskType::None
+        *self.imp().type_.get().unwrap()
+    }
+
+    pub fn package(&self) -> Option<SkPackage> {
+        self.imp().package.get().unwrap().clone()
+    }
+
+    pub fn activity(&self) -> SkTaskActivity {
+        *self.imp().activity.borrow()
     }
 
     pub fn progress(&self) -> f32 {
         self.imp().progress.get()
     }
 
-    pub fn steps(&self) -> SkTaskStepModel {
-        self.imp().steps.clone()
-    }
-
-    /// Returns the download rate of the current active [SkTaskStep]
     pub fn download_rate(&self) -> u64 {
-        if let Some(step) = self.steps().current() {
-            step.download_rate()
-        } else {
-            0
-        }
+        self.imp().download_rate.get()
     }
 
-    /// Returns the activity of the current active [SkTaskStep]
-    pub fn activity(&self) -> SkTaskActivity {
-        if let Some(step) = self.steps().current() {
-            step.activity()
-        } else {
-            SkTaskActivity::None
-        }
+    pub fn related_tasks(&self) -> SkTaskModel {
+        self.imp().related_tasks.clone()
+    }
+
+    pub fn related_to(&self) -> Option<SkTask> {
+        self.imp().related_to.get().unwrap().clone()
     }
 
     pub fn handle_response(&self, response: &TaskResponse) {
@@ -219,15 +254,25 @@ impl SkTask {
 
         match response.type_ {
             TaskResponseType::Initial => {
-                let steps = response.initial_response.as_ref().unwrap();
-                self.steps().set_steps(steps);
+                let initial_response = response.initial_response.as_ref().unwrap();
+                for task_progress in initial_response {
+                    let task = SkTask::new_related(task_progress, self);
+                    self.related_tasks().add_task(&task);
+                }
             }
             TaskResponseType::Update => {
-                let updated_step = response.update_response.as_ref().unwrap();
-                self.steps().update_step(Some(updated_step));
+                let update = response.update_response.as_ref().unwrap();
+                let uuid = format!("{}-{}", self.uuid(), update.index);
 
-                let progress = ((updated_step.index * 100) + updated_step.progress as u32) as f32
-                    / (self.steps().n_items() as f32 * 100.0);
+                if let Some(task) = self.related_tasks().task(&uuid) {
+                    task.update(update);
+                } else {
+                    error!("No related task {}, unable to update", uuid);
+                }
+
+                let progress = ((update.index * 100) + update.progress as u32) as f32
+                    / (self.related_tasks().n_items() as f32 * 100.0);
+
                 if self.progress() != progress {
                     self.imp().progress.set(progress);
                     self.notify("progress");
@@ -235,9 +280,6 @@ impl SkTask {
             }
             TaskResponseType::Result => {
                 let result = response.result_response.as_ref().unwrap();
-
-                // Unset `current` property of SkTaskStepModel
-                self.steps().update_step(None);
 
                 match result.type_ {
                     TaskResultType::Done => {
@@ -273,6 +315,26 @@ impl SkTask {
         }
     }
 
+    pub(super) fn update(&self, task_progress: &TaskProgress) {
+        let imp = self.imp();
+
+        let activity = SkTaskActivity::from_str(&task_progress.activity).unwrap();
+        if self.activity() != activity {
+            *imp.activity.borrow_mut() = activity;
+            self.notify("activity");
+        }
+
+        if self.progress() != task_progress.progress as f32 {
+            imp.progress.set(task_progress.progress as f32 / 100.0);
+            self.notify("progress");
+        }
+
+        if self.download_rate() != task_progress.download_rate {
+            imp.download_rate.set(task_progress.download_rate);
+            self.notify("download-rate");
+        }
+    }
+
     pub async fn await_result(&self) -> Result<(), Error> {
         let imp = self.imp();
         imp.finished_receiver.get().unwrap().recv().await.unwrap();
@@ -292,8 +354,13 @@ impl SkTask {
         self.imp().result_error.get().cloned()
     }
 
-    /// Returns the original shared [Task] struct
+    /// Returns the original shared [Task] struct. If this task is related to
+    /// another task, the [Task] struct from the related [SkTask] gets returned.
     pub fn data(&self) -> Task {
-        self.imp().data.get().unwrap().clone()
+        if let Some(dependent_task) = self.related_to() {
+            dependent_task.data()
+        } else {
+            self.imp().data.get().unwrap().clone().unwrap()
+        }
     }
 }
