@@ -96,7 +96,7 @@ impl SkPackageAppstream {
             .unwrap_or_default();
 
         let fallback = dry_run.package().info();
-        let c = serde_json::from_str(&text).unwrap_or(Self::fallback_component(&fallback));
+        let c = serde_json::from_str(&text).unwrap_or_else(|_| Self::fallback_component(&fallback));
         imp.component.set(c).unwrap();
 
         // Icon
@@ -173,7 +173,7 @@ impl SkPackageAppstream {
     fn translated_value(&self, value: &TranslatableString) -> String {
         value
             .get_for_locale(&self.locale())
-            .unwrap_or(value.get_default().unwrap())
+            .unwrap_or_else(|| value.get_default().unwrap())
             .to_string()
     }
 
