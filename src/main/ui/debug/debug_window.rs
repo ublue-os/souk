@@ -89,7 +89,7 @@ impl SkDebugWindow {
 
         let tree_model = gtk::TreeListModel::new(&tasks, false, true, |item| {
             let task: &SkTask = item.downcast_ref().unwrap();
-            Some(task.related_tasks().upcast())
+            Some(task.dependencies().upcast())
         });
 
         let model = gtk::NoSelection::new(Some(&tree_model));

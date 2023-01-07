@@ -52,8 +52,8 @@ mod imp {
         pub progress: Cell<f32>,
         pub download_rate: Cell<u64>,
 
-        pub related_tasks: SkTaskModel,
-        pub related_to: OnceCell<Option<super::SkTask>>,
+        pub dependencies: SkTaskModel,
+        pub dependency_of: OnceCell<Option<super::SkTask>>,
 
         // Gets called when task finishes (done/error/cancelled)
         pub finished_sender: OnceCell<Sender<()>>,
@@ -110,14 +110,14 @@ mod imp {
                         ParamFlags::READABLE,
                     ),
                     ParamSpecObject::new(
-                        "related-tasks",
+                        "dependencies",
                         "",
                         "",
                         SkTaskModel::static_type(),
                         ParamFlags::READABLE,
                     ),
                     ParamSpecObject::new(
-                        "related-to",
+                        "dependency-of",
                         "",
                         "",
                         super::SkTask::static_type(),
@@ -137,8 +137,8 @@ mod imp {
                 "activity" => obj.activity().to_value(),
                 "progress" => obj.progress().to_value(),
                 "download-rate" => obj.download_rate().to_value(),
-                "related-tasks" => obj.related_tasks().to_value(),
-                "related-to" => obj.related_to().to_value(),
+                "dependencies" => obj.dependencies().to_value(),
+                "dependency-of" => obj.dependency_of().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -180,12 +180,13 @@ impl SkTask {
         imp.index.set(0).unwrap();
         imp.type_.set(SkTaskType::from_task_data(&data)).unwrap();
 
-        imp.related_to.set(None).unwrap();
+        imp.dependency_of.set(None).unwrap();
 
         task
     }
 
-    pub fn new_related(progress: &TaskProgress, related_to: &SkTask) -> Self {
+    /// Creates a new task which is a dependency of another task
+    pub fn new_dependency(progress: &TaskProgress, dependency_of: &SkTask) -> Self {
         let task: Self = glib::Object::new(&[]).unwrap();
         let imp = task.imp();
 
@@ -200,7 +201,7 @@ impl SkTask {
             *imp.package.borrow_mut() = None;
         }
 
-        imp.related_to.set(Some(related_to.clone())).unwrap();
+        imp.dependency_of.set(Some(dependency_of.clone())).unwrap();
 
         task
     }
@@ -208,7 +209,7 @@ impl SkTask {
     pub fn uuid(&self) -> String {
         let task_data = self.data();
 
-        if let Some(dependent_task) = self.related_to() {
+        if let Some(dependent_task) = self.dependency_of() {
             format!("{}-{}", dependent_task.uuid(), self.index())
         } else {
             task_data.uuid
@@ -239,12 +240,12 @@ impl SkTask {
         self.imp().download_rate.get()
     }
 
-    pub fn related_tasks(&self) -> SkTaskModel {
-        self.imp().related_tasks.clone()
+    pub fn dependencies(&self) -> SkTaskModel {
+        self.imp().dependencies.clone()
     }
 
-    pub fn related_to(&self) -> Option<SkTask> {
-        self.imp().related_to.get().unwrap().clone()
+    pub fn dependency_of(&self) -> Option<SkTask> {
+        self.imp().dependency_of.get().unwrap().clone()
     }
 
     pub fn handle_response(&self, response: &TaskResponse) {
@@ -265,8 +266,8 @@ impl SkTask {
                             self.notify("package");
                         }
                     } else {
-                        let task = SkTask::new_related(task_progress, self);
-                        self.related_tasks().add_task(&task);
+                        let task = SkTask::new_dependency(task_progress, self);
+                        self.dependencies().add_task(&task);
                     }
                 }
             }
@@ -274,13 +275,13 @@ impl SkTask {
                 let update = response.update_response.as_ref().unwrap();
                 let uuid = format!("{}-{}", self.uuid(), update.index);
 
-                let is_last_task = update.index == self.related_tasks().n_items();
+                let is_last_task = update.index == self.dependencies().n_items();
 
-                if let Some(task) = self.related_tasks().task(&uuid) {
+                if let Some(task) = self.dependencies().task(&uuid) {
                     task.update(update);
                 } else if !(self.type_().targets_single_package() && is_last_task) {
                     error!(
-                        "Unable to retrieve the related task for a task progress update: {}",
+                        "Unable to retrieve dependency task for progress update: {}",
                         uuid
                     );
                 }
@@ -335,10 +336,11 @@ impl SkTask {
             self.notify("activity");
         }
 
-        let total_tasks = self.related_tasks().n_items() + 1;
+        // +1 since this task also counts to the total progress, and is not a dependency
+        let total_tasks = self.dependencies().n_items() + 1;
         let mut task_index = task_progress.index;
 
-        if self.related_tasks().n_items() == 0 {
+        if self.dependencies().n_items() == 0 {
             task_index = 0;
         }
         let progress = ((task_index * 100) + task_progress.progress as u32) as f32
@@ -373,10 +375,11 @@ impl SkTask {
         self.imp().result_error.get().cloned()
     }
 
-    /// Returns the original shared [Task] struct. If this task is related to
-    /// another task, the [Task] struct from the related [SkTask] gets returned.
+    /// Returns the original shared [Task] struct. If this task is a dependency
+    /// to another task, the [Task] struct from the main [SkTask] gets
+    /// returned.
     pub fn data(&self) -> Task {
-        if let Some(dependent_task) = self.related_to() {
+        if let Some(dependent_task) = self.dependency_of() {
             dependent_task.data()
         } else {
             self.imp().data.get().unwrap().clone().unwrap()
