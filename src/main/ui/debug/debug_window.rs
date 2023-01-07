@@ -16,7 +16,7 @@
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::subclass;
+use glib::{closure, subclass};
 use gtk::{gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
@@ -112,6 +112,21 @@ impl SkDebugWindow {
                 .downcast::<gtk::TreeExpander>()
                 .unwrap();
 
+            // Hide expander icon if there are no dependency tasks
+            item.property_expression("item")
+                .chain_property::<gtk::TreeListRow>("item")
+                .chain_property::<SkTask>("dependencies")
+                .chain_closure::<bool>(closure!(
+                    |_: Option<glib::Object>, deps: Option<SkTaskModel>| {
+                        if let Some(deps) = deps {
+                            deps.n_items() == 0
+                        } else {
+                            false
+                        }
+                    }
+                ))
+                .bind(&expander, "hide-expander", None::<&SkTask>);
+
             let listrow = item.item().unwrap().downcast::<gtk::TreeListRow>().unwrap();
             expander.set_list_row(Some(&listrow));
 
@@ -148,7 +163,7 @@ impl SkDebugWindow {
             item.set_child(Some(&progressbar));
             item.property_expression("item")
                 .chain_property::<gtk::TreeListRow>("item")
-                .bind(&progressbar, "task", None::<&SkTask>);
+                .bind(&progressbar, "task", None::<&gtk::TreeListRow>);
         });
         self.add_column("Progress", &factory);
 
@@ -159,7 +174,7 @@ impl SkDebugWindow {
                 .chain_property::<gtk::TreeListRow>("item")
                 .chain_property::<SkTask>("package")
                 .chain_property::<SkPackage>("name")
-                .bind(&text, "label", None::<&SkTask>);
+                .bind(&text, "label", None::<&SkPackage>);
         });
         self.add_column("Ref", &factory);
 
@@ -171,7 +186,7 @@ impl SkDebugWindow {
                 .chain_property::<SkTask>("package")
                 .chain_property::<SkPackage>("remote")
                 .chain_property::<SkRemote>("name")
-                .bind(&text, "label", None::<&SkTask>);
+                .bind(&text, "label", None::<&SkRemote>);
         });
         self.add_column("Remote", &factory);
 
@@ -184,7 +199,7 @@ impl SkDebugWindow {
                 .chain_property::<SkPackage>("remote")
                 .chain_property::<SkRemote>("installation")
                 .chain_property::<SkInstallation>("name")
-                .bind(&text, "label", None::<&SkTask>);
+                .bind(&text, "label", None::<&SkInstallation>);
         });
         self.add_column("Installation", &factory);
     }

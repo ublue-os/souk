@@ -266,8 +266,11 @@ impl SkTask {
                             self.notify("package");
                         }
                     } else {
+                        // Check if the update is *not* for the last task (which would be `self`,
+                        // and not a dependency), and if the task targets a single package.
                         let task = SkTask::new_dependency(task_progress, self);
                         self.dependencies().add_task(&task);
+                        self.notify("dependencies");
                     }
                 }
             }
