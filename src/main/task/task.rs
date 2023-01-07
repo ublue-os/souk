@@ -181,6 +181,7 @@ impl SkTask {
         imp.data.set(Some(data.clone())).unwrap();
         imp.index.set(0).unwrap();
         imp.type_.set(SkTaskType::from_task_data(&data)).unwrap();
+        *imp.status.borrow_mut() = SkTaskStatus::Pending;
 
         imp.dependency_of.set(None).unwrap();
 
@@ -196,12 +197,14 @@ impl SkTask {
 
         imp.index.set(progress.index).unwrap();
         imp.type_.set(progress.type_.clone().into()).unwrap();
+
         if let Some(package_info) = progress.package.clone().into() {
             let package = SkPackage::new(&package_info);
             *imp.package.borrow_mut() = Some(package);
         } else {
             *imp.package.borrow_mut() = None;
         }
+        task.update(progress);
 
         imp.dependency_of.set(Some(dependency_of.clone())).unwrap();
 

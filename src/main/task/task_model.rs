@@ -89,7 +89,6 @@ impl SkTaskModel {
             let mut map = self.imp().map.borrow_mut();
             match map.get_index_of(&task.uuid()) {
                 Some(pos) => {
-                    warn!("Remove task {} at pos {}", task.uuid(), pos);
                     map.shift_remove(&task.uuid());
                     Some(pos)
                 }

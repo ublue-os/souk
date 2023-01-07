@@ -46,10 +46,15 @@ impl SkTaskStatus {
 impl From<String> for SkTaskStatus {
     fn from(string: String) -> Self {
         match string.as_str() {
+            "pending" => Self::Pending,
+            "preparing" => Self::Preparing,
             "install" => Self::Installing,
             "install-bundle" => Self::InstallingBundle,
-            "update" => Self::Updating,
             "uninstall" => Self::Uninstalling,
+            "update" => Self::Updating,
+            "done" => Self::Done,
+            "cancelled" => Self::Cancelled,
+            "error" => Self::Error,
             _ => {
                 error!("Unable to parse string as SkTaskStatus: {}", string);
                 Self::default()
