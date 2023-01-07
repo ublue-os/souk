@@ -210,7 +210,7 @@ impl SkTask {
         let task_data = self.data();
 
         if let Some(dependent_task) = self.dependency_of() {
-            format!("{}-{}", dependent_task.uuid(), self.index())
+            format!("{}:{}", dependent_task.uuid(), self.index())
         } else {
             task_data.uuid
         }
