@@ -23,7 +23,7 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
-use super::{SkTask, SkTaskActivity};
+use super::{SkTask, SkTaskStatus};
 
 mod imp {
     use super::*;
@@ -111,10 +111,10 @@ impl SkTaskModel {
 
     pub fn remove_completed_tasks(&self, keep: u32) {
         let completed_expression =
-            gtk::PropertyExpression::new(SkTask::static_type(), gtk::Expression::NONE, "activity")
-                .chain_closure::<bool>(closure!(
-                |_: Option<glib::Object>, activity: SkTaskActivity| activity.is_completed()
-            ));
+            gtk::PropertyExpression::new(SkTask::static_type(), gtk::Expression::NONE, "status")
+                .chain_closure::<bool>(closure!(|_: Option<glib::Object>, status: SkTaskStatus| {
+                status.is_completed()
+            }));
 
         let filter = gtk::BoolFilter::new(Some(&completed_expression));
         let filtermodel = gtk::FilterListModel::new(Some(self), Some(&filter));

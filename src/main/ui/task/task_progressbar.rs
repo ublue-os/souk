@@ -40,7 +40,7 @@ mod imp {
         pub fraction: Cell<f64>,
 
         pub progress_watch: OnceCell<gtk::ExpressionWatch>,
-        pub activity_watch: OnceCell<gtk::ExpressionWatch>,
+        pub status_watch: OnceCell<gtk::ExpressionWatch>,
     }
 
     #[glib::object_subclass]
@@ -103,14 +103,11 @@ mod imp {
                 );
             self.progress_watch.set(progress_watch).unwrap();
 
-            let activity_watch = obj
+            let status_watch = obj
                 .property_expression("task")
-                .chain_property::<SkTask>("activity")
-                .watch(
-                    glib::Object::NONE,
-                    clone!(@weak obj => move|| obj.update_activity()),
-                );
-            self.activity_watch.set(activity_watch).unwrap();
+                .chain_property::<SkTask>("status")
+                .watch(glib::Object::NONE, clone!(@weak obj => move|| obj.update()));
+            self.status_watch.set(status_watch).unwrap();
         }
 
         fn dispose(&self, _obj: &Self::Type) {
@@ -155,13 +152,13 @@ impl SkTaskProgressBar {
         }
     }
 
-    pub fn update_activity(&self) {
+    pub fn update(&self) {
         if let Some(task) = self.task() {
             let is_pulsing = self.imp().is_pulsing.get();
 
             // Show a pulse animation, since we don't have any progress information
             // available when a Flatpak bundle gets installed.
-            if task.activity().has_no_detailed_progress() && !is_pulsing {
+            if task.status().has_no_detailed_progress() && !is_pulsing {
                 self.imp().is_pulsing.set(true);
                 glib::timeout_add_local(
                     Duration::from_secs(1),

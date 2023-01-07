@@ -31,7 +31,7 @@ use once_cell::unsync::OnceCell;
 use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::package::SkPackage;
-use crate::main::task::{SkTaskActivity, SkTaskModel, SkTaskType};
+use crate::main::task::{SkTaskModel, SkTaskStatus, SkTaskType};
 use crate::shared::task::{Task, TaskProgress, TaskResponse, TaskResponseType, TaskResultType};
 
 mod imp {
@@ -47,7 +47,7 @@ mod imp {
 
         // Dynamic values
         pub package: RefCell<Option<SkPackage>>,
-        pub activity: RefCell<SkTaskActivity>,
+        pub status: RefCell<SkTaskStatus>,
         pub progress: Cell<f32>,
         pub download_rate: Cell<u64>,
 
@@ -91,11 +91,11 @@ mod imp {
                         ParamFlags::READABLE,
                     ),
                     ParamSpecEnum::new(
-                        "activity",
+                        "status",
                         "",
                         "",
-                        SkTaskActivity::static_type(),
-                        SkTaskActivity::default() as i32,
+                        SkTaskStatus::static_type(),
+                        SkTaskStatus::default() as i32,
                         ParamFlags::READABLE,
                     ),
                     ParamSpecFloat::new("progress", "", "", 0.0, 1.0, 0.0, ParamFlags::READABLE),
@@ -133,7 +133,7 @@ mod imp {
                 "index" => obj.index().to_value(),
                 "type" => obj.type_().to_value(),
                 "package" => obj.package().to_value(),
-                "activity" => obj.activity().to_value(),
+                "status" => obj.status().to_value(),
                 "progress" => obj.progress().to_value(),
                 "download-rate" => obj.download_rate().to_value(),
                 "dependencies" => obj.dependencies().to_value(),
@@ -230,8 +230,8 @@ impl SkTask {
         self.imp().package.borrow().clone()
     }
 
-    pub fn activity(&self) -> SkTaskActivity {
-        *self.imp().activity.borrow()
+    pub fn status(&self) -> SkTaskStatus {
+        *self.imp().status.borrow()
     }
 
     pub fn progress(&self) -> f32 {
@@ -298,14 +298,14 @@ impl SkTask {
             TaskResponseType::Result => {
                 let result = response.result_response.as_ref().unwrap();
 
-                let activity = match result.type_ {
+                let status = match result.type_ {
                     TaskResultType::Done => {
                         imp.progress.set(1.0);
                         self.notify("progress");
                         self.emit_by_name::<()>("done", &[]);
                         self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
-                        SkTaskActivity::Done
+                        SkTaskStatus::Done
                     }
                     TaskResultType::DoneDryRun => {
                         let dry_run = result.dry_run.as_ref().unwrap().clone();
@@ -317,7 +317,7 @@ impl SkTask {
                         self.emit_by_name::<()>("done", &[]);
                         self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
-                        SkTaskActivity::Done
+                        SkTaskStatus::Done
                     }
                     TaskResultType::Error => {
                         let result_error = result.error.as_ref().unwrap().clone();
@@ -326,22 +326,22 @@ impl SkTask {
                         self.emit_by_name::<()>("error", &[&result_error]);
                         self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
-                        SkTaskActivity::Error
+                        SkTaskStatus::Error
                     }
                     TaskResultType::Cancelled => {
                         self.emit_by_name::<()>("cancelled", &[]);
                         self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
-                        SkTaskActivity::Cancelled
+                        SkTaskStatus::Cancelled
                     }
                     _ => {
                         warn!("Unknown response type");
-                        SkTaskActivity::None
+                        SkTaskStatus::None
                     }
                 };
 
-                *imp.activity.borrow_mut() = activity;
-                self.notify("activity");
+                *imp.status.borrow_mut() = status;
+                self.notify("status");
             }
         }
     }
@@ -349,10 +349,10 @@ impl SkTask {
     pub(super) fn update(&self, task_progress: &TaskProgress) {
         let imp = self.imp();
 
-        let activity = SkTaskActivity::from(task_progress.activity.clone());
-        if self.activity() != activity {
-            *imp.activity.borrow_mut() = activity;
-            self.notify("activity");
+        let status = SkTaskStatus::from(task_progress.status.clone());
+        if self.status() != status {
+            *imp.status.borrow_mut() = status;
+            self.notify("status");
         }
 
         // +1 since this task also counts to the total progress, and is not a dependency

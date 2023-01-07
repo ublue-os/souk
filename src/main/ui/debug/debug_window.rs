@@ -146,10 +146,10 @@ impl SkDebugWindow {
             let text = Self::setup_text_widget(item);
             item.property_expression("item")
                 .chain_property::<gtk::TreeListRow>("item")
-                .chain_property::<SkTask>("activity")
+                .chain_property::<SkTask>("status")
                 .bind(&text, "label", None::<&SkTask>);
         });
-        self.add_column("Activity", &factory);
+        self.add_column("Status", &factory);
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {

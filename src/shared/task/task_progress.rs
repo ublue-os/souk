@@ -28,9 +28,9 @@ pub struct TaskProgress {
     /// this progress information is.
     pub index: u32,
     pub type_: String,
+    pub status: String,
     pub progress: i32,
     pub download_rate: u64,
-    pub activity: String,
 
     pub package: Optional<PackageInfo>,
 }
@@ -50,7 +50,7 @@ impl TaskProgress {
             .try_into()
             .unwrap();
 
-        let (progress, download_rate, activity) = if let Some(op_progress) = op_progress {
+        let (progress, download_rate, status) = if let Some(op_progress) = op_progress {
             // Calculate download-rate in bytes per second
             let start_time = op_progress.start_time();
             let elapsed_time = (gtk::glib::monotonic_time() as u64 - start_time) as f64 / 1000000.0;
@@ -82,9 +82,9 @@ impl TaskProgress {
         Self {
             index,
             type_,
+            status,
             progress,
             download_rate,
-            activity,
             package: Some(package).into(),
         }
     }
@@ -95,9 +95,9 @@ impl Default for TaskProgress {
         Self {
             index: u32::default(),
             type_: String::default(),
+            status: String::default(),
             progress: i32::default(),
             download_rate: u64::default(),
-            activity: String::default(),
             package: None.into(),
         }
     }

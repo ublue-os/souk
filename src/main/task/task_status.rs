@@ -1,4 +1,4 @@
-// Souk - task_activity.rs
+// Souk - task_status.rs
 // Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -19,8 +19,8 @@ use gtk::glib;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkTaskActivity")]
-pub enum SkTaskActivity {
+#[enum_type(name = "SkTaskStatus")]
+pub enum SkTaskStatus {
     None,
     Pending,
     Preparing,
@@ -33,7 +33,7 @@ pub enum SkTaskActivity {
     Error,
 }
 
-impl SkTaskActivity {
+impl SkTaskStatus {
     pub fn is_completed(&self) -> bool {
         self == &Self::Done || self == &Self::Cancelled || self == &Self::Error
     }
@@ -43,7 +43,7 @@ impl SkTaskActivity {
     }
 }
 
-impl From<String> for SkTaskActivity {
+impl From<String> for SkTaskStatus {
     fn from(string: String) -> Self {
         match string.as_str() {
             "install" => Self::Installing,
@@ -51,15 +51,15 @@ impl From<String> for SkTaskActivity {
             "update" => Self::Updating,
             "uninstall" => Self::Uninstalling,
             _ => {
-                error!("Unable to parse string as SkTaskActivity: {}", string);
+                error!("Unable to parse string as SkTaskStatus: {}", string);
                 Self::default()
             }
         }
     }
 }
 
-impl Default for SkTaskActivity {
+impl Default for SkTaskStatus {
     fn default() -> Self {
-        SkTaskActivity::None
+        SkTaskStatus::None
     }
 }
