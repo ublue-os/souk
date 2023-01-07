@@ -45,9 +45,9 @@ mod imp {
         // Static values
         pub index: OnceCell<u32>,
         pub type_: OnceCell<SkTaskType>,
-        pub package: OnceCell<Option<SkPackage>>,
 
         // Dynamic values
+        pub package: RefCell<Option<SkPackage>>,
         pub activity: RefCell<SkTaskActivity>,
         pub progress: Cell<f32>,
         pub download_rate: Cell<u64>,
@@ -134,7 +134,7 @@ mod imp {
                 "index" => obj.index().to_value(),
                 "type" => obj.type_().to_value(),
                 "package" => obj.package().to_value(),
-                "activity" => obj.package().to_value(),
+                "activity" => obj.activity().to_value(),
                 "progress" => obj.progress().to_value(),
                 "download-rate" => obj.download_rate().to_value(),
                 "related-tasks" => obj.related_tasks().to_value(),
@@ -179,8 +179,6 @@ impl SkTask {
         imp.data.set(Some(data.clone())).unwrap();
         imp.index.set(0).unwrap();
         imp.type_.set(SkTaskType::from_task_data(&data)).unwrap();
-        // TODO: Implement package
-        imp.package.set(None).unwrap();
 
         imp.related_to.set(None).unwrap();
 
@@ -197,9 +195,9 @@ impl SkTask {
         imp.type_.set(progress.type_.clone().into()).unwrap();
         if let Some(package_info) = progress.package.clone().into() {
             let package = SkPackage::new(&package_info);
-            imp.package.set(Some(package)).unwrap();
+            *imp.package.borrow_mut() = Some(package);
         } else {
-            imp.package.set(None).unwrap();
+            *imp.package.borrow_mut() = None;
         }
 
         imp.related_to.set(Some(related_to.clone())).unwrap();
@@ -226,7 +224,7 @@ impl SkTask {
     }
 
     pub fn package(&self) -> Option<SkPackage> {
-        self.imp().package.get().unwrap().clone()
+        self.imp().package.borrow().clone()
     }
 
     pub fn activity(&self) -> SkTaskActivity {
@@ -256,27 +254,40 @@ impl SkTask {
             TaskResponseType::Initial => {
                 let initial_response = response.initial_response.as_ref().unwrap();
                 for task_progress in initial_response {
-                    let task = SkTask::new_related(task_progress, self);
-                    self.related_tasks().add_task(&task);
+                    let is_last_task = task_progress.index as usize == (initial_response.len() - 1);
+
+                    if self.type_().targets_single_package() && is_last_task {
+                        // It only affects one particular package, and the update response has the
+                        // last index -> it affects this task
+                        if let Some(package) = task_progress.package.as_ref() {
+                            let package = SkPackage::new(package);
+                            *imp.package.borrow_mut() = Some(package);
+                            self.notify("package");
+                        }
+                    } else {
+                        let task = SkTask::new_related(task_progress, self);
+                        self.related_tasks().add_task(&task);
+                    }
                 }
             }
             TaskResponseType::Update => {
                 let update = response.update_response.as_ref().unwrap();
                 let uuid = format!("{}-{}", self.uuid(), update.index);
 
+                let is_last_task = update.index == self.related_tasks().n_items();
+
                 if let Some(task) = self.related_tasks().task(&uuid) {
                     task.update(update);
-                } else {
-                    error!("No related task {}, unable to update", uuid);
+                } else if !(self.type_().targets_single_package() && is_last_task) {
+                    error!(
+                        "Unable to retrieve the related task for a task progress update: {}",
+                        uuid
+                    );
                 }
 
-                let progress = ((update.index * 100) + update.progress as u32) as f32
-                    / (self.related_tasks().n_items() as f32 * 100.0);
-
-                if self.progress() != progress {
-                    self.imp().progress.set(progress);
-                    self.notify("progress");
-                }
+                // Always update this task as well, so it mirrors the information of all
+                // subtasks
+                self.update(update);
             }
             TaskResponseType::Result => {
                 let result = response.result_response.as_ref().unwrap();
@@ -324,8 +335,16 @@ impl SkTask {
             self.notify("activity");
         }
 
-        if self.progress() != task_progress.progress as f32 {
-            imp.progress.set(task_progress.progress as f32 / 100.0);
+        let total_tasks = self.related_tasks().n_items() + 1;
+        let mut task_index = task_progress.index;
+
+        if self.related_tasks().n_items() == 0 {
+            task_index = 0;
+        }
+        let progress = ((task_index * 100) + task_progress.progress as u32) as f32
+            / (total_tasks as f32 * 100.0);
+        if progress != task_progress.progress as f32 {
+            imp.progress.set(progress);
             self.notify("progress");
         }
 

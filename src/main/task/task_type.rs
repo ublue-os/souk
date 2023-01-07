@@ -29,8 +29,10 @@ pub enum SkTaskType {
     FlatpakInstall,
     /// A Flatpak package (with all related refs) gets uninstalled
     FlatpakUninstall,
-    /// One or more Flatpak packages are getting updated
+    /// One single Flatpak package gets updated (with all related refs)
     FlatpakUpdate,
+    /// A whole Flatpak installation gets updated
+    FlatpakUpdateInstallation,
     /// Never should be get used (placeholder)
     Unknown,
     None,
@@ -49,6 +51,12 @@ impl SkTaskType {
 
         Self::Unknown
     }
+
+    pub fn targets_single_package(&self) -> bool {
+        self == &Self::FlatpakInstall
+            || self == &Self::FlatpakUninstall
+            || self == &Self::FlatpakUpdate
+    }
 }
 
 impl From<FlatpakOperationType> for SkTaskType {
@@ -58,6 +66,7 @@ impl From<FlatpakOperationType> for SkTaskType {
             FlatpakOperationType::InstallRefFile => Self::FlatpakInstall,
             FlatpakOperationType::InstallBundleFile => Self::FlatpakInstall,
             FlatpakOperationType::Update => Self::FlatpakUpdate,
+            FlatpakOperationType::UpdateInstallation => Self::FlatpakUpdateInstallation,
             FlatpakOperationType::Uninstall => Self::FlatpakUninstall,
             FlatpakOperationType::None => Self::None,
         }

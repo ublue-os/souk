@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use flatpak::Remote;
 use futures_util::stream::StreamExt;
 use gio::File;
 use glib::{clone, KeyFile, ParamFlags, ParamSpec, ParamSpecObject};
@@ -331,3 +332,4 @@ impl Default for SkWorker {
         glib::Object::new::<Self>(&[]).unwrap()
     }
 }
+

@@ -100,6 +100,9 @@ impl FlatpakWorker {
             FlatpakOperationType::Update => {
                 unimplemented!();
             }
+            FlatpakOperationType::UpdateInstallation => {
+                unimplemented!();
+            }
             FlatpakOperationType::Uninstall => {
                 unimplemented!();
             }
@@ -646,3 +649,4 @@ impl FlatpakWorker {
         Ok(Remote::from_file("remote", &bytes)?)
     }
 }
+

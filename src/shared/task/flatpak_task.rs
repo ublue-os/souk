@@ -136,8 +136,10 @@ pub enum FlatpakOperationType {
     Install,
     InstallRefFile,
     InstallBundleFile,
-    Update,
     Uninstall,
+    Update,
+    UpdateInstallation,
     #[default]
     None,
 }
+
