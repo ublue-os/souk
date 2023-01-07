@@ -332,4 +332,3 @@ impl Default for SkWorker {
         glib::Object::new::<Self>(&[]).unwrap()
     }
 }
-

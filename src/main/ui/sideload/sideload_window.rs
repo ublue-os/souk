@@ -571,7 +571,7 @@ impl SkSideloadWindow {
         let imp = self.imp();
 
         imp.sideload_leaflet.set_visible_child_name("progress");
-        imp.progress_bar.set_task(task);
+        imp.progress_bar.set_task(Some(task));
 
         task.connect_notify_local(
             None,

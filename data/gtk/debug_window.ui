@@ -3,7 +3,7 @@
   <template class="SkDebugWindow" parent="AdwWindow">
     <property name="width_request">350</property>
     <property name="height_request">400</property>
-    <property name="default_width">700</property>
+    <property name="default_width">900</property>
     <property name="default_height">500</property>
     <property name="title" translatable="yes">Debug Information</property>
     <child>
@@ -16,8 +16,13 @@
           <object class="GtkBox">
             <property name="orientation">vertical</property>
             <child>
-              <object class="GtkColumnView" id="current_tasks_columnview">
-                <property name="hexpand">true</property>
+              <object class="GtkScrolledWindow">
+                <property name="vexpand">true</property>
+                <child>
+                  <object class="GtkColumnView" id="current_tasks_columnview">
+                    <property name="hexpand">true</property>
+                  </object>
+                </child>
               </object>
             </child>
           </object>

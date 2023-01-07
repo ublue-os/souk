@@ -142,4 +142,3 @@ pub enum FlatpakOperationType {
     #[default]
     None,
 }
-

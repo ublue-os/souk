@@ -80,13 +80,14 @@ mod imp {
             pspec: &ParamSpec,
         ) {
             match pspec.name() {
-                "task" => obj.set_task(value.get().unwrap()),
+                "task" => obj.set_task(value.get().ok()),
                 _ => unimplemented!(),
             }
         }
 
         fn constructed(&self, obj: &Self::Type) {
             self.progressbar.set_pulse_step(1.0);
+            self.progressbar.set_valign(gtk::Align::Center);
             obj.set_child(Some(&self.progressbar));
 
             let target = PropertyAnimationTarget::new(&self.progressbar, "fraction");
@@ -137,9 +138,8 @@ impl SkTaskProgressBar {
         self.imp().task.borrow().clone()
     }
 
-    pub fn set_task(&self, task: &SkTask) {
-        *self.imp().task.borrow_mut() = Some(task.clone());
-
+    pub fn set_task(&self, task: Option<&SkTask>) {
+        *self.imp().task.borrow_mut() = task.cloned();
         self.notify("task");
     }
 
