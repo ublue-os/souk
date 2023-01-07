@@ -15,7 +15,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::cell::{Cell, RefCell};
-use std::str::FromStr;
 
 use async_std::channel::{unbounded, Receiver, Sender};
 use glib::subclass::Signal;
@@ -146,6 +145,9 @@ mod imp {
         fn signals() -> &'static [Signal] {
             static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
                 vec![
+                    // Activated, regardless of the result of the task
+                    Signal::builder("completed", &[], glib::Type::UNIT.into()).build(),
+                    // Activated, when this task completed successfully
                     Signal::builder("done", &[], glib::Type::UNIT.into()).build(),
                     Signal::builder("cancelled", &[], glib::Type::UNIT.into()).build(),
                     Signal::builder(
@@ -276,7 +278,7 @@ impl SkTask {
             }
             TaskResponseType::Update => {
                 let update = response.update_response.as_ref().unwrap();
-                let uuid = format!("{}-{}", self.uuid(), update.index);
+                let uuid = format!("{}:{}", self.uuid(), update.index);
 
                 let is_last_task = update.index == self.dependencies().n_items();
 
@@ -296,12 +298,14 @@ impl SkTask {
             TaskResponseType::Result => {
                 let result = response.result_response.as_ref().unwrap();
 
-                match result.type_ {
+                let activity = match result.type_ {
                     TaskResultType::Done => {
                         imp.progress.set(1.0);
                         self.notify("progress");
                         self.emit_by_name::<()>("done", &[]);
+                        self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                        SkTaskActivity::Done
                     }
                     TaskResultType::DoneDryRun => {
                         let dry_run = result.dry_run.as_ref().unwrap().clone();
@@ -311,21 +315,33 @@ impl SkTask {
                         imp.progress.set(1.0);
                         self.notify("progress");
                         self.emit_by_name::<()>("done", &[]);
+                        self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                        SkTaskActivity::Done
                     }
                     TaskResultType::Error => {
                         let result_error = result.error.as_ref().unwrap().clone();
                         imp.result_error.set(result_error.clone()).unwrap();
 
                         self.emit_by_name::<()>("error", &[&result_error]);
+                        self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                        SkTaskActivity::Error
                     }
                     TaskResultType::Cancelled => {
                         self.emit_by_name::<()>("cancelled", &[]);
+                        self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                        SkTaskActivity::Cancelled
                     }
-                    _ => warn!("Unknown response type"),
-                }
+                    _ => {
+                        warn!("Unknown response type");
+                        SkTaskActivity::None
+                    }
+                };
+
+                *imp.activity.borrow_mut() = activity;
+                self.notify("activity");
             }
         }
     }
@@ -333,7 +349,7 @@ impl SkTask {
     pub(super) fn update(&self, task_progress: &TaskProgress) {
         let imp = self.imp();
 
-        let activity = SkTaskActivity::from_str(&task_progress.activity).unwrap();
+        let activity = SkTaskActivity::from(task_progress.activity.clone());
         if self.activity() != activity {
             *imp.activity.borrow_mut() = activity;
             self.notify("activity");

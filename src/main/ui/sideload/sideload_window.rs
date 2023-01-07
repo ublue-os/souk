@@ -577,8 +577,7 @@ impl SkSideloadWindow {
             None,
             clone!(@weak self as this => move |task, _|{
                 let download_rate = format!("{}/s", glib::format_size(task.download_rate()));
-                let activity = task.activity().to_string();
-                let text = format!("{activity}... ({download_rate})");
+                let text = format!("{:?}... ({download_rate})", task.activity());
 
                 this.imp().progress_label.set_label(&text);
             }),

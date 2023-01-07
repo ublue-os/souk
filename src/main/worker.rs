@@ -41,8 +41,7 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkWorker {
-        pub tasks_active: SkTaskModel,
-        pub tasks_completed: SkTaskModel,
+        pub tasks: SkTaskModel,
         pub installations: SkInstallationModel,
 
         pub proxy: WorkerProxy<'static>,
@@ -59,14 +58,7 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
                     ParamSpecObject::new(
-                        "tasks-active",
-                        "",
-                        "",
-                        SkTaskModel::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "tasks-completed",
+                        "tasks",
                         "",
                         "",
                         SkTaskModel::static_type(),
@@ -86,8 +78,7 @@ mod imp {
 
         fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "tasks-active" => obj.tasks_active().to_value(),
-                "tasks-completed" => obj.tasks_completed().to_value(),
+                "tasks" => obj.tasks().to_value(),
                 "installations" => obj.installations().to_value(),
                 _ => unimplemented!(),
             }
@@ -109,14 +100,8 @@ glib::wrapper! {
 }
 
 impl SkWorker {
-    /// Returns all current active tasks
-    pub fn tasks_active(&self) -> SkTaskModel {
-        self.imp().tasks_active.clone()
-    }
-
-    /// Returns completed tasks
-    pub fn tasks_completed(&self) -> SkTaskModel {
-        self.imp().tasks_completed.clone()
+    pub fn tasks(&self) -> SkTaskModel {
+        self.imp().tasks.clone()
     }
 
     /// Returns all available Flatpak installations
@@ -191,34 +176,15 @@ impl SkWorker {
     async fn run_task(&self, task: &SkTask) -> Result<(), Error> {
         // Remove finished tasks from model
         task.connect_local(
-            "done",
+            "completed",
             false,
-            clone!(@weak self as this => @default-return None, move |t|{
-                let task: SkTask = t[0].get().unwrap();
-                this.completed_task(&task);
-                None
-            }),
-        );
-        task.connect_local(
-            "cancelled",
-            false,
-            clone!(@weak self as this => @default-return None, move |t|{
-                let task: SkTask = t[0].get().unwrap();
-                this.completed_task(&task);
-                None
-            }),
-        );
-        task.connect_local(
-            "error",
-            false,
-            clone!(@weak self as this => @default-return None, move |t|{
-                let task: SkTask = t[0].get().unwrap();
-                this.completed_task(&task);
+            clone!(@weak self as this => @default-return None, move |_|{
+                this.tasks().remove_completed_tasks(KEEP_COMPLETED_TASKS);
                 None
             }),
         );
 
-        self.tasks_active().add_task(task);
+        self.tasks().add_task(task);
         self.imp().proxy.run_task(task.data()).await?;
 
         Ok(())
@@ -239,20 +205,10 @@ impl SkWorker {
             debug!("Task response: {:#?}", response);
 
             let task_uuid = response.uuid.clone();
-            match self.tasks_active().task(&task_uuid) {
+            match self.tasks().task(&task_uuid) {
                 Some(task) => task.handle_response(&response),
                 None => warn!("Received response for unknown active task!"),
             }
-        }
-    }
-
-    fn completed_task(&self, task: &SkTask) {
-        self.tasks_active().remove_task(task);
-
-        self.tasks_completed().add_task(task);
-        if self.tasks_completed().n_items() > KEEP_COMPLETED_TASKS {
-            let to_remove = self.tasks_completed().item(0).unwrap().downcast().unwrap();
-            self.tasks_completed().remove_task(&to_remove);
         }
     }
 

@@ -17,12 +17,13 @@
 use std::cell::RefCell;
 use std::convert::TryInto;
 
+use glib::closure;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
-use crate::main::task::SkTask;
+use super::{SkTask, SkTaskActivity};
 
 mod imp {
     use super::*;
@@ -88,7 +89,8 @@ impl SkTaskModel {
             let mut map = self.imp().map.borrow_mut();
             match map.get_index_of(&task.uuid()) {
                 Some(pos) => {
-                    map.remove(&task.uuid());
+                    warn!("Remove task {} at pos {}", task.uuid(), pos);
+                    map.shift_remove(&task.uuid());
                     Some(pos)
                 }
                 None => {
@@ -105,6 +107,22 @@ impl SkTaskModel {
 
     pub fn task(&self, uuid: &str) -> Option<SkTask> {
         self.imp().map.borrow().get(uuid).cloned()
+    }
+
+    pub fn remove_completed_tasks(&self, keep: u32) {
+        let completed_expression =
+            gtk::PropertyExpression::new(SkTask::static_type(), gtk::Expression::NONE, "activity")
+                .chain_closure::<bool>(closure!(
+                |_: Option<glib::Object>, activity: SkTaskActivity| activity.is_completed()
+            ));
+
+        let filter = gtk::BoolFilter::new(Some(&completed_expression));
+        let filtermodel = gtk::FilterListModel::new(Some(self), Some(&filter));
+
+        while filtermodel.n_items() >= keep {
+            let task = filtermodel.item(0).unwrap().downcast::<SkTask>().unwrap();
+            self.remove_task(&task);
+        }
     }
 }
 

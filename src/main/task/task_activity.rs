@@ -16,22 +16,46 @@
 
 use glib::Enum;
 use gtk::glib;
-use strum_macros::{EnumString, ToString};
 
-#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum, EnumString, ToString)]
-#[strum(serialize_all = "kebab-case")]
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
 #[enum_type(name = "SkTaskActivity")]
 pub enum SkTaskActivity {
     None,
     Pending,
     Preparing,
-    Processing,
-    Install,
-    InstallBundle,
-    Uninstall,
-    Update,
+    Installing,
+    InstallingBundle,
+    Uninstalling,
+    Updating,
     Done,
+    Cancelled,
+    Error,
+}
+
+impl SkTaskActivity {
+    pub fn is_completed(&self) -> bool {
+        self == &Self::Done || self == &Self::Cancelled || self == &Self::Error
+    }
+
+    pub fn has_no_detailed_progress(&self) -> bool {
+        self == &Self::InstallingBundle
+    }
+}
+
+impl From<String> for SkTaskActivity {
+    fn from(string: String) -> Self {
+        match string.as_str() {
+            "install" => Self::Installing,
+            "install-bundle" => Self::InstallingBundle,
+            "update" => Self::Updating,
+            "uninstall" => Self::Uninstalling,
+            _ => {
+                error!("Unable to parse string as SkTaskActivity: {}", string);
+                Self::default()
+            }
+        }
+    }
 }
 
 impl Default for SkTaskActivity {

@@ -25,7 +25,7 @@ use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::glib;
 use once_cell::unsync::OnceCell;
 
-use crate::main::task::{SkTask, SkTaskActivity};
+use crate::main::task::SkTask;
 
 mod imp {
     use super::*;
@@ -161,7 +161,7 @@ impl SkTaskProgressBar {
 
             // Show a pulse animation, since we don't have any progress information
             // available when a Flatpak bundle gets installed.
-            if task.activity() == SkTaskActivity::InstallBundle && !is_pulsing {
+            if task.activity().has_no_detailed_progress() && !is_pulsing {
                 self.imp().is_pulsing.set(true);
                 glib::timeout_add_local(
                     Duration::from_secs(1),

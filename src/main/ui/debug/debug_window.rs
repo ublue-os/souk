@@ -17,7 +17,7 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{closure, subclass};
-use gtk::{gio, glib, CompositeTemplate};
+use gtk::{glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote};
@@ -81,13 +81,7 @@ impl SkDebugWindow {
         let imp = self.imp();
         let worker = SkApplication::default().worker();
 
-        // Combining the two tasks models into a single one
-        let tasks = gio::ListStore::new(SkTaskModel::static_type());
-        tasks.append(&worker.tasks_active());
-        tasks.append(&worker.tasks_completed());
-        let tasks = gtk::FlattenListModel::new(Some(&tasks));
-
-        let tree_model = gtk::TreeListModel::new(&tasks, false, true, |item| {
+        let tree_model = gtk::TreeListModel::new(&worker.tasks(), false, true, |item| {
             let task: &SkTask = item.downcast_ref().unwrap();
             Some(task.dependencies().upcast())
         });
