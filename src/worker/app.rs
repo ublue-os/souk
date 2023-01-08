@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::cell::RefCell;
+use std::env::var;
 use std::time::Duration;
 
 use adw::subclass::prelude::*;
@@ -23,7 +24,9 @@ use async_std::prelude::*;
 use gio::subclass::prelude::ApplicationImpl;
 use glib::clone;
 use gtk::prelude::*;
+use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
+use lazy_static::lazy_static;
 use rusty_pool::ThreadPool;
 use zbus::{Connection, ConnectionBuilder, SignalContext};
 
@@ -35,6 +38,10 @@ use crate::worker::flatpak::FlatpakWorker;
 
 /// Specifies how many tasks can be executed in parallel
 const WORKER_THREADS: usize = 4;
+
+lazy_static! {
+    static ref NO_INACTIVITY_TIMEOUT: bool = var("NO_INACTIVITY_TIMEOUT").is_ok();
+}
 
 mod imp {
     use super::*;
@@ -107,9 +114,7 @@ mod imp {
                 futures::join!(f1, f2, f3);
             });
             spawn!(fut);
-        }
 
-        fn activate(&self, app: &Self::Type) {
             self.parent_activate(app);
             debug!("Application -> activate");
 
@@ -125,6 +130,10 @@ mod imp {
                 thread_pool.start_core_threads();
 
                 *app.imp().thread_pool.borrow_mut() = Some(thread_pool);
+            }
+
+            if *NO_INACTIVITY_TIMEOUT {
+                app.hold();
             }
         }
 
