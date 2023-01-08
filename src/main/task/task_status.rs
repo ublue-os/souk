@@ -14,8 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::fmt;
+
 use glib::Enum;
 use gtk::glib;
+
+use crate::main::i18n::i18n;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
@@ -60,6 +64,25 @@ impl From<String> for SkTaskStatus {
                 Self::default()
             }
         }
+    }
+}
+
+impl fmt::Display for SkTaskStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let text = match self {
+            Self::None => i18n("Unknown"),
+            Self::Pending => i18n("Pending…"),
+            Self::Preparing => i18n("Preparing…"),
+            Self::Installing => i18n("Installing…"),
+            Self::InstallingBundle => i18n("Installing Bundle…"),
+            Self::Uninstalling => i18n("Uninstalling…"),
+            Self::Updating => i18n("Updating…"),
+            Self::Done => i18n("Done"),
+            Self::Cancelled => i18n("Cancelled"),
+            Self::Error => i18n("Error"),
+        };
+
+        write!(f, "{text}")
     }
 }
 

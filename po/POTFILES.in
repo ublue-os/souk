@@ -16,6 +16,7 @@ src/main/flatpak/permissions/types/device_permission.rs
 src/main/flatpak/permissions/types/socket_permission.rs
 src/main/flatpak/permissions/permission_summary.rs
 src/main/flatpak/utils.rs
+src/main/task/task_status.rs
 src/main/ui/about_dialog.rs
 src/main/ui/sideload/remote_row.rs
 src/main/ui/sideload/sideload_window.rs

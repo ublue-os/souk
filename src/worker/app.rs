@@ -24,7 +24,6 @@ use async_std::prelude::*;
 use gio::subclass::prelude::ApplicationImpl;
 use glib::clone;
 use gtk::prelude::*;
-use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use lazy_static::lazy_static;
 use rusty_pool::ThreadPool;
