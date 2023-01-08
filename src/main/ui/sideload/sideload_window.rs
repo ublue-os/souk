@@ -233,7 +233,7 @@ impl SkSideloadWindow {
         let imp = self.imp();
 
         // Add devel style class for development or beta builds
-        if config::PROFILE == "development" || config::PROFILE == "beta" {
+        if config::PROFILE == "development" {
             self.add_css_class("devel");
         }
 

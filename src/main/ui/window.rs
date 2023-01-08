@@ -83,8 +83,8 @@ impl SkApplicationWindow {
     fn setup_widgets(&self) {
         let imp = self.imp();
 
-        // Add devel style class for development or beta builds
-        if config::PROFILE == "development" || config::PROFILE == "beta" {
+        // Add devel style class for development builds
+        if config::PROFILE == "development" {
             self.add_css_class("devel");
         }
 
