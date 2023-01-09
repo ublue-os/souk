@@ -1,5 +1,5 @@
 // Souk - souk-worker.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::env;
+use std::path::Path;
 
 use gtk::glib;
 use souk::shared::{config, path};
@@ -24,13 +25,18 @@ fn main() {
     // Initialize logger
     pretty_env_logger::init();
 
-    // We need to overwrite `FLATPAK_BINARY`, otherwise the exported files (eg.
-    // desktop or DBus services) would have the wrong path ("/app/bin/flatpak").
-    //
-    // This only applies to `user` installations, since `system` operations are
-    // getting handled by Flatpak SystemHelper on host side.
-    env::set_var("FLATPAK_BINARY", "/usr/bin/flatpak");
-    env::set_var("FLATPAK_BWRAP", "/app/bin/flatpak-bwrap");
+    // Check if Souk gets executed as Flatpak
+    let flatpak_info = Path::new("/.flatpak-info");
+    if flatpak_info.exists() {
+        log::debug!("Running in Flatpak sandbox, overwriting Flatpak paths...");
+        // We need to overwrite `FLATPAK_BINARY`, otherwise the exported files (eg.
+        // desktop or DBus services) would have the wrong path ("/app/bin/flatpak").
+        //
+        // This only applies to `user` installations, since `system` operations are
+        // getting handled by Flatpak SystemHelper on host side.
+        env::set_var("FLATPAK_BINARY", "/usr/bin/flatpak");
+        env::set_var("FLATPAK_BWRAP", "/app/bin/flatpak-bwrap");
+    }
 
     // Initialize paths
     path::init().expect("Unable to create paths.");
