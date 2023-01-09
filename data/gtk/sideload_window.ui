@@ -383,7 +383,22 @@
                                           <object class="SkTaskProgressBar" id="progress_bar"/>
                                         </child>
                                         <child>
-                                          <object class="GtkLabel" id="progress_label"/>
+                                          <object class="GtkBox">
+                                            <property name="spacing">6</property>
+                                            <property name="halign">center</property>
+                                            <property name="orientation">vertical</property>
+                                            <child>
+                                              <object class="GtkLabel" id="progress_status_label"/>
+                                            </child>
+                                            <child>
+                                              <object class="GtkLabel" id="progress_download_label">
+                                                <style>
+                                                  <class name="numeric"/>
+                                                  <class name="caption"/>
+                                                </style>
+                                              </object>
+                                            </child>
+                                          </object>
                                         </child>
                                       </object>
                                     </child>

@@ -19,7 +19,7 @@ use std::cell::RefCell;
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gio::{File, ListStore};
-use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{clone, closure, subclass, ParamFlags, ParamSpec, ParamSpecObject};
 use gtk::{gio, glib, CompositeTemplate};
 use once_cell::sync::{Lazy, OnceCell};
 
@@ -31,7 +31,7 @@ use crate::main::flatpak::installation::SkRemote;
 use crate::main::flatpak::package::SkPackageType;
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::i18n::{i18n, i18n_f};
-use crate::main::task::SkTask;
+use crate::main::task::{SkTask, SkTaskStatus};
 use crate::main::ui::badge::{SkBadge, SkBadgeType};
 use crate::main::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::main::ui::installation::SkInstallationListBox;
@@ -91,7 +91,9 @@ mod imp {
         #[template_child]
         pub progress_bar: TemplateChild<SkTaskProgressBar>,
         #[template_child]
-        pub progress_label: TemplateChild<gtk::Label>,
+        pub progress_status_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub progress_download_label: TemplateChild<gtk::Label>,
 
         #[template_child]
         pub done_title: TemplateChild<adw::WindowTitle>,
@@ -157,6 +159,13 @@ mod imp {
                         SkSideloadable::static_type(),
                         ParamFlags::READABLE,
                     ),
+                    ParamSpecObject::new(
+                        "task",
+                        "",
+                        "",
+                        SkTask::static_type(),
+                        ParamFlags::READABLE,
+                    ),
                 ]
             });
             PROPERTIES.as_ref()
@@ -166,6 +175,7 @@ mod imp {
             match pspec.name() {
                 "file" => obj.file().to_value(),
                 "sideloadable" => obj.sideloadable().to_value(),
+                "task" => obj.task().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -229,6 +239,10 @@ impl SkSideloadWindow {
         self.imp().sideloadable.borrow().clone()
     }
 
+    pub fn task(&self) -> Option<SkTask> {
+        self.imp().task.get().cloned()
+    }
+
     fn setup_widgets(&self) {
         let imp = self.imp();
 
@@ -236,6 +250,31 @@ impl SkSideloadWindow {
         if config::PROFILE == "development" {
             self.add_css_class("devel");
         }
+
+        // Progress View
+        self.property_expression("task")
+            .bind(&imp.progress_bar.get(), "task", None::<&SkTask>);
+
+        self.property_expression("task")
+            .chain_property::<SkTask>("status")
+            .chain_closure::<String>(closure!(|_: Option<glib::Object>, status: SkTaskStatus| {
+                status.to_string()
+            }))
+            .bind(&imp.progress_status_label.get(), "label", None::<&SkTask>);
+
+        self.property_expression("task")
+            .chain_property::<SkTask>("download-rate")
+            .chain_closure::<String>(closure!(|_: Option<glib::Object>, download_rate: u64| {
+                if download_rate != 0 {
+                    i18n_f(
+                        "Downloading data {}/s",
+                        &[&glib::format_size(download_rate)],
+                    )
+                } else {
+                    String::new()
+                }
+            }))
+            .bind(&imp.progress_download_label.get(), "label", None::<&SkTask>);
 
         // When the installation changes, we also have to update the sideloadable,
         // since it depends on the installation
@@ -281,6 +320,7 @@ impl SkSideloadWindow {
         actions.add_action(&action);
     }
 
+    /// Load the sideloadable for the selected file asynchronously
     async fn update_sideloadable(&self) {
         let imp = self.imp();
         imp.sideload_stack.set_visible_child_name("loading");
@@ -556,6 +596,7 @@ impl SkSideloadWindow {
 
                 self.handle_sideload_task(&task);
                 imp.task.set(task).unwrap();
+                self.notify("task");
             }
             SkSideloadType::Repo => {
                 match sideloadable.sideload(&worker).await {
@@ -569,19 +610,7 @@ impl SkSideloadWindow {
 
     fn handle_sideload_task(&self, task: &SkTask) {
         let imp = self.imp();
-
         imp.sideload_leaflet.set_visible_child_name("progress");
-        imp.progress_bar.set_task(Some(task));
-
-        task.connect_notify_local(
-            None,
-            clone!(@weak self as this => move |task, _|{
-                let download_rate = format!("{}/s", glib::format_size(task.download_rate()));
-                let text = format!("{} ({download_rate})", task.status());
-
-                this.imp().progress_label.set_label(&text);
-            }),
-        );
 
         task.connect_local(
             "done",
