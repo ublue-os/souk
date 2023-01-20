@@ -76,19 +76,19 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "tasks" => obj.tasks().to_value(),
-                "installations" => obj.installations().to_value(),
+                "tasks" => self.obj().tasks().to_value(),
+                "installations" => self.obj().installations().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn constructed(&self, obj: &Self::Type) {
-            self.parent_constructed(obj);
+        fn constructed(&self) {
+            self.parent_constructed();
 
-            let fut = clone!(@weak obj => async move {
-                obj.receive_task_response().await;
+            let fut = clone!(@weak self as this => async move {
+                this.obj().receive_task_response().await;
             });
             gtk_macros::spawn!(fut);
         }
@@ -285,6 +285,6 @@ impl SkWorker {
 
 impl Default for SkWorker {
     fn default() -> Self {
-        glib::Object::new::<Self>(&[]).unwrap()
+        glib::Object::new::<Self>(&[])
     }
 }

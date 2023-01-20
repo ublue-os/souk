@@ -1,5 +1,5 @@
 // Souk - context_box.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -83,22 +83,16 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "context" => obj.context().to_value(),
+                "context" => self.obj().context().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
-                "context" => obj.set_context(&value.get().unwrap()),
+                "context" => self.obj().set_context(&value.get().unwrap()),
                 _ => unimplemented!(),
             }
         }
@@ -117,7 +111,7 @@ glib::wrapper! {
 
 impl SkContextBox {
     pub fn new(context: &SkContext) -> Self {
-        glib::Object::new(&[("context", context)]).unwrap()
+        glib::Object::new(&[("context", context)])
     }
 
     pub fn context(&self) -> SkContext {

@@ -103,13 +103,13 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "filesystems" => obj.filesystems().to_value(),
-                "services" => obj.services().to_value(),
-                "devices" => obj.devices().to_value(),
-                "sockets" => obj.sockets().to_value(),
-                "subsystems" => obj.subsystems().to_value(),
+                "filesystems" => self.obj().filesystems().to_value(),
+                "services" => self.obj().services().to_value(),
+                "devices" => self.obj().devices().to_value(),
+                "sockets" => self.obj().sockets().to_value(),
+                "subsystems" => self.obj().subsystems().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -122,7 +122,7 @@ glib::wrapper! {
 
 impl SkAppPermissions {
     pub fn from_metadata(keyfile: &KeyFile) -> Self {
-        let permissions: Self = glib::Object::new(&[]).unwrap();
+        let permissions: Self = glib::Object::new(&[]);
         let imp = permissions.imp();
 
         let filesystems = ListStore::new(SkFilesystemPermission::static_type());
@@ -214,7 +214,7 @@ impl SkAppPermissions {
             }
         }
 
-        let permissions: Self = glib::Object::new(&[]).unwrap();
+        let permissions: Self = glib::Object::new(&[]);
 
         let imp = permissions.imp();
         imp.filesystems.set(filesystems).unwrap();

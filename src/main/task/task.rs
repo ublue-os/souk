@@ -127,17 +127,17 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "uuid" => obj.uuid().to_value(),
-                "index" => obj.index().to_value(),
-                "type" => obj.type_().to_value(),
-                "package" => obj.package().to_value(),
-                "status" => obj.status().to_value(),
-                "progress" => obj.progress().to_value(),
-                "download-rate" => obj.download_rate().to_value(),
-                "dependencies" => obj.dependencies().to_value(),
-                "dependency-of" => obj.dependency_of().to_value(),
+                "uuid" => self.obj().uuid().to_value(),
+                "index" => self.obj().index().to_value(),
+                "type" => self.obj().type_().to_value(),
+                "package" => self.obj().package().to_value(),
+                "status" => self.obj().status().to_value(),
+                "progress" => self.obj().progress().to_value(),
+                "download-rate" => self.obj().download_rate().to_value(),
+                "dependencies" => self.obj().dependencies().to_value(),
+                "dependency-of" => self.obj().dependency_of().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -146,22 +146,17 @@ mod imp {
             static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
                 vec![
                     // Activated, regardless of the result of the task
-                    Signal::builder("completed", &[], glib::Type::UNIT.into()).build(),
+                    Signal::builder("completed").build(),
                     // Activated, when this task completed successfully
-                    Signal::builder("done", &[], glib::Type::UNIT.into()).build(),
-                    Signal::builder("cancelled", &[], glib::Type::UNIT.into()).build(),
-                    Signal::builder(
-                        "error",
-                        &[glib::Type::STRING.into()],
-                        glib::Type::UNIT.into(),
-                    )
-                    .build(),
+                    Signal::builder("done").build(),
+                    Signal::builder("cancelled").build(),
+                    Signal::builder("error").build(),
                 ]
             });
             SIGNALS.as_ref()
         }
 
-        fn constructed(&self, _obj: &Self::Type) {
+        fn constructed(&self) {
             let (finished_sender, finished_receiver) = unbounded();
             self.finished_sender.set(finished_sender).unwrap();
             self.finished_receiver.set(finished_receiver).unwrap();
@@ -175,7 +170,7 @@ glib::wrapper! {
 
 impl SkTask {
     pub fn new(data: Task) -> Self {
-        let task: Self = glib::Object::new(&[]).unwrap();
+        let task: Self = glib::Object::new(&[]);
         let imp = task.imp();
 
         imp.data.set(Some(data.clone())).unwrap();
@@ -190,7 +185,7 @@ impl SkTask {
 
     /// Creates a new task which is a dependency of another task
     pub fn new_dependency(progress: &TaskProgress, dependency_of: &SkTask) -> Self {
-        let task: Self = glib::Object::new(&[]).unwrap();
+        let task: Self = glib::Object::new(&[]);
         let imp = task.imp();
 
         imp.data.set(None).unwrap();

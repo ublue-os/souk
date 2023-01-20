@@ -81,21 +81,15 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "detail" => obj.detail().to_value(),
-                "show-arrow" => obj.show_arrow().to_value(),
+                "detail" => self.obj().detail().to_value(),
+                "show-arrow" => self.obj().show_arrow().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            _obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
                 "detail" => self.detail.set(value.get().unwrap()).unwrap(),
                 "show-arrow" => self.show_arrow.set(value.get().unwrap()).unwrap(),
@@ -103,9 +97,9 @@ mod imp {
             }
         }
 
-        fn constructed(&self, obj: &Self::Type) {
-            self.parent_constructed(obj);
-            obj.setup_widgets();
+        fn constructed(&self) {
+            self.parent_constructed();
+            self.obj().setup_widgets();
         }
     }
 
@@ -126,7 +120,7 @@ glib::wrapper! {
 
 impl SkContextDetailRow {
     pub fn new(detail: &SkContextDetail, show_arrow: bool) -> Self {
-        glib::Object::new(&[("detail", detail), ("show-arrow", &show_arrow)]).unwrap()
+        glib::Object::new(&[("detail", detail), ("show-arrow", &show_arrow)])
     }
 
     fn setup_widgets(&self) {

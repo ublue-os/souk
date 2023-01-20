@@ -1,5 +1,5 @@
 // Shortwave - installation_model.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,11 +45,11 @@ mod imp {
     }
 
     impl ObjectImpl for SkInstallationModel {
-        fn constructed(&self, obj: &Self::Type) {
+        fn constructed(&self) {
             // System Installation
             let f_inst = Installation::new_system(Cancellable::NONE).unwrap();
             let info = InstallationInfo::from(&f_inst);
-            obj.add_info(&info);
+            self.obj().add_info(&info);
 
             // User Installation
             let mut user_path = glib::home_dir();
@@ -60,20 +60,20 @@ mod imp {
 
             let f_inst = Installation::for_path(&file, true, Cancellable::NONE).unwrap();
             let info = InstallationInfo::from(&f_inst);
-            obj.add_info(&info);
+            self.obj().add_info(&info);
         }
     }
 
     impl ListModelImpl for SkInstallationModel {
-        fn item_type(&self, _list_model: &Self::Type) -> glib::Type {
+        fn item_type(&self) -> glib::Type {
             SkInstallation::static_type()
         }
 
-        fn n_items(&self, _list_model: &Self::Type) -> u32 {
+        fn n_items(&self) -> u32 {
             self.map.borrow().len() as u32
         }
 
-        fn item(&self, _list_model: &Self::Type, position: u32) -> Option<glib::Object> {
+        fn item(&self, position: u32) -> Option<glib::Object> {
             self.map
                 .borrow()
                 .get_index(position.try_into().unwrap())
@@ -88,7 +88,7 @@ glib::wrapper! {
 
 impl SkInstallationModel {
     pub fn new() -> Self {
-        glib::Object::new(&[]).unwrap()
+        glib::Object::new(&[])
     }
 
     pub fn refresh(&self) -> Result<(), Error> {

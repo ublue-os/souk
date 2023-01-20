@@ -66,12 +66,12 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "icon" => obj.icon().to_value(),
-                "name" => obj.name().to_value(),
-                "developer-name" => obj.developer_name().to_value(),
-                "version" => obj.version().to_value(),
+                "icon" => self.obj().icon().to_value(),
+                "name" => self.obj().name().to_value(),
+                "developer-name" => self.obj().developer_name().to_value(),
+                "version" => self.obj().version().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -84,7 +84,7 @@ glib::wrapper! {
 
 impl SkPackageAppstream {
     pub fn from_dry_run(dry_run: &SkDryRun) -> Self {
-        let appstream: Self = glib::Object::new(&[]).unwrap();
+        let appstream: Self = glib::Object::new(&[]);
         let imp = appstream.imp();
 
         // Appstream Component

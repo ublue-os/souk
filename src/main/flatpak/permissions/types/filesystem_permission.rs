@@ -59,10 +59,10 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "type" => obj.type_().to_value(),
-                "path" => obj.path().to_value(),
+                "type" => self.obj().type_().to_value(),
+                "path" => self.obj().path().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -75,7 +75,7 @@ glib::wrapper! {
 
 impl SkFilesystemPermission {
     pub fn new(value: &str) -> Self {
-        let perm: Self = glib::Object::new(&[]).unwrap();
+        let perm: Self = glib::Object::new(&[]);
         let imp = perm.imp();
 
         let path: &str;

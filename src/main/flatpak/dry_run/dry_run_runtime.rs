@@ -74,12 +74,12 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "package" => obj.package().to_value(),
-                "operation-type" => obj.operation_type().to_value(),
-                "download-size" => obj.download_size().to_value(),
-                "installed-size" => obj.installed_size().to_value(),
+                "package" => self.obj().package().to_value(),
+                "operation-type" => self.obj().operation_type().to_value(),
+                "download-size" => self.obj().download_size().to_value(),
+                "installed-size" => self.obj().installed_size().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -92,7 +92,7 @@ glib::wrapper! {
 
 impl SkDryRunRuntime {
     pub fn new(data: DryRunRuntime) -> Self {
-        let runtime: Self = glib::Object::new(&[]).unwrap();
+        let runtime: Self = glib::Object::new(&[]);
         let imp = runtime.imp();
 
         let package = SkPackage::new(&data.package);

@@ -96,14 +96,14 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "file" => obj.file().to_value(),
-                "type" => obj.type_().to_value(),
-                "package-dry-run" => obj.package_dry_run().to_value(),
-                "remotes" => obj.remotes().to_value(),
-                "no-changes" => obj.no_changes().to_value(),
-                "installation" => obj.installation().to_value(),
+                "file" => self.obj().file().to_value(),
+                "type" => self.obj().type_().to_value(),
+                "package-dry-run" => self.obj().package_dry_run().to_value(),
+                "remotes" => self.obj().remotes().to_value(),
+                "no-changes" => self.obj().no_changes().to_value(),
+                "installation" => self.obj().installation().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -122,7 +122,7 @@ impl SkSideloadable {
         dry_run: SkDryRun,
         installation: &SkInstallation,
     ) -> Self {
-        let sideloadable: Self = glib::Object::new(&[]).unwrap();
+        let sideloadable: Self = glib::Object::new(&[]);
 
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
@@ -146,7 +146,7 @@ impl SkSideloadable {
         already_added: bool,
         installation: &SkInstallation,
     ) -> Self {
-        let sideloadable: Self = glib::Object::new(&[]).unwrap();
+        let sideloadable: Self = glib::Object::new(&[]);
 
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();

@@ -71,13 +71,13 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "type" => obj.type_().to_value(),
-                "name" => obj.name().to_value(),
-                "architecture" => obj.architecture().to_value(),
-                "branch" => obj.branch().to_value(),
-                "remote" => obj.remote().to_value(),
+                "type" => self.obj().type_().to_value(),
+                "name" => self.obj().name().to_value(),
+                "architecture" => self.obj().architecture().to_value(),
+                "branch" => self.obj().branch().to_value(),
+                "remote" => self.obj().remote().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -90,7 +90,7 @@ glib::wrapper! {
 
 impl SkPackage {
     pub fn new(info: &PackageInfo) -> Self {
-        let package: Self = glib::Object::new(&[]).unwrap();
+        let package: Self = glib::Object::new(&[]);
         let imp = package.imp();
 
         imp.info.set(info.clone()).unwrap();

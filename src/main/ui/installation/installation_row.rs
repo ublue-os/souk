@@ -70,31 +70,25 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "installation" => obj.installation().to_value(),
-                "selected" => obj.selected().to_value(),
+                "installation" => self.obj().installation().to_value(),
+                "selected" => self.obj().selected().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
                 "installation" => self.installation.set(value.get().unwrap()).unwrap(),
-                "selected" => obj.set_selected(value.get().unwrap()),
+                "selected" => self.obj().set_selected(value.get().unwrap()),
                 _ => unimplemented!(),
             }
         }
 
-        fn constructed(&self, obj: &Self::Type) {
-            self.parent_constructed(obj);
-            obj.setup_widgets();
+        fn constructed(&self) {
+            self.parent_constructed();
+            self.obj().setup_widgets();
         }
     }
 
@@ -116,7 +110,7 @@ glib::wrapper! {
 
 impl SkInstallationRow {
     pub fn new(installation: &SkInstallation) -> Self {
-        glib::Object::new(&[("installation", installation)]).unwrap()
+        glib::Object::new(&[("installation", installation)])
     }
 
     fn setup_widgets(&self) {

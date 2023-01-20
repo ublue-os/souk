@@ -171,41 +171,35 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "file" => obj.file().to_value(),
-                "sideloadable" => obj.sideloadable().to_value(),
-                "task" => obj.task().to_value(),
+                "file" => self.obj().file().to_value(),
+                "sideloadable" => self.obj().sideloadable().to_value(),
+                "task" => self.obj().task().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            _obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
                 "file" => self.file.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
             }
         }
 
-        fn constructed(&self, obj: &Self::Type) {
-            self.parent_constructed(obj);
+        fn constructed(&self) {
+            self.parent_constructed();
 
             let worker = SkApplication::default().worker();
             let preferred = worker.installations().preferred();
             self.installation_listbox
                 .set_selected_installation(&preferred);
 
-            obj.setup_widgets();
-            obj.setup_actions();
+            self.obj().setup_widgets();
+            self.obj().setup_actions();
 
-            let fut = clone!(@weak obj => async move {
-                obj.update_sideloadable().await;
+            let fut = clone!(@weak self as this => async move {
+                this.obj().update_sideloadable().await;
             });
             spawn!(fut);
         }
@@ -228,7 +222,7 @@ glib::wrapper! {
 #[gtk::template_callbacks]
 impl SkSideloadWindow {
     pub fn new(file: &File) -> Self {
-        glib::Object::new::<Self>(&[("file", file)]).unwrap()
+        glib::Object::new::<Self>(&[("file", file)])
     }
 
     pub fn file(&self) -> File {

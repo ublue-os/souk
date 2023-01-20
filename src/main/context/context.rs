@@ -71,21 +71,15 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "summary" => obj.summary().to_value(),
-                "details" => obj.details().to_value(),
+                "summary" => self.obj().summary().to_value(),
+                "details" => self.obj().details().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            _obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
                 "summary" => self.summary.set(value.get().unwrap()).unwrap(),
                 "details" => self.details.set(value.get().unwrap()).unwrap(),
@@ -101,7 +95,7 @@ glib::wrapper! {
 
 impl SkContext {
     pub fn new(summary: &SkContextDetail, details: &SkContextDetailGroupModel) -> Self {
-        glib::Object::new(&[("summary", &summary), ("details", &details)]).unwrap()
+        glib::Object::new(&[("summary", &summary), ("details", &details)])
     }
 
     pub fn permissions(permissions: &SkAppPermissions) -> Self {

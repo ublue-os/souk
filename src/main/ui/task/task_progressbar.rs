@@ -65,52 +65,51 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "task" => obj.task().to_value(),
+                "task" => self.obj().task().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
-                "task" => obj.set_task(value.get().ok()),
+                "task" => self.obj().set_task(value.get().ok()),
                 _ => unimplemented!(),
             }
         }
 
-        fn constructed(&self, obj: &Self::Type) {
+        fn constructed(&self) {
             self.progressbar.set_pulse_step(1.0);
             self.progressbar.set_valign(gtk::Align::Center);
-            obj.set_child(Some(&self.progressbar));
+            self.obj().set_child(Some(&self.progressbar));
 
             let target = PropertyAnimationTarget::new(&self.progressbar, "fraction");
             let animation = TimedAnimation::new(&self.progressbar, 0.0, 0.0, 1000, &target);
             self.animation.set(animation).unwrap();
 
-            let progress_watch = obj
+            let progress_watch = self
+                .obj()
                 .property_expression("task")
                 .chain_property::<SkTask>("progress")
                 .watch(
                     glib::Object::NONE,
-                    clone!(@weak obj => move|| obj.update_fraction()),
+                    clone!(@weak self as this => move|| this.obj().update_fraction()),
                 );
             self.progress_watch.set(progress_watch).unwrap();
 
-            let status_watch = obj
+            let status_watch = self
+                .obj()
                 .property_expression("task")
                 .chain_property::<SkTask>("status")
-                .watch(glib::Object::NONE, clone!(@weak obj => move|| obj.update()));
+                .watch(
+                    glib::Object::NONE,
+                    clone!(@weak self as this => move|| this.obj().update()),
+                );
             self.status_watch.set(status_watch).unwrap();
         }
 
-        fn dispose(&self, _obj: &Self::Type) {
+        fn dispose(&self) {
             self.progress_watch.get().unwrap().unwatch();
         }
     }
@@ -128,7 +127,7 @@ glib::wrapper! {
 
 impl SkTaskProgressBar {
     pub fn new() -> Self {
-        glib::Object::new(&[]).unwrap()
+        glib::Object::new(&[])
     }
 
     pub fn task(&self) -> Option<SkTask> {

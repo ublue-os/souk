@@ -75,26 +75,20 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "type" => obj.type_().to_value(),
-                "value" => obj.value().to_value(),
-                "colored" => obj.colored().to_value(),
+                "type" => self.obj().type_().to_value(),
+                "value" => self.obj().value().to_value(),
+                "colored" => self.obj().colored().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
-                "type" => obj.set_type(value.get().unwrap()),
-                "value" => obj.set_value(value.get().unwrap()),
-                "colored" => obj.set_colored(value.get().unwrap()),
+                "type" => self.obj().set_type(value.get().unwrap()),
+                "value" => self.obj().set_value(value.get().unwrap()),
+                "colored" => self.obj().set_colored(value.get().unwrap()),
                 _ => unimplemented!(),
             }
         }
@@ -113,7 +107,7 @@ glib::wrapper! {
 
 impl SkBadge {
     pub fn new(type_: SkBadgeType, value: &str, colored: bool) -> Self {
-        glib::Object::new(&[("type", &type_), ("value", &value), ("colored", &colored)]).unwrap()
+        glib::Object::new(&[("type", &type_), ("value", &value), ("colored", &colored)])
     }
 
     pub fn type_(&self) -> SkBadgeType {

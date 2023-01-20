@@ -85,16 +85,16 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "name" => obj.name().to_value(),
-                "title" => obj.title().to_value(),
-                "description" => obj.description().to_value(),
-                "icon-name" => obj.icon_name().to_value(),
-                "is-user" => obj.is_user().to_value(),
-                "path" => obj.path().to_value(),
-                "remotes" => obj.remotes().to_value(),
-                "packages" => obj.packages().to_value(),
+                "name" => self.obj().name().to_value(),
+                "title" => self.obj().title().to_value(),
+                "description" => self.obj().description().to_value(),
+                "icon-name" => self.obj().icon_name().to_value(),
+                "is-user" => self.obj().is_user().to_value(),
+                "path" => self.obj().path().to_value(),
+                "remotes" => self.obj().remotes().to_value(),
+                "packages" => self.obj().packages().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -107,7 +107,7 @@ glib::wrapper! {
 
 impl SkInstallation {
     pub(super) fn new(info: &InstallationInfo) -> Self {
-        let installation: Self = glib::Object::new(&[]).unwrap();
+        let installation: Self = glib::Object::new(&[]);
         let imp = installation.imp();
 
         imp.info.set(info.clone()).unwrap();

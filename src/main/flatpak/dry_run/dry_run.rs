@@ -114,17 +114,17 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "package" => obj.package().to_value(),
-                "download-size" => obj.download_size().to_value(),
-                "installed-size" => obj.installed_size().to_value(),
-                "runtimes" => obj.runtimes().to_value(),
-                "added-remotes" => obj.added_remotes().to_value(),
-                "is-already-installed" => obj.is_already_installed().to_value(),
-                "is-update" => obj.is_update().to_value(),
-                "has-update-source" => obj.has_update_source().to_value(),
-                "is-replacing-remote" => obj.is_replacing_remote().to_value(),
+                "package" => self.obj().package().to_value(),
+                "download-size" => self.obj().download_size().to_value(),
+                "installed-size" => self.obj().installed_size().to_value(),
+                "runtimes" => self.obj().runtimes().to_value(),
+                "added-remotes" => self.obj().added_remotes().to_value(),
+                "is-already-installed" => self.obj().is_already_installed().to_value(),
+                "is-update" => self.obj().is_update().to_value(),
+                "has-update-source" => self.obj().has_update_source().to_value(),
+                "is-replacing-remote" => self.obj().is_replacing_remote().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -137,7 +137,7 @@ glib::wrapper! {
 
 impl SkDryRun {
     pub fn new(data: DryRun) -> Self {
-        let dry_run: Self = glib::Object::new(&[]).unwrap();
+        let dry_run: Self = glib::Object::new(&[]);
         let imp = dry_run.imp();
 
         let package = SkPackage::new(&data.package);

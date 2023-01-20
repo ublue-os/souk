@@ -68,28 +68,22 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "remote" => obj.remote().to_value(),
+                "remote" => self.obj().remote().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            _obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
                 "remote" => self.remote.set(value.get().unwrap()).unwrap(),
                 _ => unimplemented!(),
             }
         }
 
-        fn constructed(&self, obj: &Self::Type) {
-            let remote = obj.remote();
+        fn constructed(&self) {
+            let remote = self.obj().remote();
 
             // Icon
             if !remote.icon().is_empty() {
@@ -104,9 +98,9 @@ mod imp {
 
             // Title
             if !remote.title().is_empty() {
-                obj.set_title(&remote.title());
+                self.obj().set_title(&remote.title());
             } else {
-                obj.set_title(&i18n("Unknown Repository"));
+                self.obj().set_title(&i18n("Unknown Repository"));
             }
 
             // Subtitle
@@ -123,14 +117,14 @@ mod imp {
                     remote.repository_url()
                 );
             }
-            obj.set_subtitle(&subtitle);
+            self.obj().set_subtitle(&subtitle);
 
             // Homepage
             let has_homepage = !remote.homepage().is_empty();
             self.external_link_image.set_visible(has_homepage);
-            obj.set_activatable(has_homepage);
+            self.obj().set_activatable(has_homepage);
 
-            obj.connect_activated(clone!(@weak remote => move|s|{
+            self.obj().connect_activated(clone!(@weak remote => move|s|{
                 let window: gtk::Window = s.root().unwrap().downcast().unwrap();
                 gtk::show_uri(Some(&window), &remote.homepage(), gtk::gdk::CURRENT_TIME);
             }));
@@ -155,7 +149,7 @@ glib::wrapper! {
 
 impl SkRemoteRow {
     pub fn new(remote: &SkRemote) -> Self {
-        glib::Object::new(&[("remote", &remote)]).unwrap()
+        glib::Object::new(&[("remote", &remote)])
     }
 
     pub fn remote(&self) -> SkRemote {

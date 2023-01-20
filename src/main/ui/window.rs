@@ -49,12 +49,12 @@ mod imp {
     }
 
     impl ObjectImpl for SkApplicationWindow {
-        fn constructed(&self, obj: &Self::Type) {
-            self.parent_constructed(obj);
+        fn constructed(&self) {
+            self.parent_constructed();
 
-            obj.setup_widgets();
-            obj.setup_signals();
-            obj.setup_gactions();
+            self.obj().setup_widgets();
+            self.obj().setup_signals();
+            self.obj().setup_gactions();
         }
     }
 
@@ -77,7 +77,7 @@ glib::wrapper! {
 #[gtk::template_callbacks]
 impl SkApplicationWindow {
     pub fn new() -> Self {
-        glib::Object::new::<Self>(&[]).unwrap()
+        glib::Object::new::<Self>(&[])
     }
 
     fn setup_widgets(&self) {

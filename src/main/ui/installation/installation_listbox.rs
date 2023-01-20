@@ -56,21 +56,21 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "selected-installation" => obj.selected_installation().to_value(),
+                "selected-installation" => self.obj().selected_installation().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn constructed(&self, obj: &Self::Type) {
-            self.parent_constructed(obj);
-            obj.set_child(Some(&obj.imp().listbox));
+        fn constructed(&self) {
+            self.parent_constructed();
+            self.obj().set_child(Some(&self.obj().imp().listbox));
 
             self.listbox.set_selection_mode(gtk::SelectionMode::None);
             self.listbox.add_css_class("boxed-list");
 
-            obj.setup_signals();
+            self.obj().setup_signals();
         }
     }
 
@@ -158,6 +158,6 @@ impl SkInstallationListBox {
 
 impl Default for SkInstallationListBox {
     fn default() -> Self {
-        glib::Object::new(&[]).unwrap()
+        glib::Object::new(&[])
     }
 }

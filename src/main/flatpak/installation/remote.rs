@@ -63,16 +63,16 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "name" => obj.name().to_value(),
-                "repository-url" => obj.repository_url().to_value(),
-                "installation" => obj.installation().to_value(),
-                "title" => obj.title().to_value(),
-                "description" => obj.description().to_value(),
-                "comment" => obj.comment().to_value(),
-                "homepage" => obj.homepage().to_value(),
-                "icon" => obj.icon().to_value(),
+                "name" => self.obj().name().to_value(),
+                "repository-url" => self.obj().repository_url().to_value(),
+                "installation" => self.obj().installation().to_value(),
+                "title" => self.obj().title().to_value(),
+                "description" => self.obj().description().to_value(),
+                "comment" => self.obj().comment().to_value(),
+                "homepage" => self.obj().homepage().to_value(),
+                "icon" => self.obj().icon().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -85,7 +85,7 @@ glib::wrapper! {
 
 impl SkRemote {
     pub fn new(info: &RemoteInfo) -> Self {
-        let remote: Self = glib::Object::new(&[]).unwrap();
+        let remote: Self = glib::Object::new(&[]);
         let imp = remote.imp();
 
         imp.info.set(info.clone()).unwrap();

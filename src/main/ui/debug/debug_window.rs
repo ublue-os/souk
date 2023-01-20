@@ -52,9 +52,9 @@ mod imp {
     }
 
     impl ObjectImpl for SkDebugWindow {
-        fn constructed(&self, obj: &Self::Type) {
-            self.parent_constructed(obj);
-            obj.setup_widgets();
+        fn constructed(&self) {
+            self.parent_constructed();
+            self.obj().setup_widgets();
         }
     }
 
@@ -74,7 +74,7 @@ glib::wrapper! {
 #[gtk::template_callbacks]
 impl SkDebugWindow {
     pub fn new() -> Self {
-        glib::Object::new::<Self>(&[]).unwrap()
+        glib::Object::new::<Self>(&[])
     }
 
     fn setup_widgets(&self) {
@@ -96,10 +96,12 @@ impl SkDebugWindow {
             let expander = gtk::TreeExpander::new();
             expander.set_child(Some(&text));
 
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             item.set_child(Some(&expander));
         });
 
         factory.connect_bind(move |_factory, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let expander = item
                 .child()
                 .unwrap()
@@ -133,6 +135,7 @@ impl SkDebugWindow {
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let text = Self::setup_text_widget(item);
             item.property_expression("item")
                 .chain_property::<gtk::TreeListRow>("item")
@@ -143,6 +146,7 @@ impl SkDebugWindow {
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let text = Self::setup_text_widget(item);
             item.property_expression("item")
                 .chain_property::<gtk::TreeListRow>("item")
@@ -154,6 +158,8 @@ impl SkDebugWindow {
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
             let progressbar = SkTaskProgressBar::new();
+
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             item.set_child(Some(&progressbar));
             item.property_expression("item")
                 .chain_property::<gtk::TreeListRow>("item")
@@ -163,6 +169,7 @@ impl SkDebugWindow {
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let text = Self::setup_text_widget(item);
             item.property_expression("item")
                 .chain_property::<gtk::TreeListRow>("item")
@@ -174,6 +181,7 @@ impl SkDebugWindow {
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let text = Self::setup_text_widget(item);
             item.property_expression("item")
                 .chain_property::<gtk::TreeListRow>("item")
@@ -186,6 +194,7 @@ impl SkDebugWindow {
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let text = Self::setup_text_widget(item);
             item.property_expression("item")
                 .chain_property::<gtk::TreeListRow>("item")

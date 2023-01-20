@@ -43,15 +43,15 @@ mod imp {
     impl ObjectImpl for SkDryRunRuntimeModel {}
 
     impl ListModelImpl for SkDryRunRuntimeModel {
-        fn item_type(&self, _list_model: &Self::Type) -> glib::Type {
+        fn item_type(&self) -> glib::Type {
             SkDryRunRuntime::static_type()
         }
 
-        fn n_items(&self, _list_model: &Self::Type) -> u32 {
+        fn n_items(&self) -> u32 {
             self.map.borrow().len() as u32
         }
 
-        fn item(&self, _list_model: &Self::Type, position: u32) -> Option<glib::Object> {
+        fn item(&self, position: u32) -> Option<glib::Object> {
             self.map
                 .borrow()
                 .get_index(position.try_into().unwrap())
@@ -66,7 +66,7 @@ glib::wrapper! {
 
 impl SkDryRunRuntimeModel {
     pub fn new() -> Self {
-        glib::Object::new(&[]).unwrap()
+        glib::Object::new(&[])
     }
 
     pub fn set_runtimes(&self, runtimes: Vec<DryRunRuntime>) {

@@ -1,5 +1,5 @@
 // Shortwave - context_detail_group_model.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,15 +42,15 @@ mod imp {
     impl ObjectImpl for SkContextDetailGroupModel {}
 
     impl ListModelImpl for SkContextDetailGroupModel {
-        fn item_type(&self, _list_model: &Self::Type) -> glib::Type {
+        fn item_type(&self) -> glib::Type {
             SkContextDetailGroup::static_type()
         }
 
-        fn n_items(&self, _list_model: &Self::Type) -> u32 {
+        fn n_items(&self) -> u32 {
             self.map.borrow().len() as u32
         }
 
-        fn item(&self, _list_model: &Self::Type, position: u32) -> Option<glib::Object> {
+        fn item(&self, position: u32) -> Option<glib::Object> {
             self.map
                 .borrow()
                 .get_index(position.try_into().unwrap())
@@ -65,7 +65,7 @@ glib::wrapper! {
 
 impl SkContextDetailGroupModel {
     pub fn new(details: &[SkContextDetailGroup]) -> Self {
-        let model: Self = glib::Object::new(&[]).unwrap();
+        let model: Self = glib::Object::new(&[]);
 
         let imp = model.imp();
         for (pos, detail) in details.iter().enumerate() {

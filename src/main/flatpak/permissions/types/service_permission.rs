@@ -64,10 +64,10 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "name" => obj.name().to_value(),
-                "is-system" => obj.is_system().to_value(),
+                "name" => self.obj().name().to_value(),
+                "is-system" => self.obj().is_system().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -80,7 +80,7 @@ glib::wrapper! {
 
 impl SkServicePermission {
     pub fn new(name: &str, is_system: bool) -> Self {
-        let perm: Self = glib::Object::new(&[]).unwrap();
+        let perm: Self = glib::Object::new(&[]);
 
         let imp = perm.imp();
         imp.name.set(name.to_string()).unwrap();

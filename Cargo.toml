@@ -30,9 +30,9 @@ derivative = "2.2"
 rusty_pool = "0.7"
 
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
-adw = { version = "0.2.0-alpha.3", package = "libadwaita", features = ["v1_2"] }
-gtk = { version = "0.4", package = "gtk4", features = ["v4_8"] }
-gdk = { version = "0.4", package = "gdk4", features = ["v4_6"] }
+adw = { version = "0.2", package = "libadwaita", features = ["v1_2"] }
+gtk = { version = "0.5", package = "gtk4", features = ["v4_8"] }
+gdk = { version = "0.5", package = "gdk4", features = ["v4_6"] }
 gtk-macros = "0.3"
-flatpak = { git = "https://gitlab.gnome.org/World/Rust/libflatpak-rs", branch = "v0.1", features = ["v1_9_1"], package = "libflatpak" }
+flatpak = { version = "0.2", package = "libflatpak", features = ["v1_9_1"] }
 xb = { git = "https://gitlab.gnome.org/haecker-felix/libxmlb-rs", package = "libxmlb"}

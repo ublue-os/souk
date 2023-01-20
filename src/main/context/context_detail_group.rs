@@ -1,5 +1,5 @@
 // Shortwave - context_detail_group.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -68,21 +68,15 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "title" => obj.title().to_value(),
-                "description" => obj.description().to_value(),
+                "title" => self.obj().title().to_value(),
+                "description" => self.obj().description().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            _obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
                 "title" => self.title.set(value.get().unwrap()).unwrap(),
                 "description" => self.description.set(value.get().unwrap()).unwrap(),
@@ -92,15 +86,15 @@ mod imp {
     }
 
     impl ListModelImpl for SkContextDetailGroup {
-        fn item_type(&self, _list_model: &Self::Type) -> glib::Type {
+        fn item_type(&self) -> glib::Type {
             SkContextDetail::static_type()
         }
 
-        fn n_items(&self, _list_model: &Self::Type) -> u32 {
+        fn n_items(&self) -> u32 {
             self.map.borrow().len() as u32
         }
 
-        fn item(&self, _list_model: &Self::Type, position: u32) -> Option<glib::Object> {
+        fn item(&self, position: u32) -> Option<glib::Object> {
             self.map
                 .borrow()
                 .get_index(position.try_into().unwrap())
@@ -119,8 +113,7 @@ impl SkContextDetailGroup {
         title: Option<&str>,
         description: Option<&str>,
     ) -> Self {
-        let model: Self =
-            glib::Object::new(&[("title", &title), ("description", &description)]).unwrap();
+        let model: Self = glib::Object::new(&[("title", &title), ("description", &description)]);
 
         let imp = model.imp();
         for (pos, detail) in details.iter().enumerate() {

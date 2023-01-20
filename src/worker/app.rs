@@ -26,6 +26,7 @@ use glib::clone;
 use gtk::prelude::*;
 use gtk::{gio, glib};
 use lazy_static::lazy_static;
+use once_cell::unsync::OnceCell;
 use rusty_pool::ThreadPool;
 use zbus::{Connection, ConnectionBuilder, SignalContext};
 
@@ -57,6 +58,8 @@ mod imp {
 
         pub dbus_connection: RefCell<Option<Connection>>,
         pub thread_pool: RefCell<Option<ThreadPool>>,
+
+        pub hold_guard: OnceCell<gio::ApplicationHoldGuard>,
     }
 
     #[glib::object_subclass]
@@ -75,6 +78,7 @@ mod imp {
 
             let dbus_connection = RefCell::default();
             let thread_pool = RefCell::default();
+            let hold_guard = OnceCell::default();
 
             Self {
                 task_sender,
@@ -86,6 +90,7 @@ mod imp {
                 appstream_worker,
                 dbus_connection,
                 thread_pool,
+                hold_guard,
             }
         }
     }
@@ -97,28 +102,30 @@ mod imp {
     impl AdwApplicationImpl for SkWorkerApplication {}
 
     impl ApplicationImpl for SkWorkerApplication {
-        fn startup(&self, app: &Self::Type) {
-            self.parent_startup(app);
+        fn startup(&self) {
+            self.parent_startup();
             debug!("Application -> startup");
 
-            let fut = clone!(@weak app => async move {
-                if let Err(err) = app.start_dbus_server().await{
+            let fut = clone!(@weak self as this => async move {
+                let obj = this.obj();
+
+                if let Err(err) = obj.start_dbus_server().await{
                     error!("Unable to start DBus server: {}", err.to_string());
-                    app.quit();
+                    obj.quit();
                 }
 
-                let f1 = app.receive_tasks();
-                let f2 = app.receive_cancel_requests();
-                let f3 = app.receive_responses();
+                let f1 = obj.receive_tasks();
+                let f2 = obj.receive_cancel_requests();
+                let f3 = obj.receive_responses();
                 futures::join!(f1, f2, f3);
             });
             spawn!(fut);
 
-            self.parent_activate(app);
+            self.parent_activate();
             debug!("Application -> activate");
 
             // Start worker threads if needed
-            if app.imp().thread_pool.borrow().is_none() {
+            if self.thread_pool.borrow().is_none() {
                 debug!("Start worker thread pool...");
                 let thread_pool = ThreadPool::new_named(
                     "souk_worker".into(),
@@ -128,19 +135,19 @@ mod imp {
                 );
                 thread_pool.start_core_threads();
 
-                *app.imp().thread_pool.borrow_mut() = Some(thread_pool);
+                *self.thread_pool.borrow_mut() = Some(thread_pool);
             }
 
             if *NO_INACTIVITY_TIMEOUT {
-                app.hold();
+                self.hold_guard.set(self.obj().hold()).unwrap();
             }
         }
 
-        fn shutdown(&self, app: &Self::Type) {
-            self.parent_shutdown(app);
+        fn shutdown(&self) {
+            self.parent_shutdown();
             debug!("Application -> shutdown");
 
-            if let Some(thread_pool) = app.imp().thread_pool.borrow_mut().take() {
+            if let Some(thread_pool) = self.thread_pool.borrow_mut().take() {
                 debug!("Stop worker thread pool...");
                 thread_pool.shutdown_join();
             }
@@ -172,8 +179,7 @@ impl SkWorkerApplication {
         let app = glib::Object::new::<SkWorkerApplication>(&[
             ("application-id", &Some(app_id)),
             ("flags", &gio::ApplicationFlags::IS_SERVICE),
-        ])
-        .unwrap();
+        ]);
 
         // Wait 15 seconds before worker quits because of inactivity
         app.set_inactivity_timeout(15000);
@@ -212,7 +218,7 @@ impl SkWorkerApplication {
         self.activate();
 
         debug!("Start task: {:#?}", task);
-        self.hold();
+        let _ = self.hold();
 
         // Own scope for `await_holding_refcell_ref` lint
         {
@@ -246,7 +252,6 @@ impl SkWorkerApplication {
         }
 
         receiver.next().await;
-        self.release();
     }
 
     async fn cancel_task(&self, task: Task) {

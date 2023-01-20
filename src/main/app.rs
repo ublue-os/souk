@@ -60,9 +60,9 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "worker" => obj.worker().to_value(),
+                "worker" => self.obj().worker().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -73,21 +73,17 @@ mod imp {
     impl AdwApplicationImpl for SkApplication {}
 
     impl ApplicationImpl for SkApplication {
-        fn startup(&self, app: &Self::Type) {
-            self.parent_startup(app);
-
+        fn startup(&self) {
+            self.parent_startup();
             debug!("Application -> startup");
-            let app = app.downcast_ref::<super::SkApplication>().unwrap();
 
             // Setup `app` level GActions
-            app.setup_gactions();
+            self.obj().setup_gactions();
         }
 
-        fn activate(&self, app: &Self::Type) {
-            self.parent_activate(app);
-
+        fn activate(&self) {
+            self.parent_activate();
             debug!("Application -> activate");
-            let app = app.downcast_ref::<super::SkApplication>().unwrap();
 
             // If the window already exists, present it instead creating a new one again.
             if let Some(weak_window) = self.window.get() {
@@ -97,19 +93,17 @@ mod imp {
             }
 
             // No window available -> we have to create one
-            let window = app.create_window();
+            let window = self.obj().create_window();
             let _ = self.window.set(window.downgrade());
             info!("Created application window.");
 
             // Trigger refresh of all available Flatpak installations/remotes
-            app.activate_action("refresh-installations", None);
+            self.obj().activate_action("refresh-installations", None);
         }
 
-        fn open(&self, app: &Self::Type, files: &[gio::File], hint: &str) {
-            self.parent_open(app, files, hint);
-
+        fn open(&self, files: &[gio::File], hint: &str) {
+            self.parent_open(files, hint);
             debug!("Application -> open");
-            let app = app.downcast_ref::<super::SkApplication>().unwrap();
 
             for file in files {
                 let sideload_type = SkSideloadType::determine_type(file);
@@ -118,13 +112,13 @@ mod imp {
                     // TODO: Check if the FlatpakRef file is for a already added remote
                     let is_known_remote = false;
                     if is_known_remote {
-                        app.activate();
+                        self.obj().activate();
                         // TODO: Open app details page for flatpak ref
                         return;
                     }
                 }
 
-                let _ = app.create_sideload_window(file);
+                let _ = self.obj().create_sideload_window(file);
             }
         }
     }
@@ -152,8 +146,7 @@ impl SkApplication {
             ("application-id", &Some(config::APP_ID)),
             ("flags", &gio::ApplicationFlags::HANDLES_OPEN),
             ("resource-base-path", &Some("/de/haeckerfelix/Souk/")),
-        ])
-        .unwrap();
+        ]);
 
         // Start running gtk::Application
         app.run();

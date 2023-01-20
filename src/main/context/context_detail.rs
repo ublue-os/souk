@@ -1,5 +1,5 @@
 // Souk - context_detail.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -87,24 +87,18 @@ mod imp {
             PROPERTIES.as_ref()
         }
 
-        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "type" => obj.type_().to_value(),
-                "type-value" => obj.type_value().to_value(),
-                "level" => obj.level().to_value(),
-                "title" => obj.title().to_value(),
-                "description" => obj.description().to_value(),
+                "type" => self.obj().type_().to_value(),
+                "type-value" => self.obj().type_value().to_value(),
+                "level" => self.obj().level().to_value(),
+                "title" => self.obj().title().to_value(),
+                "description" => self.obj().description().to_value(),
                 _ => unimplemented!(),
             }
         }
 
-        fn set_property(
-            &self,
-            _obj: &Self::Type,
-            _id: usize,
-            value: &glib::Value,
-            pspec: &ParamSpec,
-        ) {
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
             match pspec.name() {
                 "type" => self.type_.set(value.get().unwrap()).unwrap(),
                 "type-value" => self.type_value.set(value.get().unwrap()).unwrap(),
@@ -136,7 +130,6 @@ impl SkContextDetail {
             ("title", &title),
             ("description", &description),
         ])
-        .unwrap()
     }
 
     pub fn new_neutral_size(size: u64, title: &str, description: &str) -> Self {
@@ -147,7 +140,6 @@ impl SkContextDetail {
             ("title", &title),
             ("description", &description),
         ])
-        .unwrap()
     }
 
     pub fn new_neutral_text(text: &str, title: &str, description: &str) -> Self {
@@ -158,7 +150,6 @@ impl SkContextDetail {
             ("title", &title),
             ("description", &description),
         ])
-        .unwrap()
     }
 
     pub fn type_(&self) -> SkContextDetailType {
