@@ -92,7 +92,7 @@ mod imp {
                     self.icon_image.set_paintable(Some(&texture));
                 }
             } else {
-                let icon_name = "package-x-generic-symbolic";
+                let icon_name = "repo-symbolic";
                 self.icon_image.set_icon_name(Some(icon_name));
             }
 

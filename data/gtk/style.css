@@ -3,8 +3,8 @@
 }
 
 .large-row > box {
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-top: 6px;
+  margin-bottom: 6px;
 }
 
 .large-row .title :not(.subtitle) {
@@ -16,10 +16,21 @@
   opacity: unset;
 }
 
-.warning-row {
-  background: alpha(@warning_color, .3);
-  font-weight: bold;
-  box-shadow: none;
+.large-row .icon {
+  border-radius: 99999px;
+  padding: 9px 11px;
+  min-width: 18px;
+  min-height: 22px;
+}
+
+.neutral-row{
+  color: alpha(@window_fg_color, .75);
+  background-color: alpha(@window_fg_color, .15);
+}
+
+.warning-row .icon {
+  color: #ae7b03;
+  background: alpha(@yellow_5, .25);
 }
 
 .circular-background {

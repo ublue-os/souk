@@ -91,7 +91,6 @@
                                         <child>
                                           <object class="GtkBox" id="package_box">
                                             <property name="orientation">vertical</property>
-                                            <property name="margin_bottom">12</property>
                                             <child>
                                               <object class="GtkBox">
                                                 <property name="orientation">vertical</property>
@@ -166,9 +165,11 @@
                                                     <child>
                                                       <object class="AdwActionRow" id="no_updates_row">
                                                         <property name="visible">False</property>
+                                                        <property name="icon_name">dialog-warning-symbolic</property>
                                                         <property name="title" translatable="yes">No Automatic Updates</property>
                                                         <property name="subtitle" translatable="yes">This package will not receive automatic updates. New versions with possible bug / security fixes have to be downloaded and installed manually.</property>
                                                         <style>
+                                                          <class name="large-row"/>
                                                           <class name="warning-row"/>
                                                         </style>
                                                       </object>
@@ -176,8 +177,10 @@
                                                     <child>
                                                       <object class="AdwActionRow" id="replacing_remote_row">
                                                         <property name="visible">False</property>
+                                                        <property name="icon_name">dialog-warning-symbolic</property>
                                                         <property name="title" translatable="yes">Different Source</property>
                                                         <style>
+                                                          <class name="large-row"/>
                                                           <class name="warning-row"/>
                                                         </style>
                                                       </object>
@@ -191,7 +194,6 @@
                                         <child>
                                           <object class="GtkBox" id="remotes_box">
                                             <property name="orientation">vertical</property>
-                                            <property name="margin_bottom">12</property>
                                           </object>
                                         </child>
                                         <child>

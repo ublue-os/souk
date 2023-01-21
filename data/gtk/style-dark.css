@@ -1,22 +1,27 @@
+.warning-row .icon {
+  color: @yellow_2;
+  background: alpha(#cd9309, .25);
+}
+
 .color-green {
-	color: @green_1;
-	background-color: alpha(@green_4, .25);
+  color: @green_1;
+  background-color: alpha(@green_4, .25);
 }
 
 .color-blue {
-	color: @blue_1;
+  color: @blue_1;
 }
 
 .color-yellow {
-	color: @yellow_2;
-	background: alpha(#cd9309, .25);
+  color: @yellow_2;
+  background: alpha(#cd9309, .25);
 }
 
 .color-orange {
-	color: @orange_1;
+  color: @orange_1;
 }
 
 .color-red {
-	color: #ff7b63;
+  color: #ff7b63;
 }
 
