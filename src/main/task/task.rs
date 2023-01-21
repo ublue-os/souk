@@ -150,7 +150,9 @@ mod imp {
                     // Activated, when this task completed successfully
                     Signal::builder("done").build(),
                     Signal::builder("cancelled").build(),
-                    Signal::builder("error").build(),
+                    Signal::builder("error")
+                        .param_types([glib::Type::STRING])
+                        .build(),
                 ]
             });
             SIGNALS.as_ref()

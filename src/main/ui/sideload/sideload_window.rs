@@ -27,12 +27,13 @@ use super::SkRemoteRow;
 use crate::main::app::SkApplication;
 use crate::main::context::SkContext;
 use crate::main::error::Error;
+use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::installation::SkRemote;
-use crate::main::flatpak::package::SkPackageType;
+use crate::main::flatpak::package::{SkPackage, SkPackageType};
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::task::{SkTask, SkTaskStatus};
-use crate::main::ui::badge::{SkBadge, SkBadgeType};
+use crate::main::ui::badge::SkBadge;
 use crate::main::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::main::ui::installation::SkInstallationListBox;
 use crate::main::ui::task::SkTaskProgressBar;
@@ -70,7 +71,9 @@ mod imp {
         #[template_child]
         pub package_version_label: TemplateChild<gtk::Label>,
         #[template_child]
-        pub package_badges_box: TemplateChild<gtk::Box>,
+        pub package_branch_badge: TemplateChild<SkBadge>,
+        #[template_child]
+        pub package_repository_badge: TemplateChild<SkBadge>,
         #[template_child]
         pub package_context_listbox: TemplateChild<gtk::ListBox>,
         #[template_child]
@@ -244,6 +247,24 @@ impl SkSideloadWindow {
         if config::PROFILE == "development" {
             self.add_css_class("devel");
         }
+
+        // Details View
+        self.property_expression("sideloadable")
+            .chain_property::<SkSideloadable>("package-dry-run")
+            .chain_property::<SkDryRun>("package")
+            .chain_property::<SkPackage>("branch")
+            .bind(&imp.package_branch_badge.get(), "value", None::<&SkPackage>);
+
+        self.property_expression("sideloadable")
+            .chain_property::<SkSideloadable>("package-dry-run")
+            .chain_property::<SkDryRun>("package")
+            .chain_property::<SkPackage>("remote")
+            .chain_property::<SkRemote>("name")
+            .bind(
+                &imp.package_repository_badge.get(),
+                "value",
+                None::<&SkPackage>,
+            );
 
         // Progress View
         self.property_expression("task")
@@ -449,15 +470,6 @@ impl SkSideloadWindow {
             imp.warn_group.set_visible(
                 !(!imp.no_updates_row.is_visible() && !imp.replacing_remote_row.is_visible()),
             );
-
-            // Badges
-            utils::clear_box(&imp.package_badges_box);
-
-            let branch_badge = SkBadge::new(SkBadgeType::Branch, &package.branch(), true);
-            imp.package_badges_box.append(&branch_badge);
-
-            let repo_badge = SkBadge::new(SkBadgeType::Repository, &package.remote().name(), true);
-            imp.package_badges_box.append(&repo_badge);
 
             // Context information
             let contexts = ListStore::new(SkContext::static_type());

@@ -16,11 +16,9 @@
   <gresource prefix="/de/haeckerfelix/Souk/icons/16x16/emblems/">
     <file preprocess="xml-stripblanks" alias="branch-beta-symbolic.svg">icons/hicolor/scalable/emblems/branch-beta-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="branch-generic-symbolic.svg">icons/hicolor/scalable/emblems/branch-generic-symbolic.svg</file>
-    <file preprocess="xml-stripblanks" alias="branch-master-symbolic.svg">icons/hicolor/scalable/emblems/branch-master-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="branch-stable-symbolic.svg">icons/hicolor/scalable/emblems/branch-stable-symbolic.svg</file>
-    <file preprocess="xml-stripblanks" alias="repo-flathub-symbolic.svg">icons/hicolor/scalable/emblems/repo-flathub-symbolic.svg</file>
-    <file preprocess="xml-stripblanks" alias="repo-generic-symbolic.svg">icons/hicolor/scalable/emblems/repo-generic-symbolic.svg</file>
-    <file preprocess="xml-stripblanks" alias="repo-gnome-symbolic.svg">icons/hicolor/scalable/emblems/repo-gnome-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="branch-unstable-symbolic.svg">icons/hicolor/scalable/emblems/branch-unstable-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="repo-symbolic.svg">icons/hicolor/scalable/emblems/repo-symbolic.svg</file>
   </gresource>
   <gresource prefix="/de/haeckerfelix/Souk/icons/128x128/emblems/">
     <file preprocess="xml-stripblanks" alias="system-component.svg">icons/hicolor/scalable/emblems/system-component.svg</file>

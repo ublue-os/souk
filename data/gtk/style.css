@@ -53,8 +53,9 @@
 
 .badge {
   border-radius: 99999px;
-  padding: 6px 12px;
+  padding: 6px 9px;
   font-size: smaller;
+  font-weight: bold;
 }
 
 .color-neutral{

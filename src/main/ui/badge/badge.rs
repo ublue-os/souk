@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::{subclass, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecEnum, ParamSpecString};
+use glib::{subclass, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecString};
 use gtk::{glib, CompositeTemplate};
 
 use crate::main::ui::badge::SkBadgeType;
@@ -37,7 +37,6 @@ mod imp {
 
         pub type_: RefCell<SkBadgeType>,
         pub value: RefCell<String>,
-        pub colored: Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -69,7 +68,6 @@ mod imp {
                         ParamFlags::READWRITE,
                     ),
                     ParamSpecString::new("value", "", "", None, ParamFlags::READWRITE),
-                    ParamSpecBoolean::new("colored", "", "", false, ParamFlags::READWRITE),
                 ]
             });
             PROPERTIES.as_ref()
@@ -79,7 +77,6 @@ mod imp {
             match pspec.name() {
                 "type" => self.obj().type_().to_value(),
                 "value" => self.obj().value().to_value(),
-                "colored" => self.obj().colored().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -88,7 +85,6 @@ mod imp {
             match pspec.name() {
                 "type" => self.obj().set_type(value.get().unwrap()),
                 "value" => self.obj().set_value(value.get().unwrap()),
-                "colored" => self.obj().set_colored(value.get().unwrap()),
                 _ => unimplemented!(),
             }
         }
@@ -106,8 +102,8 @@ glib::wrapper! {
 }
 
 impl SkBadge {
-    pub fn new(type_: SkBadgeType, value: &str, colored: bool) -> Self {
-        glib::Object::new(&[("type", &type_), ("value", &value), ("colored", &colored)])
+    pub fn new(type_: SkBadgeType, value: &str) -> Self {
+        glib::Object::new(&[("type", &type_), ("value", &value)])
     }
 
     pub fn type_(&self) -> SkBadgeType {
@@ -135,36 +131,15 @@ impl SkBadge {
         self.update_icon();
     }
 
-    pub fn colored(&self) -> bool {
-        self.imp().colored.get()
-    }
-
-    pub fn set_colored(&self, colored: bool) {
-        self.imp().colored.set(colored);
-        self.notify("colored");
-
-        self.update_css();
-    }
-
     fn update_icon(&self) {
         let icon = match self.type_() {
-            SkBadgeType::Repository => {
-                if self.value().to_lowercase().starts_with("gnome") {
-                    "repo-gnome-symbolic"
-                } else if self.value().to_lowercase() == "flathub" {
-                    // TODO: Swap out placeholder with real Flathub logo
-                    "repo-flathub-symbolic"
-                } else {
-                    "repo-generic-symbolic"
-                }
-            }
+            SkBadgeType::Repository => "repo-symbolic",
             SkBadgeType::Branch => match self.value().to_lowercase().as_str() {
                 "stable" => "branch-stable-symbolic",
                 "beta" => "branch-beta-symbolic",
-                "master" => "branch-master-symbolic",
+                "master" | "nightly" | "daily" => "branch-unstable-symbolic",
                 _ => "branch-generic-symbolic",
             },
-            SkBadgeType::File => "folder-documents-symbolic",
         };
 
         self.imp().image.set_icon_name(Some(icon));
@@ -174,19 +149,14 @@ impl SkBadge {
     fn update_css(&self) {
         utils::remove_css_colors(self);
 
-        if !self.colored() {
-            return;
-        }
-
         let css = match self.type_() {
             SkBadgeType::Repository => "color-blue",
             SkBadgeType::Branch => match self.value().to_lowercase().as_str() {
                 "stable" => "color-green",
                 "beta" => "color-orange",
-                "master" => "color-red",
+                "master" | "nightly" | "daily" => "color-red",
                 _ => "color-neutral",
             },
-            SkBadgeType::File => "color-orange",
         };
 
         self.add_css_class(css);

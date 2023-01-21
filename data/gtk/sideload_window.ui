@@ -135,8 +135,18 @@
                                                           </object>
                                                         </child>
                                                         <child>
-                                                          <object class="GtkBox" id="package_badges_box">
+                                                          <object class="GtkBox">
                                                             <property name="spacing">6</property>
+                                                            <child>
+                                                              <object class="SkBadge" id="package_branch_badge">
+                                                                <property name="type">branch</property>
+                                                              </object>
+                                                            </child>
+                                                            <child>
+                                                              <object class="SkBadge" id="package_repository_badge">
+                                                                <property name="type">repository</property>
+                                                              </object>
+                                                            </child>
                                                           </object>
                                                         </child>
                                                       </object>
