@@ -26,7 +26,7 @@ use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::i18n::i18n;
 use crate::main::ui::debug::SkDebugWindow;
 use crate::main::ui::sideload::SkSideloadWindow;
-use crate::main::ui::{about_dialog, SkApplicationWindow};
+use crate::main::ui::{about_window, SkApplicationWindow};
 use crate::main::worker::SkWorker;
 use crate::shared::config;
 
@@ -194,7 +194,7 @@ impl SkApplication {
         action!(self, "about", move |_, _| {
             let app = SkApplication::default();
             if let Some(window) = app.app_window() {
-                about_dialog::show_about_dialog(&window);
+                about_window::show(&window);
             }
         });
 

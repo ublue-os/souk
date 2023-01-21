@@ -21,7 +21,7 @@ pub mod installation;
 pub mod sideload;
 pub mod task;
 
-pub mod about_dialog;
+pub mod about_window;
 pub mod utils;
 
 mod window;
