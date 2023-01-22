@@ -20,6 +20,7 @@ use glib::Enum;
 use gtk::glib;
 
 use crate::main::i18n::i18n;
+use crate::shared::task::TaskStatus;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
@@ -47,22 +48,16 @@ impl SkTaskStatus {
     }
 }
 
-impl From<String> for SkTaskStatus {
-    fn from(string: String) -> Self {
-        match string.as_str() {
-            "pending" => Self::Pending,
-            "preparing" => Self::Preparing,
-            "install" => Self::Installing,
-            "install-bundle" => Self::InstallingBundle,
-            "uninstall" => Self::Uninstalling,
-            "update" => Self::Updating,
-            "done" => Self::Done,
-            "cancelled" => Self::Cancelled,
-            "error" => Self::Error,
-            _ => {
-                error!("Unable to parse string as SkTaskStatus: {}", string);
-                Self::default()
-            }
+impl From<TaskStatus> for SkTaskStatus {
+    fn from(status: TaskStatus) -> Self {
+        match status {
+            TaskStatus::Pending => Self::Pending,
+            TaskStatus::Installing => Self::Installing,
+            TaskStatus::InstallingBundle => Self::InstallingBundle,
+            TaskStatus::Uninstalling => Self::Uninstalling,
+            TaskStatus::Updating => Self::Updating,
+            TaskStatus::Done => Self::Done,
+            TaskStatus::None => Self::None,
         }
     }
 }

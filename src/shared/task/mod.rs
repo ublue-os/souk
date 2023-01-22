@@ -21,6 +21,7 @@ mod task;
 mod task_progress;
 mod task_response;
 mod task_result;
+mod task_status;
 
 pub use appstream_task::AppstreamTask;
 pub use flatpak_task::{FlatpakTask, FlatpakTaskType};
@@ -28,3 +29,4 @@ pub use task::Task;
 pub use task_progress::TaskProgress;
 pub use task_response::{TaskResponse, TaskResponseType};
 pub use task_result::{TaskResult, TaskResultType};
+pub use task_status::TaskStatus;

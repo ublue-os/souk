@@ -20,6 +20,7 @@ use gtk::gio;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
+use super::TaskStatus;
 use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
 use crate::shared::flatpak::FlatpakOperationType;
 
@@ -29,8 +30,7 @@ pub struct TaskProgress {
     /// this progress information is.
     pub index: u32,
     pub operation_type: FlatpakOperationType,
-    // TODO: Convert this to an enum
-    pub status: String,
+    pub status: TaskStatus,
     pub progress: i32,
     pub download_rate: u64,
 
@@ -61,12 +61,12 @@ impl TaskProgress {
             (
                 op_progress.progress(),
                 bytes_second,
-                operation.operation_type().to_str().unwrap().to_string(),
+                operation.operation_type().into(),
             )
         } else if is_done {
-            (100, 0, "done".to_string())
+            (100, 0, TaskStatus::Done)
         } else {
-            (0, 0, "pending".to_string())
+            (0, 0, TaskStatus::Pending)
         };
 
         let ref_ = operation.get_ref().unwrap();
@@ -97,7 +97,7 @@ impl Default for TaskProgress {
         Self {
             index: u32::default(),
             operation_type: FlatpakOperationType::default(),
-            status: String::default(),
+            status: TaskStatus::default(),
             progress: i32::default(),
             download_rate: u64::default(),
             package: None.into(),
