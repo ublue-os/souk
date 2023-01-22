@@ -20,14 +20,16 @@ use gtk::gio;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::shared::info::{PackageInfo, RemoteInfo};
+use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
+use crate::shared::flatpak::FlatpakOperationType;
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
 pub struct TaskProgress {
     /// A task can consist of several steps. The index indicates for which step
     /// this progress information is.
     pub index: u32,
-    pub type_: String,
+    pub operation_type: FlatpakOperationType,
+    // TODO: Convert this to an enum
     pub status: String,
     pub progress: i32,
     pub download_rate: u64,
@@ -77,11 +79,11 @@ impl TaskProgress {
         let remote_info = RemoteInfo::from_flatpak(&remote, Some(&installation));
 
         let package = PackageInfo::new(ref_.to_string(), remote_info);
-        let type_ = operation.operation_type().to_str().unwrap().to_string();
+        let operation_type = operation.operation_type().into();
 
         Self {
             index,
-            type_,
+            operation_type,
             status,
             progress,
             download_rate,
@@ -94,7 +96,7 @@ impl Default for TaskProgress {
     fn default() -> Self {
         Self {
             index: u32::default(),
-            type_: String::default(),
+            operation_type: FlatpakOperationType::default(),
             status: String::default(),
             progress: i32::default(),
             download_rate: u64::default(),

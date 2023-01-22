@@ -21,7 +21,7 @@ use flatpak::{Installation, InstalledRef, Remote};
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-use crate::shared::info::RemoteInfo;
+use crate::shared::flatpak::info::RemoteInfo;
 
 #[derive(Default, Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PackageInfo {

@@ -17,7 +17,7 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::shared::dry_run::DryRun;
+use crate::shared::flatpak::dry_run::DryRun;
 use crate::shared::WorkerError;
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]

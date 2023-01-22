@@ -17,7 +17,8 @@
 use glib::Enum;
 use gtk::glib;
 
-use crate::shared::task::{FlatpakOperationType, Task};
+use crate::shared::flatpak::FlatpakOperationType;
+use crate::shared::task::{FlatpakTaskType, Task};
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
@@ -45,7 +46,7 @@ impl SkTaskType {
             if flatpak_task.dry_run {
                 return Self::FlatpakDryRun;
             } else {
-                return flatpak_task.operation_type.into();
+                return flatpak_task.type_.into();
             }
         }
 
@@ -59,31 +60,28 @@ impl SkTaskType {
     }
 }
 
-impl From<FlatpakOperationType> for SkTaskType {
-    fn from(op: FlatpakOperationType) -> Self {
-        match op {
-            FlatpakOperationType::Install => Self::FlatpakInstall,
-            FlatpakOperationType::InstallRefFile => Self::FlatpakInstall,
-            FlatpakOperationType::InstallBundleFile => Self::FlatpakInstall,
-            FlatpakOperationType::Update => Self::FlatpakUpdate,
-            FlatpakOperationType::UpdateInstallation => Self::FlatpakUpdateInstallation,
-            FlatpakOperationType::Uninstall => Self::FlatpakUninstall,
-            FlatpakOperationType::None => Self::None,
+impl From<FlatpakTaskType> for SkTaskType {
+    fn from(type_: FlatpakTaskType) -> Self {
+        match type_ {
+            FlatpakTaskType::Install => Self::FlatpakInstall,
+            FlatpakTaskType::InstallRefFile => Self::FlatpakInstall,
+            FlatpakTaskType::InstallBundleFile => Self::FlatpakInstall,
+            FlatpakTaskType::Update => Self::FlatpakUpdate,
+            FlatpakTaskType::UpdateInstallation => Self::FlatpakUpdateInstallation,
+            FlatpakTaskType::Uninstall => Self::FlatpakUninstall,
+            FlatpakTaskType::None => Self::None,
         }
     }
 }
 
-impl From<String> for SkTaskType {
-    fn from(string: String) -> Self {
-        match string.as_str() {
-            "install" => Self::FlatpakInstall,
-            "install-bundle" => Self::FlatpakInstall,
-            "update" => Self::FlatpakUpdate,
-            "uninstall" => Self::FlatpakUninstall,
-            _ => {
-                error!("Unable to parse string as SkTaskType: {}", string);
-                Self::Unknown
-            }
+impl From<FlatpakOperationType> for SkTaskType {
+    fn from(type_: FlatpakOperationType) -> Self {
+        match type_ {
+            FlatpakOperationType::Install => Self::FlatpakInstall,
+            FlatpakOperationType::InstallBundle => Self::FlatpakInstall,
+            FlatpakOperationType::Update => Self::FlatpakUpdate,
+            FlatpakOperationType::Uninstall => Self::FlatpakUninstall,
+            FlatpakOperationType::None => Self::None,
         }
     }
 }

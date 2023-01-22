@@ -30,7 +30,7 @@ use once_cell::unsync::OnceCell;
 use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::SkApplication;
-use crate::shared::info::PackageInfo;
+use crate::shared::flatpak::info::PackageInfo;
 
 mod imp {
     use super::*;

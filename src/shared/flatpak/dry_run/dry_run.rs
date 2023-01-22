@@ -20,13 +20,15 @@ use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
 use super::DryRunRuntime;
-use crate::shared::info::{PackageInfo, RemoteInfo};
+use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash)]
 #[derivative(Debug)]
 pub struct DryRun {
     /// The affected package
     pub package: PackageInfo,
+    /// The same ref is already installed, but the commit differs
+    pub is_update: bool,
 
     /// Size information of the actual package (size information about the
     /// runtimes are in `runtimes`)
@@ -51,8 +53,6 @@ pub struct DryRun {
 
     /// Whether the package with the exact commit is already installed
     pub is_already_installed: bool,
-    /// The same ref is already installed, but the commit differs
-    pub is_update: bool,
     /// Whether the package has an source for future app updates (not always
     /// the case, for example sideloading a bundle)
     pub has_update_source: bool,
@@ -73,6 +73,7 @@ impl Default for DryRun {
     fn default() -> Self {
         Self {
             package: PackageInfo::default(),
+            is_update: false,
             runtimes: Vec::default(),
             download_size: 0,
             installed_size: 0,
@@ -82,7 +83,6 @@ impl Default for DryRun {
             metadata: String::new(),
             old_metadata: None.into(),
             is_already_installed: false,
-            is_update: false,
             has_update_source: true,
             is_replacing_remote: None.into(),
         }

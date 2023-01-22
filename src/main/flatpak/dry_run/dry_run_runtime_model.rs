@@ -23,7 +23,7 @@ use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
 use crate::main::flatpak::dry_run::SkDryRunRuntime;
-use crate::shared::dry_run::DryRunRuntime;
+use crate::shared::flatpak::dry_run::DryRunRuntime;
 
 mod imp {
     use super::*;

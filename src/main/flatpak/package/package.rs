@@ -26,7 +26,7 @@ use once_cell::unsync::OnceCell;
 use super::SkPackageType;
 use crate::main::flatpak::installation::SkRemote;
 use crate::main::SkApplication;
-use crate::shared::info::PackageInfo;
+use crate::shared::flatpak::info::PackageInfo;
 
 mod imp {
     use super::*;

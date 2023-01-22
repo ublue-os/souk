@@ -18,7 +18,9 @@
 mod dry_run;
 mod dry_run_runtime;
 mod dry_run_runtime_model;
+mod operation_type;
 
 pub use dry_run::SkDryRun;
 pub use dry_run_runtime::SkDryRunRuntime;
 pub use dry_run_runtime_model::SkDryRunRuntimeModel;
+pub use operation_type::SkFlatpakOperationType;

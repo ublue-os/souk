@@ -14,15 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{ParamFlags, ParamSpec, ParamSpecObject, ParamSpecString, ParamSpecUInt64, ToValue};
+use glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecUInt64, ToValue};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
+use super::SkFlatpakOperationType;
 use crate::main::flatpak::package::SkPackage;
-use crate::shared::dry_run::DryRunRuntime;
+use crate::shared::flatpak::dry_run::DryRunRuntime;
 
 mod imp {
     use super::*;
@@ -50,7 +51,14 @@ mod imp {
                         SkPackage::static_type(),
                         ParamFlags::READABLE,
                     ),
-                    ParamSpecString::new("operation-type", "", "", None, ParamFlags::READABLE),
+                    ParamSpecEnum::new(
+                        "operation-type",
+                        "",
+                        "",
+                        SkFlatpakOperationType::static_type(),
+                        SkFlatpakOperationType::default() as i32,
+                        ParamFlags::READABLE,
+                    ),
                     ParamSpecUInt64::new(
                         "download-size",
                         "",
@@ -111,8 +119,8 @@ impl SkDryRunRuntime {
         self.imp().package.get().unwrap().clone()
     }
 
-    pub fn operation_type(&self) -> String {
-        self.data().operation_type
+    pub fn operation_type(&self) -> SkFlatpakOperationType {
+        self.data().operation_type.into()
     }
 
     pub fn download_size(&self) -> u64 {

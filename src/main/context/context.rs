@@ -31,7 +31,8 @@ use crate::main::flatpak::permissions::types::{SkFilesystemPermission, SkService
 use crate::main::flatpak::permissions::{PermissionDetails, SkAppPermissions, SkPermissionSummary};
 use crate::main::flatpak::utils;
 use crate::main::i18n::{i18n, i18n_f};
-use crate::shared::dry_run::DryRun;
+use crate::shared::flatpak::dry_run::DryRun;
+use crate::shared::flatpak::FlatpakOperationType;
 
 mod imp {
     use super::*;
@@ -204,7 +205,7 @@ impl SkContext {
             let ref_branch = ref_.branch().unwrap().to_string();
 
             let mut title = utils::runtime_ref_to_display_name(&ref_name);
-            if runtime.operation_type == "update" {
+            if runtime.operation_type == FlatpakOperationType::Update {
                 title = i18n_f("{} (Update)", &[&title]);
             }
             let subtitle = format!("{ref_name} ({ref_branch})");

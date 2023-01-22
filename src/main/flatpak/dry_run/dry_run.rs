@@ -29,8 +29,8 @@ use crate::main::context::SkContext;
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};
 use crate::main::flatpak::package::{SkPackage, SkPackageAppstream};
 use crate::main::flatpak::permissions::SkAppPermissions;
-use crate::shared::dry_run::DryRun;
-use crate::shared::info::RemoteInfo;
+use crate::shared::flatpak::dry_run::DryRun;
+use crate::shared::flatpak::info::RemoteInfo;
 
 mod imp {
     use super::*;

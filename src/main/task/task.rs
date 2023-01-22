@@ -194,7 +194,9 @@ impl SkTask {
         imp.data.set(None).unwrap();
 
         imp.index.set(progress.index).unwrap();
-        imp.type_.set(progress.type_.clone().into()).unwrap();
+        imp.type_
+            .set(progress.operation_type.clone().into())
+            .unwrap();
 
         if let Some(package_info) = progress.package.clone().into() {
             let package = SkPackage::new(&package_info);

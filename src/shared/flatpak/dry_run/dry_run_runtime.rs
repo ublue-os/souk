@@ -17,12 +17,14 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-use crate::shared::info::PackageInfo;
+use crate::shared::flatpak::info::PackageInfo;
+use crate::shared::flatpak::FlatpakOperationType;
 
 #[derive(Default, Deserialize, Serialize, Type, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DryRunRuntime {
     pub package: PackageInfo,
-    pub operation_type: String,
+    pub operation_type: FlatpakOperationType,
+
     pub download_size: u64,
     pub installed_size: u64,
 }

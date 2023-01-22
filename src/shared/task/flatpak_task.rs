@@ -17,26 +17,26 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
+use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
 use crate::shared::task::Task;
 
 #[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
 // TODO: This could be simplified by using PackageInfo
 pub struct FlatpakTask {
     /// The Flatpak operation of this task
-    pub operation_type: FlatpakOperationType,
+    pub type_: FlatpakTaskType,
     /// The Flatpak installation in which the operation is to be performed.
     pub installation: InstallationInfo,
     /// If `true`, this task is only simulated and no changes are made to the
     /// corresponding installation.
     pub dry_run: bool,
 
-    /// A Flatpak ref. Needed for [FlatpakOperationType::Install] operations.
+    /// A Flatpak ref. Needed for [FlatpakTaskType::Install] operations.
     pub ref_: Optional<String>,
-    /// A Flatpak remote. Needed for [FlatpakOperationType::Install] operations.
+    /// A Flatpak remote. Needed for [FlatpakTaskType::Install] operations.
     pub remote: Optional<RemoteInfo>,
-    /// The path of a Flatpak ref file ([FlatpakOperationType::InstallRefFile])
-    /// or a Flatpak bundle file ([FlatpakOperationType::InstallBundleFile])
+    /// The path of a Flatpak ref file ([FlatpakTaskType::InstallRefFile])
+    /// or a Flatpak bundle file ([FlatpakTaskType::InstallBundleFile])
     pub path: Optional<String>,
     /// There are cases where it isn't possible to update an already installed
     /// ref directly, and the previously installed ref have to get
@@ -54,7 +54,7 @@ impl FlatpakTask {
         let installation = package.remote.installation.as_ref().unwrap().clone();
 
         let flatpak_task = Self {
-            operation_type: FlatpakOperationType::Install,
+            type_: FlatpakTaskType::Install,
             installation,
             dry_run,
             ref_: Some(package.ref_.clone()).into(),
@@ -73,7 +73,7 @@ impl FlatpakTask {
         dry_run: bool,
     ) -> Task {
         let flatpak_task = Self {
-            operation_type: FlatpakOperationType::InstallRefFile,
+            type_: FlatpakTaskType::InstallRefFile,
             installation: installation.clone(),
             dry_run,
             path: Some(path.to_owned()).into(),
@@ -91,7 +91,7 @@ impl FlatpakTask {
         dry_run: bool,
     ) -> Task {
         let flatpak_task = Self {
-            operation_type: FlatpakOperationType::InstallBundleFile,
+            type_: FlatpakTaskType::InstallBundleFile,
             installation: installation.clone(),
             dry_run,
             path: Some(path.to_owned()).into(),
@@ -104,7 +104,7 @@ impl FlatpakTask {
 
     pub fn new_uninstall(installation: &InstallationInfo, remote: &RemoteInfo, ref_: &str) -> Task {
         let flatpak_task = Self {
-            operation_type: FlatpakOperationType::Install,
+            type_: FlatpakTaskType::Install,
             installation: installation.clone(),
             dry_run: false,
             ref_: Some(ref_.to_owned()).into(),
@@ -120,7 +120,7 @@ impl FlatpakTask {
 impl Default for FlatpakTask {
     fn default() -> Self {
         Self {
-            operation_type: FlatpakOperationType::default(),
+            type_: FlatpakTaskType::default(),
             installation: InstallationInfo::default(),
             dry_run: false,
             ref_: None.into(),
@@ -132,7 +132,7 @@ impl Default for FlatpakTask {
 }
 
 #[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
-pub enum FlatpakOperationType {
+pub enum FlatpakTaskType {
     Install,
     InstallRefFile,
     InstallBundleFile,

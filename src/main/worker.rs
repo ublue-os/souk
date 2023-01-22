@@ -30,7 +30,7 @@ use crate::main::flatpak::package::SkPackage;
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::flatpak::utils;
 use crate::main::task::{SkTask, SkTaskModel};
-use crate::shared::info::RemoteInfo;
+use crate::shared::flatpak::info::RemoteInfo;
 use crate::shared::task::FlatpakTask;
 
 /// Number of tasks that are completed and still remain in log

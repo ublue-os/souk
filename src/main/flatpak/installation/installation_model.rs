@@ -27,7 +27,7 @@ use indexmap::map::IndexMap;
 
 use crate::main::error::Error;
 use crate::main::flatpak::installation::SkInstallation;
-use crate::shared::info::InstallationInfo;
+use crate::shared::flatpak::info::InstallationInfo;
 
 mod imp {
     use super::*;

@@ -31,7 +31,7 @@ use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};
 use crate::main::flatpak::package::{SkPackage, SkPackageModel};
 use crate::main::i18n::i18n;
-use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
+use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
 
 mod imp {
     use super::*;

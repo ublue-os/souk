@@ -23,7 +23,7 @@ use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
 use crate::main::flatpak::installation::SkRemote;
-use crate::shared::info::RemoteInfo;
+use crate::shared::flatpak::info::RemoteInfo;
 
 mod imp {
     use super::*;

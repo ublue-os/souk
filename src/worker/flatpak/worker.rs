@@ -29,11 +29,9 @@ use glib::{clone, Downgrade, KeyFile};
 use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 
-use crate::shared::dry_run::{DryRun, DryRunRuntime};
-use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
-use crate::shared::task::{
-    FlatpakOperationType, FlatpakTask, TaskProgress, TaskResponse, TaskResult,
-};
+use crate::shared::flatpak::dry_run::{DryRun, DryRunRuntime};
+use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
+use crate::shared::task::{FlatpakTask, FlatpakTaskType, TaskProgress, TaskResponse, TaskResult};
 use crate::shared::WorkerError;
 use crate::worker::appstream;
 
@@ -52,8 +50,8 @@ impl FlatpakWorker {
     }
 
     pub fn process_task(&self, task: FlatpakTask, task_uuid: &str) {
-        let result = match task.operation_type {
-            FlatpakOperationType::Install => {
+        let result = match task.type_ {
+            FlatpakTaskType::Install => {
                 if task.dry_run {
                     unimplemented!();
                 } else {
@@ -66,7 +64,7 @@ impl FlatpakWorker {
                     )
                 }
             }
-            FlatpakOperationType::InstallBundleFile => {
+            FlatpakTaskType::InstallBundleFile => {
                 if task.dry_run {
                     self.install_flatpak_bundle_file_dry_run(
                         task_uuid,
@@ -82,7 +80,7 @@ impl FlatpakWorker {
                     )
                 }
             }
-            FlatpakOperationType::InstallRefFile => {
+            FlatpakTaskType::InstallRefFile => {
                 if task.dry_run {
                     self.install_flatpak_ref_file_dry_run(
                         task_uuid,
@@ -98,16 +96,16 @@ impl FlatpakWorker {
                     )
                 }
             }
-            FlatpakOperationType::Update => {
+            FlatpakTaskType::Update => {
                 unimplemented!();
             }
-            FlatpakOperationType::UpdateInstallation => {
+            FlatpakTaskType::UpdateInstallation => {
                 unimplemented!();
             }
-            FlatpakOperationType::Uninstall => {
+            FlatpakTaskType::Uninstall => {
                 unimplemented!();
             }
-            FlatpakOperationType::None => return,
+            FlatpakTaskType::None => return,
         };
 
         if let Err(err) = result {
@@ -530,7 +528,7 @@ impl FlatpakWorker {
 
                         let runtime = DryRunRuntime{
                             package,
-                            operation_type: operation.operation_type().to_str().unwrap().to_string(),
+                            operation_type: operation.operation_type().into(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
                         };

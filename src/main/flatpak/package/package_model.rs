@@ -23,7 +23,7 @@ use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
 use crate::main::flatpak::package::SkPackage;
-use crate::shared::info::PackageInfo;
+use crate::shared::flatpak::info::PackageInfo;
 
 mod imp {
     use super::*;
