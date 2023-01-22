@@ -24,11 +24,12 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use super::{SkDryRunRuntimeModel, SkFlatpakOperationType};
+use super::SkDryRunRuntimeModel;
 use crate::main::context::SkContext;
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};
 use crate::main::flatpak::package::{SkPackage, SkPackageAppstream};
 use crate::main::flatpak::permissions::SkAppPermissions;
+use crate::main::flatpak::SkFlatpakOperationType;
 use crate::shared::flatpak::dry_run::DryRun;
 use crate::shared::flatpak::info::RemoteInfo;
 

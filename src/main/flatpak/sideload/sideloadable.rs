@@ -25,9 +25,10 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
-use crate::main::flatpak::dry_run::{SkDryRun, SkFlatpakOperationType};
+use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote, SkRemoteModel};
 use crate::main::flatpak::sideload::SkSideloadType;
+use crate::main::flatpak::SkFlatpakOperationType;
 use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
 

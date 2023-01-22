@@ -21,8 +21,8 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use super::SkFlatpakOperationType;
 use crate::main::flatpak::package::SkPackage;
+use crate::main::flatpak::SkFlatpakOperationType;
 use crate::shared::flatpak::dry_run::DryRunRuntime;
 
 mod imp {
