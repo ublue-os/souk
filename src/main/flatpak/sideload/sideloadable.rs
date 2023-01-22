@@ -25,7 +25,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
-use crate::main::flatpak::dry_run::SkDryRun;
+use crate::main::flatpak::dry_run::{SkDryRun, SkFlatpakOperationType};
 use crate::main::flatpak::installation::{SkInstallation, SkRemote, SkRemoteModel};
 use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::task::SkTask;
@@ -127,7 +127,9 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(type_).unwrap();
-        imp.no_changes.set(dry_run.is_already_installed()).unwrap();
+        imp.no_changes
+            .set(dry_run.operation_type() == SkFlatpakOperationType::None)
+            .unwrap();
         imp.installation.set(installation.clone()).unwrap();
 
         // remotes

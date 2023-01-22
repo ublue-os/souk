@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use glib::{
-    KeyFile, KeyFileFlags, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject,
+    KeyFile, KeyFileFlags, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecEnum, ParamSpecObject,
     ParamSpecUInt64, ToValue,
 };
 use gtk::glib;
@@ -24,7 +24,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use super::SkDryRunRuntimeModel;
+use super::{SkDryRunRuntimeModel, SkFlatpakOperationType};
 use crate::main::context::SkContext;
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};
 use crate::main::flatpak::package::{SkPackage, SkPackageAppstream};
@@ -61,6 +61,14 @@ mod imp {
                         SkPackage::static_type(),
                         ParamFlags::READABLE,
                     ),
+                    ParamSpecEnum::new(
+                        "operation-type",
+                        "",
+                        "",
+                        SkFlatpakOperationType::static_type(),
+                        SkFlatpakOperationType::default() as i32,
+                        ParamFlags::READABLE,
+                    ),
                     ParamSpecUInt64::new(
                         "download-size",
                         "",
@@ -93,14 +101,6 @@ mod imp {
                         SkRemoteModel::static_type(),
                         ParamFlags::READABLE,
                     ),
-                    ParamSpecBoolean::new(
-                        "is-already-installed",
-                        "",
-                        "",
-                        false,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecBoolean::new("is-update", "", "", false, ParamFlags::READABLE),
                     ParamSpecBoolean::new("has-update-source", "", "", false, ParamFlags::READABLE),
                     ParamSpecObject::new(
                         "is-replacing-remote",
@@ -117,12 +117,11 @@ mod imp {
         fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "package" => self.obj().package().to_value(),
+                "operation-type" => self.obj().operation_type().to_value(),
                 "download-size" => self.obj().download_size().to_value(),
                 "installed-size" => self.obj().installed_size().to_value(),
                 "runtimes" => self.obj().runtimes().to_value(),
                 "added-remotes" => self.obj().added_remotes().to_value(),
-                "is-already-installed" => self.obj().is_already_installed().to_value(),
-                "is-update" => self.obj().is_update().to_value(),
                 "has-update-source" => self.obj().has_update_source().to_value(),
                 "is-replacing-remote" => self.obj().is_replacing_remote().to_value(),
                 _ => unimplemented!(),
@@ -155,6 +154,10 @@ impl SkDryRun {
         self.imp().package.get().unwrap().clone()
     }
 
+    pub fn operation_type(&self) -> SkFlatpakOperationType {
+        self.data().operation_type.into()
+    }
+
     pub fn download_size(&self) -> u64 {
         self.data().download_size
     }
@@ -169,14 +172,6 @@ impl SkDryRun {
 
     pub fn added_remotes(&self) -> SkRemoteModel {
         self.imp().added_remotes.clone()
-    }
-
-    pub fn is_already_installed(&self) -> bool {
-        self.data().is_already_installed
-    }
-
-    pub fn is_update(&self) -> bool {
-        self.data().is_update
     }
 
     pub fn has_update_source(&self) -> bool {

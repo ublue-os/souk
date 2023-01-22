@@ -31,6 +31,7 @@ use isahc::ReadResponseExt;
 
 use crate::shared::flatpak::dry_run::{DryRun, DryRunRuntime};
 use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
+use crate::shared::flatpak::FlatpakOperationType;
 use crate::shared::task::{FlatpakTask, FlatpakTaskType, TaskProgress, TaskResponse, TaskResult};
 use crate::shared::WorkerError;
 use crate::worker::appstream;
@@ -450,6 +451,7 @@ impl FlatpakWorker {
                         result.download_size = operation.download_size();
                         result.installed_size = operation.installed_size();
 
+                        result.operation_type = operation.operation_type().into();
                         if operation.operation_type() == TransactionOperationType::InstallBundle{
                             result.has_update_source = false;
                         }
@@ -479,11 +481,14 @@ impl FlatpakWorker {
                             }
 
                             if installed.commit().unwrap() == operation_commit {
-                                // Commit is the same -> ref is already installed
-                                result.is_already_installed = true;
+                                // Commit is the same -> ref is already installed -> No operation
+                                result.operation_type = FlatpakOperationType::None;
                             }else{
                                 // Commit differs -> is update
-                                result.is_update = true;
+                                // Manually set operation type to `Update`, since technically it's
+                                // not possible to "update" Flatpak bundles, from libflatpak side
+                                // it's always `InstallBundle` operation.
+                                result.operation_type = FlatpakOperationType::Update;
                             }
                         }
 

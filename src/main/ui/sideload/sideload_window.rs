@@ -27,7 +27,7 @@ use super::SkRemoteRow;
 use crate::main::app::SkApplication;
 use crate::main::context::SkContext;
 use crate::main::error::Error;
-use crate::main::flatpak::dry_run::SkDryRun;
+use crate::main::flatpak::dry_run::{SkDryRun, SkFlatpakOperationType};
 use crate::main::flatpak::installation::SkRemote;
 use crate::main::flatpak::package::{SkPackage, SkPackageType};
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
@@ -422,7 +422,7 @@ impl SkSideloadWindow {
         if let Some(dry_run) = sideloadable.package_dry_run() {
             let package = dry_run.package();
 
-            if dry_run.is_update() {
+            if dry_run.operation_type() == SkFlatpakOperationType::Update {
                 imp.start_button.set_label(&update_start_button);
                 imp.details_title.set_title(&update_details_title);
                 imp.progress_title.set_title(&update_progress_title);
@@ -505,7 +505,9 @@ impl SkSideloadWindow {
             // We don't support updating .flatpakrefs through sideloading, since the
             // installation would fail with "x is already installed". Only bundles can be
             // updated.
-            if dry_run.is_update() && sideloadable.type_() == SkSideloadType::Ref {
+            if dry_run.operation_type() == SkFlatpakOperationType::Update
+                && sideloadable.type_() == SkSideloadType::Ref
+            {
                 imp.sideload_leaflet.set_visible_child_name("already-done");
                 return;
             }
