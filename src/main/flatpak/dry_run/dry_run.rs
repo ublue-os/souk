@@ -184,6 +184,10 @@ impl SkDryRun {
         remote_info.map(|remote_info| SkRemote::new(&remote_info))
     }
 
+    pub fn appstream(&self) -> SkPackageAppstream {
+        SkPackageAppstream::from_dry_run(self)
+    }
+
     pub fn metadata(&self) -> KeyFile {
         let keyfile = KeyFile::new();
         keyfile
@@ -203,10 +207,6 @@ impl SkDryRun {
         } else {
             None
         }
-    }
-
-    pub fn appstream(&self) -> SkPackageAppstream {
-        SkPackageAppstream::from_dry_run(self)
     }
 
     // TODO: Rework context info so it makes use of new SkDryRun objects etc.

@@ -191,7 +191,7 @@ impl FlatpakWorker {
         let transaction = self.new_transaction(installation_info, true)?;
         transaction.add_install_bundle(&file, None)?;
 
-        let mut results = self.run_dry_run_transaction(transaction, installation_info, false)?;
+        let mut results = self.run_dry_run_transaction(transaction, installation_info)?;
 
         // Installed bundle size
         results.installed_size = bundle.installed_size();
@@ -211,10 +211,10 @@ impl FlatpakWorker {
 
         // Icon
         if let Some(bytes) = bundle.icon(128) {
-            results.icon = bytes.to_vec();
+            results.icon = Some(bytes.to_vec()).into();
         }
 
-        // Appstream metadata
+        // Appstream
         if let Some(compressed) = bundle.appstream() {
             let collection = Collection::from_gzipped_bytes(&compressed).unwrap();
             let component = &collection.components[0];
@@ -273,7 +273,7 @@ impl FlatpakWorker {
         let transaction = self.new_transaction(installation_info, true)?;
         transaction.add_install_flatpakref(&bytes)?;
 
-        let mut results = self.run_dry_run_transaction(transaction, installation_info, true)?;
+        let mut results = self.run_dry_run_transaction(transaction, installation_info)?;
 
         // Up to two remotes can be added during a *.flatpakref installation:
         // 1) `Url` value (= the repository where the ref is located)
@@ -401,8 +401,6 @@ impl FlatpakWorker {
         transaction: Transaction,
         // We need the "real" installation (not the dry-run one) to check what's already installed
         installation_info: &InstallationInfo,
-        // Whether to load the AppStream data from the Remote
-        load_remote_appstream: bool,
     ) -> Result<DryRun, WorkerError> {
         let result = Rc::new(RefCell::new(DryRun::default()));
         let real_installation = Installation::from(installation_info);
@@ -419,12 +417,15 @@ impl FlatpakWorker {
 
         // Ready -> Everything got resolved, so we can check the transaction operations
         transaction.connect_ready(
-            clone!(@weak result, @weak real_installation, @strong load_remote_appstream => @default-return false, move |transaction|{
+            clone!(@weak result, @weak real_installation => @default-return false, move |transaction|{
                 let mut result = result.borrow_mut();
                 let operation_count = transaction.operations().len();
 
                 for (pos, operation) in transaction.operations().iter().enumerate () {
                     let operation_ref = operation.get_ref().unwrap().to_string();
+                    let operation_commit = operation.commit().unwrap().to_string();
+                    let operation_metadata = operation.metadata().unwrap().to_data().to_string();
+                    let operation_old_metadata = operation.metadata().map(|m| m.to_data().to_string());
 
                     // Retrieve remote
                     let remote_name = operation.remote().unwrap().to_string();
@@ -436,22 +437,64 @@ impl FlatpakWorker {
                         RemoteInfo::from_flatpak(&f_remote, None)
                     };
 
+                    // Load appstream
+                    let mut appstream = None;
+                    let mut icon = None;
+
+                    // We can't load appstream for bundles from the remote, since it's included in the bundle file
+                    if operation.operation_type() != TransactionOperationType::InstallBundle {
+                        let dry_run_installation = transaction.installation().unwrap();
+                        let remote_name = operation.remote().unwrap().to_string();
+                        let ref_ = Ref::parse(&operation.get_ref().unwrap()).unwrap();
+                        let arch = ref_.arch().unwrap().to_string();
+
+                        // Check if remote is already added (and we don't need to update the appstram data)
+                        let remote = match real_installation.remote_by_name(&remote_name, Cancellable::NONE) {
+                            Ok(remote) => remote,
+                            Err(_) => {
+                                debug!("Update appstream data for remote \"{}\" in dry run installation...", remote_name);
+                                let res = dry_run_installation.update_appstream_sync(&remote_name, Some(&arch), Cancellable::NONE);
+                                if let Err(err) = res {
+                                    warn!("Unable to update appstream data: {}", err.to_string());
+                                    return false;
+                                }
+
+                                dry_run_installation.remote_by_name(&remote_name, Cancellable::NONE).unwrap()
+                            }
+                        };
+
+                        // TODO: This currently compiles the appstream into xmlb every single time for every single runtime / package....
+                        if let Some(component) = appstream::utils::component_from_remote(&ref_, &remote) {
+                            // Appstream
+                            let json = serde_json::to_string(&component).unwrap();
+                            appstream = Some(json);
+
+                            // Icon
+                            let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
+                            let icon_file = appstream_dir.child(format!("icons/128x128/{}.png", ref_.name().unwrap()));
+                            if let Ok((bytes, _)) = icon_file.load_bytes(Cancellable::NONE) {
+                                icon = Some(bytes.to_vec());
+                            }
+                        } else {
+                            warn!("Couldn't find appstream component for {operation_ref}");
+                        }
+                    }
+
                     // Check if it's the last operation, which is the targeted app / runtime
                     if (pos+1) ==  operation_count {
-                        let operation_commit = operation.commit().unwrap().to_string();
-                        let operation_metadata = operation.metadata().unwrap().to_data().to_string();
-                        let operation_old_metadata = operation.metadata().map(|m| m.to_data().to_string());
-
                         // Package
                         let package_info = PackageInfo::new(operation_ref, remote_info);
                         result.package = package_info;
+                        result.operation_type = operation.operation_type().into();
 
-                        result.metadata = operation_metadata;
-                        result.old_metadata = operation_old_metadata.into();
                         result.download_size = operation.download_size();
                         result.installed_size = operation.installed_size();
 
-                        result.operation_type = operation.operation_type().into();
+                        result.icon = icon.into();
+                        result.appstream_component = appstream.into();
+                        result.metadata = operation_metadata;
+                        result.old_metadata = operation_old_metadata.into();
+
                         if operation.operation_type() == TransactionOperationType::InstallBundle{
                             result.has_update_source = false;
                         }
@@ -491,43 +534,6 @@ impl FlatpakWorker {
                                 result.operation_type = FlatpakOperationType::Update;
                             }
                         }
-
-                        // Load appstream metadata
-                        if load_remote_appstream {
-                            let dry_run_installation = transaction.installation().unwrap();
-                            let remote_name = operation.remote().unwrap().to_string();
-                            let arch = ref_.arch().unwrap().to_string();
-
-                            // Check if remote is already added (and we don't need to update the appstram data)
-                            let remote = match real_installation.remote_by_name(&remote_name, Cancellable::NONE){
-                                Ok(remote) => remote,
-                                Err(_) => {
-                                    debug!("Update appstream data for remote \"{}\" in dry run installation...", remote_name);
-                                    let res = dry_run_installation.update_appstream_sync(&remote_name, Some(&arch), Cancellable::NONE);
-                                    if let Err(err) = res {
-                                        warn!("Unable to update appstream data: {}", err.to_string());
-                                        return false;
-                                    }
-
-                                    dry_run_installation.remote_by_name(&remote_name, Cancellable::NONE).unwrap()
-                                }
-                            };
-
-                            if let Some(component) = appstream::utils::component_from_remote(&ref_, &remote){
-                                // Appstream
-                                let json = serde_json::to_string(&component).unwrap();
-                                result.appstream_component = Some(json).into();
-
-                                // Icon
-                                let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
-                                let icon = appstream_dir.child(format!("icons/128x128/{}.png", ref_.name().unwrap()));
-                                if let Ok((bytes, _)) = icon.load_bytes(Cancellable::NONE){
-                                    result.icon = bytes.to_vec();
-                                }
-                            }else{
-                                warn!("Couldn't find appstream component.");
-                            }
-                        }
                     }else{
                         let package = PackageInfo::new(operation_ref, remote_info);
 
@@ -536,7 +542,12 @@ impl FlatpakWorker {
                             operation_type: operation.operation_type().into(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
+                            icon: icon.into(),
+                            appstream_component: appstream.into(),
+                            metadata: operation_metadata,
+                            old_metadata: operation_old_metadata.into(),
                         };
+
                         result.runtimes.push(runtime);
                     }
                 }

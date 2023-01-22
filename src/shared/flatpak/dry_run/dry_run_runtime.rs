@@ -14,17 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::Type;
+use zbus::zvariant::{Optional, Type};
 
 use crate::shared::flatpak::info::PackageInfo;
 use crate::shared::flatpak::FlatpakOperationType;
 
-#[derive(Default, Deserialize, Serialize, Type, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Derivative, Default, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash)]
+#[derivative(Debug)]
 pub struct DryRunRuntime {
     pub package: PackageInfo,
     pub operation_type: FlatpakOperationType,
 
     pub download_size: u64,
     pub installed_size: u64,
+
+    #[derivative(Debug = "ignore")]
+    pub icon: Optional<Vec<u8>>,
+    /// Json serialized appstream component
+    #[derivative(Debug = "ignore")]
+    pub appstream_component: Optional<String>,
+    /// Flatpak metadata
+    #[derivative(Debug = "ignore")]
+    pub metadata: String,
+    #[derivative(Debug = "ignore")]
+    pub old_metadata: Optional<String>,
 }

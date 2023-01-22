@@ -27,7 +27,8 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::dry_run::SkDryRun;
+use crate::main::flatpak::dry_run::{SkDryRun, SkDryRunRuntime};
+use crate::main::flatpak::package::SkPackage;
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::SkApplication;
 use crate::shared::flatpak::info::PackageInfo;
@@ -83,27 +84,39 @@ glib::wrapper! {
 }
 
 impl SkPackageAppstream {
+    pub fn from_dry_run_runtime(dry_run_time: &SkDryRunRuntime) -> Self {
+        let appstream: Option<String> = dry_run_time.data().appstream_component.into();
+        let icon: Option<Vec<u8>> = dry_run_time.data().icon.into();
+
+        Self::new(appstream, icon, &dry_run_time.package())
+    }
+
     pub fn from_dry_run(dry_run: &SkDryRun) -> Self {
+        let appstream: Option<String> = dry_run.data().appstream_component.into();
+        let icon: Option<Vec<u8>> = dry_run.data().icon.into();
+
+        Self::new(appstream, icon, &dry_run.package())
+    }
+
+    fn new(appstream_string: Option<String>, icon: Option<Vec<u8>>, package: &SkPackage) -> Self {
         let appstream: Self = glib::Object::new(&[]);
         let imp = appstream.imp();
 
         // Appstream Component
-        let text = dry_run
-            .data()
-            .appstream_component
-            .as_ref()
-            .cloned()
-            .unwrap_or_default();
+        let text = appstream_string.unwrap_or_default();
 
-        let fallback = dry_run.package().info();
+        let fallback = package.info();
         let c = serde_json::from_str(&text).unwrap_or_else(|_| Self::fallback_component(&fallback));
         imp.component.set(c).unwrap();
 
         // Icon
-        let icon = dry_run.data().icon;
-        let bytes = Bytes::from_owned(icon);
-        let icon: Paintable = if let Ok(texture) = gdk::Texture::from_bytes(&bytes) {
-            texture.upcast()
+        let icon = if let Some(icon) = icon {
+            let bytes = Bytes::from_owned(icon);
+            if let Ok(texture) = gdk::Texture::from_bytes(&bytes) {
+                texture.upcast()
+            } else {
+                Self::fallback_icon().upcast()
+            }
         } else {
             Self::fallback_icon().upcast()
         };

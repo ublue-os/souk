@@ -36,13 +36,8 @@ pub struct DryRun {
     pub download_size: u64,
     pub installed_size: u64,
 
-    /// Which runtimes are installed during the installation
-    pub runtimes: Vec<DryRunRuntime>,
-    /// Which remotes are getting added during installation
-    pub added_remotes: Vec<RemoteInfo>,
-
     #[derivative(Debug = "ignore")]
-    pub icon: Vec<u8>,
+    pub icon: Optional<Vec<u8>>,
     /// Json serialized appstream component
     #[derivative(Debug = "ignore")]
     pub appstream_component: Optional<String>,
@@ -51,6 +46,11 @@ pub struct DryRun {
     pub metadata: String,
     #[derivative(Debug = "ignore")]
     pub old_metadata: Optional<String>,
+
+    /// Which runtimes are installed during the installation
+    pub runtimes: Vec<DryRunRuntime>,
+    /// Which remotes are getting added during installation
+    pub added_remotes: Vec<RemoteInfo>,
 
     /// Whether the package has an source for future app updates (not always
     /// the case, for example sideloading a bundle)
@@ -76,11 +76,11 @@ impl Default for DryRun {
             runtimes: Vec::default(),
             download_size: 0,
             installed_size: 0,
-            added_remotes: Vec::default(),
-            icon: Vec::default(),
+            icon: None.into(),
             appstream_component: None.into(),
             metadata: String::new(),
             old_metadata: None.into(),
+            added_remotes: Vec::default(),
             has_update_source: true,
             is_replacing_remote: None.into(),
         }

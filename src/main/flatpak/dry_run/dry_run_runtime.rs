@@ -14,14 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecUInt64, ToValue};
+use glib::{
+    KeyFile, KeyFileFlags, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecUInt64,
+    ToValue,
+};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::package::SkPackage;
+use crate::main::flatpak::package::{SkPackage, SkPackageAppstream};
 use crate::main::flatpak::SkFlatpakOperationType;
 use crate::shared::flatpak::dry_run::DryRunRuntime;
 
@@ -129,5 +132,30 @@ impl SkDryRunRuntime {
 
     pub fn installed_size(&self) -> u64 {
         self.data().installed_size
+    }
+
+    pub fn appstream(&self) -> SkPackageAppstream {
+        SkPackageAppstream::from_dry_run_runtime(self)
+    }
+
+    pub fn metadata(&self) -> KeyFile {
+        let keyfile = KeyFile::new();
+        keyfile
+            .load_from_data(&self.data().metadata, KeyFileFlags::NONE)
+            .unwrap();
+        keyfile
+    }
+
+    pub fn old_metadata(&self) -> Option<KeyFile> {
+        if let Some(metadata) = self.data().old_metadata.into() {
+            let metadata: String = metadata;
+            let keyfile = KeyFile::new();
+            keyfile
+                .load_from_data(&metadata, KeyFileFlags::NONE)
+                .unwrap();
+            Some(keyfile)
+        } else {
+            None
+        }
     }
 }
