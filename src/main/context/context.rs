@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use flatpak::prelude::*;
-use flatpak::Ref;
 use glib::{ParamFlags, ParamSpec, ParamSpecObject, ToValue};
 use gtk::glib;
 use gtk::prelude::*;
@@ -27,12 +25,11 @@ use crate::main::context::{
     SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel, SkContextDetailLevel,
     SkContextDetailType,
 };
+use crate::main::flatpak::dry_run::{SkDryRun, SkDryRunRuntime};
 use crate::main::flatpak::permissions::types::{SkFilesystemPermission, SkServicePermission};
 use crate::main::flatpak::permissions::{PermissionDetails, SkAppPermissions, SkPermissionSummary};
-use crate::main::flatpak::utils;
+use crate::main::flatpak::SkFlatpakOperationType;
 use crate::main::i18n::{i18n, i18n_f};
-use crate::shared::flatpak::dry_run::DryRun;
-use crate::shared::flatpak::FlatpakOperationType;
 
 mod imp {
     use super::*;
@@ -153,42 +150,45 @@ impl SkContext {
         Self::new(&summary, &groups)
     }
 
-    pub fn download_size(dry_run: &DryRun) -> Self {
+    pub fn download_size(dry_run: &SkDryRun) -> Self {
         Self::size_context(dry_run, true)
     }
 
-    pub fn installed_size(dry_run: &DryRun) -> Self {
+    pub fn installed_size(dry_run: &SkDryRun) -> Self {
         Self::size_context(dry_run, false)
     }
 
-    fn size_context(dry_run: &DryRun, download_size: bool) -> Self {
+    fn size_context(dry_run: &SkDryRun, download_size: bool) -> Self {
         let mut groups = Vec::new();
         let mut runtime_size: u64 = 0;
 
         // Sort by size
-        let mut runtimes = dry_run.runtimes.clone();
+        let runtimes = dry_run.runtimes().snapshot();
+        let mut runtimes: Vec<&SkDryRunRuntime> = runtimes
+            .iter()
+            .map(|o| o.downcast_ref::<SkDryRunRuntime>().unwrap())
+            .collect();
         if download_size {
-            runtimes.sort_by(|a, b| b.download_size.cmp(&a.download_size));
+            runtimes.sort_by_key(|b| std::cmp::Reverse(b.download_size()))
         } else {
-            runtimes.sort_by(|a, b| b.installed_size.cmp(&a.installed_size));
+            runtimes.sort_by_key(|b| std::cmp::Reverse(b.installed_size()))
         }
 
         // The package itelf
         let mut package_details = Vec::new();
 
         let size = if download_size {
-            dry_run.download_size
+            dry_run.download_size()
         } else {
-            dry_run.installed_size
+            dry_run.installed_size()
         };
         let mut package_size = size;
 
-        let package_ref = Ref::parse(&dry_run.package.ref_).unwrap();
-        let package_ref_name = package_ref.name().unwrap().to_string();
-        let package_ref_branch = package_ref.branch().unwrap().to_string();
+        let package_ref_name = dry_run.package().name();
+        let package_ref_branch = dry_run.package().branch();
 
-        let title = i18n("Application Data");
-        let detail = if dry_run.has_extra_data() && !download_size {
+        let title = dry_run.appstream().name();
+        let detail = if dry_run.data().has_extra_data() && !download_size {
             let subtitle = i18n_f("{} ({}) – Requires additional extra data from an external source with unknown size", &[&package_ref_name, &package_ref_branch]);
             SkContextDetail::new_neutral_text("  ???  ", &title, &subtitle)
         } else {
@@ -200,20 +200,19 @@ impl SkContext {
         // Runtimes
         let mut runtime_details = Vec::new();
         for runtime in &runtimes {
-            let ref_ = Ref::parse(&runtime.package.ref_).unwrap();
-            let ref_name = ref_.name().unwrap().to_string();
-            let ref_branch = ref_.branch().unwrap().to_string();
+            let ref_name = runtime.package().name();
+            let ref_branch = runtime.package().branch();
 
-            let mut title = utils::runtime_ref_to_display_name(&ref_name);
-            if runtime.operation_type == FlatpakOperationType::Update {
+            let mut title = runtime.appstream().name();
+            if runtime.operation_type() == SkFlatpakOperationType::Update {
                 title = i18n_f("{} (Update)", &[&title]);
             }
             let subtitle = format!("{ref_name} ({ref_branch})");
 
             let size = if download_size {
-                runtime.download_size
+                runtime.download_size()
             } else {
-                runtime.installed_size
+                runtime.installed_size()
             };
 
             let detail = SkContextDetail::new_neutral_size(size, &title, &subtitle);
@@ -264,7 +263,7 @@ impl SkContext {
                 &descr,
             )
         } else {
-            let title = if dry_run.has_extra_data() {
+            let title = if dry_run.data().has_extra_data() {
                 i18n("Unknown storage size")
             } else {
                 i18n_f("Up to {} storage required", &[&total_size_str])

@@ -224,11 +224,11 @@ impl SkDryRun {
     }
 
     pub fn download_size_context(&self) -> SkContext {
-        SkContext::download_size(&self.data())
+        SkContext::download_size(self)
     }
 
     pub fn installed_size_context(&self) -> SkContext {
-        SkContext::installed_size(&self.data())
+        SkContext::installed_size(self)
     }
 
     pub fn data(&self) -> DryRun {
