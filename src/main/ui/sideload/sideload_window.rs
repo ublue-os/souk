@@ -38,8 +38,7 @@ use crate::main::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::main::ui::installation::SkInstallationListBox;
 use crate::main::ui::task::SkTaskProgressBar;
 use crate::main::ui::utils;
-use crate::shared::config;
-use crate::worker::WorkerError;
+use crate::shared::{config, WorkerError};
 
 mod imp {
     use super::*;
@@ -360,16 +359,12 @@ impl SkSideloadWindow {
                         WorkerError::DryRunRuntimeNotFound(runtime) => {
                             self.show_missing_runtime_message(runtime)
                         }
-                        _ => self.show_error_message(&worker_error.message()),
+                        _ => self.show_error_message(&err.message()),
                     }
                 }
 
                 match err {
                     Error::Worker(_) => (),
-                    Error::Task(err) => {
-                        let message = i18n_f("Task failed: {}", &[&err]);
-                        self.show_error_message(&message);
-                    }
                     Error::UnsupportedSideloadType => {
                         let message = i18n("Unknown or unsupported file format.");
                         self.show_error_message(&message);

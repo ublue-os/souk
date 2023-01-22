@@ -1,5 +1,5 @@
 // Souk - error.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,15 +16,12 @@
 
 use thiserror::Error;
 
-use crate::worker::WorkerError;
+use crate::shared::WorkerError;
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Souk worker error")]
     Worker(#[from] WorkerError),
-
-    #[error("Souk task error")]
-    Task(String),
 
     #[error("Unsupported sideload type")]
     UnsupportedSideloadType,
@@ -39,7 +36,7 @@ pub enum Error {
 impl Error {
     pub fn message(&self) -> String {
         match self {
-            Self::Worker(err) => err.message(),
+            Self::Worker(err) => err.to_string(),
             Self::GLib(err) => err.message().to_string(),
             _ => self.to_string(),
         }

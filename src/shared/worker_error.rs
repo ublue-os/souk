@@ -1,5 +1,5 @@
 // Souk - worker_error.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,22 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::fmt;
+
 use gtk::gio::IOErrorEnum;
-use gtk::glib::Error;
-use zbus::DBusError;
+use gtk::glib;
+use gtk::glib::Error as GLibError;
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+use zbus::zvariant::Type;
 
-#[derive(DBusError, Debug, PartialEq)]
+#[derive(Deserialize, Clone, Serialize, Type, Error, Debug, PartialEq, glib::Boxed)]
+#[boxed_type(name = "WorkerError")]
 pub enum WorkerError {
-    Network(String),
     IO(String),
-
-    DryRunRuntimeNotFound(String),
-
-    GLibCancelled,
+    // The string is unused. Unfortunately we need it, so the struct can be (de)serialized with
+    // dbus/zbus
+    GLibCancelled(String),
     GLib(String),
+    DryRunRuntimeNotFound(String),
+}
 
-    #[dbus_error(zbus_error)]
-    ZBus(zbus::Error),
+impl Default for WorkerError {
+    fn default() -> Self {
+        Self::GLib(String::new())
+    }
 }
 
 impl From<std::io::Error> for WorkerError {
@@ -44,27 +52,26 @@ impl From<isahc::Error> for WorkerError {
     }
 }
 
-impl From<Error> for WorkerError {
-    fn from(item: Error) -> Self {
+impl From<GLibError> for WorkerError {
+    fn from(item: GLibError) -> Self {
         if item.kind::<IOErrorEnum>() == Some(IOErrorEnum::Cancelled) {
-            return Self::GLibCancelled;
+            return Self::GLibCancelled(String::new());
         }
 
         Self::GLib(item.message().to_string())
     }
 }
 
-impl WorkerError {
-    pub fn message(&self) -> String {
-        match self {
-            Self::Network(message) => message.into(),
+impl fmt::Display for WorkerError {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        let msg = match self {
             Self::IO(message) => message.into(),
             Self::DryRunRuntimeNotFound(runtime) => {
                 format!("Unable to find required runtime {runtime}")
             }
-            Self::GLibCancelled => "The operation got cancelled.".into(),
+            Self::GLibCancelled(_) => "The operation got cancelled.".into(),
             Self::GLib(message) => message.into(),
-            Self::ZBus(err) => err.to_string(),
-        }
+        };
+        write!(fmt, "{msg}")
     }
 }

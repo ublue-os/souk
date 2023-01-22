@@ -34,7 +34,8 @@ use crate::shared::info::{InstallationInfo, PackageInfo, RemoteInfo};
 use crate::shared::task::{
     FlatpakOperationType, FlatpakTask, TaskProgress, TaskResponse, TaskResult,
 };
-use crate::worker::{appstream, WorkerError};
+use crate::shared::WorkerError;
+use crate::worker::appstream;
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct FlatpakWorker {
@@ -111,12 +112,12 @@ impl FlatpakWorker {
 
         if let Err(err) = result {
             // Transaction got cancelled (probably by user)
-            if err == WorkerError::GLibCancelled {
+            if err == WorkerError::GLibCancelled(String::new()) {
                 let result = TaskResult::new_cancelled();
                 let response = TaskResponse::new_result(task_uuid.into(), result);
                 self.sender.try_send(response).unwrap();
             } else {
-                let result = TaskResult::new_error(err.message());
+                let result = TaskResult::new_error(err);
                 let response = TaskResponse::new_result(task_uuid.into(), result);
                 self.sender.try_send(response).unwrap();
             }

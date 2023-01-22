@@ -1,5 +1,5 @@
 // Souk - task_result.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,12 +18,13 @@ use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
 use crate::shared::dry_run::DryRun;
+use crate::shared::WorkerError;
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
 pub struct TaskResult {
     pub type_: TaskResultType,
     pub dry_run: Optional<DryRun>,
-    pub error: Optional<String>,
+    pub error: Optional<WorkerError>,
 }
 
 impl TaskResult {
@@ -43,7 +44,7 @@ impl TaskResult {
         }
     }
 
-    pub fn new_error(error: String) -> Self {
+    pub fn new_error(error: WorkerError) -> Self {
         Self {
             type_: TaskResultType::Error,
             dry_run: None.into(),

@@ -17,7 +17,9 @@
 pub mod dry_run;
 pub mod info;
 pub mod task;
+mod worker_error;
 
+pub use worker_error::WorkerError;
 #[rustfmt::skip]
 pub mod config;
 pub mod path;

@@ -33,6 +33,7 @@ use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::package::SkPackage;
 use crate::main::task::{SkTaskModel, SkTaskStatus, SkTaskType};
 use crate::shared::task::{Task, TaskProgress, TaskResponse, TaskResponseType, TaskResultType};
+use crate::shared::WorkerError;
 
 mod imp {
     use super::*;
@@ -60,7 +61,7 @@ mod imp {
 
         // Possible result values
         pub result_dry_run: OnceCell<SkDryRun>,
-        pub result_error: OnceCell<String>,
+        pub result_error: OnceCell<WorkerError>,
     }
 
     #[glib::object_subclass]
@@ -151,7 +152,7 @@ mod imp {
                     Signal::builder("done").build(),
                     Signal::builder("cancelled").build(),
                     Signal::builder("error")
-                        .param_types([glib::Type::STRING])
+                        .param_types([WorkerError::static_type()])
                         .build(),
                 ]
             });
@@ -380,7 +381,7 @@ impl SkTask {
         imp.finished_receiver.get().unwrap().recv().await.unwrap();
 
         if let Some(err) = self.result_error() {
-            Err(Error::Task(err))
+            Err(Error::Worker(err))
         } else {
             Ok(())
         }
@@ -390,7 +391,7 @@ impl SkTask {
         self.imp().result_dry_run.get().cloned()
     }
 
-    pub fn result_error(&self) -> Option<String> {
+    pub fn result_error(&self) -> Option<WorkerError> {
         self.imp().result_error.get().cloned()
     }
 

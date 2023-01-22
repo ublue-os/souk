@@ -21,7 +21,5 @@ mod flatpak;
 
 mod app;
 mod dbus_server;
-mod error;
 
 pub use app::SkWorkerApplication;
-pub use error::WorkerError;
