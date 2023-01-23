@@ -51,7 +51,7 @@
 }
 
 .circular-background.size {
-  min-width: 75px;
+  min-width: 65px;
 }
 
 .transparent-rows {
@@ -98,3 +98,4 @@
   color: @red_4;
   background-color: alpha(@red_2, .25);
 }
+
