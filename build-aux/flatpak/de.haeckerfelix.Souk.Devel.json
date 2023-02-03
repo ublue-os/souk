@@ -83,6 +83,8 @@
             "name" : "ostree",
             "config-opts" : [
                 "--disable-man",
+                "--with-curl",
+                "--without-soup",
                 "--without-libsystemd"
             ],
             "cleanup" : [
@@ -96,7 +98,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/ostreedev/ostree.git",
-                    "tag" : "v2022.2"
+                    "tag" : "v2022.7"
                 }
             ]
         },
@@ -154,11 +156,52 @@
             ]
         },
         {
+            "name" : "libyaml",
+            "sources" : [
+                {
+                    "type" : "git",
+                    "url" : "https://github.com/yaml/libyaml.git",
+                    "tag" : "0.2.5"
+                }
+            ]
+        },
+        {
+            "name" : "libstemmer",
+            "buildsystem" : "cmake-ninja",
+            "sources" : [
+                {
+                    "type" : "git",
+                    "url" : "https://github.com/zvelo/libstemmer",
+                    "commit" : "78c149a3a6f262a35c7f7351d3f77b725fc646cf"
+                }
+            ]
+        },
+        {
+            "name" : "appstream",
+            "config-opts" : [
+                "--libdir=/app/lib",
+                "--buildtype=debugoptimized",
+                "-Dgir=false",
+                "-Dapidocs=false",
+                "-Dinstall-docs=false"
+            ],
+            "buildsystem" : "meson",
+            "builddir" : true,
+            "sources" : [
+                {
+                    "type" : "git",
+                    "url" : "https://github.com/ximion/appstream.git",
+                    "commit" : "565ff2f3bcf4497c7ffbd298c95c24ad0b7c3d1e"
+                }
+            ]
+        },
+        {
             "name" : "flatpak",
             "config-opts" : [
                 "--disable-documentation",
                 "--disable-seccomp",
                 "--disable-sandboxed-triggers",
+                "--with-curl",
                 "--with-system-install-dir=/var/lib/flatpak",
                 "--sysconfdir=/var/run/host/etc"
             ],
@@ -182,7 +225,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/flatpak/flatpak.git",
-                    "branch" : "1.12.7"
+                    "branch" : "1.14.1"
                 },
                 {
                     "type" : "file",
@@ -194,7 +237,10 @@
             "name" : "libxmlb",
             "buildsystem" : "meson",
             "config-opts" : [
-                "-Dgtkdoc=false"
+                "--libdir=/app/lib",
+                "-Dgtkdoc=false",
+                "-Dtests=false",
+                "-Dcli=false"
             ],
             "sources": [
                 {
