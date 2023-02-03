@@ -1,5 +1,5 @@
 // Souk - remote_info.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,13 +16,15 @@
 
 use flatpak::prelude::*;
 use flatpak::{Installation, Remote};
+use gtk::glib;
 use gtk::glib::Error;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
 use super::InstallationInfo;
 
-#[derive(Deserialize, Serialize, Hash, Type, Debug, Clone, Eq, PartialEq)]
+#[derive(Deserialize, Serialize, Hash, Type, Debug, Clone, Eq, PartialEq, glib::Boxed)]
+#[boxed_type(name = "RemoteInfo", nullable)]
 pub struct RemoteInfo {
     pub name: String,
     pub repository_url: String,

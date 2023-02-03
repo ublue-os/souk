@@ -1,5 +1,5 @@
 // Souk - package_info.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,12 +18,14 @@ use std::hash::Hash;
 
 use flatpak::prelude::*;
 use flatpak::{Installation, InstalledRef, Remote};
+use gtk::glib;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
 use crate::shared::flatpak::info::RemoteInfo;
 
-#[derive(Default, Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq, Hash, glib::Boxed)]
+#[boxed_type(name = "PackageInfo", nullable)]
 pub struct PackageInfo {
     pub ref_: String,
     pub remote: RemoteInfo,

@@ -1,5 +1,5 @@
 // Souk - installation_info.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,8 @@ use gtk::{gio, glib};
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
-#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Default, Debug, Clone, Hash)]
+#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Default, Debug, Clone, Hash, glib::Boxed)]
+#[boxed_type(name = "InstallationInfo", nullable)]
 pub struct InstallationInfo {
     /// Flatpak installation id/name. For example `default` or `user`.
     pub name: String,
