@@ -29,7 +29,7 @@ use crate::main::context::SkContext;
 use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::installation::SkRemote;
-use crate::main::flatpak::package::{SkPackage, SkPackageType};
+use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageKind};
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::flatpak::SkFlatpakOperationType;
 use crate::main::i18n::{i18n, i18n_f};
@@ -444,7 +444,7 @@ impl SkSideloadWindow {
                 .set_description(Some(&app_already_done_descr));
 
             // Only display launch button if it's an app
-            if package.type_() == SkPackageType::App {
+            if package.kind() == SkPackageKind::App {
                 imp.launch_button.set_visible(true);
             }
 
@@ -501,7 +501,7 @@ impl SkSideloadWindow {
             imp.package_name_label.set_text(&asi.name());
             imp.package_icon_image.set_paintable(Some(&asi.icon()));
             imp.package_developer_label.set_text(&asi.developer_name());
-            imp.package_version_label.set_text(&asi.version_text());
+            imp.package_version_label.set_text(&asi.version_text(false));
 
             // We don't support updating .flatpakrefs through sideloading, since the
             // installation would fail with "x is already installed". Only bundles can be

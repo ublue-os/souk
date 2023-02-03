@@ -26,7 +26,7 @@ use once_cell::sync::Lazy;
 use crate::main::dbus_proxy::WorkerProxy;
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkInstallation, SkInstallationModel, SkRemote};
-use crate::main::flatpak::package::SkPackage;
+use crate::main::flatpak::package::{SkPackage, SkPackageExt};
 use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
 use crate::main::flatpak::utils;
 use crate::main::task::{SkTask, SkTaskModel};

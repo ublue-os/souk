@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use appstream::builders::ComponentBuilder;
+use appstream::enums::ComponentKind;
 use appstream::{AppId, Component, TranslatableString};
 use flatpak::prelude::*;
 use flatpak::{Installation, Ref};
@@ -28,7 +29,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::flatpak::dry_run::{SkDryRun, SkDryRunRuntime};
-use crate::main::flatpak::package::SkPackage;
+use crate::main::flatpak::package::{SkPackage, SkPackageExt};
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::SkApplication;
 use crate::shared::flatpak::info::PackageInfo;
@@ -38,6 +39,8 @@ mod imp {
 
     #[derive(Debug, Default)]
     pub struct SkPackageAppstream {
+        pub package: OnceCell<SkPackage>,
+
         pub component: OnceCell<Component>,
         pub icon: OnceCell<Paintable>,
     }
@@ -62,6 +65,7 @@ mod imp {
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("developer-name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("version", "", "", None, ParamFlags::READABLE),
+                    ParamSpecString::new("summary", "", "", None, ParamFlags::READABLE),
                 ]
             });
             PROPERTIES.as_ref()
@@ -73,6 +77,7 @@ mod imp {
                 "name" => self.obj().name().to_value(),
                 "developer-name" => self.obj().developer_name().to_value(),
                 "version" => self.obj().version().to_value(),
+                "summary" => self.obj().summary().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -100,7 +105,9 @@ impl SkPackageAppstream {
 
     fn new(appstream_string: Option<String>, icon: Option<Vec<u8>>, package: &SkPackage) -> Self {
         let appstream: Self = glib::Object::new(&[]);
+
         let imp = appstream.imp();
+        imp.package.set(package.clone()).unwrap();
 
         // Appstream Component
         let text = appstream_string.unwrap_or_default();
@@ -155,13 +162,33 @@ impl SkPackageAppstream {
 
     /// Returns the version as user friendly text, eg. "Version 3.1" or "Unknown
     /// Version"
-    pub fn version_text(&self) -> String {
+    pub fn version_text(&self, include_branch: bool) -> String {
         let mut releases = self.imp().component.get().unwrap().releases.clone();
         releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
-        if let Some(release) = releases.get(0) {
-            i18n_f("Version {}", &[&release.version.clone()])
+
+        let branch = self.imp().package.get().unwrap().branch();
+        let version = if let Some(release) = releases.get(0) {
+            if include_branch {
+                format!("{} ({})", release.version.clone(), branch)
+            } else {
+                release.version.clone()
+            }
         } else {
-            i18n("Unknown Version")
+            branch
+        };
+        i18n_f("Version {}", &[&version])
+    }
+
+    pub fn summary(&self) -> String {
+        let component = self.imp().component.get().unwrap();
+        if let Some(value) = &component.summary {
+            self.translated_value(value)
+        } else {
+            if component.kind == ComponentKind::Runtime {
+                i18n("A Flatpak Runtime")
+            } else {
+                i18n("A Flatpak Application")
+            }
         }
     }
 

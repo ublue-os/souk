@@ -16,14 +16,16 @@
 
 use flatpak::prelude::*;
 use flatpak::Ref;
-use glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecString, ToValue};
+use glib::{
+    ParamFlags, ParamSpec, ParamSpecBoxed, ParamSpecEnum, ParamSpecObject, ParamSpecString, ToValue,
+};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use super::SkPackageType;
+use super::SkPackageKind;
 use crate::main::flatpak::installation::SkRemote;
 use crate::main::SkApplication;
 use crate::shared::flatpak::info::PackageInfo;
@@ -48,12 +50,19 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
+                    ParamSpecBoxed::new(
+                        "info",
+                        "",
+                        "",
+                        PackageInfo::static_type(),
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
                     ParamSpecEnum::new(
-                        "type",
+                        "kind",
                         "",
                         "",
-                        SkPackageType::static_type(),
-                        SkPackageType::App as i32,
+                        SkPackageKind::static_type(),
+                        SkPackageKind::App as i32,
                         ParamFlags::READABLE,
                     ),
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
@@ -73,12 +82,46 @@ mod imp {
 
         fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
-                "type" => self.obj().type_().to_value(),
+                "info" => self.obj().info().to_value(),
+                "kind" => self.obj().kind().to_value(),
                 "name" => self.obj().name().to_value(),
                 "architecture" => self.obj().architecture().to_value(),
                 "branch" => self.obj().branch().to_value(),
                 "remote" => self.obj().remote().to_value(),
                 _ => unimplemented!(),
+            }
+        }
+
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            match pspec.name() {
+                "info" => self.info.set(value.get().unwrap()).unwrap(),
+                _ => unimplemented!(),
+            }
+        }
+
+        fn constructed(&self) {
+            let info = self.obj().info();
+
+            let flatpak_ref = Ref::parse(&info.ref_).unwrap();
+            self.flatpak_ref.set(flatpak_ref).unwrap();
+
+            if let Some(inst_info) = &info.remote.installation.clone().into() {
+                let installations = SkApplication::default().worker().installations();
+                let installation = installations
+                    .installation(inst_info)
+                    .expect("Unknown Flatpak installation");
+
+                let remote = installation.remotes().remote(&info.remote);
+
+                if let Some(remote) = remote {
+                    self.remote.set(remote).unwrap();
+                } else {
+                    error!("Flatpak remote {} is not available in installations model, unable to reuse remote object", info.remote.name);
+                    self.remote.set(SkRemote::new(&info.remote)).unwrap();
+                }
+            } else {
+                let remote = SkRemote::new(&info.remote);
+                self.remote.set(remote).unwrap();
             }
         }
     }
@@ -90,42 +133,38 @@ glib::wrapper! {
 
 impl SkPackage {
     pub fn new(info: &PackageInfo) -> Self {
-        let package: Self = glib::Object::new(&[]);
-        let imp = package.imp();
+        glib::Object::new(&[("info", info)])
+    }
+}
 
-        imp.info.set(info.clone()).unwrap();
+pub trait SkPackageExt: 'static {
+    fn info(&self) -> PackageInfo;
 
-        let flatpak_ref = Ref::parse(&info.ref_).unwrap();
-        imp.flatpak_ref.set(flatpak_ref).unwrap();
+    fn kind(&self) -> SkPackageKind;
 
-        if let Some(inst_info) = &info.remote.installation.clone().into() {
-            let installations = SkApplication::default().worker().installations();
-            let installation = installations
-                .installation(inst_info)
-                .expect("Unknown Flatpak installation");
+    fn name(&self) -> String;
 
-            let remote = installation.remotes().remote(&info.remote);
+    fn architecture(&self) -> String;
 
-            if let Some(remote) = remote {
-                imp.remote.set(remote).unwrap();
-            } else {
-                error!("Flatpak remote {} is not available in installations model, unable to reuse remote object", info.remote.name);
-                imp.remote.set(SkRemote::new(&info.remote)).unwrap();
-            }
-        } else {
-            let remote = SkRemote::new(&info.remote);
-            imp.remote.set(remote).unwrap();
-        }
+    fn branch(&self) -> String;
 
-        package
+    fn remote(&self) -> SkRemote;
+}
+
+impl<O: IsA<SkPackage>> SkPackageExt for O {
+    fn info(&self) -> PackageInfo {
+        let obj = self.upcast_ref();
+        obj.imp().info.get().unwrap().clone()
     }
 
-    pub fn type_(&self) -> SkPackageType {
-        self.imp().flatpak_ref.get().unwrap().kind().into()
+    fn kind(&self) -> SkPackageKind {
+        let obj = self.upcast_ref();
+        obj.imp().flatpak_ref.get().unwrap().kind().into()
     }
 
-    pub fn name(&self) -> String {
-        self.imp()
+    fn name(&self) -> String {
+        let obj = self.upcast_ref();
+        obj.imp()
             .flatpak_ref
             .get()
             .unwrap()
@@ -134,8 +173,9 @@ impl SkPackage {
             .to_string()
     }
 
-    pub fn architecture(&self) -> String {
-        self.imp()
+    fn architecture(&self) -> String {
+        let obj = self.upcast_ref();
+        obj.imp()
             .flatpak_ref
             .get()
             .unwrap()
@@ -144,8 +184,10 @@ impl SkPackage {
             .to_string()
     }
 
-    pub fn branch(&self) -> String {
-        self.imp()
+    fn branch(&self) -> String {
+        let obj = self.upcast_ref();
+
+        obj.imp()
             .flatpak_ref
             .get()
             .unwrap()
@@ -154,11 +196,17 @@ impl SkPackage {
             .to_string()
     }
 
-    pub fn remote(&self) -> SkRemote {
-        self.imp().remote.get().unwrap().clone()
+    fn remote(&self) -> SkRemote {
+        let obj = self.upcast_ref();
+        obj.imp().remote.get().unwrap().clone()
     }
+}
 
-    pub fn info(&self) -> PackageInfo {
-        self.imp().info.get().unwrap().clone()
+pub trait SkPackageImpl: ObjectImpl {}
+
+/// Make SkPackage subclassable
+unsafe impl<T: SkPackageImpl> IsSubclassable<T> for SkPackage {
+    fn class_init(class: &mut glib::Class<Self>) {
+        Self::parent_class_init::<T>(class.upcast_ref_mut());
     }
 }

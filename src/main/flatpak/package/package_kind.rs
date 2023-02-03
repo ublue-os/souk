@@ -1,5 +1,5 @@
-// Souk - package_type.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - package_kind.rs
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,17 +20,17 @@ use gtk::glib;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkPackageType")]
-pub enum SkPackageType {
+#[enum_type(name = "SkPackageKind")]
+pub enum SkPackageKind {
     App,
     Runtime,
 }
 
-impl From<RefKind> for SkPackageType {
+impl From<RefKind> for SkPackageKind {
     fn from(value: RefKind) -> Self {
         match value {
-            RefKind::App => SkPackageType::App,
-            _ => SkPackageType::Runtime,
+            RefKind::App => SkPackageKind::App,
+            _ => SkPackageKind::Runtime,
         }
     }
 }
