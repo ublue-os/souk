@@ -163,7 +163,7 @@ impl SkDryRunPackage {
         // Version line
         let mut version_line = self.appstream().version_text(true);
         if self.operation_type() != SkFlatpakOperationType::Install
-            || self.operation_type() != SkFlatpakOperationType::InstallBundle
+            && self.operation_type() != SkFlatpakOperationType::InstallBundle
         {
             version_line = i18n_f(
                 "{} – {}",
