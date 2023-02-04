@@ -25,7 +25,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use super::SkPackageKind;
+use super::{SkPackageKind, SkPackageSubrefKind};
 use crate::main::flatpak::installation::SkRemote;
 use crate::main::SkApplication;
 use crate::shared::flatpak::info::PackageInfo;
@@ -65,6 +65,14 @@ mod imp {
                         SkPackageKind::App as i32,
                         ParamFlags::READABLE,
                     ),
+                    ParamSpecEnum::new(
+                        "subref-kind",
+                        "",
+                        "",
+                        SkPackageKind::static_type(),
+                        SkPackageKind::App as i32,
+                        ParamFlags::READABLE,
+                    ),
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("architecture", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("branch", "", "", None, ParamFlags::READABLE),
@@ -84,6 +92,7 @@ mod imp {
             match pspec.name() {
                 "info" => self.obj().info().to_value(),
                 "kind" => self.obj().kind().to_value(),
+                "subref-kind" => self.obj().kind().to_value(),
                 "name" => self.obj().name().to_value(),
                 "architecture" => self.obj().architecture().to_value(),
                 "branch" => self.obj().branch().to_value(),
@@ -142,6 +151,8 @@ pub trait SkPackageExt: 'static {
 
     fn kind(&self) -> SkPackageKind;
 
+    fn subref_kind(&self) -> SkPackageSubrefKind;
+
     fn name(&self) -> String;
 
     fn architecture(&self) -> String;
@@ -160,6 +171,10 @@ impl<O: IsA<SkPackage>> SkPackageExt for O {
     fn kind(&self) -> SkPackageKind {
         let obj = self.upcast_ref();
         obj.imp().flatpak_ref.get().unwrap().kind().into()
+    }
+
+    fn subref_kind(&self) -> SkPackageSubrefKind {
+        SkPackageSubrefKind::from(self.upcast_ref().name().as_str())
     }
 
     fn name(&self) -> String {

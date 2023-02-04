@@ -27,7 +27,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageKind};
+use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageKind, SkPackageSubrefKind};
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::SkApplication;
 use crate::shared::flatpak::info::PackageInfo;
@@ -130,17 +130,11 @@ impl SkPackageAppstream {
         let package = imp.package.get().unwrap();
 
         let mut name = self.translated_value(&component.name);
-
-        if package.name().ends_with(".Locale") {
-            name = i18n_f("{} (Translations)", &[&name]);
-        }
-
-        if package.name().ends_with(".Debug") {
-            name = i18n_f("{} (Debug)", &[&name]);
-        }
-
-        if package.name().ends_with(".Sources") {
-            name = i18n_f("{} (Sources)", &[&name]);
+        match package.subref_kind() {
+            SkPackageSubrefKind::Locale => name = i18n_f("{} (Translations)", &[&name]),
+            SkPackageSubrefKind::Debug => name = i18n_f("{} (Debug)", &[&name]),
+            SkPackageSubrefKind::Sources => name = i18n_f("{} (Sources)", &[&name]),
+            SkPackageSubrefKind::None => (),
         }
 
         name
@@ -189,21 +183,11 @@ impl SkPackageAppstream {
         let component = imp.component.get().unwrap();
         let package = imp.package.get().unwrap();
 
-        // TODO: Have this information available on SkPackage level, so we don't have to
-        // match it manually here.
-        if package.name().ends_with(".Locale") {
-            let s = i18n("Translations for various languages");
-            return s;
-        }
-
-        if package.name().ends_with(".Debug") {
-            let s = i18n("Development and diagnostics data");
-            return s;
-        }
-
-        if package.name().ends_with(".Sources") {
-            let s = i18n("Source code");
-            return s;
+        match package.subref_kind() {
+            SkPackageSubrefKind::Locale => return i18n("Translations for various languages"),
+            SkPackageSubrefKind::Debug => return i18n("Development and diagnostics data"),
+            SkPackageSubrefKind::Sources => return i18n("Source code"),
+            SkPackageSubrefKind::None => (),
         }
 
         if let Some(value) = &component.summary {

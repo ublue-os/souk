@@ -19,8 +19,10 @@ mod package;
 mod package_appstream;
 mod package_kind;
 mod package_model;
+mod package_subref_kind;
 
 pub use package::{SkPackage, SkPackageExt, SkPackageImpl};
 pub use package_appstream::SkPackageAppstream;
 pub use package_kind::SkPackageKind;
 pub use package_model::SkPackageModel;
+pub use package_subref_kind::SkPackageSubrefKind;
