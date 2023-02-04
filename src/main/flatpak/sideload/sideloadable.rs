@@ -42,7 +42,7 @@ mod imp {
 
         /// Package which gets installed during sideload process (evaluated as
         /// [SkDryRun])
-        pub package_dry_run: OnceCell<Option<SkDryRun>>,
+        pub dry_run: OnceCell<Option<SkDryRun>>,
 
         /// Remotes which are getting added during the sideload process
         pub remotes: OnceCell<SkRemoteModel>,
@@ -71,7 +71,7 @@ mod imp {
                         ParamFlags::READABLE,
                     ),
                     ParamSpecObject::new(
-                        "package-dry-run",
+                        "dry-run",
                         "",
                         "",
                         SkDryRun::static_type(),
@@ -101,7 +101,7 @@ mod imp {
             match pspec.name() {
                 "file" => self.obj().file().to_value(),
                 "type" => self.obj().type_().to_value(),
-                "package-dry-run" => self.obj().package_dry_run().to_value(),
+                "dry-run" => self.obj().dry_run().to_value(),
                 "remotes" => self.obj().remotes().to_value(),
                 "no-changes" => self.obj().no_changes().to_value(),
                 "installation" => self.obj().installation().to_value(),
@@ -137,7 +137,7 @@ impl SkSideloadable {
         imp.remotes.set(dry_run.remotes()).unwrap();
 
         // package dry run
-        imp.package_dry_run.set(Some(dry_run)).unwrap();
+        imp.dry_run.set(Some(dry_run)).unwrap();
 
         sideloadable
     }
@@ -154,7 +154,7 @@ impl SkSideloadable {
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(SkSideloadType::Repo).unwrap();
-        imp.package_dry_run.set(None).unwrap();
+        imp.dry_run.set(None).unwrap();
         imp.no_changes.set(already_added).unwrap();
         imp.installation.set(installation.clone()).unwrap();
 
@@ -177,8 +177,8 @@ impl SkSideloadable {
         self.imp().installation.get().unwrap().clone()
     }
 
-    pub fn package_dry_run(&self) -> Option<SkDryRun> {
-        self.imp().package_dry_run.get().unwrap().to_owned()
+    pub fn dry_run(&self) -> Option<SkDryRun> {
+        self.imp().dry_run.get().unwrap().to_owned()
     }
 
     pub fn remotes(&self) -> SkRemoteModel {
@@ -190,7 +190,7 @@ impl SkSideloadable {
     }
 
     pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTask>, Error> {
-        if let Some(dry_run) = self.package_dry_run() {
+        if let Some(dry_run) = self.dry_run() {
             let uninstall_before_install = dry_run.is_replacing_remote().is_some();
 
             let task = match self.type_() {

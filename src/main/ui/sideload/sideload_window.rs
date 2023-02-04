@@ -250,13 +250,13 @@ impl SkSideloadWindow {
 
         // Details View
         self.property_expression("sideloadable")
-            .chain_property::<SkSideloadable>("package-dry-run")
+            .chain_property::<SkSideloadable>("dry-run")
             .chain_property::<SkDryRun>("package")
             .chain_property::<SkPackage>("branch")
             .bind(&imp.package_branch_badge.get(), "value", None::<&SkPackage>);
 
         self.property_expression("sideloadable")
-            .chain_property::<SkSideloadable>("package-dry-run")
+            .chain_property::<SkSideloadable>("dry-run")
             .chain_property::<SkDryRun>("package")
             .chain_property::<SkPackage>("remote")
             .chain_property::<SkRemote>("name")
@@ -417,10 +417,10 @@ impl SkSideloadWindow {
         let repo_error_title = i18n("Adding Source Failed");
 
         // Package
-        let has_package = sideloadable.package_dry_run().is_some();
+        let has_package = sideloadable.dry_run().is_some();
         imp.package_box.set_visible(has_package);
 
-        if let Some(dry_run) = sideloadable.package_dry_run() {
+        if let Some(dry_run) = sideloadable.dry_run() {
             let package = dry_run.package();
 
             if dry_run.package().operation_type() == SkFlatpakOperationType::Update {
@@ -529,7 +529,7 @@ impl SkSideloadWindow {
                 group.add(&remote_row);
             }
 
-            if sideloadable.package_dry_run().is_none() {
+            if sideloadable.dry_run().is_none() {
                 let remotes = sideloadable.remotes();
                 let remote: SkRemote = remotes.item(0).unwrap().downcast().unwrap();
                 let name = if !remote.title().is_empty() {
@@ -666,7 +666,7 @@ impl SkSideloadWindow {
             let sideloadable = this.sideloadable().unwrap();
             let installation = sideloadable.installation();
 
-            let package: SkPackage = sideloadable.package_dry_run().unwrap().package().upcast();
+            let package: SkPackage = sideloadable.dry_run().unwrap().package().upcast();
             installation.launch_app(&package);
 
             this.close();
