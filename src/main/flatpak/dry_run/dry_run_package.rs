@@ -157,7 +157,7 @@ impl SkDryRunPackage {
             };
 
             extra_data_line =
-                format!("\n<small><b><span baseline_shift=\"-16pt\">{msg}</span></b></small>");
+                format!("\n<small><b><span foreground=\"orange\" baseline_shift=\"-18pt\">{msg}</span></b></small>");
         }
 
         // Version line
@@ -172,7 +172,7 @@ impl SkDryRunPackage {
         }
 
         let subtitle = format!(
-            "{}{}\n<small><span baseline_shift=\"-16pt\">{}</span></small>",
+            "{}{}\n<small><span baseline_shift=\"-18pt\">{}</span></small>",
             self.appstream().summary(),
             extra_data_line,
             version_line
