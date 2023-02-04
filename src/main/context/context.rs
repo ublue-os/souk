@@ -21,15 +21,10 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::context::{
-    SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel, SkContextDetailLevel,
-    SkContextDetailType,
-};
-use crate::main::flatpak::dry_run::{SkDryRun, SkDryRunRuntime};
+use crate::main::context::{SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel};
 use crate::main::flatpak::permissions::types::{SkFilesystemPermission, SkServicePermission};
 use crate::main::flatpak::permissions::{PermissionDetails, SkAppPermissions, SkPermissionSummary};
-use crate::main::flatpak::SkFlatpakOperationType;
-use crate::main::i18n::{i18n, i18n_f};
+use crate::main::i18n::i18n;
 
 mod imp {
     use super::*;
@@ -145,146 +140,6 @@ impl SkContext {
 
         // Summary
         let summary = summary.as_context_detail();
-
-        let groups = SkContextDetailGroupModel::new(&groups);
-        Self::new(&summary, &groups)
-    }
-
-    pub fn download_size(dry_run: &SkDryRun) -> Self {
-        Self::size_context(dry_run, true)
-    }
-
-    pub fn installed_size(dry_run: &SkDryRun) -> Self {
-        Self::size_context(dry_run, false)
-    }
-
-    fn size_context(dry_run: &SkDryRun, download_size: bool) -> Self {
-        let mut groups = Vec::new();
-        let mut runtime_size: u64 = 0;
-
-        // Sort by size
-        let runtimes = dry_run.runtimes().snapshot();
-        let mut runtimes: Vec<&SkDryRunRuntime> = runtimes
-            .iter()
-            .map(|o| o.downcast_ref::<SkDryRunRuntime>().unwrap())
-            .collect();
-        if download_size {
-            runtimes.sort_by_key(|b| std::cmp::Reverse(b.download_size()))
-        } else {
-            runtimes.sort_by_key(|b| std::cmp::Reverse(b.installed_size()))
-        }
-
-        // The package itelf
-        let mut package_details = Vec::new();
-
-        let size = if download_size {
-            dry_run.download_size()
-        } else {
-            dry_run.installed_size()
-        };
-        let mut package_size = size;
-
-        let package_ref_name = dry_run.package().name();
-        let package_ref_branch = dry_run.package().branch();
-
-        let title = dry_run.appstream().name();
-        let detail = if dry_run.data().has_extra_data() && !download_size {
-            let subtitle = i18n_f("{} ({}) – Requires additional extra data from an external source with unknown size", &[&package_ref_name, &package_ref_branch]);
-            SkContextDetail::new_neutral_text("  ???  ", &title, &subtitle)
-        } else {
-            let subtitle = format!("{package_ref_name} ({package_ref_branch})");
-            SkContextDetail::new_neutral_size(size, &title, &subtitle)
-        };
-        package_details.push(detail);
-
-        // Runtimes
-        let mut runtime_details = Vec::new();
-        for runtime in &runtimes {
-            let ref_name = runtime.package().name();
-            let ref_branch = runtime.package().branch();
-
-            let mut title = runtime.appstream().name();
-            if runtime.operation_type() == SkFlatpakOperationType::Update {
-                title = i18n_f("{} (Update)", &[&title]);
-            }
-            let subtitle = format!("{ref_name} ({ref_branch})");
-
-            let size = if download_size {
-                runtime.download_size()
-            } else {
-                runtime.installed_size()
-            };
-
-            let detail = SkContextDetail::new_neutral_size(size, &title, &subtitle);
-            if ref_name.contains(&package_ref_name) {
-                package_details.push(detail);
-                package_size += size;
-            } else {
-                runtime_details.push(detail);
-                runtime_size += size;
-            }
-        }
-
-        let description = i18n("The storage sizes are only maximum values. Actual usage will most likely be significantly lower due to deduplication of data.");
-        let group = SkContextDetailGroup::new(&package_details, None, Some(&description));
-        groups.push(group);
-
-        if runtime_size != 0 {
-            let description = i18n("These components are shared with other applications, and only need to be downloaded once.");
-            let group = SkContextDetailGroup::new(&runtime_details, None, Some(&description));
-            groups.push(group);
-        }
-
-        // Summary
-        let total_size = package_size + runtime_size;
-        let total_size_str = glib::format_size(total_size);
-        let runtime_size_str = glib::format_size(runtime_size);
-        let summary = if download_size {
-            let title = if total_size == 0 {
-                i18n("No download required")
-            } else {
-                i18n_f("Up to {} to download", &[&total_size_str])
-            };
-
-            let descr = if runtime_size == 0 {
-                i18n("No additional system packages needed")
-            } else {
-                i18n_f(
-                    "Needs {} of additional system packages",
-                    &[&runtime_size_str],
-                )
-            };
-
-            SkContextDetail::new(
-                SkContextDetailType::Icon,
-                "folder-download-symbolic",
-                SkContextDetailLevel::Neutral,
-                &title,
-                &descr,
-            )
-        } else {
-            let title = if dry_run.data().has_extra_data() {
-                i18n("Unknown storage size")
-            } else {
-                i18n_f("Up to {} storage required", &[&total_size_str])
-            };
-
-            let descr = if runtime_size == 0 {
-                i18n("Requires no additional space for system packages")
-            } else {
-                i18n_f(
-                    "Requires {} for shared system packages",
-                    &[&runtime_size_str],
-                )
-            };
-            SkContextDetail::new(
-                SkContextDetailType::Icon,
-                "drive-harddisk-system-symbolic",
-                SkContextDetailLevel::Neutral,
-                &title,
-                &descr,
-            )
-        };
 
         let groups = SkContextDetailGroupModel::new(&groups);
         Self::new(&summary, &groups)

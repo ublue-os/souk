@@ -1,4 +1,4 @@
-// Shortwave - dry_run_runtime_model.rs
+// Shortwave - dry_run_package_model.rs
 // Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -22,29 +22,29 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
-use crate::main::flatpak::dry_run::SkDryRunRuntime;
-use crate::shared::flatpak::dry_run::DryRunRuntime;
+use crate::main::flatpak::dry_run::SkDryRunPackage;
+use crate::shared::flatpak::dry_run::DryRunPackage;
 
 mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct SkDryRunRuntimeModel {
-        pub map: RefCell<IndexMap<DryRunRuntime, SkDryRunRuntime>>,
+    pub struct SkDryRunPackageModel {
+        pub map: RefCell<IndexMap<DryRunPackage, SkDryRunPackage>>,
     }
 
     #[glib::object_subclass]
-    impl ObjectSubclass for SkDryRunRuntimeModel {
-        const NAME: &'static str = "SkDryRunRuntimeModel";
-        type Type = super::SkDryRunRuntimeModel;
+    impl ObjectSubclass for SkDryRunPackageModel {
+        const NAME: &'static str = "SkDryRunPackageModel";
+        type Type = super::SkDryRunPackageModel;
         type Interfaces = (gio::ListModel,);
     }
 
-    impl ObjectImpl for SkDryRunRuntimeModel {}
+    impl ObjectImpl for SkDryRunPackageModel {}
 
-    impl ListModelImpl for SkDryRunRuntimeModel {
+    impl ListModelImpl for SkDryRunPackageModel {
         fn item_type(&self) -> glib::Type {
-            SkDryRunRuntime::static_type()
+            SkDryRunPackage::static_type()
         }
 
         fn n_items(&self) -> u32 {
@@ -61,45 +61,45 @@ mod imp {
 }
 
 glib::wrapper! {
-    pub struct SkDryRunRuntimeModel(ObjectSubclass<imp::SkDryRunRuntimeModel>) @implements gio::ListModel;
+    pub struct SkDryRunPackageModel(ObjectSubclass<imp::SkDryRunPackageModel>) @implements gio::ListModel;
 }
 
-impl SkDryRunRuntimeModel {
+impl SkDryRunPackageModel {
     pub fn new() -> Self {
         glib::Object::new(&[])
     }
 
-    pub fn set_runtimes(&self, runtimes: Vec<DryRunRuntime>) {
+    pub fn set_packages(&self, packages: Vec<DryRunPackage>) {
         let imp = self.imp();
 
-        for runtime in &runtimes {
-            self.add_data(runtime);
+        for package in &packages {
+            self.add_data(package);
         }
 
         let map = imp.map.borrow().clone();
         for data in map.keys() {
-            if !runtimes.contains(data) {
+            if !packages.contains(data) {
                 self.remove_data(data);
             }
         }
     }
 
-    fn add_data(&self, data: &DryRunRuntime) {
+    fn add_data(&self, data: &DryRunPackage) {
         let pos = {
             let mut map = self.imp().map.borrow_mut();
             if map.contains_key(data) {
                 return;
             }
 
-            let sk_runtime = SkDryRunRuntime::new(data.clone());
-            map.insert(data.clone(), sk_runtime);
+            let sk_package = SkDryRunPackage::new(data.clone());
+            map.insert(data.clone(), sk_package);
             (map.len() - 1) as u32
         };
 
         self.items_changed(pos, 0, 1);
     }
 
-    fn remove_data(&self, data: &DryRunRuntime) {
+    fn remove_data(&self, data: &DryRunPackage) {
         let pos = {
             let mut map = self.imp().map.borrow_mut();
             match map.get_index_of(data) {
@@ -109,7 +109,7 @@ impl SkDryRunRuntimeModel {
                 }
                 None => {
                     warn!(
-                        "Unable to remove runtime {:?}, not found in model",
+                        "Unable to remove package {:?}, not found in model",
                         data.package.ref_
                     );
                     None
@@ -123,7 +123,7 @@ impl SkDryRunRuntimeModel {
     }
 }
 
-impl Default for SkDryRunRuntimeModel {
+impl Default for SkDryRunPackageModel {
     fn default() -> Self {
         Self::new()
     }

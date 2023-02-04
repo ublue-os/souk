@@ -15,7 +15,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use appstream::builders::ComponentBuilder;
-use appstream::enums::ComponentKind;
 use appstream::{AppId, Component, TranslatableString};
 use flatpak::prelude::*;
 use flatpak::{Installation, Ref};
@@ -28,8 +27,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::dry_run::{SkDryRun, SkDryRunRuntime};
-use crate::main::flatpak::package::{SkPackage, SkPackageExt};
+use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageKind};
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::SkApplication;
 use crate::shared::flatpak::info::PackageInfo;
@@ -89,21 +87,11 @@ glib::wrapper! {
 }
 
 impl SkPackageAppstream {
-    pub fn from_dry_run_runtime(dry_run_time: &SkDryRunRuntime) -> Self {
-        let appstream: Option<String> = dry_run_time.data().appstream_component.into();
-        let icon: Option<Vec<u8>> = dry_run_time.data().icon.into();
-
-        Self::new(appstream, icon, &dry_run_time.package())
-    }
-
-    pub fn from_dry_run(dry_run: &SkDryRun) -> Self {
-        let appstream: Option<String> = dry_run.data().appstream_component.into();
-        let icon: Option<Vec<u8>> = dry_run.data().icon.into();
-
-        Self::new(appstream, icon, &dry_run.package())
-    }
-
-    fn new(appstream_string: Option<String>, icon: Option<Vec<u8>>, package: &SkPackage) -> Self {
+    pub fn new(
+        appstream_string: Option<String>,
+        icon: Option<Vec<u8>>,
+        package: &SkPackage,
+    ) -> Self {
         let appstream: Self = glib::Object::new(&[]);
 
         let imp = appstream.imp();
@@ -137,8 +125,25 @@ impl SkPackageAppstream {
     }
 
     pub fn name(&self) -> String {
-        let value = &self.imp().component.get().unwrap().name;
-        self.translated_value(value)
+        let imp = self.imp();
+        let component = imp.component.get().unwrap();
+        let package = imp.package.get().unwrap();
+
+        let mut name = self.translated_value(&component.name);
+
+        if package.name().ends_with(".Locale") {
+            name = i18n_f("{} (Translations)", &[&name]);
+        }
+
+        if package.name().ends_with(".Debug") {
+            name = i18n_f("{} (Debug)", &[&name]);
+        }
+
+        if package.name().ends_with(".Sources") {
+            name = i18n_f("{} (Sources)", &[&name]);
+        }
+
+        name
     }
 
     pub fn developer_name(&self) -> String {
@@ -180,15 +185,33 @@ impl SkPackageAppstream {
     }
 
     pub fn summary(&self) -> String {
-        let component = self.imp().component.get().unwrap();
+        let imp = self.imp();
+        let component = imp.component.get().unwrap();
+        let package = imp.package.get().unwrap();
+
+        // TODO: Have this information available on SkPackage level, so we don't have to
+        // match it manually here.
+        if package.name().ends_with(".Locale") {
+            let s = i18n("Translations for various languages");
+            return s;
+        }
+
+        if package.name().ends_with(".Debug") {
+            let s = i18n("Development and diagnostics data");
+            return s;
+        }
+
+        if package.name().ends_with(".Sources") {
+            let s = i18n("Source code");
+            return s;
+        }
+
         if let Some(value) = &component.summary {
             self.translated_value(value)
+        } else if package.kind() == SkPackageKind::Runtime {
+            i18n("A Flatpak Runtime")
         } else {
-            if component.kind == ComponentKind::Runtime {
-                i18n("A Flatpak Runtime")
-            } else {
-                i18n("A Flatpak Application")
-            }
+            i18n("A Flatpak Application")
         }
     }
 

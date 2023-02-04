@@ -1,4 +1,4 @@
-// Souk - dry_run_runtime.rs
+// Souk - dry_run_package.rs
 // Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -21,9 +21,9 @@ use zbus::zvariant::{Optional, Type};
 use crate::shared::flatpak::info::PackageInfo;
 use crate::shared::flatpak::FlatpakOperationType;
 
-#[derive(Derivative, Default, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash)]
+#[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash)]
 #[derivative(Debug)]
-pub struct DryRunRuntime {
+pub struct DryRunPackage {
     pub package: PackageInfo,
     pub operation_type: FlatpakOperationType,
 
@@ -40,4 +40,19 @@ pub struct DryRunRuntime {
     pub metadata: String,
     #[derivative(Debug = "ignore")]
     pub old_metadata: Optional<String>,
+}
+
+impl Default for DryRunPackage {
+    fn default() -> Self {
+        Self {
+            package: PackageInfo::default(),
+            operation_type: FlatpakOperationType::default(),
+            download_size: u64::default(),
+            installed_size: u64::default(),
+            icon: None.into(),
+            appstream_component: None.into(),
+            metadata: String::default(),
+            old_metadata: None.into(),
+        }
+    }
 }

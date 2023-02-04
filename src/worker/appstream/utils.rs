@@ -1,5 +1,5 @@
 // Souk - utils.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,13 +16,13 @@
 
 use appstream::Component;
 use flatpak::prelude::*;
-use flatpak::{Ref, Remote};
+use flatpak::Remote;
 use gtk::gio::Cancellable;
 use gtk::prelude::*;
 use xb::prelude::*;
 
-pub fn component_from_remote(ref_: &Ref, remote: &Remote) -> Option<Component> {
-    let appstream_dir = remote.appstream_dir(Some(&ref_.arch().unwrap())).unwrap();
+pub fn component_from_remote(name: &str, arch: &str, remote: &Remote) -> Option<Component> {
+    let appstream_dir = remote.appstream_dir(Some(arch)).unwrap();
     let appstream_file = appstream_dir.child("appstream.xml");
 
     debug!("Load appstream file {:?}", appstream_file.path().unwrap());
@@ -49,10 +49,7 @@ pub fn component_from_remote(ref_: &Ref, remote: &Remote) -> Option<Component> {
         .unwrap();
 
     // Query for appstream component
-    let xpath = format!(
-        "components/component/id[text()='{}']/..",
-        ref_.name().unwrap()
-    );
+    let xpath = format!("components/component/id[text()='{name}']/..");
     if let Ok(node) = silo.query_first(&xpath) {
         let xml = node.export(xb::NodeExportFlags::NONE).unwrap().to_string();
         let element = xmltree::Element::parse(xml.as_bytes()).unwrap();

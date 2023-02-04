@@ -8,6 +8,8 @@ data/gtk/window.ui
 
 src/main/context/context.rs
 src/main/flatpak/installation/installation.rs
+src/main/flatpak/dry_run/dry_run.rs
+src/main/flatpak/dry_run/dry_run_package.rs
 src/main/flatpak/package/package_appstream.rs
 src/main/flatpak/permissions/types/filesystem_permission.rs
 src/main/flatpak/permissions/types/service_permission.rs

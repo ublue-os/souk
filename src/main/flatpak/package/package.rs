@@ -186,7 +186,6 @@ impl<O: IsA<SkPackage>> SkPackageExt for O {
 
     fn branch(&self) -> String {
         let obj = self.upcast_ref();
-
         obj.imp()
             .flatpak_ref
             .get()

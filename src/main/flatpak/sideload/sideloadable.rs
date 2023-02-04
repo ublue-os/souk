@@ -129,12 +129,12 @@ impl SkSideloadable {
         imp.file.set(file.clone()).unwrap();
         imp.type_.set(type_).unwrap();
         imp.no_changes
-            .set(dry_run.operation_type() == SkFlatpakOperationType::None)
+            .set(dry_run.package().operation_type() == SkFlatpakOperationType::None)
             .unwrap();
         imp.installation.set(installation.clone()).unwrap();
 
         // remotes
-        imp.remotes.set(dry_run.added_remotes()).unwrap();
+        imp.remotes.set(dry_run.remotes()).unwrap();
 
         // package dry run
         imp.package_dry_run.set(Some(dry_run)).unwrap();

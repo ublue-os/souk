@@ -15,72 +15,39 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use derivative::Derivative;
-use gtk::glib::{KeyFile, KeyFileFlags};
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use super::DryRunRuntime;
-use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
-use crate::shared::flatpak::FlatpakOperationType;
+use super::DryRunPackage;
+use crate::shared::flatpak::info::RemoteInfo;
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash)]
 #[derivative(Debug)]
 pub struct DryRun {
-    /// The affected package
-    pub package: PackageInfo,
-    /// The same ref is already installed, but the commit differs
-    pub operation_type: FlatpakOperationType,
+    /// The Flatpak package for which the dry-run is performed (can be an
+    /// application or runtime)
+    pub package: DryRunPackage,
 
-    /// Size information of the actual package (size information about the
-    /// runtimes are in `runtimes`)
-    pub download_size: u64,
-    pub installed_size: u64,
+    /// Runtimes that would be affected by the Flatpak transaction (e.g.
+    /// install, update or uninstall)
+    pub runtimes: Vec<DryRunPackage>,
+    /// Remotes that would be added by the Flatpak transaction
+    pub remotes: Vec<RemoteInfo>,
 
-    #[derivative(Debug = "ignore")]
-    pub icon: Optional<Vec<u8>>,
-    /// Json serialized appstream component
-    #[derivative(Debug = "ignore")]
-    pub appstream_component: Optional<String>,
-    /// Flatpak metadata
-    #[derivative(Debug = "ignore")]
-    pub metadata: String,
-    #[derivative(Debug = "ignore")]
-    pub old_metadata: Optional<String>,
-
-    /// Which runtimes are installed during the installation
-    pub runtimes: Vec<DryRunRuntime>,
-    /// Which remotes are getting added during installation
-    pub added_remotes: Vec<RemoteInfo>,
-
-    /// Whether the package has an source for future app updates (not always
-    /// the case, for example sideloading a bundle)
+    /// Whether the package has an source for future app updates (for example
+    /// Flatpak bundles don't have necessary an update source)
     pub has_update_source: bool,
     /// Whether the package is already installed from a different remote, and
     /// the old app needs to get uninstalled first
     pub is_replacing_remote: Optional<RemoteInfo>,
 }
 
-impl DryRun {
-    pub fn has_extra_data(&self) -> bool {
-        let keyfile = KeyFile::new();
-        let _ = keyfile.load_from_data(&self.metadata, KeyFileFlags::NONE);
-        keyfile.has_group("Extra Data")
-    }
-}
-
 impl Default for DryRun {
     fn default() -> Self {
         Self {
-            package: PackageInfo::default(),
-            operation_type: FlatpakOperationType::default(),
+            package: DryRunPackage::default(),
             runtimes: Vec::default(),
-            download_size: 0,
-            installed_size: 0,
-            icon: None.into(),
-            appstream_component: None.into(),
-            metadata: String::new(),
-            old_metadata: None.into(),
-            added_remotes: Vec::default(),
+            remotes: Vec::default(),
             has_update_source: true,
             is_replacing_remote: None.into(),
         }

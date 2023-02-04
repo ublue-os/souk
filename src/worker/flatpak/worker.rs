@@ -29,7 +29,7 @@ use glib::{clone, Downgrade, KeyFile};
 use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 
-use crate::shared::flatpak::dry_run::{DryRun, DryRunRuntime};
+use crate::shared::flatpak::dry_run::{DryRun, DryRunPackage};
 use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
 use crate::shared::flatpak::FlatpakOperationType;
 use crate::shared::task::{FlatpakTask, FlatpakTaskType, TaskProgress, TaskResponse, TaskResult};
@@ -194,14 +194,14 @@ impl FlatpakWorker {
         let mut results = self.run_dry_run_transaction(transaction, installation_info)?;
 
         // Installed bundle size
-        results.installed_size = bundle.installed_size();
+        results.package.installed_size = bundle.installed_size();
 
         // Remotes
         if let Some(runtime_repo_url) = bundle.runtime_repo_url() {
             // Download Flatpak repofile for additional remote metadata
             let bundle_remote = self.retrieve_flatpak_remote(&runtime_repo_url)?;
 
-            for remote_info in &mut results.added_remotes {
+            for remote_info in &mut results.remotes {
                 if bundle_remote.url().unwrap().as_str() == remote_info.repository_url {
                     remote_info.update_metadata(&bundle_remote);
                     break;
@@ -211,7 +211,7 @@ impl FlatpakWorker {
 
         // Icon
         if let Some(bytes) = bundle.icon(128) {
-            results.icon = Some(bytes.to_vec()).into();
+            results.package.icon = Some(bytes.to_vec()).into();
         }
 
         // Appstream
@@ -220,7 +220,7 @@ impl FlatpakWorker {
             let component = &collection.components[0];
 
             let json = serde_json::to_string(component).unwrap();
-            results.appstream_component = Some(json).into();
+            results.package.appstream_component = Some(json).into();
         }
 
         let result = TaskResult::new_dry_run(results);
@@ -288,7 +288,7 @@ impl FlatpakWorker {
                 let ref_repo = self.retrieve_flatpak_remote(&repo_url)?;
                 let ref_repo_url = ref_repo.url().unwrap().to_string();
 
-                for remote_info in &mut results.added_remotes {
+                for remote_info in &mut results.remotes {
                     if ref_repo_url == remote_info.repository_url {
                         remote_info.update_metadata(&ref_repo);
                         break;
@@ -410,7 +410,7 @@ impl FlatpakWorker {
         transaction.connect_add_new_remote(
             clone!(@weak result, @strong installation_info => @default-return false, move |_, _, _, name, url|{
                 let remote_info = RemoteInfo::new(name.into(), url.into(), None);
-                result.borrow_mut().added_remotes.push(remote_info);
+                result.borrow_mut().remotes.push(remote_info);
                 true
             }),
         );
@@ -446,7 +446,25 @@ impl FlatpakWorker {
                         let dry_run_installation = transaction.installation().unwrap();
                         let remote_name = operation.remote().unwrap().to_string();
                         let ref_ = Ref::parse(&operation.get_ref().unwrap()).unwrap();
+                        let ref_name = ref_.name().unwrap().to_string();
                         let arch = ref_.arch().unwrap().to_string();
+
+                        // Those Flatpak subrefs usually don't include appstream data.
+                        // So we strip the suffixes, and retrieve the appstream data of the actual ref.
+                        //
+                        // We use here the same subrefs as Flatpak, see:
+                        // https://github.com/flatpak/flatpak/blob/600e18567c538ecd306d021534dbb418dc490676/common/flatpak-ref-utils.c#L451
+                        let ref_name = if ref_name.ends_with(".Locale")
+                            || ref_name.ends_with(".Debug")
+                            || ref_name.ends_with(".Sources")
+                        {
+                            let mut rn = ref_name.replace(".Locale", "");
+                            rn = rn.replace(".Debug", "");
+                            rn = rn.replace(".Sources", "");
+                            rn
+                        }else{
+                            ref_name.to_string()
+                        };
 
                         // Check if remote is already added (and we don't need to update the appstram data)
                         let remote = match real_installation.remote_by_name(&remote_name, Cancellable::NONE) {
@@ -464,7 +482,7 @@ impl FlatpakWorker {
                         };
 
                         // TODO: This currently compiles the appstream into xmlb every single time for every single runtime / package....
-                        if let Some(component) = appstream::utils::component_from_remote(&ref_, &remote) {
+                        if let Some(component) = appstream::utils::component_from_remote(&ref_name, &arch, &remote) {
                             // Appstream
                             let json = serde_json::to_string(&component).unwrap();
                             appstream = Some(json);
@@ -483,17 +501,17 @@ impl FlatpakWorker {
                     // Check if it's the last operation, which is the targeted app / runtime
                     if (pos+1) ==  operation_count {
                         // Package
-                        let package_info = PackageInfo::new(operation_ref, remote_info);
-                        result.package = package_info;
-                        result.operation_type = operation.operation_type().into();
-
-                        result.download_size = operation.download_size();
-                        result.installed_size = operation.installed_size();
-
-                        result.icon = icon.into();
-                        result.appstream_component = appstream.into();
-                        result.metadata = operation_metadata;
-                        result.old_metadata = operation_old_metadata.into();
+                        let package = DryRunPackage{
+                            package: PackageInfo::new(operation_ref, remote_info),
+                            operation_type: operation.operation_type().into(),
+                            download_size: operation.download_size(),
+                            installed_size: operation.installed_size(),
+                            icon: icon.into(),
+                            appstream_component: appstream.into(),
+                            metadata: operation_metadata,
+                            old_metadata: operation_old_metadata.into(),
+                        };
+                        result.package = package;
 
                         if operation.operation_type() == TransactionOperationType::InstallBundle{
                             result.has_update_source = false;
@@ -525,20 +543,18 @@ impl FlatpakWorker {
 
                             if installed.commit().unwrap() == operation_commit {
                                 // Commit is the same -> ref is already installed -> No operation
-                                result.operation_type = FlatpakOperationType::None;
+                                result.package.operation_type = FlatpakOperationType::None;
                             }else{
                                 // Commit differs -> is update
                                 // Manually set operation type to `Update`, since technically it's
                                 // not possible to "update" Flatpak bundles, from libflatpak side
                                 // it's always `InstallBundle` operation.
-                                result.operation_type = FlatpakOperationType::Update;
+                                result.package.operation_type = FlatpakOperationType::Update;
                             }
                         }
                     }else{
-                        let package = PackageInfo::new(operation_ref, remote_info);
-
-                        let runtime = DryRunRuntime{
-                            package,
+                        let runtime = DryRunPackage{
+                            package: PackageInfo::new(operation_ref, remote_info),
                             operation_type: operation.operation_type().into(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),

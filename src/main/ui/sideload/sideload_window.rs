@@ -423,7 +423,7 @@ impl SkSideloadWindow {
         if let Some(dry_run) = sideloadable.package_dry_run() {
             let package = dry_run.package();
 
-            if dry_run.operation_type() == SkFlatpakOperationType::Update {
+            if dry_run.package().operation_type() == SkFlatpakOperationType::Update {
                 imp.start_button.set_label(&update_start_button);
                 imp.details_title.set_title(&update_details_title);
                 imp.progress_title.set_title(&update_progress_title);
@@ -476,7 +476,7 @@ impl SkSideloadWindow {
             let installed_size_context = dry_run.installed_size_context();
             contexts.append(&installed_size_context);
 
-            let permissions_context = dry_run.permissions_context();
+            let permissions_context = dry_run.package().permissions_context();
             contexts.append(&permissions_context);
 
             imp.package_context_listbox.bind_model(
@@ -497,7 +497,7 @@ impl SkSideloadWindow {
             );
 
             // Appstream information
-            let asi = dry_run.appstream();
+            let asi = dry_run.package().appstream();
             imp.package_name_label.set_text(&asi.name());
             imp.package_icon_image.set_paintable(Some(&asi.icon()));
             imp.package_developer_label.set_text(&asi.developer_name());
@@ -506,7 +506,7 @@ impl SkSideloadWindow {
             // We don't support updating .flatpakrefs through sideloading, since the
             // installation would fail with "x is already installed". Only bundles can be
             // updated.
-            if dry_run.operation_type() == SkFlatpakOperationType::Update
+            if dry_run.package().operation_type() == SkFlatpakOperationType::Update
                 && sideloadable.type_() == SkSideloadType::Ref
             {
                 imp.sideload_leaflet.set_visible_child_name("already-done");
@@ -666,7 +666,7 @@ impl SkSideloadWindow {
             let sideloadable = this.sideloadable().unwrap();
             let installation = sideloadable.installation();
 
-            let package = sideloadable.package_dry_run().unwrap().package();
+            let package: SkPackage = sideloadable.package_dry_run().unwrap().package().upcast();
             installation.launch_app(&package);
 
             this.close();

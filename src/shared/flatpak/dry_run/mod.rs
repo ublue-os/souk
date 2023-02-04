@@ -16,7 +16,7 @@
 
 #[allow(clippy::module_inception)]
 mod dry_run;
-mod dry_run_runtime;
+mod dry_run_package;
 
 pub use dry_run::DryRun;
-pub use dry_run_runtime::DryRunRuntime;
+pub use dry_run_package::DryRunPackage;

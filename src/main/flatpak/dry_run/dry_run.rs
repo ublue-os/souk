@@ -14,22 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{
-    KeyFile, KeyFileFlags, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecEnum, ParamSpecObject,
-    ParamSpecUInt64, ToValue,
-};
+use glib::{ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject, ToValue};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use super::SkDryRunRuntimeModel;
-use crate::main::context::SkContext;
+use super::{SkDryRunPackage, SkDryRunPackageModel};
+use crate::main::context::{
+    SkContext, SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel,
+    SkContextDetailLevel, SkContextDetailType,
+};
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};
-use crate::main::flatpak::package::{SkPackage, SkPackageAppstream};
-use crate::main::flatpak::permissions::SkAppPermissions;
-use crate::main::flatpak::SkFlatpakOperationType;
+use crate::main::flatpak::package::SkPackageExt;
+use crate::main::i18n::{i18n, i18n_f};
 use crate::shared::flatpak::dry_run::DryRun;
 use crate::shared::flatpak::info::RemoteInfo;
 
@@ -40,9 +39,9 @@ mod imp {
     pub struct SkDryRun {
         pub data: OnceCell<DryRun>,
 
-        pub package: OnceCell<SkPackage>,
-        pub runtimes: SkDryRunRuntimeModel,
-        pub added_remotes: SkRemoteModel,
+        pub package: OnceCell<SkDryRunPackage>,
+        pub runtimes: SkDryRunPackageModel,
+        pub remotes: SkRemoteModel,
     }
 
     #[glib::object_subclass]
@@ -59,44 +58,18 @@ mod imp {
                         "package",
                         "",
                         "",
-                        SkPackage::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecEnum::new(
-                        "operation-type",
-                        "",
-                        "",
-                        SkFlatpakOperationType::static_type(),
-                        SkFlatpakOperationType::default() as i32,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecUInt64::new(
-                        "download-size",
-                        "",
-                        "",
-                        0,
-                        u64::MAX,
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecUInt64::new(
-                        "installed-size",
-                        "",
-                        "",
-                        0,
-                        u64::MAX,
-                        0,
+                        SkDryRunPackage::static_type(),
                         ParamFlags::READABLE,
                     ),
                     ParamSpecObject::new(
                         "runtimes",
                         "",
                         "",
-                        SkDryRunRuntimeModel::static_type(),
+                        SkDryRunPackageModel::static_type(),
                         ParamFlags::READABLE,
                     ),
                     ParamSpecObject::new(
-                        "added-remotes",
+                        "remotes",
                         "",
                         "",
                         SkRemoteModel::static_type(),
@@ -118,11 +91,8 @@ mod imp {
         fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "package" => self.obj().package().to_value(),
-                "operation-type" => self.obj().operation_type().to_value(),
-                "download-size" => self.obj().download_size().to_value(),
-                "installed-size" => self.obj().installed_size().to_value(),
                 "runtimes" => self.obj().runtimes().to_value(),
-                "added-remotes" => self.obj().added_remotes().to_value(),
+                "remotes" => self.obj().remotes().to_value(),
                 "has-update-source" => self.obj().has_update_source().to_value(),
                 "is-replacing-remote" => self.obj().is_replacing_remote().to_value(),
                 _ => unimplemented!(),
@@ -140,39 +110,27 @@ impl SkDryRun {
         let dry_run: Self = glib::Object::new(&[]);
         let imp = dry_run.imp();
 
-        let package = SkPackage::new(&data.package);
+        let package = SkDryRunPackage::new(data.package.clone());
         imp.package.set(package).unwrap();
 
-        imp.runtimes.set_runtimes(data.runtimes.clone());
-        imp.added_remotes.set_remotes(data.added_remotes.clone());
+        imp.runtimes.set_packages(data.runtimes.clone());
+        imp.remotes.set_remotes(data.remotes.clone());
 
         imp.data.set(data).unwrap();
 
         dry_run
     }
 
-    pub fn package(&self) -> SkPackage {
+    pub fn package(&self) -> SkDryRunPackage {
         self.imp().package.get().unwrap().clone()
     }
 
-    pub fn operation_type(&self) -> SkFlatpakOperationType {
-        self.data().operation_type.into()
-    }
-
-    pub fn download_size(&self) -> u64 {
-        self.data().download_size
-    }
-
-    pub fn installed_size(&self) -> u64 {
-        self.data().installed_size
-    }
-
-    pub fn runtimes(&self) -> SkDryRunRuntimeModel {
+    pub fn runtimes(&self) -> SkDryRunPackageModel {
         self.imp().runtimes.clone()
     }
 
-    pub fn added_remotes(&self) -> SkRemoteModel {
-        self.imp().added_remotes.clone()
+    pub fn remotes(&self) -> SkRemoteModel {
+        self.imp().remotes.clone()
     }
 
     pub fn has_update_source(&self) -> bool {
@@ -184,54 +142,121 @@ impl SkDryRun {
         remote_info.map(|remote_info| SkRemote::new(&remote_info))
     }
 
-    pub fn appstream(&self) -> SkPackageAppstream {
-        SkPackageAppstream::from_dry_run(self)
-    }
-
-    pub fn metadata(&self) -> KeyFile {
-        let keyfile = KeyFile::new();
-        keyfile
-            .load_from_data(&self.data().metadata, KeyFileFlags::NONE)
-            .unwrap();
-        keyfile
-    }
-
-    pub fn old_metadata(&self) -> Option<KeyFile> {
-        if let Some(metadata) = self.data().old_metadata.into() {
-            let metadata: String = metadata;
-            let keyfile = KeyFile::new();
-            keyfile
-                .load_from_data(&metadata, KeyFileFlags::NONE)
-                .unwrap();
-            Some(keyfile)
-        } else {
-            None
-        }
-    }
-
-    // TODO: Rework context info so it makes use of new SkDryRun objects etc.
-    pub fn permissions(&self) -> SkAppPermissions {
-        SkAppPermissions::from_metadata(&self.metadata())
-    }
-
-    pub fn old_permissions(&self) -> Option<SkAppPermissions> {
-        self.old_metadata()
-            .map(|m| SkAppPermissions::from_metadata(&m))
-    }
-
-    pub fn permissions_context(&self) -> SkContext {
-        SkContext::permissions(&self.permissions())
-    }
-
     pub fn download_size_context(&self) -> SkContext {
-        SkContext::download_size(self)
+        self.size_context(false)
     }
 
     pub fn installed_size_context(&self) -> SkContext {
-        SkContext::installed_size(self)
+        self.size_context(true)
     }
 
-    pub fn data(&self) -> DryRun {
+    fn size_context(&self, download_size: bool) -> SkContext {
+        let mut groups = Vec::new();
+        let mut package_size: u64;
+        let mut runtime_size: u64 = 0;
+
+        // Context details for package itself
+        let mut package_details = Vec::new();
+        package_size = if download_size {
+            self.package().download_size()
+        } else {
+            self.package().installed_size()
+        };
+
+        let detail = self.package().size_context_detail(download_size);
+        package_details.push(detail);
+
+        // Context details for runtimes
+        let mut runtime_details = Vec::new();
+        for runtime in self.runtimes().snapshot() {
+            let runtime: SkDryRunPackage = runtime.downcast().unwrap();
+            let detail = runtime.size_context_detail(download_size);
+
+            let size = if download_size {
+                runtime.download_size()
+            } else {
+                runtime.installed_size()
+            };
+
+            if runtime.name().contains(&self.package().name()) {
+                package_details.push(detail);
+                package_size += size;
+            } else {
+                runtime_details.push(detail);
+                runtime_size += size;
+            }
+        }
+
+        // Package context group
+        let description = i18n("The storage sizes are only maximum values. Actual usage will most likely be significantly lower due to deduplication of data.");
+        let group = SkContextDetailGroup::new(&package_details, None, Some(&description));
+        groups.push(group);
+
+        // Runtimes context group
+        if runtime_size != 0 {
+            let description = i18n("These components are shared with other applications, and only need to be downloaded once.");
+            let group = SkContextDetailGroup::new(&runtime_details, None, Some(&description));
+            groups.push(group);
+        }
+
+        // Context summary
+        let total_size = package_size + runtime_size;
+        let total_size_str = glib::format_size(total_size);
+        let runtime_size_str = glib::format_size(runtime_size);
+        let summary = if download_size {
+            // Download size
+            let title = if total_size == 0 {
+                i18n("No download required")
+            } else {
+                i18n_f("Up to {} to download", &[&total_size_str])
+            };
+
+            let descr = if runtime_size == 0 {
+                i18n("No additional system packages needed")
+            } else {
+                i18n_f(
+                    "Needs {} of additional system packages",
+                    &[&runtime_size_str],
+                )
+            };
+
+            SkContextDetail::new(
+                SkContextDetailType::Icon,
+                "folder-download-symbolic",
+                SkContextDetailLevel::Neutral,
+                &title,
+                &descr,
+            )
+        } else {
+            // Installed size
+            let title = if self.package().extra_data_source().is_some() {
+                i18n("Unknown storage size")
+            } else {
+                i18n_f("Up to {} storage required", &[&total_size_str])
+            };
+
+            let descr = if runtime_size == 0 {
+                i18n("Requires no additional space for system packages")
+            } else {
+                i18n_f(
+                    "Requires {} for shared system packages",
+                    &[&runtime_size_str],
+                )
+            };
+            SkContextDetail::new(
+                SkContextDetailType::Icon,
+                "drive-harddisk-system-symbolic",
+                SkContextDetailLevel::Neutral,
+                &title,
+                &descr,
+            )
+        };
+
+        let groups = SkContextDetailGroupModel::new(&groups);
+        SkContext::new(&summary, &groups)
+    }
+
+    fn data(&self) -> DryRun {
         self.imp().data.get().unwrap().clone()
     }
 }
