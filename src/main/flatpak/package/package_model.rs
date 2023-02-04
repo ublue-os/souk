@@ -1,4 +1,4 @@
-// Shortwave - package_model.rs
+// Souk - package_model.rs
 // Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify

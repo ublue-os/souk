@@ -37,11 +37,11 @@ pub fn show(parent: &SkApplicationWindow) {
     window.set_debug_info(&vcs_tag);
     window.set_developer_name("Felix Häcker");
     window.set_developers(&["Felix Häcker <haeckerfelix@gnome.org>"]);
-    window.set_issue_url("https://gitlab.gnome.org/World/Shortwave/-/issues");
+    window.set_issue_url("https://gitlab.gnome.org/haecker-felix/souk/-/issues");
     window.set_license_type(gtk::License::Gpl30);
     window.set_translator_credits(&i18n("translator-credits"));
     window.set_version(&version);
-    window.set_website("https://gitlab.gnome.org/World/Shortwave");
+    window.set_website("https://gitlab.gnome.org/haecker-felix/souk");
 
     window.show();
 }
