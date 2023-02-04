@@ -1,5 +1,5 @@
 // Souk - utils.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,19 +18,22 @@ use gtk::glib;
 use gtk::prelude::*;
 
 pub fn size_to_markup(size: &str) -> String {
-    let size: u64 = size.parse().unwrap();
-    let formatted = glib::format_size(size).to_string();
+    if let Ok(size) = size.parse::<u64>() {
+        let formatted = glib::format_size(size).to_string();
 
-    let mut spl: Vec<&str> = formatted.split('\u{a0}').collect();
-    if spl.len() == 1 {
-        spl = formatted.split(' ').collect();
-    }
+        let mut spl: Vec<&str> = formatted.split('\u{a0}').collect();
+        if spl.len() == 1 {
+            spl = formatted.split(' ').collect();
+        }
 
-    if spl.len() == 2 {
-        format!("{}\u{a0}<small>{}</small>", spl[0], spl[1])
+        if spl.len() == 2 {
+            format!("{}\u{a0}<small>{}</small>", spl[0], spl[1])
+        } else {
+            warn!("Unable to build size markup: {}", size);
+            String::new()
+        }
     } else {
-        warn!("Unable to build size markup: {}", size);
-        String::new()
+        size.to_string()
     }
 }
 

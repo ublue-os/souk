@@ -25,7 +25,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 use url::Url;
 
-use crate::main::context::{SkContext, SkContextDetail};
+use crate::main::context::{SkContext, SkContextDetail, SkContextDetailLevel, SkContextDetailType};
 use crate::main::flatpak::package::{SkPackage, SkPackageAppstream, SkPackageImpl};
 use crate::main::flatpak::permissions::SkAppPermissions;
 use crate::main::flatpak::SkFlatpakOperationType;
@@ -185,7 +185,13 @@ impl SkDryRunPackage {
         };
 
         if self.extra_data_source().is_some() && !download_size {
-            SkContextDetail::new_neutral_text("  ???  ", &self.appstream().name(), &subtitle)
+            SkContextDetail::new(
+                SkContextDetailType::Size,
+                "???",
+                SkContextDetailLevel::Neutral,
+                &self.appstream().name(),
+                &subtitle,
+            )
         } else {
             SkContextDetail::new_neutral_size(size, &self.appstream().name(), &subtitle)
         }
