@@ -162,9 +162,13 @@ impl SkDryRunPackage {
 
         // Version line
         let mut version_line = self.appstream().version_text(true);
-        if self.operation_type() == SkFlatpakOperationType::Update {
-            // TODO: Do the translation in SkFlatpakOperationType
-            version_line = i18n_f("{} – Update", &[&version_line]);
+        if self.operation_type() != SkFlatpakOperationType::Install
+            || self.operation_type() != SkFlatpakOperationType::InstallBundle
+        {
+            version_line = i18n_f(
+                "{} – {}",
+                &[&version_line, &self.operation_type().to_string()],
+            );
         }
 
         let subtitle = format!(

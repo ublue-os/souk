@@ -14,9 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::fmt;
+
 use glib::Enum;
 use gtk::glib;
 
+use crate::main::i18n::i18n;
 use crate::shared::flatpak::FlatpakOperationType;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
@@ -39,6 +42,20 @@ impl From<FlatpakOperationType> for SkFlatpakOperationType {
             FlatpakOperationType::Uninstall => Self::Uninstall,
             FlatpakOperationType::None => Self::None,
         }
+    }
+}
+
+impl fmt::Display for SkFlatpakOperationType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let text = match self {
+            Self::Install => i18n("Install"),
+            Self::InstallBundle => i18n("Bundle Install"),
+            Self::Update => i18n("Update"),
+            Self::Uninstall => i18n("Uninstall"),
+            Self::None => i18n("None"),
+        };
+
+        write!(f, "{text}")
     }
 }
 
