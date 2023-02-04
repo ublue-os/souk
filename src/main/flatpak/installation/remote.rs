@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{ParamFlags, ParamSpec, ParamSpecObject, ParamSpecString, ToValue};
+use glib::{ParamFlags, ParamSpec, ParamSpecBoxed, ParamSpecObject, ParamSpecString, ToValue};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -44,6 +44,13 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
+                    ParamSpecBoxed::new(
+                        "info",
+                        "",
+                        "",
+                        RemoteInfo::static_type(),
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("repository-url", "", "", None, ParamFlags::READABLE),
                     ParamSpecObject::new(
@@ -65,6 +72,7 @@ mod imp {
 
         fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
+                "info" => self.obj().info().to_value(),
                 "name" => self.obj().name().to_value(),
                 "repository-url" => self.obj().repository_url().to_value(),
                 "installation" => self.obj().installation().to_value(),
@@ -76,6 +84,27 @@ mod imp {
                 _ => unimplemented!(),
             }
         }
+
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            match pspec.name() {
+                "info" => self.info.set(value.get().unwrap()).unwrap(),
+                _ => unimplemented!(),
+            }
+        }
+
+        fn constructed(&self) {
+            let info = self.obj().info();
+
+            if let Some(inst_info) = &info.installation.into() {
+                let installations = SkApplication::default().worker().installations();
+                let installation = installations
+                    .installation(inst_info)
+                    .expect("Unknown Flatpak installation");
+                self.installation.set(Some(installation)).unwrap();
+            } else {
+                self.installation.set(None).unwrap();
+            }
+        }
     }
 }
 
@@ -85,22 +114,7 @@ glib::wrapper! {
 
 impl SkRemote {
     pub fn new(info: &RemoteInfo) -> Self {
-        let remote: Self = glib::Object::new(&[]);
-        let imp = remote.imp();
-
-        imp.info.set(info.clone()).unwrap();
-
-        if let Some(inst_info) = &info.installation.clone().into() {
-            let installations = SkApplication::default().worker().installations();
-            let installation = installations
-                .installation(inst_info)
-                .expect("Unknown Flatpak installation");
-            imp.installation.set(Some(installation)).unwrap();
-        } else {
-            imp.installation.set(None).unwrap();
-        }
-
-        remote
+        glib::Object::new(&[("info", info)])
     }
 
     pub fn name(&self) -> String {

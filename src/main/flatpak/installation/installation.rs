@@ -19,7 +19,8 @@ use flatpak::prelude::*;
 use flatpak::{Installation, Remote};
 use gio::{Cancellable, File, FileMonitor};
 use glib::{
-    clone, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject, ParamSpecString, ToValue,
+    clone, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecBoxed, ParamSpecObject,
+    ParamSpecString, ToValue,
 };
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -60,6 +61,13 @@ mod imp {
         fn properties() -> &'static [ParamSpec] {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
+                    ParamSpecBoxed::new(
+                        "info",
+                        "",
+                        "",
+                        InstallationInfo::static_type(),
+                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
+                    ),
                     ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("title", "", "", None, ParamFlags::READABLE),
                     ParamSpecString::new("description", "", "", None, ParamFlags::READABLE),
@@ -87,6 +95,7 @@ mod imp {
 
         fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
+                "info" => self.obj().info().to_value(),
                 "name" => self.obj().name().to_value(),
                 "title" => self.obj().title().to_value(),
                 "description" => self.obj().description().to_value(),
@@ -98,6 +107,72 @@ mod imp {
                 _ => unimplemented!(),
             }
         }
+
+        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            match pspec.name() {
+                "info" => self.info.set(value.get().unwrap()).unwrap(),
+                _ => unimplemented!(),
+            }
+        }
+
+        fn constructed(&self) {
+            let info = self.obj().info();
+            let obj = self.obj();
+
+            self.name.set(info.name.clone()).unwrap();
+
+            // Create file monitor to detect changes in the installation (eg. ref
+            // in/uninstall, remote changes)
+            let f_inst = Installation::from(&info);
+            let monitor = f_inst.create_monitor(Cancellable::NONE).unwrap();
+            monitor.connect_changed(clone!(@weak obj as this => move |_,_,_,_|{
+                debug!("Detected change in Flatpak installation.");
+                if let Err(err) = this.refresh(){
+                    error!("Unable to refresh Flatpak installation: {}", err.to_string());
+                    // TODO: Should this be exposed in the UI?
+                }
+            }));
+            self.monitor.set(monitor).unwrap();
+
+            // Set a more user friendly installation title, a description and an icon which
+            // can be used in UIs.
+            if info.name == "default" && !info.is_user {
+                // Default system installation
+                let title = i18n("System");
+                self.title.set(title).unwrap();
+
+                let description = i18n("All users on this computer");
+                self.description.set(description).unwrap();
+
+                self.icon_name.set("computer-symbolic".into()).unwrap();
+            } else if info.name == "user" && info.is_user {
+                // Default user installation
+                let title = i18n("User");
+                self.title.set(title).unwrap();
+
+                let description = i18n("Only currently logged in user");
+                self.description.set(description).unwrap();
+
+                self.icon_name.set("person-symbolic".into()).unwrap();
+            } else {
+                let title = if let Some(string) = Installation::from(&info).display_name() {
+                    string.to_string()
+                } else {
+                    i18n("Flatpak Installation")
+                };
+
+                self.title.set(title).unwrap();
+                if info.is_user {
+                    self.description.set(i18n("User Installation")).unwrap();
+                } else {
+                    self.description.set(i18n("System Installation")).unwrap();
+                }
+
+                self.icon_name
+                    .set("drive-harddisk-symbolic".into())
+                    .unwrap();
+            }
+        }
     }
 }
 
@@ -107,63 +182,7 @@ glib::wrapper! {
 
 impl SkInstallation {
     pub(super) fn new(info: &InstallationInfo) -> Self {
-        let installation: Self = glib::Object::new(&[]);
-        let imp = installation.imp();
-
-        imp.info.set(info.clone()).unwrap();
-        imp.name.set(info.name.clone()).unwrap();
-
-        // Create file monitor to detect changes in the installation (eg. ref
-        // in/uninstall, remote changes)
-        let f_inst = Installation::from(info);
-        let monitor = f_inst.create_monitor(Cancellable::NONE).unwrap();
-        monitor.connect_changed(clone!(@weak installation as this => move |_,_,_,_|{
-            debug!("Detected change in Flatpak installation.");
-            if let Err(err) = this.refresh(){
-                error!("Unable to refresh Flatpak installation: {}", err.to_string());
-                // TODO: Should this be exposed in the UI?
-            }
-        }));
-        imp.monitor.set(monitor).unwrap();
-
-        // Set a more user friendly installation title, a description and an icon which
-        // can be used in UIs.
-        if info.name == "default" && !info.is_user {
-            // Default system installation
-            let title = i18n("System");
-            imp.title.set(title).unwrap();
-
-            let description = i18n("All users on this computer");
-            imp.description.set(description).unwrap();
-
-            imp.icon_name.set("computer-symbolic".into()).unwrap();
-        } else if info.name == "user" && info.is_user {
-            // Default user installation
-            let title = i18n("User");
-            imp.title.set(title).unwrap();
-
-            let description = i18n("Only currently logged in user");
-            imp.description.set(description).unwrap();
-
-            imp.icon_name.set("person-symbolic".into()).unwrap();
-        } else {
-            let title = if let Some(string) = Installation::from(info).display_name() {
-                string.to_string()
-            } else {
-                i18n("Flatpak Installation")
-            };
-
-            imp.title.set(title).unwrap();
-            if info.is_user {
-                imp.description.set(i18n("User Installation")).unwrap();
-            } else {
-                imp.description.set(i18n("System Installation")).unwrap();
-            }
-
-            imp.icon_name.set("drive-harddisk-symbolic".into()).unwrap();
-        }
-
-        installation
+        glib::Object::new(&[("info", info)])
     }
 
     pub fn name(&self) -> String {
