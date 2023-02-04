@@ -185,6 +185,10 @@ impl SkInstallation {
         glib::Object::new(&[("info", info)])
     }
 
+    pub fn info(&self) -> InstallationInfo {
+        self.imp().info.get().unwrap().clone()
+    }
+
     pub fn name(&self) -> String {
         self.imp().name.get().unwrap().to_string()
     }
@@ -215,10 +219,6 @@ impl SkInstallation {
 
     pub fn packages(&self) -> SkPackageModel {
         self.imp().packages.clone()
-    }
-
-    pub fn info(&self) -> InstallationInfo {
-        self.imp().info.get().unwrap().clone()
     }
 
     pub fn launch_app(&self, app: &SkPackage) {

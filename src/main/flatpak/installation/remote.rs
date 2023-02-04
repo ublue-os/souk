@@ -117,6 +117,10 @@ impl SkRemote {
         glib::Object::new(&[("info", info)])
     }
 
+    pub fn info(&self) -> RemoteInfo {
+        self.imp().info.get().unwrap().clone()
+    }
+
     pub fn name(&self) -> String {
         self.info().name
     }
@@ -147,9 +151,5 @@ impl SkRemote {
 
     pub fn icon(&self) -> String {
         self.info().icon
-    }
-
-    pub fn info(&self) -> RemoteInfo {
-        self.imp().info.get().unwrap().clone()
     }
 }
