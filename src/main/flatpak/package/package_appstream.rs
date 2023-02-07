@@ -218,13 +218,14 @@ impl SkPackageAppstream {
     }
 
     fn translated_value(&self, value: &TranslatableString) -> String {
+        let locale = self.locale().unwrap_or("C".to_string());
         value
-            .get_for_locale(&self.locale())
+            .get_for_locale(&locale)
             .unwrap_or_else(|| value.get_default().unwrap())
             .to_string()
     }
 
-    fn locale(&self) -> String {
+    fn locale(&self) -> Option<String> {
         let f_inst = Installation::from(
             &SkApplication::default()
                 .worker()
@@ -233,11 +234,7 @@ impl SkPackageAppstream {
                 .info(),
         );
 
-        f_inst
-            .default_languages()
-            .unwrap()
-            .first()
-            .unwrap()
-            .to_string()
+        let locale = f_inst.default_languages().ok()?.first()?.to_string();
+        Some(locale)
     }
 }
