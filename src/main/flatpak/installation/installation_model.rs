@@ -46,6 +46,8 @@ mod imp {
 
     impl ObjectImpl for SkInstallationModel {
         fn constructed(&self) {
+            self.parent_constructed();
+
             // System Installation
             let f_inst = Installation::new_system(Cancellable::NONE).unwrap();
             let info = InstallationInfo::from(&f_inst);

@@ -116,6 +116,8 @@ mod imp {
         }
 
         fn constructed(&self) {
+            self.parent_constructed();
+
             let info = self.obj().info();
             let obj = self.obj();
 

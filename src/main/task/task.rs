@@ -160,6 +160,8 @@ mod imp {
         }
 
         fn constructed(&self) {
+            self.parent_constructed();
+
             let (finished_sender, finished_receiver) = unbounded();
             self.finished_sender.set(finished_sender).unwrap();
             self.finished_receiver.set(finished_receiver).unwrap();

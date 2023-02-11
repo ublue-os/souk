@@ -109,6 +109,8 @@ mod imp {
         }
 
         fn constructed(&self) {
+            self.parent_constructed();
+
             let info = self.obj().info();
 
             let flatpak_ref = Ref::parse(&info.ref_).unwrap();

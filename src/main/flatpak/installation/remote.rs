@@ -93,6 +93,8 @@ mod imp {
         }
 
         fn constructed(&self) {
+            self.parent_constructed();
+
             let info = self.obj().info();
 
             if let Some(inst_info) = &info.installation.into() {
