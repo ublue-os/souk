@@ -51,9 +51,3 @@ pub fn remove_css_colors<T: IsA<gtk::Widget>>(widget: &T) {
         widget.remove_css_class(class);
     }
 }
-
-pub fn clear_box(box_: &gtk::Box) {
-    while let Some(child) = box_.first_child() {
-        box_.remove(&child);
-    }
-}

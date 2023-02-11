@@ -192,8 +192,15 @@
                                           </object>
                                         </child>
                                         <child>
-                                          <object class="GtkBox" id="remotes_box">
-                                            <property name="orientation">vertical</property>
+                                          <object class="AdwPreferencesGroup" id="remotes_group">
+                                            <child>
+                                              <object class="GtkListBox" id="remotes_listbox">
+                                                <property name="selection_mode">none</property>
+                                                <style>
+                                                  <class name="content"/>
+                                                </style>
+                                              </object>
+                                            </child>
                                           </object>
                                         </child>
                                         <child>
@@ -378,7 +385,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="AdwStatusPage" id="progress_status_page">
+                              <object class="AdwStatusPage" id="progress_spage">
                                 <property name="vexpand">True</property>
                                 <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
                                 <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
@@ -440,7 +447,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="AdwStatusPage" id="done_status_page">
+                              <object class="AdwStatusPage" id="done_spage">
                                 <property name="vexpand">True</property>
                                 <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
                                 <property name="icon_name" bind-source="package_icon_image" bind-property="icon_name" bind-flags="sync-create"/>
@@ -483,7 +490,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="AdwStatusPage" id="error_status_page">
+                              <object class="AdwStatusPage" id="error_spage">
                                 <property name="vexpand">True</property>
                                 <property name="icon_name">dialog-warning-symbolic</property>
                                 <property name="title" translatable="yes">A problem has occurred</property>
@@ -517,7 +524,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="AdwStatusPage" id="already_done_status_page">
+                              <object class="AdwStatusPage" id="already_done_spage">
                                 <property name="vexpand">True</property>
                                 <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
                                 <property name="icon_name" bind-source="package_icon_image" bind-property="icon_name" bind-flags="sync-create"/>
@@ -563,7 +570,7 @@
                               </object>
                             </child>
                             <child>
-                              <object class="AdwStatusPage" id="missing_runtime_status_page">
+                              <object class="AdwStatusPage" id="missing_runtime_spage">
                                 <property name="vexpand">True</property>
                                 <property name="icon_name">dialog-question-symbolic</property>
                                 <property name="title" translatable="yes">Cannot Find Required Runtime</property>
