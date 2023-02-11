@@ -39,8 +39,7 @@ mod imp {
         pub task: RefCell<Option<SkTask>>,
         pub fraction: Cell<f64>,
 
-        pub progress_watch: OnceCell<gtk::ExpressionWatch>,
-        pub status_watch: OnceCell<gtk::ExpressionWatch>,
+        pub watches: RefCell<Vec<gtk::ExpressionWatch>>,
     }
 
     #[glib::object_subclass]
@@ -80,6 +79,8 @@ mod imp {
         }
 
         fn constructed(&self) {
+            self.parent_constructed();
+
             self.progressbar.set_pulse_step(1.0);
             self.progressbar.set_valign(gtk::Align::Center);
             self.obj().set_child(Some(&self.progressbar));
@@ -87,30 +88,13 @@ mod imp {
             let target = PropertyAnimationTarget::new(&self.progressbar, "fraction");
             let animation = TimedAnimation::new(&self.progressbar, 0.0, 0.0, 1000, &target);
             self.animation.set(animation).unwrap();
-
-            let progress_watch = self
-                .obj()
-                .property_expression("task")
-                .chain_property::<SkTask>("progress")
-                .watch(
-                    glib::Object::NONE,
-                    clone!(@weak self as this => move|| this.obj().update_fraction()),
-                );
-            self.progress_watch.set(progress_watch).unwrap();
-
-            let status_watch = self
-                .obj()
-                .property_expression("task")
-                .chain_property::<SkTask>("status")
-                .watch(
-                    glib::Object::NONE,
-                    clone!(@weak self as this => move|| this.obj().update()),
-                );
-            self.status_watch.set(status_watch).unwrap();
         }
 
         fn dispose(&self) {
-            self.progress_watch.get().unwrap().unwatch();
+            // Workaround copied from
+            // https://github.com/YaLTeR/plitki/blob/b0c43452e407d906c57b55fdb08980aed29831e4/plitki-gnome/src/hit_light.rs#L49
+            let animation = self.animation.get().unwrap();
+            animation.set_target(&adw::CallbackAnimationTarget::new(|_| ()));
         }
     }
 
@@ -135,7 +119,27 @@ impl SkTaskProgressBar {
     }
 
     pub fn set_task(&self, task: Option<&SkTask>) {
-        *self.imp().task.borrow_mut() = task.cloned();
+        let imp = self.imp();
+
+        while let Some(watch) = imp.watches.borrow_mut().pop() {
+            watch.unwatch();
+        }
+
+        if let Some(task) = task {
+            let watch = task.property_expression("progress").watch(
+                glib::Object::NONE,
+                clone!(@weak self as this => move|| this.update_fraction()),
+            );
+            imp.watches.borrow_mut().push(watch);
+
+            let watch = task.property_expression("status").watch(
+                glib::Object::NONE,
+                clone!(@weak self as this => move|| this.update()),
+            );
+            imp.watches.borrow_mut().push(watch);
+        }
+
+        *imp.task.borrow_mut() = task.cloned();
         self.notify("task");
     }
 
