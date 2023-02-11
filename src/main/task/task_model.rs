@@ -118,7 +118,7 @@ impl SkTaskModel {
         let filter = gtk::BoolFilter::new(Some(&completed_expression));
         let filtermodel = gtk::FilterListModel::new(Some(self), Some(&filter));
 
-        while filtermodel.n_items() >= keep {
+        while filtermodel.n_items() > keep {
             let task = filtermodel.item(0).unwrap().downcast::<SkTask>().unwrap();
             self.remove_task(&task);
         }

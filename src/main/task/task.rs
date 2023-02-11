@@ -306,7 +306,6 @@ impl SkTask {
                         imp.progress.set(1.0);
                         self.notify("progress");
                         self.emit_by_name::<()>("done", &[]);
-                        self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                         SkTaskStatus::Done
                     }
@@ -318,7 +317,6 @@ impl SkTask {
                         imp.progress.set(1.0);
                         self.notify("progress");
                         self.emit_by_name::<()>("done", &[]);
-                        self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                         SkTaskStatus::Done
                     }
@@ -327,13 +325,11 @@ impl SkTask {
                         imp.result_error.set(result_error.clone()).unwrap();
 
                         self.emit_by_name::<()>("error", &[&result_error]);
-                        self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                         SkTaskStatus::Error
                     }
                     TaskResultType::Cancelled => {
                         self.emit_by_name::<()>("cancelled", &[]);
-                        self.emit_by_name::<()>("completed", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                         SkTaskStatus::Cancelled
                     }
@@ -345,6 +341,8 @@ impl SkTask {
 
                 *imp.status.borrow_mut() = status;
                 self.notify("status");
+
+                self.emit_by_name::<()>("completed", &[]);
             }
         }
     }
