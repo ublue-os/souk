@@ -184,7 +184,7 @@ glib::wrapper! {
 
 impl SkInstallation {
     pub(super) fn new(info: &InstallationInfo) -> Self {
-        glib::Object::new(&[("info", info)])
+        glib::Object::builder().property("info", &info).build()
     }
 
     pub fn info(&self) -> InstallationInfo {

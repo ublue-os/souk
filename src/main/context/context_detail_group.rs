@@ -113,7 +113,10 @@ impl SkContextDetailGroup {
         title: Option<&str>,
         description: Option<&str>,
     ) -> Self {
-        let model: Self = glib::Object::new(&[("title", &title), ("description", &description)]);
+        let model: Self = glib::Object::builder()
+            .property("title", &title)
+            .property("description", &description)
+            .build();
 
         let imp = model.imp();
         for (pos, detail) in details.iter().enumerate() {

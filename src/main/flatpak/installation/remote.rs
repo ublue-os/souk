@@ -116,7 +116,7 @@ glib::wrapper! {
 
 impl SkRemote {
     pub fn new(info: &RemoteInfo) -> Self {
-        glib::Object::new(&[("info", info)])
+        glib::Object::builder().property("info", &info).build()
     }
 
     pub fn info(&self) -> RemoteInfo {

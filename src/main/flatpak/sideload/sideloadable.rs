@@ -123,7 +123,7 @@ impl SkSideloadable {
         dry_run: SkDryRun,
         installation: &SkInstallation,
     ) -> Self {
-        let sideloadable: Self = glib::Object::new(&[]);
+        let sideloadable: Self = glib::Object::new();
 
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();
@@ -149,7 +149,7 @@ impl SkSideloadable {
         already_added: bool,
         installation: &SkInstallation,
     ) -> Self {
-        let sideloadable: Self = glib::Object::new(&[]);
+        let sideloadable: Self = glib::Object::new();
 
         let imp = sideloadable.imp();
         imp.file.set(file.clone()).unwrap();

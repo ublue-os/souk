@@ -158,6 +158,6 @@ impl SkInstallationListBox {
 
 impl Default for SkInstallationListBox {
     fn default() -> Self {
-        glib::Object::new(&[])
+        glib::Object::new()
     }
 }

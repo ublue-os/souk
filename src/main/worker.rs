@@ -284,6 +284,6 @@ impl SkWorker {
 
 impl Default for SkWorker {
     fn default() -> Self {
-        glib::Object::new::<Self>(&[])
+        glib::Object::new()
     }
 }

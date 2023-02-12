@@ -277,7 +277,7 @@ glib::wrapper! {
 #[gtk::template_callbacks]
 impl SkSideloadWindow {
     pub fn new(file: &File) -> Self {
-        glib::Object::new::<Self>(&[("file", file)])
+        glib::Object::builder().property("file", file).build()
     }
 
     pub fn file(&self) -> File {

@@ -110,7 +110,9 @@ glib::wrapper! {
 
 impl SkInstallationRow {
     pub fn new(installation: &SkInstallation) -> Self {
-        glib::Object::new(&[("installation", installation)])
+        glib::Object::builder()
+            .property("installation", installation)
+            .build()
     }
 
     fn setup_widgets(&self) {

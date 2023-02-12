@@ -88,7 +88,10 @@ glib::wrapper! {
 
 impl SkContext {
     pub fn new(summary: &SkContextDetail, details: &SkContextDetailGroupModel) -> Self {
-        glib::Object::new(&[("summary", &summary), ("details", &details)])
+        glib::Object::builder()
+            .property("summary", &summary)
+            .property("details", &details)
+            .build()
     }
 
     pub fn permissions(permissions: &SkAppPermissions) -> Self {

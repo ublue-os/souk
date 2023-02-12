@@ -66,7 +66,7 @@ glib::wrapper! {
 
 impl SkRemoteModel {
     pub fn new() -> Self {
-        glib::Object::new(&[])
+        glib::Object::new()
     }
 
     pub fn remote(&self, info: &RemoteInfo) -> Option<SkRemote> {

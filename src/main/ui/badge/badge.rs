@@ -103,7 +103,10 @@ glib::wrapper! {
 
 impl SkBadge {
     pub fn new(type_: SkBadgeType, value: &str) -> Self {
-        glib::Object::new(&[("type", &type_), ("value", &value)])
+        glib::Object::builder()
+            .property("type", &type_)
+            .property("value", &value)
+            .build()
     }
 
     pub fn type_(&self) -> SkBadgeType {

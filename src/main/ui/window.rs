@@ -77,7 +77,7 @@ glib::wrapper! {
 #[gtk::template_callbacks]
 impl SkApplicationWindow {
     pub fn new() -> Self {
-        glib::Object::new::<Self>(&[])
+        glib::Object::new()
     }
 
     fn setup_widgets(&self) {
@@ -98,7 +98,7 @@ impl SkApplicationWindow {
             }
             false
         });
-        imp.status_page.add_controller(&drop_target);
+        imp.status_page.add_controller(drop_target);
     }
 
     fn setup_signals(&self) {}

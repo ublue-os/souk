@@ -1,5 +1,5 @@
 // Souk - filesystem_permission.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ glib::wrapper! {
 
 impl SkFilesystemPermission {
     pub fn new(value: &str) -> Self {
-        let perm: Self = glib::Object::new(&[]);
+        let perm: Self = glib::Object::new();
         let imp = perm.imp();
 
         let path: &str;

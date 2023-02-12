@@ -110,7 +110,9 @@ glib::wrapper! {
 
 impl SkDryRunPackage {
     pub fn new(data: DryRunPackage) -> Self {
-        let runtime: Self = glib::Object::new(&[("info", &data.package)]);
+        let runtime: Self = glib::Object::builder()
+            .property("info", &data.package)
+            .build();
 
         let imp = runtime.imp();
         imp.data.set(data).unwrap();

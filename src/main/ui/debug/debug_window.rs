@@ -74,19 +74,19 @@ glib::wrapper! {
 #[gtk::template_callbacks]
 impl SkDebugWindow {
     pub fn new() -> Self {
-        glib::Object::new::<Self>(&[])
+        glib::Object::new()
     }
 
     fn setup_widgets(&self) {
         let imp = self.imp();
         let worker = SkApplication::default().worker();
 
-        let tree_model = gtk::TreeListModel::new(&worker.tasks(), false, true, |item| {
+        let tree_model = gtk::TreeListModel::new(worker.tasks(), false, true, |item| {
             let task: &SkTask = item.downcast_ref().unwrap();
             Some(task.dependencies().upcast())
         });
 
-        let model = gtk::NoSelection::new(Some(&tree_model));
+        let model = gtk::NoSelection::new(Some(tree_model));
         imp.current_tasks_columnview.set_model(Some(&model));
 
         // Setup table columns
@@ -131,7 +131,7 @@ impl SkDebugWindow {
             let text = expander.child().unwrap().downcast::<gtk::Label>().unwrap();
             text.set_text(&task.uuid());
         });
-        self.add_column("Task", &factory);
+        self.add_column("Task", factory);
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
@@ -142,7 +142,7 @@ impl SkDebugWindow {
                 .chain_property::<SkTask>("type")
                 .bind(&text, "label", None::<&SkTask>);
         });
-        self.add_column("Type", &factory);
+        self.add_column("Type", factory);
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
@@ -153,7 +153,7 @@ impl SkDebugWindow {
                 .chain_property::<SkTask>("status")
                 .bind(&text, "label", None::<&SkTask>);
         });
-        self.add_column("Status", &factory);
+        self.add_column("Status", factory);
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
@@ -165,7 +165,7 @@ impl SkDebugWindow {
                 .chain_property::<gtk::TreeListRow>("item")
                 .bind(&progressbar, "task", None::<&gtk::TreeListRow>);
         });
-        self.add_column("Progress", &factory);
+        self.add_column("Progress", factory);
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
@@ -177,7 +177,7 @@ impl SkDebugWindow {
                 .chain_property::<SkPackage>("name")
                 .bind(&text, "label", None::<&SkPackage>);
         });
-        self.add_column("Ref", &factory);
+        self.add_column("Ref", factory);
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
@@ -190,7 +190,7 @@ impl SkDebugWindow {
                 .chain_property::<SkRemote>("name")
                 .bind(&text, "label", None::<&SkRemote>);
         });
-        self.add_column("Remote", &factory);
+        self.add_column("Remote", factory);
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
@@ -204,10 +204,10 @@ impl SkDebugWindow {
                 .chain_property::<SkInstallation>("name")
                 .bind(&text, "label", None::<&SkInstallation>);
         });
-        self.add_column("Installation", &factory);
+        self.add_column("Installation", factory);
     }
 
-    fn add_column(&self, name: &str, factory: &gtk::SignalListItemFactory) {
+    fn add_column(&self, name: &str, factory: gtk::SignalListItemFactory) {
         let column = gtk::ColumnViewColumn::new(Some(name), Some(factory));
         self.imp().current_tasks_columnview.append_column(&column);
     }

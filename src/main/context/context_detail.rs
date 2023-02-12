@@ -123,33 +123,33 @@ impl SkContextDetail {
         title: &str,
         description: &str,
     ) -> Self {
-        glib::Object::new(&[
-            ("type", &type_),
-            ("type-value", &type_value),
-            ("level", &level),
-            ("title", &title),
-            ("description", &description),
-        ])
+        glib::Object::builder()
+            .property("type", &type_)
+            .property("type-value", &type_value)
+            .property("level", &level)
+            .property("title", &title)
+            .property("description", &description)
+            .build()
     }
 
     pub fn new_neutral_size(size: u64, title: &str, description: &str) -> Self {
-        glib::Object::new(&[
-            ("type", &SkContextDetailType::Size),
-            ("type-value", &size.to_string()),
-            ("level", &SkContextDetailLevel::Neutral),
-            ("title", &title),
-            ("description", &description),
-        ])
+        glib::Object::builder()
+            .property("type", &SkContextDetailType::Size)
+            .property("type-value", &size.to_string())
+            .property("level", &SkContextDetailLevel::Neutral)
+            .property("title", &title)
+            .property("description", &description)
+            .build()
     }
 
     pub fn new_neutral_text(text: &str, title: &str, description: &str) -> Self {
-        glib::Object::new(&[
-            ("type", &SkContextDetailType::Text),
-            ("type-value", &text.to_string()),
-            ("level", &SkContextDetailLevel::Neutral),
-            ("title", &title),
-            ("description", &description),
-        ])
+        glib::Object::builder()
+            .property("type", &SkContextDetailType::Text)
+            .property("type-value", &text.to_string())
+            .property("level", &SkContextDetailLevel::Neutral)
+            .property("title", &title)
+            .property("description", &description)
+            .build()
     }
 
     pub fn type_(&self) -> SkContextDetailType {

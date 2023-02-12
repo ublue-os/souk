@@ -111,7 +111,7 @@ glib::wrapper! {
 
 impl SkContextBox {
     pub fn new(context: &SkContext) -> Self {
-        glib::Object::new(&[("context", context)])
+        glib::Object::builder().property("context", context).build()
     }
 
     pub fn context(&self) -> SkContext {

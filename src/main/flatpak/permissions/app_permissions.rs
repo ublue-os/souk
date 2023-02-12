@@ -122,13 +122,13 @@ glib::wrapper! {
 
 impl SkAppPermissions {
     pub fn from_metadata(keyfile: &KeyFile) -> Self {
-        let permissions: Self = glib::Object::new(&[]);
+        let permissions: Self = glib::Object::new();
         let imp = permissions.imp();
 
         let filesystems = ListStore::new(SkFilesystemPermission::static_type());
         if let Ok(filesystem_list) = keyfile.string_list("Context", "filesystems") {
             for filesystem in filesystem_list {
-                let value = SkFilesystemPermission::new(&filesystem);
+                let value = SkFilesystemPermission::new(filesystem.to_str());
                 filesystems.append(&value);
             }
         }
@@ -136,20 +136,20 @@ impl SkAppPermissions {
 
         let services = ListStore::new(SkServicePermission::static_type());
         if let Ok(session_list) = keyfile.keys("Session Bus Policy") {
-            for service in session_list.0 {
-                if Self::is_whitelisted(SERVICE_WHITELIST.to_vec(), &service) {
+            for service in session_list {
+                if Self::is_whitelisted(SERVICE_WHITELIST.to_vec(), service.to_str()) {
                     continue;
                 }
-                let value = SkServicePermission::new(&service, false);
+                let value = SkServicePermission::new(service.to_str(), false);
                 services.append(&value);
             }
         }
         if let Ok(system_list) = keyfile.keys("System Bus Policy") {
-            for service in system_list.0 {
-                if Self::is_whitelisted(SERVICE_WHITELIST.to_vec(), &service) {
+            for service in system_list {
+                if Self::is_whitelisted(SERVICE_WHITELIST.to_vec(), service.to_str()) {
                     continue;
                 }
-                let value = SkServicePermission::new(&service, true);
+                let value = SkServicePermission::new(service.to_str(), true);
                 services.append(&value);
             }
         }
@@ -158,7 +158,7 @@ impl SkAppPermissions {
         let mut devices = SkDevicePermission::NONE;
         if let Ok(device_list) = keyfile.string_list("Context", "devices") {
             for device in device_list {
-                devices |= device.as_str().into();
+                devices |= device.to_str().into();
                 devices.remove(SkDevicePermission::NONE);
             }
         }
@@ -167,7 +167,7 @@ impl SkAppPermissions {
         let mut sockets = SkSocketPermission::NONE;
         if let Ok(socket_list) = keyfile.string_list("Context", "sockets") {
             for socket in socket_list {
-                sockets |= socket.as_str().into();
+                sockets |= socket.to_str().into();
                 sockets.remove(SkSocketPermission::NONE);
             }
         }
@@ -176,7 +176,7 @@ impl SkAppPermissions {
         let mut subsystems = SkSubsystemPermission::NONE;
         if let Ok(subsystem_list) = keyfile.string_list("Context", "shared") {
             for subsystem in subsystem_list {
-                subsystems |= subsystem.as_str().into();
+                subsystems |= subsystem.to_str().into();
                 subsystems.remove(SkSubsystemPermission::NONE);
             }
         }
@@ -214,7 +214,7 @@ impl SkAppPermissions {
             }
         }
 
-        let permissions: Self = glib::Object::new(&[]);
+        let permissions: Self = glib::Object::new();
 
         let imp = permissions.imp();
         imp.filesystems.set(filesystems).unwrap();

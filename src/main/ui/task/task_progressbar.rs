@@ -86,7 +86,7 @@ mod imp {
             self.obj().set_child(Some(&self.progressbar));
 
             let target = PropertyAnimationTarget::new(&self.progressbar, "fraction");
-            let animation = TimedAnimation::new(&self.progressbar, 0.0, 0.0, 1000, &target);
+            let animation = TimedAnimation::new(&self.progressbar, 0.0, 0.0, 1000, target);
             self.animation.set(animation).unwrap();
         }
 
@@ -111,7 +111,7 @@ glib::wrapper! {
 
 impl SkTaskProgressBar {
     pub fn new() -> Self {
-        glib::Object::new(&[])
+        glib::Object::new()
     }
 
     pub fn task(&self) -> Option<SkTask> {

@@ -65,7 +65,7 @@ glib::wrapper! {
 
 impl SkContextDetailGroupModel {
     pub fn new(details: &[SkContextDetailGroup]) -> Self {
-        let model: Self = glib::Object::new(&[]);
+        let model: Self = glib::Object::new();
 
         let imp = model.imp();
         for (pos, detail) in details.iter().enumerate() {

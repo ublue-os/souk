@@ -107,7 +107,7 @@ glib::wrapper! {
 
 impl SkDryRun {
     pub fn new(data: DryRun) -> Self {
-        let dry_run: Self = glib::Object::new(&[]);
+        let dry_run: Self = glib::Object::new();
         let imp = dry_run.imp();
 
         let package = SkDryRunPackage::new(data.package.clone());

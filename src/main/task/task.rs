@@ -175,7 +175,7 @@ glib::wrapper! {
 
 impl SkTask {
     pub fn new(data: Task) -> Self {
-        let task: Self = glib::Object::new(&[]);
+        let task: Self = glib::Object::new();
         let imp = task.imp();
 
         imp.data.set(Some(data.clone())).unwrap();
@@ -190,7 +190,7 @@ impl SkTask {
 
     /// Creates a new task which is a dependency of another task
     pub fn new_dependency(progress: &TaskProgress, dependency_of: &SkTask) -> Self {
-        let task: Self = glib::Object::new(&[]);
+        let task: Self = glib::Object::new();
         let imp = task.imp();
 
         imp.data.set(None).unwrap();

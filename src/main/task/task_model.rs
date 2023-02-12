@@ -66,7 +66,7 @@ glib::wrapper! {
 
 impl SkTaskModel {
     pub fn new() -> Self {
-        glib::Object::new(&[])
+        glib::Object::new()
     }
 
     pub fn add_task(&self, task: &SkTask) {
@@ -116,7 +116,7 @@ impl SkTaskModel {
             }));
 
         let filter = gtk::BoolFilter::new(Some(&completed_expression));
-        let filtermodel = gtk::FilterListModel::new(Some(self), Some(&filter));
+        let filtermodel = gtk::FilterListModel::new(Some(self.clone()), Some(filter));
 
         while filtermodel.n_items() > keep {
             let task = filtermodel.item(0).unwrap().downcast::<SkTask>().unwrap();

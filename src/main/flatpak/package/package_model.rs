@@ -66,7 +66,7 @@ glib::wrapper! {
 
 impl SkPackageModel {
     pub fn new() -> Self {
-        glib::Object::new(&[])
+        glib::Object::new()
     }
 
     pub fn set_packages(&self, packages: Vec<PackageInfo>) {

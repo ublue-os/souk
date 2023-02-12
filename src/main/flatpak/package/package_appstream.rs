@@ -92,7 +92,7 @@ impl SkPackageAppstream {
         icon: Option<Vec<u8>>,
         package: &SkPackage,
     ) -> Self {
-        let appstream: Self = glib::Object::new(&[]);
+        let appstream: Self = glib::Object::new();
 
         let imp = appstream.imp();
         imp.package.set(package.clone()).unwrap();

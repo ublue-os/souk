@@ -90,7 +90,7 @@ glib::wrapper! {
 
 impl SkInstallationModel {
     pub fn new() -> Self {
-        glib::Object::new(&[])
+        glib::Object::new()
     }
 
     pub fn refresh(&self) -> Result<(), Error> {

@@ -120,7 +120,10 @@ glib::wrapper! {
 
 impl SkContextDetailRow {
     pub fn new(detail: &SkContextDetail, show_arrow: bool) -> Self {
-        glib::Object::new(&[("detail", detail), ("show-arrow", &show_arrow)])
+        glib::Object::builder()
+            .property("detail", detail)
+            .property("show-arrow", &show_arrow)
+            .build()
     }
 
     fn setup_widgets(&self) {

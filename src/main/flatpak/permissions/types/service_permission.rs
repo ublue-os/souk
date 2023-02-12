@@ -1,5 +1,5 @@
 // Souk - service_permission.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ glib::wrapper! {
 
 impl SkServicePermission {
     pub fn new(name: &str, is_system: bool) -> Self {
-        let perm: Self = glib::Object::new(&[]);
+        let perm: Self = glib::Object::new();
 
         let imp = perm.imp();
         imp.name.set(name.to_string()).unwrap();

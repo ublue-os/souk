@@ -176,10 +176,10 @@ impl SkWorkerApplication {
             config::PROFILE
         );
 
-        let app = glib::Object::new::<SkWorkerApplication>(&[
-            ("application-id", &Some(app_id)),
-            ("flags", &gio::ApplicationFlags::IS_SERVICE),
-        ]);
+        let app: Self = glib::Object::builder()
+            .property("application-id", &Some(app_id))
+            .property("flags", &gio::ApplicationFlags::IS_SERVICE)
+            .build();
 
         // Wait 15 seconds before worker quits because of inactivity
         app.set_inactivity_timeout(15000);

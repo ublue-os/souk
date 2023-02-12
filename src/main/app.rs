@@ -142,11 +142,11 @@ impl SkApplication {
         );
 
         // Create new GObject and downcast it into SkApplication
-        let app = glib::Object::new::<SkApplication>(&[
-            ("application-id", &Some(config::APP_ID)),
-            ("flags", &gio::ApplicationFlags::HANDLES_OPEN),
-            ("resource-base-path", &Some("/de/haeckerfelix/Souk/")),
-        ]);
+        let app: Self = glib::Object::builder()
+            .property("application-id", &Some(config::APP_ID))
+            .property("flags", &gio::ApplicationFlags::HANDLES_OPEN)
+            .property("resource-base-path", &Some("/de/haeckerfelix/Souk/"))
+            .build();
 
         // Start running gtk::Application
         app.run();
