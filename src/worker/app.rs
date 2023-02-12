@@ -162,7 +162,7 @@ glib::wrapper! {
 }
 
 impl SkWorkerApplication {
-    pub fn run() {
+    pub fn run() -> glib::ExitCode {
         // We need to use a different app id for the gio application, otherwise zbus
         // wouldn't be able to use it any more. See https://gitlab.gnome.org/GNOME/glib/-/issues/2756
         let app_id = format!("{}.App", config::WORKER_APP_ID);
@@ -185,9 +185,7 @@ impl SkWorkerApplication {
         app.set_inactivity_timeout(15000);
 
         // Start mainloop
-        app.run();
-
-        debug!("Quit.");
+        app.run()
     }
 
     async fn start_dbus_server(&self) -> zbus::Result<()> {

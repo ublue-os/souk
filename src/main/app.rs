@@ -131,7 +131,7 @@ glib::wrapper! {
 }
 
 impl SkApplication {
-    pub fn run() {
+    pub fn run() -> glib::ExitCode {
         debug!(
             "{} ({}) ({}) - Version {} ({})",
             config::NAME,
@@ -149,7 +149,7 @@ impl SkApplication {
             .build();
 
         // Start running gtk::Application
-        app.run();
+        app.run()
     }
 
     pub fn worker(&self) -> SkWorker {

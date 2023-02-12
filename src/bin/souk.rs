@@ -19,7 +19,7 @@ use gtk::{gio, glib};
 use souk::main::SkApplication;
 use souk::shared::{config, path};
 
-fn main() {
+fn main() -> glib::ExitCode {
     // Initialize logger
     pretty_env_logger::init();
 
@@ -53,5 +53,5 @@ fn main() {
     let _guard = ctx.acquire().unwrap();
 
     // Run app itself
-    SkApplication::run();
+    SkApplication::run()
 }
