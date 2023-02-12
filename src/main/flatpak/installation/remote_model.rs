@@ -58,6 +58,46 @@ mod imp {
                 .map(|(_, o)| o.clone().upcast::<glib::Object>())
         }
     }
+
+    impl SkRemoteModel {
+        pub fn add_info(&self, info: &RemoteInfo) {
+            let pos = {
+                let mut map = self.map.borrow_mut();
+                if map.contains_key(info) {
+                    return;
+                }
+
+                let sk_remote = SkRemote::new(info);
+                map.insert(info.clone(), sk_remote);
+                (map.len() - 1) as u32
+            };
+
+            self.obj().items_changed(pos, 0, 1);
+        }
+
+        pub fn remove_info(&self, info: &RemoteInfo) {
+            let pos = {
+                let mut map = self.map.borrow_mut();
+                match map.get_index_of(info) {
+                    Some(pos) => {
+                        map.remove(info);
+                        Some(pos)
+                    }
+                    None => {
+                        warn!(
+                            "Unable to remove remote {:?}, not found in model",
+                            info.name
+                        );
+                        None
+                    }
+                }
+            };
+
+            if let Some(pos) = pos {
+                self.obj().items_changed(pos.try_into().unwrap(), 1, 0);
+            }
+        }
+    }
 }
 
 glib::wrapper! {
@@ -84,52 +124,14 @@ impl SkRemoteModel {
         let imp = self.imp();
 
         for remote in &remotes {
-            self.add_info(remote);
+            self.imp().add_info(remote);
         }
 
         let map = imp.map.borrow().clone();
         for info in map.keys() {
             if !remotes.contains(info) {
-                self.remove_info(info);
+                self.imp().remove_info(info);
             }
-        }
-    }
-
-    fn add_info(&self, info: &RemoteInfo) {
-        let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            if map.contains_key(info) {
-                return;
-            }
-
-            let sk_remote = SkRemote::new(info);
-            map.insert(info.clone(), sk_remote);
-            (map.len() - 1) as u32
-        };
-
-        self.items_changed(pos, 0, 1);
-    }
-
-    fn remove_info(&self, info: &RemoteInfo) {
-        let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            match map.get_index_of(info) {
-                Some(pos) => {
-                    map.remove(info);
-                    Some(pos)
-                }
-                None => {
-                    warn!(
-                        "Unable to remove remote {:?}, not found in model",
-                        info.name
-                    );
-                    None
-                }
-            }
-        };
-
-        if let Some(pos) = pos {
-            self.items_changed(pos.try_into().unwrap(), 1, 0);
         }
     }
 }
