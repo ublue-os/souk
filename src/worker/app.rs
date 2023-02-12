@@ -107,16 +107,14 @@ mod imp {
             debug!("Application -> startup");
 
             let fut = clone!(@weak self as this => async move {
-                let obj = this.obj();
-
-                if let Err(err) = obj.start_dbus_server().await{
+                if let Err(err) = this.start_dbus_server().await{
                     error!("Unable to start DBus server: {}", err.to_string());
-                    obj.quit();
+                    this.obj().quit();
                 }
 
-                let f1 = obj.receive_tasks();
-                let f2 = obj.receive_cancel_requests();
-                let f3 = obj.receive_responses();
+                let f1 = this.receive_tasks();
+                let f2 = this.receive_cancel_requests();
+                let f3 = this.receive_responses();
                 futures::join!(f1, f2, f3);
             });
             spawn!(fut);
@@ -153,6 +151,125 @@ mod imp {
             }
         }
     }
+
+    impl SkWorkerApplication {
+        async fn start_dbus_server(&self) -> zbus::Result<()> {
+            debug!("Start DBus server...");
+
+            let task_sender = self.task_sender.clone();
+            let cancel_sender = self.cancel_sender.clone();
+            let worker = WorkerServer {
+                task_sender,
+                cancel_sender,
+            };
+
+            let con = ConnectionBuilder::session()?
+                .name(config::WORKER_APP_ID)?
+                .serve_at(config::DBUS_PATH, worker)?
+                .build()
+                .await?;
+
+            *self.dbus_connection.borrow_mut() = Some(con);
+            Ok(())
+        }
+
+        async fn start_task(&self, task: Task) {
+            let (sender, mut receiver) = unbounded();
+
+            // Activate gio application to ensure that thread pool is started
+            self.activate();
+
+            debug!("Start task: {:#?}", task);
+            let _ = self.obj().hold();
+
+            // Own scope for `await_holding_refcell_ref` lint
+            {
+                let thread_pool = self.thread_pool.borrow();
+                if let Some(thread_pool) = &*thread_pool {
+                    let uuid = task.uuid.clone();
+
+                    // Flatpak task
+                    if let Some(task) = task.flatpak_task() {
+                        thread_pool.spawn(
+                            clone!(@strong sender, @strong self.flatpak_worker as worker, @strong task, @strong uuid => async move {
+                                worker.process_task(task, &uuid);
+                                sender.send(()).await.unwrap();
+                            }),
+                        );
+                    }
+
+                    // Appstream task
+                    if let Some(task) = task.appstream_task() {
+                        thread_pool.spawn(
+                            clone!(@strong sender, @strong self.appstream_worker as worker, @strong task, @strong uuid => async move {
+                                worker.process_task(task, &uuid);
+                                sender.send(()).await.unwrap();
+                            }),
+                        );
+                    }
+                } else {
+                    error!("Unable to start task, thread pool is not available.");
+                    return;
+                }
+            }
+
+            receiver.next().await;
+        }
+
+        async fn cancel_task(&self, task: Task) {
+            debug!("Cancel task: {:#?}", task);
+
+            if !task.cancellable {
+                warn!("Task {} is not cancellable.", task.uuid);
+                return;
+            }
+
+            // Flatpak task
+            if task.flatpak_task().is_some() {
+                self.flatpak_worker.cancel_task(&task.uuid);
+            }
+
+            // Appstream task
+            if task.appstream_task().is_some() {
+                self.appstream_worker.cancel_task(&task.uuid);
+            }
+        }
+
+        async fn receive_tasks(&self) {
+            let mut task_receiver = self.task_receiver.clone();
+            while let Some(task) = task_receiver.next().await {
+                self.start_task(task).await;
+            }
+
+            debug!("Stopped receiving tasks.");
+        }
+
+        async fn receive_cancel_requests(&self) {
+            let mut cancel_receiver = self.cancel_receiver.clone();
+            while let Some(task) = cancel_receiver.next().await {
+                self.cancel_task(task).await;
+            }
+
+            debug!("Stopped receiving cancel requests.");
+        }
+
+        async fn receive_responses(&self) {
+            let signal_ctxt = {
+                let con = self.dbus_connection.borrow();
+                let con = con.as_ref().unwrap();
+                SignalContext::new(con, config::DBUS_PATH).unwrap()
+            };
+
+            let mut receiver = self.response_receiver.clone();
+            while let Some(response) = receiver.next().await {
+                WorkerServer::task_response(&signal_ctxt, response)
+                    .await
+                    .unwrap()
+            }
+
+            debug!("Stopped receiving responses.");
+        }
+    }
 }
 
 glib::wrapper! {
@@ -186,131 +303,6 @@ impl SkWorkerApplication {
 
         // Start mainloop
         app.run()
-    }
-
-    async fn start_dbus_server(&self) -> zbus::Result<()> {
-        debug!("Start DBus server...");
-
-        let task_sender = self.imp().task_sender.clone();
-        let cancel_sender = self.imp().cancel_sender.clone();
-        let worker = WorkerServer {
-            task_sender,
-            cancel_sender,
-        };
-
-        let con = ConnectionBuilder::session()?
-            .name(config::WORKER_APP_ID)?
-            .serve_at(config::DBUS_PATH, worker)?
-            .build()
-            .await?;
-
-        *self.imp().dbus_connection.borrow_mut() = Some(con);
-        Ok(())
-    }
-
-    async fn start_task(&self, task: Task) {
-        let imp = self.imp();
-        let (sender, mut receiver) = unbounded();
-
-        // Activate gio application to ensure that thread pool is started
-        self.activate();
-
-        debug!("Start task: {:#?}", task);
-        let _ = self.hold();
-
-        // Own scope for `await_holding_refcell_ref` lint
-        {
-            let thread_pool = imp.thread_pool.borrow();
-            if let Some(thread_pool) = &*thread_pool {
-                let uuid = task.uuid.clone();
-
-                // Flatpak task
-                if let Some(task) = task.flatpak_task() {
-                    thread_pool.spawn(
-                        clone!(@strong sender, @strong imp.flatpak_worker as worker, @strong task, @strong uuid => async move {
-                            worker.process_task(task, &uuid);
-                            sender.send(()).await.unwrap();
-                        }),
-                    );
-                }
-
-                // Appstream task
-                if let Some(task) = task.appstream_task() {
-                    thread_pool.spawn(
-                        clone!(@strong sender, @strong imp.appstream_worker as worker, @strong task, @strong uuid => async move {
-                            worker.process_task(task, &uuid);
-                            sender.send(()).await.unwrap();
-                        }),
-                    );
-                }
-            } else {
-                error!("Unable to start task, thread pool is not available.");
-                return;
-            }
-        }
-
-        receiver.next().await;
-    }
-
-    async fn cancel_task(&self, task: Task) {
-        let imp = self.imp();
-        debug!("Cancel task: {:#?}", task);
-
-        if !task.cancellable {
-            warn!("Task {} is not cancellable.", task.uuid);
-            return;
-        }
-
-        // Flatpak task
-        if task.flatpak_task().is_some() {
-            imp.flatpak_worker.cancel_task(&task.uuid);
-        }
-
-        // Appstream task
-        if task.appstream_task().is_some() {
-            imp.appstream_worker.cancel_task(&task.uuid);
-        }
-    }
-
-    async fn receive_tasks(&self) {
-        let imp = self.imp();
-
-        let mut task_receiver = imp.task_receiver.clone();
-        while let Some(task) = task_receiver.next().await {
-            self.start_task(task).await;
-        }
-
-        debug!("Stopped receiving tasks.");
-    }
-
-    async fn receive_cancel_requests(&self) {
-        let imp = self.imp();
-
-        let mut cancel_receiver = imp.cancel_receiver.clone();
-        while let Some(task) = cancel_receiver.next().await {
-            self.cancel_task(task).await;
-        }
-
-        debug!("Stopped receiving cancel requests.");
-    }
-
-    async fn receive_responses(&self) {
-        let imp = self.imp();
-
-        let signal_ctxt = {
-            let con = self.imp().dbus_connection.borrow();
-            let con = con.as_ref().unwrap();
-            SignalContext::new(con, config::DBUS_PATH).unwrap()
-        };
-
-        let mut receiver = imp.response_receiver.clone();
-        while let Some(response) = receiver.next().await {
-            WorkerServer::task_response(&signal_ctxt, response)
-                .await
-                .unwrap()
-        }
-
-        debug!("Stopped receiving responses.");
     }
 }
 
