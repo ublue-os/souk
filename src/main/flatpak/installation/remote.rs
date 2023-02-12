@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{ParamFlags, ParamSpec, ParamSpecBoxed, ParamSpecObject, ParamSpecString, ToValue};
+use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use super::SkInstallation;
@@ -28,10 +27,20 @@ use crate::shared::flatpak::info::RemoteInfo;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkRemote)]
     pub struct SkRemote {
-        pub info: OnceCell<RemoteInfo>,
+        #[property(get)]
         pub installation: OnceCell<Option<SkInstallation>>,
+        #[property(name = "name", get, type = String, member = name)]
+        #[property(name = "repository-url", get, type = String, member = repository_url)]
+        #[property(name = "title", get, type = String, member = title)]
+        #[property(name = "description", get, type = String, member = description)]
+        #[property(name = "comment", get, type = String, member = comment)]
+        #[property(name = "homepage", get, type = String, member = homepage)]
+        #[property(name = "icon", get, type = String, member = icon)]
+        #[property(get, set, construct_only)]
+        pub info: OnceCell<RemoteInfo>,
     }
 
     #[glib::object_subclass]
@@ -42,54 +51,15 @@ mod imp {
 
     impl ObjectImpl for SkRemote {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecBoxed::new(
-                        "info",
-                        "",
-                        "",
-                        RemoteInfo::static_type(),
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("repository-url", "", "", None, ParamFlags::READABLE),
-                    ParamSpecObject::new(
-                        "installation",
-                        "",
-                        "",
-                        SkInstallation::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecString::new("title", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("description", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("comment", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("homepage", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("icon", "", "", None, ParamFlags::READABLE),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "info" => self.obj().info().to_value(),
-                "name" => self.obj().name().to_value(),
-                "repository-url" => self.obj().repository_url().to_value(),
-                "installation" => self.obj().installation().to_value(),
-                "title" => self.obj().title().to_value(),
-                "description" => self.obj().description().to_value(),
-                "comment" => self.obj().comment().to_value(),
-                "homepage" => self.obj().homepage().to_value(),
-                "icon" => self.obj().icon().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "info" => self.info.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
 
         fn constructed(&self) {
@@ -117,41 +87,5 @@ glib::wrapper! {
 impl SkRemote {
     pub fn new(info: &RemoteInfo) -> Self {
         glib::Object::builder().property("info", &info).build()
-    }
-
-    pub fn info(&self) -> RemoteInfo {
-        self.imp().info.get().unwrap().clone()
-    }
-
-    pub fn name(&self) -> String {
-        self.info().name
-    }
-
-    pub fn repository_url(&self) -> String {
-        self.info().repository_url
-    }
-
-    pub fn installation(&self) -> Option<SkInstallation> {
-        self.imp().installation.get().unwrap().clone()
-    }
-
-    pub fn title(&self) -> String {
-        self.info().title
-    }
-
-    pub fn description(&self) -> String {
-        self.info().description
-    }
-
-    pub fn comment(&self) -> String {
-        self.info().comment
-    }
-
-    pub fn homepage(&self) -> String {
-        self.info().homepage
-    }
-
-    pub fn icon(&self) -> String {
-        self.info().icon
     }
 }
