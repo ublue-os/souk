@@ -14,14 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{
-    KeyFile, KeyFileFlags, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecUInt64,
-    ToValue,
-};
+use glib::{KeyFile, KeyFileFlags, ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 use url::Url;
 
@@ -35,10 +31,17 @@ use crate::shared::flatpak::dry_run::DryRunPackage;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkDryRunPackage)]
     pub struct SkDryRunPackage {
-        pub data: OnceCell<DryRunPackage>,
+        #[property(get)]
         pub package: OnceCell<SkPackage>,
+        #[property(get)]
+        #[property(name = "operation-type", get = Self::operation_type, type = SkFlatpakOperationType, builder(SkFlatpakOperationType::None))]
+        #[property(name = "download-size", get, type = u64, member = download_size)]
+        #[property(name = "installed-size", get, type = u64, member = installed_size)]
+        #[property(name = "appstream", get = Self::appstream, type = SkPackageAppstream)]
+        pub data: OnceCell<DryRunPackage>,
     }
 
     #[glib::object_subclass]
@@ -50,58 +53,50 @@ mod imp {
 
     impl ObjectImpl for SkDryRunPackage {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecEnum::new(
-                        "operation-type",
-                        "",
-                        "",
-                        SkFlatpakOperationType::static_type(),
-                        SkFlatpakOperationType::default() as i32,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecUInt64::new(
-                        "download-size",
-                        "",
-                        "",
-                        0,
-                        u64::MAX,
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecUInt64::new(
-                        "installed-size",
-                        "",
-                        "",
-                        0,
-                        u64::MAX,
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "appstream",
-                        "",
-                        "",
-                        SkPackageAppstream::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "operation-type" => self.obj().operation_type().to_value(),
-                "download-size" => self.obj().download_size().to_value(),
-                "installed-size" => self.obj().installed_size().to_value(),
-                "appstream" => self.obj().appstream().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
     }
 
     impl SkPackageImpl for SkDryRunPackage {}
+
+    impl SkDryRunPackage {
+        fn operation_type(&self) -> SkFlatpakOperationType {
+            self.obj().data().operation_type.into()
+        }
+
+        fn appstream(&self) -> SkPackageAppstream {
+            SkPackageAppstream::new(
+                self.obj().data().appstream_component.into(),
+                self.obj().data().icon.into(),
+                self.obj().upcast_ref(),
+            )
+        }
+
+        pub fn metadata(&self) -> KeyFile {
+            let keyfile = KeyFile::new();
+            keyfile
+                .load_from_data(&self.obj().data().metadata, KeyFileFlags::NONE)
+                .unwrap();
+            keyfile
+        }
+
+        pub fn old_metadata(&self) -> Option<KeyFile> {
+            if let Some(metadata) = self.obj().data().old_metadata.into() {
+                let metadata: String = metadata;
+                let keyfile = KeyFile::new();
+                keyfile
+                    .load_from_data(&metadata, KeyFileFlags::NONE)
+                    .unwrap();
+                Some(keyfile)
+            } else {
+                None
+            }
+        }
+    }
 }
 
 glib::wrapper! {
@@ -118,26 +113,6 @@ impl SkDryRunPackage {
         imp.data.set(data).unwrap();
 
         runtime
-    }
-
-    pub fn operation_type(&self) -> SkFlatpakOperationType {
-        self.data().operation_type.into()
-    }
-
-    pub fn download_size(&self) -> u64 {
-        self.data().download_size
-    }
-
-    pub fn installed_size(&self) -> u64 {
-        self.data().installed_size
-    }
-
-    pub fn appstream(&self) -> SkPackageAppstream {
-        SkPackageAppstream::new(
-            self.data().appstream_component.into(),
-            self.data().icon.into(),
-            self.upcast_ref(),
-        )
     }
 
     pub fn size_context_detail(&self, download_size: bool) -> SkContextDetail {
@@ -200,7 +175,7 @@ impl SkDryRunPackage {
     }
 
     pub fn extra_data_source(&self) -> Option<Url> {
-        let keyfile = self.metadata();
+        let keyfile = self.imp().metadata();
         if keyfile.has_group("Extra Data") {
             let uri = keyfile.string("Extra Data", "uri").unwrap();
             return Some(Url::parse(&uri).unwrap());
@@ -217,36 +192,12 @@ impl SkDryRunPackage {
     // TODO: Rework context info so it makes use of new SkDryRun objects etc.
     pub fn permissions(&self) -> SkAppPermissions {
         // TODO: Make this a gobject property of SkDryRun
-        SkAppPermissions::from_metadata(&self.metadata())
+        SkAppPermissions::from_metadata(&self.imp().metadata())
     }
 
     pub fn old_permissions(&self) -> Option<SkAppPermissions> {
-        self.old_metadata()
+        self.imp()
+            .old_metadata()
             .map(|m| SkAppPermissions::from_metadata(&m))
-    }
-
-    fn metadata(&self) -> KeyFile {
-        let keyfile = KeyFile::new();
-        keyfile
-            .load_from_data(&self.data().metadata, KeyFileFlags::NONE)
-            .unwrap();
-        keyfile
-    }
-
-    fn old_metadata(&self) -> Option<KeyFile> {
-        if let Some(metadata) = self.data().old_metadata.into() {
-            let metadata: String = metadata;
-            let keyfile = KeyFile::new();
-            keyfile
-                .load_from_data(&metadata, KeyFileFlags::NONE)
-                .unwrap();
-            Some(keyfile)
-        } else {
-            None
-        }
-    }
-
-    fn data(&self) -> DryRunPackage {
-        self.imp().data.get().unwrap().clone()
     }
 }
