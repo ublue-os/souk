@@ -18,14 +18,10 @@ use async_std::process::Command;
 use flatpak::prelude::*;
 use flatpak::{Installation, Remote};
 use gio::{Cancellable, File, FileMonitor};
-use glib::{
-    clone, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecBoxed, ParamSpecObject,
-    ParamSpecString, ToValue,
-};
+use glib::{clone, ParamSpec, Properties};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
@@ -37,18 +33,27 @@ use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkInstallation)]
     pub struct SkInstallation {
-        pub info: OnceCell<InstallationInfo>,
-        pub monitor: OnceCell<FileMonitor>,
-
+        #[property(get)]
         pub name: OnceCell<String>,
+        #[property(get)]
         pub title: OnceCell<String>,
+        #[property(get)]
         pub description: OnceCell<String>,
+        #[property(get)]
         pub icon_name: OnceCell<String>,
-
+        #[property(get)]
         pub remotes: SkRemoteModel,
+        #[property(get)]
         pub packages: SkPackageModel,
+        #[property(name = "path", get = Self::path, type = File)]
+        #[property(name = "is-user", get, type = bool, member = is_user)]
+        #[property(get, set, construct_only)]
+        pub info: OnceCell<InstallationInfo>,
+
+        pub monitor: OnceCell<FileMonitor>,
     }
 
     #[glib::object_subclass]
@@ -59,60 +64,15 @@ mod imp {
 
     impl ObjectImpl for SkInstallation {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecBoxed::new(
-                        "info",
-                        "",
-                        "",
-                        InstallationInfo::static_type(),
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("title", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("description", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("icon-name", "", "", None, ParamFlags::READABLE),
-                    ParamSpecBoolean::new("is-user", "", "", false, ParamFlags::READABLE),
-                    ParamSpecObject::new("path", "", "", File::static_type(), ParamFlags::READABLE),
-                    ParamSpecObject::new(
-                        "remotes",
-                        "",
-                        "",
-                        SkRemoteModel::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "packages",
-                        "",
-                        "",
-                        SkPackageModel::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "info" => self.obj().info().to_value(),
-                "name" => self.obj().name().to_value(),
-                "title" => self.obj().title().to_value(),
-                "description" => self.obj().description().to_value(),
-                "icon-name" => self.obj().icon_name().to_value(),
-                "is-user" => self.obj().is_user().to_value(),
-                "path" => self.obj().path().to_value(),
-                "remotes" => self.obj().remotes().to_value(),
-                "packages" => self.obj().packages().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "info" => self.info.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
 
         fn constructed(&self) {
@@ -176,6 +136,12 @@ mod imp {
             }
         }
     }
+
+    impl SkInstallation {
+        fn path(&self) -> File {
+            File::for_parse_name(&self.obj().info().path)
+        }
+    }
 }
 
 glib::wrapper! {
@@ -185,42 +151,6 @@ glib::wrapper! {
 impl SkInstallation {
     pub(super) fn new(info: &InstallationInfo) -> Self {
         glib::Object::builder().property("info", &info).build()
-    }
-
-    pub fn info(&self) -> InstallationInfo {
-        self.imp().info.get().unwrap().clone()
-    }
-
-    pub fn name(&self) -> String {
-        self.imp().name.get().unwrap().to_string()
-    }
-
-    pub fn title(&self) -> String {
-        self.imp().title.get().unwrap().to_string()
-    }
-
-    pub fn description(&self) -> String {
-        self.imp().description.get().unwrap().to_string()
-    }
-
-    pub fn icon_name(&self) -> String {
-        self.imp().icon_name.get().unwrap().to_string()
-    }
-
-    pub fn is_user(&self) -> bool {
-        self.info().is_user
-    }
-
-    pub fn path(&self) -> File {
-        File::for_parse_name(&self.info().path)
-    }
-
-    pub fn remotes(&self) -> SkRemoteModel {
-        self.imp().remotes.clone()
-    }
-
-    pub fn packages(&self) -> SkPackageModel {
-        self.imp().packages.clone()
     }
 
     pub fn launch_app(&self, app: &SkPackage) {
