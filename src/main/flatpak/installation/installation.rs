@@ -26,7 +26,7 @@ use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};
-use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageModel};
+use crate::main::flatpak::package::{SkPackage, SkPackageModel};
 use crate::main::i18n::i18n;
 use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
 

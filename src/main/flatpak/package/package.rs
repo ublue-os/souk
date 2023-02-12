@@ -16,13 +16,10 @@
 
 use flatpak::prelude::*;
 use flatpak::Ref;
-use glib::{
-    ParamFlags, ParamSpec, ParamSpecBoxed, ParamSpecEnum, ParamSpecObject, ParamSpecString, ToValue,
-};
+use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use super::{SkPackageKind, SkPackageSubrefKind};
@@ -33,11 +30,20 @@ use crate::shared::flatpak::info::PackageInfo;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkPackage)]
     pub struct SkPackage {
-        pub info: OnceCell<PackageInfo>,
-        pub flatpak_ref: OnceCell<Ref>,
+        #[property(get)]
         pub remote: OnceCell<SkRemote>,
+        #[property(name = "kind", get = Self::kind, type = SkPackageKind, builder(SkPackageKind::App))]
+        #[property(name = "subref-kind", get = Self::subref_kind, type = SkPackageSubrefKind, builder(SkPackageSubrefKind::None))]
+        #[property(name = "name", get = Self::name, type = String)]
+        #[property(name = "architecture", get = Self::architecture, type = String)]
+        #[property(name = "branch", get = Self::branch, type = String)]
+        #[property(get, set, construct_only)]
+        pub info: OnceCell<PackageInfo>,
+
+        pub flatpak_ref: OnceCell<Ref>,
     }
 
     #[glib::object_subclass]
@@ -48,64 +54,15 @@ mod imp {
 
     impl ObjectImpl for SkPackage {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecBoxed::new(
-                        "info",
-                        "",
-                        "",
-                        PackageInfo::static_type(),
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecEnum::new(
-                        "kind",
-                        "",
-                        "",
-                        SkPackageKind::static_type(),
-                        SkPackageKind::App as i32,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecEnum::new(
-                        "subref-kind",
-                        "",
-                        "",
-                        SkPackageKind::static_type(),
-                        SkPackageKind::App as i32,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("architecture", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("branch", "", "", None, ParamFlags::READABLE),
-                    ParamSpecObject::new(
-                        "remote",
-                        "",
-                        "",
-                        SkRemote::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "info" => self.obj().info().to_value(),
-                "kind" => self.obj().kind().to_value(),
-                "subref-kind" => self.obj().kind().to_value(),
-                "name" => self.obj().name().to_value(),
-                "architecture" => self.obj().architecture().to_value(),
-                "branch" => self.obj().branch().to_value(),
-                "remote" => self.obj().remote().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "info" => self.info.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
 
         fn constructed(&self) {
@@ -134,6 +91,33 @@ mod imp {
                 let remote = SkRemote::new(&info.remote);
                 self.remote.set(remote).unwrap();
             }
+        }
+    }
+
+    impl SkPackage {
+        fn kind(&self) -> SkPackageKind {
+            self.flatpak_ref.get().unwrap().kind().into()
+        }
+
+        fn subref_kind(&self) -> SkPackageSubrefKind {
+            SkPackageSubrefKind::from(self.obj().name().as_str())
+        }
+
+        fn name(&self) -> String {
+            self.flatpak_ref.get().unwrap().name().unwrap().to_string()
+        }
+
+        fn architecture(&self) -> String {
+            self.flatpak_ref.get().unwrap().arch().unwrap().to_string()
+        }
+
+        fn branch(&self) -> String {
+            self.flatpak_ref
+                .get()
+                .unwrap()
+                .branch()
+                .unwrap()
+                .to_string()
         }
     }
 }
@@ -165,56 +149,32 @@ pub trait SkPackageExt: 'static {
 }
 
 impl<O: IsA<SkPackage>> SkPackageExt for O {
-    fn info(&self) -> PackageInfo {
-        let obj = self.upcast_ref();
-        obj.imp().info.get().unwrap().clone()
-    }
-
     fn kind(&self) -> SkPackageKind {
-        let obj = self.upcast_ref();
-        obj.imp().flatpak_ref.get().unwrap().kind().into()
+        self.upcast_ref().kind()
     }
 
     fn subref_kind(&self) -> SkPackageSubrefKind {
-        SkPackageSubrefKind::from(self.upcast_ref().name().as_str())
+        self.upcast_ref().subref_kind()
     }
 
     fn name(&self) -> String {
-        let obj = self.upcast_ref();
-        obj.imp()
-            .flatpak_ref
-            .get()
-            .unwrap()
-            .name()
-            .unwrap()
-            .to_string()
+        self.upcast_ref().name()
     }
 
     fn architecture(&self) -> String {
-        let obj = self.upcast_ref();
-        obj.imp()
-            .flatpak_ref
-            .get()
-            .unwrap()
-            .arch()
-            .unwrap()
-            .to_string()
+        self.upcast_ref().architecture()
     }
 
     fn branch(&self) -> String {
-        let obj = self.upcast_ref();
-        obj.imp()
-            .flatpak_ref
-            .get()
-            .unwrap()
-            .branch()
-            .unwrap()
-            .to_string()
+        self.upcast_ref().branch()
     }
 
     fn remote(&self) -> SkRemote {
-        let obj = self.upcast_ref();
-        obj.imp().remote.get().unwrap().clone()
+        self.upcast_ref().remote()
+    }
+
+    fn info(&self) -> PackageInfo {
+        self.upcast_ref().info()
     }
 }
 

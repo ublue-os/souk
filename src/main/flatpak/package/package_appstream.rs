@@ -27,7 +27,7 @@ use gtk::subclass::prelude::*;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageKind, SkPackageSubrefKind};
+use crate::main::flatpak::package::{SkPackage, SkPackageKind, SkPackageSubrefKind};
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::SkApplication;
 use crate::shared::flatpak::info::PackageInfo;
