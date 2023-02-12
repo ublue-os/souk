@@ -51,7 +51,7 @@ mod imp {
             // System Installation
             let f_inst = Installation::new_system(Cancellable::NONE).unwrap();
             let info = InstallationInfo::from(&f_inst);
-            self.obj().add_info(&info);
+            self.add_info(&info);
 
             // User Installation
             let mut user_path = glib::home_dir();
@@ -62,7 +62,7 @@ mod imp {
 
             let f_inst = Installation::for_path(&file, true, Cancellable::NONE).unwrap();
             let info = InstallationInfo::from(&f_inst);
-            self.obj().add_info(&info);
+            self.add_info(&info);
         }
     }
 
@@ -80,6 +80,46 @@ mod imp {
                 .borrow()
                 .get_index(position.try_into().unwrap())
                 .map(|(_, o)| o.clone().upcast::<glib::Object>())
+        }
+    }
+
+    impl SkInstallationModel {
+        pub fn add_info(&self, info: &InstallationInfo) {
+            let pos = {
+                let mut map = self.map.borrow_mut();
+                if map.contains_key(info) {
+                    return;
+                }
+
+                let sk_inst = SkInstallation::new(info);
+                map.insert(info.clone(), sk_inst);
+                (map.len() - 1) as u32
+            };
+
+            self.obj().items_changed(pos, 0, 1);
+        }
+
+        pub fn remove_info(&self, info: &InstallationInfo) {
+            let pos = {
+                let mut map = self.map.borrow_mut();
+                match map.get_index_of(info) {
+                    Some(pos) => {
+                        map.remove(info);
+                        Some(pos)
+                    }
+                    None => {
+                        warn!(
+                            "Unable to remove installation {:?}, not found in model",
+                            info.name
+                        );
+                        None
+                    }
+                }
+            };
+
+            if let Some(pos) = pos {
+                self.obj().items_changed(pos.try_into().unwrap(), 1, 0);
+            }
         }
     }
 }
@@ -101,14 +141,14 @@ impl SkInstallationModel {
         let mut extra_infos = Vec::new();
         for extra_flatpak_installation in extra_flatpak_installations {
             let info = InstallationInfo::from(&extra_flatpak_installation);
-            self.add_info(&info);
+            imp.add_info(&info);
             extra_infos.push(info);
         }
 
         let map = imp.map.borrow().clone();
         for (info, sk_inst) in map.iter() {
             if info.name != "user" && !extra_infos.contains(info) {
-                self.remove_info(info);
+                imp.remove_info(info);
             } else {
                 sk_inst.refresh()?;
             }
@@ -139,44 +179,6 @@ impl SkInstallationModel {
         }
 
         preferred.unwrap().clone()
-    }
-
-    fn add_info(&self, info: &InstallationInfo) {
-        let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            if map.contains_key(info) {
-                return;
-            }
-
-            let sk_inst = SkInstallation::new(info);
-            map.insert(info.clone(), sk_inst);
-            (map.len() - 1) as u32
-        };
-
-        self.items_changed(pos, 0, 1);
-    }
-
-    fn remove_info(&self, info: &InstallationInfo) {
-        let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            match map.get_index_of(info) {
-                Some(pos) => {
-                    map.remove(info);
-                    Some(pos)
-                }
-                None => {
-                    warn!(
-                        "Unable to remove installation {:?}, not found in model",
-                        info.name
-                    );
-                    None
-                }
-            }
-        };
-
-        if let Some(pos) = pos {
-            self.items_changed(pos.try_into().unwrap(), 1, 0);
-        }
     }
 }
 
