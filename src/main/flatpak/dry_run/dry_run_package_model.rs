@@ -58,6 +58,46 @@ mod imp {
                 .map(|(_, o)| o.clone().upcast::<glib::Object>())
         }
     }
+
+    impl SkDryRunPackageModel {
+        pub fn add_data(&self, data: &DryRunPackage) {
+            let pos = {
+                let mut map = self.map.borrow_mut();
+                if map.contains_key(data) {
+                    return;
+                }
+
+                let sk_package = SkDryRunPackage::new(data.clone());
+                map.insert(data.clone(), sk_package);
+                (map.len() - 1) as u32
+            };
+
+            self.obj().items_changed(pos, 0, 1);
+        }
+
+        pub fn remove_data(&self, data: &DryRunPackage) {
+            let pos = {
+                let mut map = self.map.borrow_mut();
+                match map.get_index_of(data) {
+                    Some(pos) => {
+                        map.remove(data);
+                        Some(pos)
+                    }
+                    None => {
+                        warn!(
+                            "Unable to remove package {:?}, not found in model",
+                            data.package.ref_
+                        );
+                        None
+                    }
+                }
+            };
+
+            if let Some(pos) = pos {
+                self.obj().items_changed(pos.try_into().unwrap(), 1, 0);
+            }
+        }
+    }
 }
 
 glib::wrapper! {
@@ -73,52 +113,14 @@ impl SkDryRunPackageModel {
         let imp = self.imp();
 
         for package in &packages {
-            self.add_data(package);
+            imp.add_data(package);
         }
 
         let map = imp.map.borrow().clone();
         for data in map.keys() {
             if !packages.contains(data) {
-                self.remove_data(data);
+                imp.remove_data(data);
             }
-        }
-    }
-
-    fn add_data(&self, data: &DryRunPackage) {
-        let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            if map.contains_key(data) {
-                return;
-            }
-
-            let sk_package = SkDryRunPackage::new(data.clone());
-            map.insert(data.clone(), sk_package);
-            (map.len() - 1) as u32
-        };
-
-        self.items_changed(pos, 0, 1);
-    }
-
-    fn remove_data(&self, data: &DryRunPackage) {
-        let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            match map.get_index_of(data) {
-                Some(pos) => {
-                    map.remove(data);
-                    Some(pos)
-                }
-                None => {
-                    warn!(
-                        "Unable to remove package {:?}, not found in model",
-                        data.package.ref_
-                    );
-                    None
-                }
-            }
-        };
-
-        if let Some(pos) = pos {
-            self.items_changed(pos.try_into().unwrap(), 1, 0);
         }
     }
 }
