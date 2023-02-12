@@ -17,12 +17,11 @@
 use std::cell::RefCell;
 use std::convert::TryInto;
 
-use glib::{ParamFlags, ParamSpec, ParamSpecString, ToValue};
+use glib::{ParamSpec, Properties};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::context::SkContextDetail;
@@ -30,12 +29,15 @@ use crate::main::context::SkContextDetail;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkContextDetailGroup)]
     pub struct SkContextDetailGroup {
-        pub map: RefCell<IndexMap<String, SkContextDetail>>,
-
+        #[property(get, set, construct_only)]
         pub title: OnceCell<Option<String>>,
+        #[property(get, set, construct_only)]
         pub description: OnceCell<Option<String>>,
+
+        pub map: RefCell<IndexMap<String, SkContextDetail>>,
     }
 
     #[glib::object_subclass]
@@ -47,41 +49,15 @@ mod imp {
 
     impl ObjectImpl for SkContextDetailGroup {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecString::new(
-                        "title",
-                        "",
-                        "",
-                        None,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecString::new(
-                        "description",
-                        "",
-                        "",
-                        None,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "title" => self.obj().title().to_value(),
-                "description" => self.obj().description().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "title" => self.title.set(value.get().unwrap()).unwrap(),
-                "description" => self.description.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
     }
 
@@ -108,29 +84,17 @@ glib::wrapper! {
 }
 
 impl SkContextDetailGroup {
-    pub fn new(
-        details: &[SkContextDetail],
-        title: Option<&str>,
-        description: Option<&str>,
-    ) -> Self {
-        let model: Self = glib::Object::builder()
+    pub fn new(title: Option<&str>, description: Option<&str>) -> Self {
+        glib::Object::builder()
             .property("title", &title)
             .property("description", &description)
-            .build();
+            .build()
+    }
 
-        let imp = model.imp();
+    pub fn add_details(&self, details: &[SkContextDetail]) {
+        let imp = self.imp();
         for (pos, detail) in details.iter().enumerate() {
             imp.map.borrow_mut().insert(pos.to_string(), detail.clone());
         }
-
-        model
-    }
-
-    pub fn title(&self) -> Option<String> {
-        self.imp().title.get().unwrap().to_owned()
-    }
-
-    pub fn description(&self) -> Option<String> {
-        self.imp().description.get().unwrap().to_owned()
     }
 }

@@ -22,7 +22,7 @@ use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
 use crate::main::context::{
-    SkContext, SkContextDetail, SkContextDetailGroup, SkContextDetailLevel, SkContextDetailType,
+    SkContext, SkContextDetail, SkContextDetailGroup, SkContextDetailKind, SkContextDetailLevel,
 };
 use crate::main::ui::context::SkContextDetailRow;
 use crate::main::ui::utils;
@@ -129,15 +129,15 @@ impl SkContextBox {
         let context = self.context();
         let summary = context.summary();
 
-        if summary.type_() == SkContextDetailType::Icon {
+        if summary.kind() == SkContextDetailKind::Icon {
             imp.type_stack.set_visible_child(&imp.icon_image.get());
-            imp.icon_image.set_icon_name(Some(&summary.type_value()));
-        } else if summary.type_() == SkContextDetailType::Size {
-            let markup = utils::size_to_markup(&summary.type_value());
+            imp.icon_image.set_icon_name(Some(&summary.kind_value()));
+        } else if summary.kind() == SkContextDetailKind::Size {
+            let markup = utils::size_to_markup(&summary.kind_value());
             imp.text_label.set_markup(&markup);
         } else {
             imp.type_stack.set_visible_child(&imp.text_label.get());
-            imp.text_label.set_markup(&summary.type_value());
+            imp.text_label.set_markup(&summary.kind_value());
         }
 
         // Remove previous set css classes

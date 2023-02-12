@@ -16,7 +16,7 @@
 
 use gtk::glib;
 
-use crate::main::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
 use crate::main::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::main::i18n::i18n;
 
@@ -79,7 +79,7 @@ impl PermissionDetails for SkSocketPermission {
 
     fn context_details(&self) -> Vec<SkContextDetail> {
         let mut details = Vec::new();
-        let type_ = SkContextDetailType::Icon;
+        let type_ = SkContextDetailKind::Icon;
         let level = SkContextDetailLevel::Bad;
 
         if self.contains(Self::X11) && !self.contains(Self::FALLBACK_X11) {

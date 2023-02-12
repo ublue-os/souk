@@ -22,7 +22,7 @@ use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use super::SkFilesystemPermissionType;
-use crate::main::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
 use crate::main::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::main::i18n::{i18n, i18n_f};
 
@@ -108,7 +108,7 @@ impl SkFilesystemPermission {
     }
 
     pub fn no_permission_context() -> SkContextDetail {
-        let type_ = SkContextDetailType::Icon;
+        let type_ = SkContextDetailKind::Icon;
         let icon_name = "folder-documents-symbolic".to_string();
         let level = SkContextDetailLevel::Good;
 
@@ -156,7 +156,7 @@ impl PermissionDetails for SkFilesystemPermission {
             path.clone()
         };
 
-        let type_ = SkContextDetailType::Icon;
+        let type_ = SkContextDetailKind::Icon;
         let mut icon_name = "folder-documents-symbolic".to_string();
         let mut level = if self.type_() == SkFilesystemPermissionType::ReadOnly {
             SkContextDetailLevel::Moderate

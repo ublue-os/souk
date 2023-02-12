@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@ mod context;
 mod context_detail;
 mod context_detail_group;
 mod context_detail_group_model;
+mod context_detail_kind;
 mod context_detail_level;
-mod context_detail_type;
 
 pub use context::SkContext;
 pub use context_detail::SkContextDetail;
 pub use context_detail_group::SkContextDetailGroup;
 pub use context_detail_group_model::SkContextDetailGroupModel;
+pub use context_detail_kind::SkContextDetailKind;
 pub use context_detail_level::SkContextDetailLevel;
-pub use context_detail_type::SkContextDetailType;

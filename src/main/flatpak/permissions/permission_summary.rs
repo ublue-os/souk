@@ -18,7 +18,7 @@ use std::fmt::Write;
 
 use gtk::glib;
 
-use crate::main::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
 use crate::main::i18n::i18n;
 
 #[glib::flags(name = "SkPermissionSummary")]
@@ -44,8 +44,8 @@ pub enum SkPermissionSummary {
 
 impl SkPermissionSummary {
     pub fn as_context_detail(&self) -> SkContextDetail {
-        let type_ = SkContextDetailType::Icon;
-        let type_value = "security-high-symbolic".to_string();
+        let type_ = SkContextDetailKind::Icon;
+        let kind_value = "security-high-symbolic".to_string();
         let level = SkContextDetailLevel::Neutral;
         let title = i18n("Isolated with restricted permissions");
         let mut descriptions = Vec::new();
@@ -93,6 +93,6 @@ impl SkPermissionSummary {
             write!(&mut description, "{d} ").unwrap();
         }
 
-        SkContextDetail::new(type_, &type_value, level, &title, &description)
+        SkContextDetail::new(type_, &kind_value, level, &title, &description)
     }
 }

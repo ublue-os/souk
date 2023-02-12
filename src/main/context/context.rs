@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{ParamFlags, ParamSpec, ParamSpecObject, ToValue};
+use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::context::{SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel};
@@ -29,9 +28,12 @@ use crate::main::i18n::i18n;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkContext)]
     pub struct SkContext {
+        #[property(get, set, construct_only)]
         pub summary: OnceCell<SkContextDetail>,
+        #[property(get, set, construct_only)]
         pub details: OnceCell<SkContextDetailGroupModel>,
     }
 
@@ -43,41 +45,15 @@ mod imp {
 
     impl ObjectImpl for SkContext {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new(
-                        "summary",
-                        "",
-                        "",
-                        SkContextDetail::static_type(),
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecObject::new(
-                        "details",
-                        "",
-                        "",
-                        SkContextDetailGroupModel::static_type(),
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "summary" => self.obj().summary().to_value(),
-                "details" => self.obj().details().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "summary" => self.summary.set(value.get().unwrap()).unwrap(),
-                "details" => self.details.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
     }
 }
@@ -108,7 +84,8 @@ impl SkContext {
         summary |= permissions.sockets().summary();
 
         let description = i18n("The isolated environment does not protect against malicious applications. Applications can request additional permissions at runtime. However, these must be explicitly confirmed.");
-        let group = SkContextDetailGroup::new(&general_details, None, Some(&description));
+        let group = SkContextDetailGroup::new(None, Some(&description));
+        group.add_details(&general_details);
         groups.push(group);
 
         // Filesystems
@@ -123,7 +100,8 @@ impl SkContext {
         }
 
         let title = i18n("Filesystem Permissions");
-        let group = SkContextDetailGroup::new(&filesystem_details, Some(&title), None);
+        let group = SkContextDetailGroup::new(Some(&title), None);
+        group.add_details(&filesystem_details);
         groups.push(group);
 
         // Services
@@ -138,21 +116,15 @@ impl SkContext {
         }
 
         let title = i18n("Service Permissions");
-        let group = SkContextDetailGroup::new(&service_details, Some(&title), None);
+        let group = SkContextDetailGroup::new(Some(&title), None);
+        group.add_details(&service_details);
         groups.push(group);
 
         // Summary
         let summary = summary.as_context_detail();
 
-        let groups = SkContextDetailGroupModel::new(&groups);
-        Self::new(&summary, &groups)
-    }
-
-    pub fn summary(&self) -> SkContextDetail {
-        self.imp().summary.get().unwrap().clone()
-    }
-
-    pub fn details(&self) -> SkContextDetailGroupModel {
-        self.imp().details.get().unwrap().clone()
+        let model = SkContextDetailGroupModel::new();
+        model.add_groups(&groups);
+        Self::new(&summary, &model)
     }
 }

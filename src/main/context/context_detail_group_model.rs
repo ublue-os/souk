@@ -64,14 +64,14 @@ glib::wrapper! {
 }
 
 impl SkContextDetailGroupModel {
-    pub fn new(details: &[SkContextDetailGroup]) -> Self {
-        let model: Self = glib::Object::new();
+    pub fn new() -> Self {
+        glib::Object::new()
+    }
 
-        let imp = model.imp();
+    pub fn add_groups(&self, details: &[SkContextDetailGroup]) {
+        let imp = self.imp();
         for (pos, detail) in details.iter().enumerate() {
             imp.map.borrow_mut().insert(pos.to_string(), detail.clone());
         }
-
-        model
     }
 }

@@ -24,7 +24,7 @@ use once_cell::unsync::OnceCell;
 use super::{SkDryRunPackage, SkDryRunPackageModel};
 use crate::main::context::{
     SkContext, SkContextDetail, SkContextDetailGroup, SkContextDetailGroupModel,
-    SkContextDetailLevel, SkContextDetailType,
+    SkContextDetailKind, SkContextDetailLevel,
 };
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};
 use crate::main::flatpak::package::SkPackageExt;
@@ -189,13 +189,15 @@ impl SkDryRun {
 
         // Package context group
         let description = i18n("The storage sizes are only maximum values. Actual usage will most likely be significantly lower due to deduplication of data.");
-        let group = SkContextDetailGroup::new(&package_details, None, Some(&description));
+        let group = SkContextDetailGroup::new(None, Some(&description));
+        group.add_details(&package_details);
         groups.push(group);
 
         // Runtimes context group
         if runtime_size != 0 {
             let description = i18n("These components are shared with other applications, and only need to be downloaded once.");
-            let group = SkContextDetailGroup::new(&runtime_details, None, Some(&description));
+            let group = SkContextDetailGroup::new(None, Some(&description));
+            group.add_details(&runtime_details);
             groups.push(group);
         }
 
@@ -221,7 +223,7 @@ impl SkDryRun {
             };
 
             SkContextDetail::new(
-                SkContextDetailType::Icon,
+                SkContextDetailKind::Icon,
                 "folder-download-symbolic",
                 SkContextDetailLevel::Neutral,
                 &title,
@@ -244,7 +246,7 @@ impl SkDryRun {
                 )
             };
             SkContextDetail::new(
-                SkContextDetailType::Icon,
+                SkContextDetailKind::Icon,
                 "drive-harddisk-system-symbolic",
                 SkContextDetailLevel::Neutral,
                 &title,
@@ -252,8 +254,9 @@ impl SkDryRun {
             )
         };
 
-        let groups = SkContextDetailGroupModel::new(&groups);
-        SkContext::new(&summary, &groups)
+        let model = SkContextDetailGroupModel::new();
+        model.add_groups(&groups);
+        SkContext::new(&summary, &model)
     }
 
     fn data(&self) -> DryRun {

@@ -21,7 +21,7 @@ use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
 use crate::main::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::main::i18n::{i18n, i18n_f};
 
@@ -98,7 +98,7 @@ impl SkServicePermission {
     }
 
     pub fn no_permission_context() -> SkContextDetail {
-        let type_ = SkContextDetailType::Icon;
+        let type_ = SkContextDetailKind::Icon;
         let icon_name = "system-run-symbolic".to_string();
         let level = SkContextDetailLevel::Good;
 
@@ -128,7 +128,7 @@ impl PermissionDetails for SkServicePermission {
     }
 
     fn context_details(&self) -> Vec<SkContextDetail> {
-        let type_ = SkContextDetailType::Icon;
+        let type_ = SkContextDetailKind::Icon;
         let icon_name = "system-run-symbolic".to_string();
         let mut level = if !self.is_system() {
             SkContextDetailLevel::Neutral

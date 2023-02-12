@@ -20,7 +20,7 @@ use glib::{subclass, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject};
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::OnceCell;
 
-use crate::main::context::{SkContextDetail, SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
 use crate::main::ui::utils;
 
 mod imp {
@@ -130,17 +130,17 @@ impl SkContextDetailRow {
         let imp = self.imp();
         let detail = self.detail();
 
-        if detail.type_() == SkContextDetailType::Icon {
+        if detail.kind() == SkContextDetailKind::Icon {
             imp.type_stack.set_visible_child(&imp.icon_image.get());
-            imp.icon_image.set_icon_name(Some(&detail.type_value()));
-        } else if detail.type_() == SkContextDetailType::Size {
+            imp.icon_image.set_icon_name(Some(&detail.kind_value()));
+        } else if detail.kind() == SkContextDetailKind::Size {
             imp.type_stack.set_visible_child(&imp.text_label.get());
-            let markup = utils::size_to_markup(&detail.type_value());
+            let markup = utils::size_to_markup(&detail.kind_value());
             imp.text_label.set_markup(&markup);
             imp.text_label.add_css_class("size");
         } else {
             imp.type_stack.set_visible_child(&imp.text_label.get());
-            imp.text_label.set_markup(&detail.type_value());
+            imp.text_label.set_markup(&detail.kind_value());
             imp.text_label.remove_css_class("size");
         }
 

@@ -14,24 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecString, ToValue};
+use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use crate::main::context::{SkContextDetailLevel, SkContextDetailType};
+use crate::main::context::{SkContextDetailKind, SkContextDetailLevel};
 
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkContextDetail)]
     pub struct SkContextDetail {
-        pub type_: OnceCell<SkContextDetailType>,
-        pub type_value: OnceCell<String>,
+        #[property(get, set, construct_only, builder(SkContextDetailKind::Icon))]
+        pub kind: OnceCell<SkContextDetailKind>,
+        #[property(get, set, construct_only)]
+        pub kind_value: OnceCell<String>,
+        #[property(get, set, construct_only, builder(SkContextDetailLevel::Neutral))]
         pub level: OnceCell<SkContextDetailLevel>,
+        #[property(get, set, construct_only)]
         pub title: OnceCell<String>,
+        #[property(get, set, construct_only)]
         pub description: OnceCell<String>,
     }
 
@@ -43,70 +48,15 @@ mod imp {
 
     impl ObjectImpl for SkContextDetail {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecEnum::new(
-                        "type",
-                        "",
-                        "",
-                        SkContextDetailType::static_type(),
-                        SkContextDetailType::Icon as i32,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecString::new(
-                        "type-value",
-                        "",
-                        "",
-                        None,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecEnum::new(
-                        "level",
-                        "",
-                        "",
-                        SkContextDetailLevel::static_type(),
-                        SkContextDetailLevel::Neutral as i32,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecString::new(
-                        "title",
-                        "",
-                        "",
-                        None,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecString::new(
-                        "description",
-                        "",
-                        "",
-                        None,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "type" => self.obj().type_().to_value(),
-                "type-value" => self.obj().type_value().to_value(),
-                "level" => self.obj().level().to_value(),
-                "title" => self.obj().title().to_value(),
-                "description" => self.obj().description().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "type" => self.type_.set(value.get().unwrap()).unwrap(),
-                "type-value" => self.type_value.set(value.get().unwrap()).unwrap(),
-                "level" => self.level.set(value.get().unwrap()).unwrap(),
-                "title" => self.title.set(value.get().unwrap()).unwrap(),
-                "description" => self.description.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
     }
 }
@@ -117,15 +67,15 @@ glib::wrapper! {
 
 impl SkContextDetail {
     pub fn new(
-        type_: SkContextDetailType,
-        type_value: &str,
+        kind: SkContextDetailKind,
+        kind_value: &str,
         level: SkContextDetailLevel,
         title: &str,
         description: &str,
     ) -> Self {
         glib::Object::builder()
-            .property("type", &type_)
-            .property("type-value", &type_value)
+            .property("kind", &kind)
+            .property("kind-value", &kind_value)
             .property("level", &level)
             .property("title", &title)
             .property("description", &description)
@@ -134,8 +84,8 @@ impl SkContextDetail {
 
     pub fn new_neutral_size(size: u64, title: &str, description: &str) -> Self {
         glib::Object::builder()
-            .property("type", &SkContextDetailType::Size)
-            .property("type-value", &size.to_string())
+            .property("kind", &SkContextDetailKind::Size)
+            .property("kind-value", &size.to_string())
             .property("level", &SkContextDetailLevel::Neutral)
             .property("title", &title)
             .property("description", &description)
@@ -144,31 +94,11 @@ impl SkContextDetail {
 
     pub fn new_neutral_text(text: &str, title: &str, description: &str) -> Self {
         glib::Object::builder()
-            .property("type", &SkContextDetailType::Text)
-            .property("type-value", &text.to_string())
+            .property("kind", &SkContextDetailKind::Text)
+            .property("kind-value", &text.to_string())
             .property("level", &SkContextDetailLevel::Neutral)
             .property("title", &title)
             .property("description", &description)
             .build()
-    }
-
-    pub fn type_(&self) -> SkContextDetailType {
-        *self.imp().type_.get().unwrap()
-    }
-
-    pub fn type_value(&self) -> String {
-        self.imp().type_value.get().unwrap().to_string()
-    }
-
-    pub fn level(&self) -> SkContextDetailLevel {
-        *self.imp().level.get().unwrap()
-    }
-
-    pub fn title(&self) -> String {
-        self.imp().title.get().unwrap().to_string()
-    }
-
-    pub fn description(&self) -> String {
-        self.imp().description.get().unwrap().to_string()
     }
 }

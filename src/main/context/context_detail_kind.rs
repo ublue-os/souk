@@ -1,5 +1,5 @@
 // Souk - context_detail_type.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@ use gtk::glib;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkContextDetailType")]
-pub enum SkContextDetailType {
+#[enum_type(name = "SkContextDetailKind")]
+pub enum SkContextDetailKind {
     Icon,
     Text,
     Size,
