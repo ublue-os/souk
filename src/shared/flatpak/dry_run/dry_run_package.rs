@@ -15,13 +15,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use derivative::Derivative;
+use gtk::glib;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
 use crate::shared::flatpak::info::PackageInfo;
 use crate::shared::flatpak::FlatpakOperationType;
 
-#[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash)]
+#[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash, glib::Boxed)]
+#[boxed_type(name = "DryRunPackage")]
 #[derivative(Debug)]
 pub struct DryRunPackage {
     pub package: PackageInfo,
