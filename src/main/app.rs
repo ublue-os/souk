@@ -16,11 +16,11 @@
 
 use adw::subclass::prelude::*;
 use gio::subclass::prelude::ApplicationImpl;
-use glib::{clone, ObjectExt, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{clone, ObjectExt, ParamSpec, Properties};
 use gtk::glib::WeakRef;
 use gtk::prelude::*;
 use gtk::{gio, glib, FileChooserAction, FileChooserNative};
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::OnceCell;
 
 use crate::main::flatpak::sideload::SkSideloadType;
 use crate::main::i18n::i18n;
@@ -33,10 +33,13 @@ use crate::shared::config;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkApplication)]
     pub struct SkApplication {
-        pub window: OnceCell<WeakRef<SkApplicationWindow>>,
+        #[property(get)]
         pub worker: SkWorker,
+
+        pub window: OnceCell<WeakRef<SkApplicationWindow>>,
     }
 
     #[glib::object_subclass]
@@ -48,23 +51,11 @@ mod imp {
 
     impl ObjectImpl for SkApplication {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![ParamSpecObject::new(
-                    "worker",
-                    "",
-                    "",
-                    SkWorker::static_type(),
-                    ParamFlags::READABLE,
-                )]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "worker" => self.obj().worker().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
     }
 
@@ -78,7 +69,63 @@ mod imp {
             debug!("Application -> startup");
 
             // Setup `app` level GActions
-            self.obj().setup_gactions();
+            let obj = self.obj();
+
+            // app.quit
+            action!(
+                obj,
+                "quit",
+                clone!(@weak obj => move |_, _| {
+                    for window in obj.windows() {
+                        window.close();
+                    }
+                })
+            );
+            obj.set_accels_for_action("app.quit", &["<primary>q"]);
+
+            // app.about
+            action!(
+                obj,
+                "about",
+                clone!(@weak self as this => move |_, _| {
+                    if let Some(window) = this.app_window() {
+                        about_window::show(&window);
+                    }
+                })
+            );
+
+            // app.open
+            action!(
+                obj,
+                "open",
+                clone!(@weak self as this => move |_, _| {
+                    this.show_filechooser();
+                })
+            );
+            obj.set_accels_for_action("app.open", &["<primary>o"]);
+
+            // app.refresh-installations
+            action!(
+                obj,
+                "refresh-installations",
+                clone!(@weak obj => move |_, _| {
+                    let installations = obj.worker().installations();
+                    if let Err(err) = installations.refresh() {
+                        error!(
+                            "Unable to refresh Flatpak installations: {}",
+                            err.to_string()
+                        );
+                        // TODO: Expose this in UI
+                    }
+                })
+            );
+            obj.set_accels_for_action("app.refresh-installations", &["<primary>r"]);
+
+            // app.debug
+            action!(obj, "debug", move |_, _| {
+                SkDebugWindow::new().show();
+            });
+            obj.set_accels_for_action("app.debug", &["<primary>d"]);
         }
 
         fn activate(&self) {
@@ -93,7 +140,7 @@ mod imp {
             }
 
             // No window available -> we have to create one
-            let window = self.obj().create_window();
+            let window = self.create_window();
             let _ = self.window.set(window.downgrade());
             info!("Created application window.");
 
@@ -118,8 +165,81 @@ mod imp {
                     }
                 }
 
-                let _ = self.obj().create_sideload_window(file);
+                let _ = self.create_sideload_window(file);
             }
+        }
+    }
+
+    impl SkApplication {
+        fn app_window(&self) -> Option<SkApplicationWindow> {
+            if let Some(window) = self.window.get() {
+                window.upgrade()
+            } else {
+                None
+            }
+        }
+
+        fn create_window(&self) -> SkApplicationWindow {
+            let window = SkApplicationWindow::new();
+            self.obj().add_window(&window);
+
+            window.present();
+            window
+        }
+
+        fn create_sideload_window(&self, file: &gio::File) -> SkSideloadWindow {
+            let window = SkSideloadWindow::new(file);
+            self.obj().add_window(&window);
+
+            window.present();
+            window
+        }
+
+        fn show_filechooser(&self) {
+            let window = self.app_window();
+
+            let dialog = FileChooserNative::new(
+                Some(&i18n("Open Flatpak package or repository")),
+                window.as_ref(),
+                FileChooserAction::Open,
+                Some(&i18n("_Open")),
+                None,
+            );
+
+            dialog.set_modal(true);
+            dialog.set_select_multiple(true);
+
+            // Set a filter to only show flatpak files
+            let flatpak_filter = gtk::FileFilter::new();
+            flatpak_filter.set_name(Some(&i18n("Flatpak Files")));
+            flatpak_filter.add_mime_type("application/vnd.flatpak");
+            flatpak_filter.add_mime_type("application/vnd.flatpak.repo");
+            flatpak_filter.add_mime_type("application/vnd.flatpak.ref");
+            dialog.add_filter(&flatpak_filter);
+
+            // Set a filter to show all files
+            let all_filter = gtk::FileFilter::new();
+            all_filter.set_name(Some(&i18n("All Files")));
+            all_filter.add_pattern("*");
+            dialog.add_filter(&all_filter);
+
+            dialog.connect_response(clone!(@weak dialog, @weak self as this => move |_, resp| {
+                if resp == gtk::ResponseType::Accept {
+                    let mut files = Vec::new();
+                    for pos in 0..dialog.files().n_items() {
+                    let file = dialog.files()
+                        .item(pos)
+                        .unwrap()
+                        .downcast::<gio::File>()
+                        .unwrap();
+                        files.push(file);
+                    }
+
+                    this.open(&files, "");
+                }
+            }));
+
+            dialog.show();
         }
     }
 }
@@ -150,125 +270,6 @@ impl SkApplication {
 
         // Start running gtk::Application
         app.run()
-    }
-
-    pub fn worker(&self) -> SkWorker {
-        self.imp().worker.clone()
-    }
-
-    pub fn app_window(&self) -> Option<SkApplicationWindow> {
-        if let Some(window) = self.imp().window.get() {
-            window.upgrade()
-        } else {
-            None
-        }
-    }
-
-    fn create_window(&self) -> SkApplicationWindow {
-        let window = SkApplicationWindow::new();
-        self.add_window(&window);
-
-        window.present();
-        window
-    }
-
-    fn create_sideload_window(&self, file: &gio::File) -> SkSideloadWindow {
-        let window = SkSideloadWindow::new(file);
-        self.add_window(&window);
-
-        window.present();
-        window
-    }
-
-    fn setup_gactions(&self) {
-        // app.quit
-        action!(self, "quit", move |_, _| {
-            let app = SkApplication::default();
-            for window in app.windows() {
-                window.close();
-            }
-        });
-        self.set_accels_for_action("app.quit", &["<primary>q"]);
-
-        // app.about
-        action!(self, "about", move |_, _| {
-            let app = SkApplication::default();
-            if let Some(window) = app.app_window() {
-                about_window::show(&window);
-            }
-        });
-
-        // app.open
-        action!(self, "open", move |_, _| {
-            SkApplication::default().show_filechooser();
-        });
-        self.set_accels_for_action("app.open", &["<primary>o"]);
-
-        // app.refresh-installations
-        action!(self, "refresh-installations", move |_, _| {
-            let installations = SkApplication::default().worker().installations();
-            if let Err(err) = installations.refresh() {
-                error!(
-                    "Unable to refresh Flatpak installations: {}",
-                    err.to_string()
-                );
-                // TODO: Expose this in UI
-            }
-        });
-        self.set_accels_for_action("app.refresh-installations", &["<primary>r"]);
-
-        // app.debug
-        action!(self, "debug", move |_, _| {
-            SkDebugWindow::new().show();
-        });
-        self.set_accels_for_action("app.debug", &["<primary>d"]);
-    }
-
-    fn show_filechooser(&self) {
-        let window = self.app_window();
-
-        let dialog = FileChooserNative::new(
-            Some(&i18n("Open Flatpak package or repository")),
-            window.as_ref(),
-            FileChooserAction::Open,
-            Some(&i18n("_Open")),
-            None,
-        );
-
-        dialog.set_modal(true);
-        dialog.set_select_multiple(true);
-
-        // Set a filter to only show flatpak files
-        let flatpak_filter = gtk::FileFilter::new();
-        flatpak_filter.set_name(Some(&i18n("Flatpak Files")));
-        flatpak_filter.add_mime_type("application/vnd.flatpak");
-        flatpak_filter.add_mime_type("application/vnd.flatpak.repo");
-        flatpak_filter.add_mime_type("application/vnd.flatpak.ref");
-        dialog.add_filter(&flatpak_filter);
-
-        // Set a filter to show all files
-        let all_filter = gtk::FileFilter::new();
-        all_filter.set_name(Some(&i18n("All Files")));
-        all_filter.add_pattern("*");
-        dialog.add_filter(&all_filter);
-
-        dialog.connect_response(clone!(@weak dialog, @weak self as this => move |_, resp| {
-            if resp == gtk::ResponseType::Accept {
-                let mut files = Vec::new();
-                for pos in 0..dialog.files().n_items() {
-                let file = dialog.files()
-                    .item(pos)
-                    .unwrap()
-                    .downcast::<gio::File>()
-                    .unwrap();
-                    files.push(file);
-                }
-
-                this.open(&files, "");
-            }
-        }));
-
-        dialog.show();
     }
 }
 
