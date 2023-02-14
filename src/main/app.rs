@@ -22,7 +22,7 @@ use gtk::prelude::*;
 use gtk::{gio, glib, FileChooserAction, FileChooserNative};
 use once_cell::sync::OnceCell;
 
-use crate::main::flatpak::sideload::SkSideloadType;
+use crate::main::flatpak::sideload::SkSideloadKind;
 use crate::main::i18n::i18n;
 use crate::main::ui::debug::SkDebugWindow;
 use crate::main::ui::sideload::SkSideloadWindow;
@@ -153,9 +153,9 @@ mod imp {
             debug!("Application -> open");
 
             for file in files {
-                let sideload_type = SkSideloadType::determine_type(file);
+                let sideload_type = SkSideloadKind::determine_type(file);
 
-                if sideload_type == SkSideloadType::Ref {
+                if sideload_type == SkSideloadKind::Ref {
                     // TODO: Check if the FlatpakRef file is for a already added remote
                     let is_known_remote = false;
                     if is_known_remote {

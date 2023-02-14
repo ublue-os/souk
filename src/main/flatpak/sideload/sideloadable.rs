@@ -16,18 +16,17 @@
 
 use core::fmt::Debug;
 
-use glib::{ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecEnum, ParamSpecObject, ToValue};
+use glib::{ParamSpec, Properties};
 use gtk::gio::File;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote, SkRemoteModel};
-use crate::main::flatpak::sideload::SkSideloadType;
+use crate::main::flatpak::sideload::SkSideloadKind;
 use crate::main::flatpak::SkFlatpakOperationType;
 use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
@@ -35,19 +34,23 @@ use crate::main::worker::SkWorker;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkSideloadable)]
     pub struct SkSideloadable {
+        #[property(get, set, construct_only)]
         pub file: OnceCell<File>,
-        pub type_: OnceCell<SkSideloadType>,
-
+        #[property(get, set, construct_only, builder(SkSideloadKind::None))]
+        pub kind: OnceCell<SkSideloadKind>,
         /// Package which gets installed during sideload process (evaluated as
         /// [SkDryRun])
+        #[property(get, set, construct_only)]
         pub dry_run: OnceCell<Option<SkDryRun>>,
-
         /// Remotes which are getting added during the sideload process
+        #[property(get, set, construct_only)]
         pub remotes: OnceCell<SkRemoteModel>,
-
+        #[property(get, set, construct_only)]
         pub no_changes: OnceCell<bool>,
+        #[property(get, set, construct_only)]
         pub installation: OnceCell<SkInstallation>,
     }
 
@@ -59,54 +62,15 @@ mod imp {
 
     impl ObjectImpl for SkSideloadable {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new("file", "", "", File::static_type(), ParamFlags::READABLE),
-                    ParamSpecEnum::new(
-                        "type",
-                        "",
-                        "",
-                        SkSideloadType::static_type(),
-                        SkSideloadType::None as i32,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "dry-run",
-                        "",
-                        "",
-                        SkDryRun::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "remotes",
-                        "",
-                        "",
-                        SkRemoteModel::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecBoolean::new("no-changes", "", "", false, ParamFlags::READABLE),
-                    ParamSpecObject::new(
-                        "installation",
-                        "",
-                        "",
-                        SkInstallation::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "file" => self.obj().file().to_value(),
-                "type" => self.obj().type_().to_value(),
-                "dry-run" => self.obj().dry_run().to_value(),
-                "remotes" => self.obj().remotes().to_value(),
-                "no-changes" => self.obj().no_changes().to_value(),
-                "installation" => self.obj().installation().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
+        }
+
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
     }
 }
@@ -116,30 +80,39 @@ glib::wrapper! {
 }
 
 impl SkSideloadable {
+    pub fn new(
+        file: &File,
+        kind: &SkSideloadKind,
+        dry_run: Option<&SkDryRun>,
+        remotes: &SkRemoteModel,
+        no_changes: bool,
+        installation: &SkInstallation,
+    ) -> Self {
+        glib::Object::builder()
+            .property("file", file)
+            .property("kind", kind)
+            .property("dry-run", dry_run)
+            .property("remotes", remotes)
+            .property("no-changes", no_changes)
+            .property("installation", installation)
+            .build()
+    }
+
     /// Can be a *.flatpakref or *.flatpak file
     pub fn new_package(
         file: &File,
-        type_: SkSideloadType,
-        dry_run: SkDryRun,
+        kind: &SkSideloadKind,
+        dry_run: &SkDryRun,
         installation: &SkInstallation,
     ) -> Self {
-        let sideloadable: Self = glib::Object::new();
-
-        let imp = sideloadable.imp();
-        imp.file.set(file.clone()).unwrap();
-        imp.type_.set(type_).unwrap();
-        imp.no_changes
-            .set(dry_run.package().operation_type() == SkFlatpakOperationType::None)
-            .unwrap();
-        imp.installation.set(installation.clone()).unwrap();
-
-        // remotes
-        imp.remotes.set(dry_run.remotes()).unwrap();
-
-        // package dry run
-        imp.dry_run.set(Some(dry_run)).unwrap();
-
-        sideloadable
+        Self::new(
+            file,
+            kind,
+            Some(dry_run),
+            &dry_run.remotes(),
+            dry_run.package().operation_type() == SkFlatpakOperationType::None,
+            installation,
+        )
     }
 
     /// For '*.flatpakrepo' file
@@ -149,52 +122,25 @@ impl SkSideloadable {
         already_added: bool,
         installation: &SkInstallation,
     ) -> Self {
-        let sideloadable: Self = glib::Object::new();
-
-        let imp = sideloadable.imp();
-        imp.file.set(file.clone()).unwrap();
-        imp.type_.set(SkSideloadType::Repo).unwrap();
-        imp.dry_run.set(None).unwrap();
-        imp.no_changes.set(already_added).unwrap();
-        imp.installation.set(installation.clone()).unwrap();
-
         let remotes = SkRemoteModel::new();
         remotes.set_remotes(vec![remote.info()]);
-        imp.remotes.set(remotes).unwrap();
 
-        sideloadable
-    }
-
-    pub fn file(&self) -> File {
-        self.imp().file.get().unwrap().clone()
-    }
-
-    pub fn type_(&self) -> SkSideloadType {
-        *self.imp().type_.get().unwrap()
-    }
-
-    pub fn installation(&self) -> SkInstallation {
-        self.imp().installation.get().unwrap().clone()
-    }
-
-    pub fn dry_run(&self) -> Option<SkDryRun> {
-        self.imp().dry_run.get().unwrap().to_owned()
-    }
-
-    pub fn remotes(&self) -> SkRemoteModel {
-        self.imp().remotes.get().unwrap().to_owned()
-    }
-
-    pub fn no_changes(&self) -> bool {
-        *self.imp().no_changes.get().unwrap()
+        Self::new(
+            file,
+            &SkSideloadKind::Repo,
+            None,
+            &remotes,
+            already_added,
+            installation,
+        )
     }
 
     pub async fn sideload(&self, worker: &SkWorker) -> Result<Option<SkTask>, Error> {
         if let Some(dry_run) = self.dry_run() {
             let uninstall_before_install = dry_run.is_replacing_remote().is_some();
 
-            let task = match self.type_() {
-                SkSideloadType::Bundle => {
+            let task = match self.kind() {
+                SkSideloadKind::Bundle => {
                     let task = worker
                         .install_flatpak_bundle_file(
                             &self.file(),
@@ -205,7 +151,7 @@ impl SkSideloadable {
                         .await?;
                     Some(task)
                 }
-                SkSideloadType::Ref => {
+                SkSideloadKind::Ref => {
                     let task = worker
                         .install_flatpak_ref_file(
                             &self.file(),
@@ -220,7 +166,7 @@ impl SkSideloadable {
             };
 
             return Ok(task);
-        } else if self.type_() == SkSideloadType::Repo {
+        } else if self.kind() == SkSideloadKind::Repo {
             let remotes = self.remotes();
             // There can be only *one* Flatpak repository in a *.flatpakrepo file
             let remote: SkRemote = remotes.item(0).unwrap().downcast().unwrap();

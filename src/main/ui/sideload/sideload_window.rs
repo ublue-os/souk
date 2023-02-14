@@ -29,7 +29,7 @@ use crate::main::context::SkContext;
 use crate::main::error::Error;
 use crate::main::flatpak::installation::SkRemote;
 use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageKind};
-use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
+use crate::main::flatpak::sideload::{SkSideloadKind, SkSideloadable};
 use crate::main::flatpak::SkFlatpakOperationType;
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::task::{SkTask, SkTaskStatus};
@@ -329,7 +329,7 @@ mod imp {
                 // installation would fail with "x is already installed". Only bundles can be
                 // updated.
                 if package.operation_type() == SkFlatpakOperationType::Update
-                    && sideloadable.type_() == SkSideloadType::Ref
+                    && sideloadable.kind() == SkSideloadKind::Ref
                 {
                     self.set_labels(LabelType::PackageInstall);
                     self.sideload_leaflet.set_visible_child_name("already-done");
@@ -554,8 +554,8 @@ mod imp {
             let worker = SkApplication::default().worker();
             let sideloadable = self.obj().sideloadable().unwrap();
 
-            match sideloadable.type_() {
-                SkSideloadType::Bundle | SkSideloadType::Ref => {
+            match sideloadable.kind() {
+                SkSideloadKind::Bundle | SkSideloadKind::Ref => {
                     let task = match sideloadable.sideload(&worker).await {
                         Ok(task) => task.unwrap(),
                         Err(err) => {
@@ -566,7 +566,7 @@ mod imp {
 
                     self.set_task(&task);
                 }
-                SkSideloadType::Repo => {
+                SkSideloadKind::Repo => {
                     match sideloadable.sideload(&worker).await {
                         Ok(_) => self.sideload_leaflet.set_visible_child_name("done"),
                         Err(err) => self.show_error_message(&err.message()),

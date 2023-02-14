@@ -27,7 +27,7 @@ use crate::main::dbus_proxy::WorkerProxy;
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkInstallation, SkInstallationModel, SkRemote};
 use crate::main::flatpak::package::SkPackage;
-use crate::main::flatpak::sideload::{SkSideloadType, SkSideloadable};
+use crate::main::flatpak::sideload::{SkSideloadKind, SkSideloadable};
 use crate::main::flatpak::utils;
 use crate::main::task::{SkTask, SkTaskModel};
 use crate::shared::flatpak::info::RemoteInfo;
@@ -219,18 +219,18 @@ impl SkWorker {
         file: &File,
         installation: &SkInstallation,
     ) -> Result<SkSideloadable, Error> {
-        let type_ = SkSideloadType::determine_type(file);
+        let kind = SkSideloadKind::determine_type(file);
 
-        let task = match type_ {
-            SkSideloadType::Bundle => {
+        let task = match kind {
+            SkSideloadKind::Bundle => {
                 self.install_flatpak_bundle_file(file, installation, false, true)
                     .await?
             }
-            SkSideloadType::Ref => {
+            SkSideloadKind::Ref => {
                 self.install_flatpak_ref_file(file, installation, false, true)
                     .await?
             }
-            SkSideloadType::Repo => {
+            SkSideloadKind::Repo => {
                 let bytes = file.load_bytes(gio::Cancellable::NONE)?.0;
 
                 let keyfile = KeyFile::new();
@@ -271,8 +271,8 @@ impl SkWorker {
         if let Some(dry_run) = task.result_dry_run() {
             Ok(SkSideloadable::new_package(
                 file,
-                type_,
-                dry_run,
+                &kind,
+                &dry_run,
                 installation,
             ))
         } else {

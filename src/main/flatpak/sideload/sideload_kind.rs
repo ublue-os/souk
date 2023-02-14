@@ -1,4 +1,4 @@
-// Souk - mod.rs
+// Souk - sideload_kind.rs
 // Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,8 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod sideload_kind;
-mod sideloadable;
+use gio::prelude::*;
+use gio::File;
+use glib::Enum;
+use gtk::{gio, glib};
 
-pub use sideload_kind::SkSideloadKind;
-pub use sideloadable::SkSideloadable;
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
+#[repr(u32)]
+#[enum_type(name = "SkSideloadKind")]
+pub enum SkSideloadKind {
+    Ref,
+    Repo,
+    Bundle,
+    None,
+}
+
+impl SkSideloadKind {
+    pub fn determine_type(file: &File) -> SkSideloadKind {
+        let file = file.path().unwrap();
+
+        match file.extension().unwrap_or_default().to_str().unwrap() {
+            "flatpakref" => SkSideloadKind::Ref,
+            "flatpakrepo" => SkSideloadKind::Repo,
+            "flatpak" => SkSideloadKind::Bundle,
+            _ => SkSideloadKind::None,
+        }
+    }
+}
