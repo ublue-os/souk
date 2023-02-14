@@ -16,7 +16,7 @@
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::{subclass, ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject};
+use glib::{subclass, ParamSpec, Properties};
 use gtk::{glib, CompositeTemplate};
 use once_cell::sync::OnceCell;
 
@@ -26,9 +26,15 @@ use crate::main::ui::utils;
 mod imp {
     use super::*;
 
-    #[derive(Debug, CompositeTemplate, Default)]
+    #[derive(Debug, CompositeTemplate, Default, Properties)]
+    #[properties(wrapper_type = super::SkContextDetailRow)]
     #[template(resource = "/de/haeckerfelix/Souk/gtk/context_detail_row.ui")]
     pub struct SkContextDetailRow {
+        #[property(get, set, construct_only)]
+        pub detail: OnceCell<SkContextDetail>,
+        #[property(get, set, construct_only)]
+        pub show_arrow: OnceCell<bool>,
+
         #[template_child]
         pub type_stack: TemplateChild<gtk::Stack>,
         #[template_child]
@@ -37,9 +43,6 @@ mod imp {
         pub text_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub arrow: TemplateChild<gtk::Image>,
-
-        pub detail: OnceCell<SkContextDetail>,
-        pub show_arrow: OnceCell<bool>,
     }
 
     #[glib::object_subclass]
@@ -59,47 +62,51 @@ mod imp {
 
     impl ObjectImpl for SkContextDetailRow {
         fn properties() -> &'static [ParamSpec] {
-            use once_cell::sync::Lazy;
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new(
-                        "detail",
-                        "",
-                        "",
-                        SkContextDetail::static_type(),
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                    ParamSpecBoolean::new(
-                        "show-arrow",
-                        "",
-                        "",
-                        false,
-                        ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "detail" => self.obj().detail().to_value(),
-                "show-arrow" => self.obj().show_arrow().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "detail" => self.detail.set(value.get().unwrap()).unwrap(),
-                "show-arrow" => self.show_arrow.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
 
         fn constructed(&self) {
             self.parent_constructed();
-            self.obj().setup_widgets();
+
+            let detail = self.obj().detail();
+
+            if detail.kind() == SkContextDetailKind::Icon {
+                self.type_stack.set_visible_child(&self.icon_image.get());
+                self.icon_image.set_icon_name(Some(&detail.kind_value()));
+            } else if detail.kind() == SkContextDetailKind::Size {
+                self.type_stack.set_visible_child(&self.text_label.get());
+                let markup = utils::size_to_markup(&detail.kind_value());
+                self.text_label.set_markup(&markup);
+                self.text_label.add_css_class("size");
+            } else {
+                self.type_stack.set_visible_child(&self.text_label.get());
+                self.text_label.set_markup(&detail.kind_value());
+                self.text_label.remove_css_class("size");
+            }
+
+            let css = match detail.level() {
+                SkContextDetailLevel::Neutral => "color-neutral",
+                SkContextDetailLevel::Good => "color-green",
+                SkContextDetailLevel::Minor => "color-blue",
+                SkContextDetailLevel::Moderate => "color-orange",
+                SkContextDetailLevel::Warning => "color-yellow",
+                SkContextDetailLevel::Bad => "color-red",
+            };
+            self.icon_image.add_css_class(css);
+            self.text_label.add_css_class(css);
+
+            self.arrow.set_visible(self.obj().show_arrow());
+
+            self.obj().set_title(&detail.title());
+            self.obj().set_subtitle(&detail.description());
         }
     }
 
@@ -124,48 +131,5 @@ impl SkContextDetailRow {
             .property("detail", detail)
             .property("show-arrow", &show_arrow)
             .build()
-    }
-
-    fn setup_widgets(&self) {
-        let imp = self.imp();
-        let detail = self.detail();
-
-        if detail.kind() == SkContextDetailKind::Icon {
-            imp.type_stack.set_visible_child(&imp.icon_image.get());
-            imp.icon_image.set_icon_name(Some(&detail.kind_value()));
-        } else if detail.kind() == SkContextDetailKind::Size {
-            imp.type_stack.set_visible_child(&imp.text_label.get());
-            let markup = utils::size_to_markup(&detail.kind_value());
-            imp.text_label.set_markup(&markup);
-            imp.text_label.add_css_class("size");
-        } else {
-            imp.type_stack.set_visible_child(&imp.text_label.get());
-            imp.text_label.set_markup(&detail.kind_value());
-            imp.text_label.remove_css_class("size");
-        }
-
-        let css = match detail.level() {
-            SkContextDetailLevel::Neutral => "color-neutral",
-            SkContextDetailLevel::Good => "color-green",
-            SkContextDetailLevel::Minor => "color-blue",
-            SkContextDetailLevel::Moderate => "color-orange",
-            SkContextDetailLevel::Warning => "color-yellow",
-            SkContextDetailLevel::Bad => "color-red",
-        };
-        imp.icon_image.add_css_class(css);
-        imp.text_label.add_css_class(css);
-
-        imp.arrow.set_visible(self.show_arrow());
-
-        self.set_title(&detail.title());
-        self.set_subtitle(&detail.description());
-    }
-
-    pub fn detail(&self) -> SkContextDetail {
-        self.imp().detail.get().unwrap().clone()
-    }
-
-    pub fn show_arrow(&self) -> bool {
-        *self.imp().show_arrow.get().unwrap()
     }
 }
