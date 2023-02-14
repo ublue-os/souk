@@ -474,7 +474,6 @@ impl FlatpakWorker {
                                 let res = dry_run_installation.update_appstream_sync(&remote_name, Some(&arch), Cancellable::NONE);
                                 if let Err(err) = res {
                                     warn!("Unable to update appstream data: {}", err.to_string());
-                                    return false;
                                 }
 
                                 dry_run_installation.remote_by_name(&remote_name, Cancellable::NONE).unwrap()
@@ -680,3 +679,4 @@ impl FlatpakWorker {
         Ok(Remote::from_file("remote", &bytes)?)
     }
 }
+
