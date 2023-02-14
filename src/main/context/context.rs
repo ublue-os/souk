@@ -112,7 +112,7 @@ impl SkContext {
             summary |= value.summary();
         }
         if permissions.services().n_items() == 0 {
-            service_details.push(SkServicePermission::no_permission_context());
+            service_details.push(SkServicePermission::no_access_context());
         }
 
         let title = i18n("Service Permissions");

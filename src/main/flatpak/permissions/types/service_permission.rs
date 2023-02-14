@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecString, ToValue};
+use glib::{ParamSpec, Properties};
 use gtk::glib;
+use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::context::{SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
@@ -41,9 +41,12 @@ lazy_static! {
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkServicePermission)]
     pub struct SkServicePermission {
+        #[property(get, set, construct_only)]
         pub name: OnceCell<String>,
+        #[property(get, set, construct_only)]
         pub is_system: OnceCell<bool>,
     }
 
@@ -55,21 +58,15 @@ mod imp {
 
     impl ObjectImpl for SkServicePermission {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
-                    ParamSpecBoolean::new("is-system", "", "", false, ParamFlags::READABLE),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "name" => self.obj().name().to_value(),
-                "is-system" => self.obj().is_system().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
+        }
+
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
     }
 }
@@ -80,24 +77,13 @@ glib::wrapper! {
 
 impl SkServicePermission {
     pub fn new(name: &str, is_system: bool) -> Self {
-        let perm: Self = glib::Object::new();
-
-        let imp = perm.imp();
-        imp.name.set(name.to_string()).unwrap();
-        imp.is_system.set(is_system).unwrap();
-
-        perm
+        glib::Object::builder()
+            .property("name", name)
+            .property("is_system", is_system)
+            .build()
     }
 
-    pub fn name(&self) -> String {
-        self.imp().name.get().unwrap().to_string()
-    }
-
-    pub fn is_system(&self) -> bool {
-        *self.imp().is_system.get().unwrap()
-    }
-
-    pub fn no_permission_context() -> SkContextDetail {
+    pub fn no_access_context() -> SkContextDetail {
         let type_ = SkContextDetailKind::Icon;
         let icon_name = "system-run-symbolic".to_string();
         let level = SkContextDetailLevel::Good;
