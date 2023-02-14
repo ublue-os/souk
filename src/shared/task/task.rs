@@ -1,5 +1,5 @@
 // Souk - task.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,13 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use gtk::glib;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use zbus::zvariant::{Optional, Type};
 
 use crate::shared::task::{AppstreamTask, FlatpakTask};
 
-#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash, glib::Boxed)]
+#[boxed_type(name = "Task", nullable)]
 pub struct Task {
     /// Each task has a unique UUID that can be used for identification. This is
     /// required, for example, if a running task should be cancelled.

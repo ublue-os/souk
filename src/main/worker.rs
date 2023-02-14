@@ -119,7 +119,7 @@ impl SkWorker {
         let task_data =
             FlatpakTask::new_install(&package.info(), uninstall_before_install, dry_run);
 
-        let task = SkTask::new(task_data);
+        let task = SkTask::new(Some(&task_data), None);
         self.run_task(&task).await?;
 
         Ok(task)
@@ -143,7 +143,7 @@ impl SkWorker {
             dry_run,
         );
 
-        let task = SkTask::new(task_data);
+        let task = SkTask::new(Some(&task_data), None);
         self.run_task(&task).await?;
 
         Ok(task)
@@ -167,7 +167,7 @@ impl SkWorker {
             dry_run,
         );
 
-        let task = SkTask::new(task_data);
+        let task = SkTask::new(Some(&task_data), None);
         self.run_task(&task).await?;
 
         Ok(task)

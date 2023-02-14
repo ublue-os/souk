@@ -139,7 +139,7 @@ impl SkDebugWindow {
             let text = Self::setup_text_widget(item);
             item.property_expression("item")
                 .chain_property::<gtk::TreeListRow>("item")
-                .chain_property::<SkTask>("type")
+                .chain_property::<SkTask>("kind")
                 .bind(&text, "label", None::<&SkTask>);
         });
         self.add_column("Type", factory);

@@ -23,7 +23,7 @@ use super::DryRunPackage;
 use crate::shared::flatpak::info::RemoteInfo;
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash, glib::Boxed)]
-#[boxed_type(name = "DryRun")]
+#[boxed_type(name = "DryRun", nullable)]
 #[derivative(Debug)]
 pub struct DryRun {
     /// The Flatpak package for which the dry-run is performed (can be an

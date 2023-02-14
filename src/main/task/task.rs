@@ -18,10 +18,7 @@ use std::cell::{Cell, RefCell};
 
 use async_std::channel::{unbounded, Receiver, Sender};
 use glib::subclass::Signal;
-use glib::{
-    ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecFloat, ParamSpecObject, ParamSpecString,
-    ParamSpecUInt, ParamSpecUInt64, ToValue,
-};
+use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -31,29 +28,40 @@ use once_cell::unsync::OnceCell;
 use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::package::SkPackage;
-use crate::main::task::{SkTaskModel, SkTaskStatus, SkTaskType};
+use crate::main::task::{SkTaskKind, SkTaskModel, SkTaskStatus};
 use crate::shared::task::{Task, TaskProgress, TaskResponse, TaskResponseType, TaskResultType};
 use crate::shared::WorkerError;
 
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkTask)]
     pub struct SkTask {
-        pub data: OnceCell<Option<Task>>,
-
         // Static values
+        #[property(get)]
         pub index: OnceCell<u32>,
-        pub type_: OnceCell<SkTaskType>,
+        #[property(get, builder(SkTaskKind::None))]
+        pub kind: OnceCell<SkTaskKind>,
 
         // Dynamic values
+        #[property(get)]
         pub package: RefCell<Option<SkPackage>>,
+        #[property(get, builder(SkTaskStatus::Pending))]
         pub status: RefCell<SkTaskStatus>,
+        #[property(get)]
         pub progress: Cell<f32>,
+        #[property(get)]
         pub download_rate: Cell<u64>,
 
+        #[property(get)]
         pub dependencies: SkTaskModel,
+        #[property(get, set, construct_only)]
         pub dependency_of: OnceCell<Option<super::SkTask>>,
+
+        #[property(get = Self::data, set, construct_only, type = Task)]
+        #[property(name = "uuid", get = Self::uuid, type = String)]
+        pub data: OnceCell<Option<Task>>,
 
         // Gets called when task finishes (done/error/cancelled)
         pub finished_sender: OnceCell<Sender<()>>,
@@ -72,75 +80,15 @@ mod imp {
 
     impl ObjectImpl for SkTask {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecString::new("uuid", "", "", None, ParamFlags::READABLE),
-                    ParamSpecUInt::new("index", "", "", 0, u32::MAX, 0, ParamFlags::READABLE),
-                    ParamSpecEnum::new(
-                        "type",
-                        "",
-                        "",
-                        SkTaskType::static_type(),
-                        SkTaskType::default() as i32,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "package",
-                        "",
-                        "",
-                        SkPackage::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecEnum::new(
-                        "status",
-                        "",
-                        "",
-                        SkTaskStatus::static_type(),
-                        SkTaskStatus::default() as i32,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecFloat::new("progress", "", "", 0.0, 1.0, 0.0, ParamFlags::READABLE),
-                    ParamSpecUInt64::new(
-                        "download-rate",
-                        "",
-                        "",
-                        0,
-                        u64::MAX,
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "dependencies",
-                        "",
-                        "",
-                        SkTaskModel::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "dependency-of",
-                        "",
-                        "",
-                        super::SkTask::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "uuid" => self.obj().uuid().to_value(),
-                "index" => self.obj().index().to_value(),
-                "type" => self.obj().type_().to_value(),
-                "package" => self.obj().package().to_value(),
-                "status" => self.obj().status().to_value(),
-                "progress" => self.obj().progress().to_value(),
-                "download-rate" => self.obj().download_rate().to_value(),
-                "dependencies" => self.obj().dependencies().to_value(),
-                "dependency-of" => self.obj().dependency_of().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
+        }
+
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
 
         fn signals() -> &'static [Signal] {
@@ -162,9 +110,84 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
 
+            // Only set the task kind for ¬dependency tasks, since those get the kind set
+            // from the [TaskResponseType::Initial] response.
+            if let Some(data) = self.data.get().unwrap() {
+                self.kind.set(SkTaskKind::from_task_data(&data)).unwrap();
+            }
+
+            *self.status.borrow_mut() = SkTaskStatus::Pending;
+
             let (finished_sender, finished_receiver) = unbounded();
             self.finished_sender.set(finished_sender).unwrap();
             self.finished_receiver.set(finished_receiver).unwrap();
+        }
+    }
+
+    impl SkTask {
+        /// Returns the original shared [Task] struct. If this task is a
+        /// dependency to another task, the [Task] struct from the main
+        /// [SkTask] gets returned.
+        fn data(&self) -> Task {
+            if let Some(dependent_task) = self.obj().dependency_of() {
+                dependent_task.data()
+            } else {
+                self.data.get().unwrap().clone().unwrap()
+            }
+        }
+
+        fn uuid(&self) -> String {
+            let task_data = self.data();
+
+            if let Some(dependent_task) = self.obj().dependency_of() {
+                format!("{}:{}", dependent_task.uuid(), self.obj().index())
+            } else {
+                task_data.uuid
+            }
+        }
+
+        /// Sets the initial data of a [TaskProgress] which comes via a
+        /// [TaskResponseType::Initial] response
+        pub fn set_initial(&self, initial: &TaskProgress) {
+            self.index.set(initial.index).unwrap();
+            self.kind
+                .set(initial.operation_type.clone().into())
+                .unwrap();
+
+            if let Some(package_info) = initial.package.clone().into() {
+                let package = SkPackage::new(&package_info);
+                *self.package.borrow_mut() = Some(package);
+            } else {
+                *self.package.borrow_mut() = None;
+            }
+            self.update(initial);
+        }
+
+        pub fn update(&self, task_progress: &TaskProgress) {
+            let status = SkTaskStatus::from(task_progress.status.clone());
+            if self.obj().status() != status {
+                *self.status.borrow_mut() = status;
+                self.obj().notify("status");
+            }
+
+            // +1 since this task also counts to the total progress, and is not a dependency
+            let total_tasks = self.obj().dependencies().n_items() + 1;
+            let mut task_index = task_progress.index;
+
+            if self.obj().dependencies().n_items() == 0 {
+                task_index = 0;
+            }
+            let progress = ((task_index * 100) + task_progress.progress as u32) as f32
+                / (total_tasks as f32 * 100.0);
+            if progress != task_progress.progress as f32 {
+                self.progress.set(progress);
+                self.obj().notify("progress");
+            }
+
+            if self.obj().download_rate() != task_progress.download_rate {
+                self.download_rate.set(task_progress.download_rate);
+                self.obj().notify("download-rate");
+            }
         }
     }
 }
@@ -174,85 +197,11 @@ glib::wrapper! {
 }
 
 impl SkTask {
-    pub fn new(data: Task) -> Self {
-        let task: Self = glib::Object::new();
-        let imp = task.imp();
-
-        imp.data.set(Some(data.clone())).unwrap();
-        imp.index.set(0).unwrap();
-        imp.type_.set(SkTaskType::from_task_data(&data)).unwrap();
-        *imp.status.borrow_mut() = SkTaskStatus::Pending;
-
-        imp.dependency_of.set(None).unwrap();
-
-        task
-    }
-
-    /// Creates a new task which is a dependency of another task
-    pub fn new_dependency(progress: &TaskProgress, dependency_of: &SkTask) -> Self {
-        let task: Self = glib::Object::new();
-        let imp = task.imp();
-
-        imp.data.set(None).unwrap();
-
-        imp.index.set(progress.index).unwrap();
-        imp.type_
-            .set(progress.operation_type.clone().into())
-            .unwrap();
-
-        if let Some(package_info) = progress.package.clone().into() {
-            let package = SkPackage::new(&package_info);
-            *imp.package.borrow_mut() = Some(package);
-        } else {
-            *imp.package.borrow_mut() = None;
-        }
-        task.update(progress);
-
-        imp.dependency_of.set(Some(dependency_of.clone())).unwrap();
-
-        task
-    }
-
-    pub fn uuid(&self) -> String {
-        let task_data = self.data();
-
-        if let Some(dependent_task) = self.dependency_of() {
-            format!("{}:{}", dependent_task.uuid(), self.index())
-        } else {
-            task_data.uuid
-        }
-    }
-
-    pub fn index(&self) -> u32 {
-        *self.imp().index.get().unwrap()
-    }
-
-    pub fn type_(&self) -> SkTaskType {
-        *self.imp().type_.get().unwrap()
-    }
-
-    pub fn package(&self) -> Option<SkPackage> {
-        self.imp().package.borrow().clone()
-    }
-
-    pub fn status(&self) -> SkTaskStatus {
-        *self.imp().status.borrow()
-    }
-
-    pub fn progress(&self) -> f32 {
-        self.imp().progress.get()
-    }
-
-    pub fn download_rate(&self) -> u64 {
-        self.imp().download_rate.get()
-    }
-
-    pub fn dependencies(&self) -> SkTaskModel {
-        self.imp().dependencies.clone()
-    }
-
-    pub fn dependency_of(&self) -> Option<SkTask> {
-        self.imp().dependency_of.get().unwrap().clone()
+    pub fn new(data: Option<&Task>, dependency_of: Option<&SkTask>) -> Self {
+        glib::Object::builder()
+            .property("data", data)
+            .property("dependency-of", dependency_of)
+            .build()
     }
 
     pub fn handle_response(&self, response: &TaskResponse) {
@@ -264,7 +213,7 @@ impl SkTask {
                 for task_progress in initial_response {
                     let is_last_task = task_progress.index as usize == (initial_response.len() - 1);
 
-                    if self.type_().targets_single_package() && is_last_task {
+                    if self.kind().targets_single_package() && is_last_task {
                         // It only affects one particular package, and the update response has the
                         // last index -> it affects this task
                         if let Some(package) = task_progress.package.as_ref() {
@@ -275,7 +224,9 @@ impl SkTask {
                     } else {
                         // Check if the update is *not* for the last task (which would be `self`,
                         // and not a dependency), and if the task targets a single package.
-                        let task = SkTask::new_dependency(task_progress, self);
+                        let task = SkTask::new(None, Some(self));
+                        task.imp().set_initial(task_progress);
+
                         self.dependencies().add_task(&task);
                         self.notify("dependencies");
                     }
@@ -288,8 +239,8 @@ impl SkTask {
                 let is_last_task = update.index == self.dependencies().n_items();
 
                 if let Some(task) = self.dependencies().task(&uuid) {
-                    task.update(update);
-                } else if !(self.type_().targets_single_package() && is_last_task) {
+                    task.imp().update(update);
+                } else if !(self.kind().targets_single_package() && is_last_task) {
                     error!(
                         "Unable to retrieve dependency task for progress update: {}",
                         uuid
@@ -298,7 +249,7 @@ impl SkTask {
 
                 // Always update this task as well, so it mirrors the information of all
                 // subtasks
-                self.update(update);
+                self.imp().update(update);
             }
             TaskResponseType::Result => {
                 let result = response.result_response.as_ref().unwrap();
@@ -349,35 +300,6 @@ impl SkTask {
         }
     }
 
-    pub(super) fn update(&self, task_progress: &TaskProgress) {
-        let imp = self.imp();
-
-        let status = SkTaskStatus::from(task_progress.status.clone());
-        if self.status() != status {
-            *imp.status.borrow_mut() = status;
-            self.notify("status");
-        }
-
-        // +1 since this task also counts to the total progress, and is not a dependency
-        let total_tasks = self.dependencies().n_items() + 1;
-        let mut task_index = task_progress.index;
-
-        if self.dependencies().n_items() == 0 {
-            task_index = 0;
-        }
-        let progress = ((task_index * 100) + task_progress.progress as u32) as f32
-            / (total_tasks as f32 * 100.0);
-        if progress != task_progress.progress as f32 {
-            imp.progress.set(progress);
-            self.notify("progress");
-        }
-
-        if self.download_rate() != task_progress.download_rate {
-            imp.download_rate.set(task_progress.download_rate);
-            self.notify("download-rate");
-        }
-    }
-
     pub async fn await_result(&self) -> Result<(), Error> {
         let imp = self.imp();
         imp.finished_receiver.get().unwrap().recv().await.unwrap();
@@ -395,16 +317,5 @@ impl SkTask {
 
     pub fn result_error(&self) -> Option<WorkerError> {
         self.imp().result_error.get().cloned()
-    }
-
-    /// Returns the original shared [Task] struct. If this task is a dependency
-    /// to another task, the [Task] struct from the main [SkTask] gets
-    /// returned.
-    pub fn data(&self) -> Task {
-        if let Some(dependent_task) = self.dependency_of() {
-            dependent_task.data()
-        } else {
-            self.imp().data.get().unwrap().clone().unwrap()
-        }
     }
 }

@@ -79,7 +79,7 @@ impl SkServicePermission {
     pub fn new(name: &str, is_system: bool) -> Self {
         glib::Object::builder()
             .property("name", name)
-            .property("is_system", is_system)
+            .property("is-system", is_system)
             .build()
     }
 

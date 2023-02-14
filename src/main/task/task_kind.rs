@@ -1,4 +1,4 @@
-// Souk - task_type.rs
+// Souk - task_kind.rs
 // Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -22,8 +22,8 @@ use crate::shared::task::{FlatpakTaskType, Task};
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkTaskType")]
-pub enum SkTaskType {
+#[enum_type(name = "SkTaskKind")]
+pub enum SkTaskKind {
     /// A Flatpak operation gets dry ran
     FlatpakDryRun,
     /// A Flatpak package (with all related refs) gets installed
@@ -40,7 +40,7 @@ pub enum SkTaskType {
     // Appstream...,
 }
 
-impl SkTaskType {
+impl SkTaskKind {
     pub fn from_task_data(data: &Task) -> Self {
         if let Some(flatpak_task) = data.flatpak_task() {
             if flatpak_task.dry_run {
@@ -60,7 +60,7 @@ impl SkTaskType {
     }
 }
 
-impl From<FlatpakTaskType> for SkTaskType {
+impl From<FlatpakTaskType> for SkTaskKind {
     fn from(type_: FlatpakTaskType) -> Self {
         match type_ {
             FlatpakTaskType::Install => Self::FlatpakInstall,
@@ -74,7 +74,7 @@ impl From<FlatpakTaskType> for SkTaskType {
     }
 }
 
-impl From<FlatpakOperationType> for SkTaskType {
+impl From<FlatpakOperationType> for SkTaskKind {
     fn from(type_: FlatpakOperationType) -> Self {
         match type_ {
             FlatpakOperationType::Install => Self::FlatpakInstall,
@@ -86,8 +86,8 @@ impl From<FlatpakOperationType> for SkTaskType {
     }
 }
 
-impl Default for SkTaskType {
+impl Default for SkTaskKind {
     fn default() -> Self {
-        SkTaskType::None
+        SkTaskKind::None
     }
 }
