@@ -274,9 +274,9 @@ mod imp {
                 self.package_version_label.set_text(&a.version_text(false));
 
                 // Badges
-                self.package_branch_badge.set_value(&package.branch());
+                self.package_branch_badge.set_value(package.branch());
                 self.package_repository_badge
-                    .set_value(&package.remote().name());
+                    .set_value(package.remote().name());
 
                 // Context information
                 let contexts = ListStore::new(SkContext::static_type());

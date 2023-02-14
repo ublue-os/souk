@@ -18,25 +18,28 @@ use std::cell::RefCell;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::{subclass, ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecString};
+use glib::{ParamSpec, Properties};
 use gtk::{glib, CompositeTemplate};
 
-use crate::main::ui::badge::SkBadgeType;
+use crate::main::ui::badge::SkBadgeKind;
 use crate::main::ui::utils;
 
 mod imp {
     use super::*;
 
-    #[derive(Debug, CompositeTemplate, Default)]
+    #[derive(Debug, CompositeTemplate, Default, Properties)]
+    #[properties(wrapper_type = super::SkBadge)]
     #[template(resource = "/de/haeckerfelix/Souk/gtk/badge.ui")]
     pub struct SkBadge {
+        #[property(get, set = Self::set_kind, builder(SkBadgeKind::Branch))]
+        pub kind: RefCell<SkBadgeKind>,
+        #[property(get, set = Self::set_value)]
+        pub value: RefCell<String>,
+
         #[template_child]
         pub image: TemplateChild<gtk::Image>,
         #[template_child]
         pub label: TemplateChild<gtk::Label>,
-
-        pub type_: RefCell<SkBadgeType>,
-        pub value: RefCell<String>,
     }
 
     #[glib::object_subclass]
@@ -49,50 +52,78 @@ mod imp {
             Self::bind_template(klass);
         }
 
-        fn instance_init(obj: &subclass::InitializingObject<Self>) {
+        fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
             obj.init_template();
         }
     }
 
     impl ObjectImpl for SkBadge {
         fn properties() -> &'static [ParamSpec] {
-            use once_cell::sync::Lazy;
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecEnum::new(
-                        "type",
-                        "",
-                        "",
-                        SkBadgeType::static_type(),
-                        SkBadgeType::default() as i32,
-                        ParamFlags::READWRITE,
-                    ),
-                    ParamSpecString::new("value", "", "", None, ParamFlags::READWRITE),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "type" => self.obj().type_().to_value(),
-                "value" => self.obj().value().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "type" => self.obj().set_type(value.get().unwrap()),
-                "value" => self.obj().set_value(value.get().unwrap()),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
     }
 
     impl WidgetImpl for SkBadge {}
 
     impl BinImpl for SkBadge {}
+
+    impl SkBadge {
+        fn set_kind(&self, kind: SkBadgeKind) {
+            *self.kind.borrow_mut() = kind;
+            self.obj().notify("kind");
+
+            self.update_icon();
+        }
+
+        fn set_value(&self, value: &str) {
+            let text = value.to_uppercase();
+            self.label.set_text(&text);
+
+            *self.value.borrow_mut() = value.into();
+            self.obj().notify("value");
+
+            self.update_icon();
+        }
+
+        fn update_icon(&self) {
+            let icon = match self.obj().kind() {
+                SkBadgeKind::Repository => "repo-symbolic",
+                SkBadgeKind::Branch => match self.obj().value().to_lowercase().as_str() {
+                    "stable" => "branch-stable-symbolic",
+                    "beta" => "branch-beta-symbolic",
+                    "master" | "nightly" | "daily" => "branch-unstable-symbolic",
+                    _ => "branch-generic-symbolic",
+                },
+            };
+
+            self.image.set_icon_name(Some(icon));
+            self.update_css();
+        }
+
+        fn update_css(&self) {
+            utils::remove_css_colors(&self.obj().clone());
+
+            let css = match self.obj().kind() {
+                SkBadgeKind::Repository => "color-blue",
+                SkBadgeKind::Branch => match self.obj().value().to_lowercase().as_str() {
+                    "stable" => "color-green",
+                    "beta" => "color-orange",
+                    "master" | "nightly" | "daily" => "color-red",
+                    _ => "color-neutral",
+                },
+            };
+
+            self.obj().add_css_class(css);
+        }
+    }
 }
 
 glib::wrapper! {
@@ -102,66 +133,10 @@ glib::wrapper! {
 }
 
 impl SkBadge {
-    pub fn new(type_: SkBadgeType, value: &str) -> Self {
+    pub fn new(kind: SkBadgeKind, value: &str) -> Self {
         glib::Object::builder()
-            .property("type", &type_)
+            .property("kind", &kind)
             .property("value", &value)
             .build()
-    }
-
-    pub fn type_(&self) -> SkBadgeType {
-        *self.imp().type_.borrow()
-    }
-
-    pub fn set_type(&self, type_: SkBadgeType) {
-        *self.imp().type_.borrow_mut() = type_;
-        self.notify("type");
-
-        self.update_icon();
-    }
-
-    pub fn value(&self) -> String {
-        self.imp().value.borrow().clone()
-    }
-
-    pub fn set_value(&self, value: &str) {
-        let text = value.to_uppercase();
-        self.imp().label.set_text(&text);
-
-        *self.imp().value.borrow_mut() = value.into();
-        self.notify("value");
-
-        self.update_icon();
-    }
-
-    fn update_icon(&self) {
-        let icon = match self.type_() {
-            SkBadgeType::Repository => "repo-symbolic",
-            SkBadgeType::Branch => match self.value().to_lowercase().as_str() {
-                "stable" => "branch-stable-symbolic",
-                "beta" => "branch-beta-symbolic",
-                "master" | "nightly" | "daily" => "branch-unstable-symbolic",
-                _ => "branch-generic-symbolic",
-            },
-        };
-
-        self.imp().image.set_icon_name(Some(icon));
-        self.update_css();
-    }
-
-    fn update_css(&self) {
-        utils::remove_css_colors(self);
-
-        let css = match self.type_() {
-            SkBadgeType::Repository => "color-blue",
-            SkBadgeType::Branch => match self.value().to_lowercase().as_str() {
-                "stable" => "color-green",
-                "beta" => "color-orange",
-                "master" | "nightly" | "daily" => "color-red",
-                _ => "color-neutral",
-            },
-        };
-
-        self.add_css_class(css);
     }
 }

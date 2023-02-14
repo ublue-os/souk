@@ -1,4 +1,4 @@
-// Souk - badge_type.rs
+// Souk - badge_kind.rs
 // Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -19,14 +19,14 @@ use gtk::glib;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkBadgeType")]
-pub enum SkBadgeType {
+#[enum_type(name = "SkBadgeKind")]
+pub enum SkBadgeKind {
     Repository,
     Branch,
 }
 
-impl Default for SkBadgeType {
+impl Default for SkBadgeKind {
     fn default() -> Self {
-        SkBadgeType::Branch
+        SkBadgeKind::Branch
     }
 }

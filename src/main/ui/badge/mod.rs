@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 
 #[allow(clippy::module_inception)]
 mod badge;
-mod badge_type;
+mod badge_kind;
 
 pub use badge::SkBadge;
-pub use badge_type::SkBadgeType;
+pub use badge_kind::SkBadgeKind;
