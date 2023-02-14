@@ -58,6 +58,46 @@ mod imp {
                 .map(|(_, o)| o.clone().upcast::<glib::Object>())
         }
     }
+
+    impl SkPackageModel {
+        pub fn add_info(&self, info: &PackageInfo) {
+            let pos = {
+                let mut map = self.map.borrow_mut();
+                if map.contains_key(info) {
+                    return;
+                }
+
+                let sk_package = SkPackage::new(info);
+                map.insert(info.clone(), sk_package);
+                (map.len() - 1) as u32
+            };
+
+            self.obj().items_changed(pos, 0, 1);
+        }
+
+        pub fn remove_info(&self, info: &PackageInfo) {
+            let pos = {
+                let mut map = self.map.borrow_mut();
+                match map.get_index_of(info) {
+                    Some(pos) => {
+                        map.remove(info);
+                        Some(pos)
+                    }
+                    None => {
+                        warn!(
+                            "Unable to remove package {:?}, not found in model",
+                            info.ref_
+                        );
+                        None
+                    }
+                }
+            };
+
+            if let Some(pos) = pos {
+                self.obj().items_changed(pos.try_into().unwrap(), 1, 0);
+            }
+        }
+    }
 }
 
 glib::wrapper! {
@@ -73,52 +113,14 @@ impl SkPackageModel {
         let imp = self.imp();
 
         for package in &packages {
-            self.add_info(package);
+            imp.add_info(package);
         }
 
         let map = imp.map.borrow().clone();
         for info in map.keys() {
             if !packages.contains(info) {
-                self.remove_info(info);
+                imp.remove_info(info);
             }
-        }
-    }
-
-    fn add_info(&self, info: &PackageInfo) {
-        let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            if map.contains_key(info) {
-                return;
-            }
-
-            let sk_package = SkPackage::new(info);
-            map.insert(info.clone(), sk_package);
-            (map.len() - 1) as u32
-        };
-
-        self.items_changed(pos, 0, 1);
-    }
-
-    fn remove_info(&self, info: &PackageInfo) {
-        let pos = {
-            let mut map = self.imp().map.borrow_mut();
-            match map.get_index_of(info) {
-                Some(pos) => {
-                    map.remove(info);
-                    Some(pos)
-                }
-                None => {
-                    warn!(
-                        "Unable to remove package {:?}, not found in model",
-                        info.ref_
-                    );
-                    None
-                }
-            }
-        };
-
-        if let Some(pos) = pos {
-            self.items_changed(pos.try_into().unwrap(), 1, 0);
         }
     }
 }
