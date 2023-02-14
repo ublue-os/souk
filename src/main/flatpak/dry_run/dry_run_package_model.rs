@@ -86,7 +86,7 @@ mod imp {
                     None => {
                         warn!(
                             "Unable to remove package {:?}, not found in model",
-                            data.package.ref_
+                            data.info.ref_
                         );
                         None
                     }

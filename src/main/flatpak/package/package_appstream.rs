@@ -18,13 +18,11 @@ use appstream::builders::ComponentBuilder;
 use appstream::{AppId, Component, TranslatableString};
 use flatpak::prelude::*;
 use flatpak::{Installation, Ref};
-use glib::{ParamFlags, ParamSpec, ParamSpecObject, ParamSpecString, ToValue};
+use glib::{ParamSpec, Properties};
 use gtk::gdk::Paintable;
 use gtk::glib;
-use gtk::glib::Bytes;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::flatpak::package::{SkPackage, SkPackageKind, SkPackageSubrefKind};
@@ -32,15 +30,26 @@ use crate::main::i18n::{i18n, i18n_f};
 use crate::main::SkApplication;
 use crate::shared::flatpak::info::PackageInfo;
 
+#[derive(Clone, Debug, glib::Boxed)]
+#[boxed_type(name = "Component")]
+pub struct BoxedComponent(Component);
+
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkPackageAppstream)]
     pub struct SkPackageAppstream {
+        #[property(get, set, construct_only)]
         pub package: OnceCell<SkPackage>,
-
-        pub component: OnceCell<Component>,
+        #[property(get, set, construct_only)]
         pub icon: OnceCell<Paintable>,
+        #[property(get, set, construct_only)]
+        #[property(name = "name", get = Self::name, type = String)]
+        #[property(name = "developer-name", get = Self::developer_name, type = String)]
+        #[property(name = "version", get = Self::version, type = String)]
+        #[property(name = "summary", get = Self::summary, type = String)]
+        pub component: OnceCell<BoxedComponent>,
     }
 
     #[glib::object_subclass]
@@ -51,33 +60,86 @@ mod imp {
 
     impl ObjectImpl for SkPackageAppstream {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new(
-                        "icon",
-                        "",
-                        "",
-                        Paintable::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecString::new("name", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("developer-name", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("version", "", "", None, ParamFlags::READABLE),
-                    ParamSpecString::new("summary", "", "", None, ParamFlags::READABLE),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "icon" => self.obj().icon().to_value(),
-                "name" => self.obj().name().to_value(),
-                "developer-name" => self.obj().developer_name().to_value(),
-                "version" => self.obj().version().to_value(),
-                "summary" => self.obj().summary().to_value(),
-                _ => unimplemented!(),
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
+        }
+
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
+        }
+    }
+
+    impl SkPackageAppstream {
+        fn name(&self) -> String {
+            let mut name = self.translated_value(&self.obj().component().0.name);
+            match self.obj().package().subref_kind() {
+                SkPackageSubrefKind::Locale => name = i18n_f("{} (Translations)", &[&name]),
+                SkPackageSubrefKind::Debug => name = i18n_f("{} (Debug)", &[&name]),
+                SkPackageSubrefKind::Sources => name = i18n_f("{} (Sources)", &[&name]),
+                SkPackageSubrefKind::None => (),
             }
+
+            name
+        }
+
+        fn developer_name(&self) -> String {
+            if let Some(value) = &self.obj().component().0.developer_name {
+                self.translated_value(value)
+            } else {
+                i18n("Unknown Developer")
+            }
+        }
+
+        /// Returns just the version as number, eg. "3.1"
+        fn version(&self) -> String {
+            let mut releases = self.obj().component().0.releases;
+            releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
+            if let Some(release) = releases.get(0) {
+                release.version.clone()
+            } else {
+                "–".into()
+            }
+        }
+
+        fn summary(&self) -> String {
+            match self.obj().package().subref_kind() {
+                SkPackageSubrefKind::Locale => return i18n("Translations for various languages"),
+                SkPackageSubrefKind::Debug => return i18n("Development and diagnostics data"),
+                SkPackageSubrefKind::Sources => return i18n("Source code"),
+                SkPackageSubrefKind::None => (),
+            }
+
+            if let Some(value) = self.obj().component().0.summary {
+                self.translated_value(&value)
+            } else if self.obj().package().kind() == SkPackageKind::Runtime {
+                i18n("A Flatpak Runtime")
+            } else {
+                i18n("A Flatpak Application")
+            }
+        }
+
+        fn translated_value(&self, value: &TranslatableString) -> String {
+            let locale = self.locale().unwrap_or("C".to_string());
+            value
+                .get_for_locale(&locale)
+                .unwrap_or_else(|| value.get_default().unwrap())
+                .to_string()
+        }
+
+        fn locale(&self) -> Option<String> {
+            let f_inst = Installation::from(
+                &SkApplication::default()
+                    .worker()
+                    .installations()
+                    .preferred()
+                    .info(),
+            );
+
+            let locale = f_inst.default_languages().ok()?.first()?.to_string();
+            Some(locale)
         }
     }
 }
@@ -87,82 +149,36 @@ glib::wrapper! {
 }
 
 impl SkPackageAppstream {
-    pub fn new(
-        appstream_string: Option<String>,
-        icon: Option<Vec<u8>>,
-        package: &SkPackage,
-    ) -> Self {
-        let appstream: Self = glib::Object::new();
-
-        let imp = appstream.imp();
-        imp.package.set(package.clone()).unwrap();
-
-        // Appstream Component
-        let text = appstream_string.unwrap_or_default();
-
-        let fallback = package.info();
-        let c = serde_json::from_str(&text).unwrap_or_else(|_| Self::fallback_component(&fallback));
-        imp.component.set(c).unwrap();
-
-        // Icon
-        let icon = if let Some(icon) = icon {
-            let bytes = Bytes::from_owned(icon);
-            if let Ok(texture) = gdk::Texture::from_bytes(&bytes) {
-                texture.upcast()
-            } else {
-                Self::fallback_icon().upcast()
-            }
-        } else {
-            Self::fallback_icon().upcast()
-        };
-        imp.icon.set(icon).unwrap();
-
-        appstream
+    pub fn new(package: &SkPackage, icon: &Paintable, component: Component) -> Self {
+        glib::Object::builder()
+            .property("package", package)
+            .property("icon", icon)
+            .property("component", BoxedComponent(component))
+            .build()
     }
 
-    pub fn icon(&self) -> Paintable {
-        self.imp().icon.get().unwrap().clone()
+    pub fn fallback_component(package: &PackageInfo) -> Component {
+        let ref_ = Ref::parse(&package.ref_).unwrap();
+        let app_id = ref_.name().unwrap().to_string();
+        let name = TranslatableString::with_default(&app_id);
+
+        ComponentBuilder::default()
+            .id(AppId(app_id))
+            .name(name)
+            .build()
     }
 
-    pub fn name(&self) -> String {
-        let imp = self.imp();
-        let component = imp.component.get().unwrap();
-        let package = imp.package.get().unwrap();
-
-        let mut name = self.translated_value(&component.name);
-        match package.subref_kind() {
-            SkPackageSubrefKind::Locale => name = i18n_f("{} (Translations)", &[&name]),
-            SkPackageSubrefKind::Debug => name = i18n_f("{} (Debug)", &[&name]),
-            SkPackageSubrefKind::Sources => name = i18n_f("{} (Sources)", &[&name]),
-            SkPackageSubrefKind::None => (),
-        }
-
-        name
-    }
-
-    pub fn developer_name(&self) -> String {
-        if let Some(value) = &self.imp().component.get().unwrap().developer_name {
-            self.translated_value(value)
-        } else {
-            i18n("Unknown Developer")
-        }
-    }
-
-    /// Returns just the version as number, eg. "3.1"
-    pub fn version(&self) -> String {
-        let mut releases = self.imp().component.get().unwrap().releases.clone();
-        releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
-        if let Some(release) = releases.get(0) {
-            release.version.clone()
-        } else {
-            "–".into()
-        }
+    pub fn fallback_icon() -> Paintable {
+        gdk::Texture::from_resource(
+            "/de/haeckerfelix/Souk/icons/128x128/emblems/system-component.svg",
+        )
+        .upcast()
     }
 
     /// Returns the version as user friendly text, eg. "Version 3.1" or "Unknown
     /// Version"
     pub fn version_text(&self, include_branch: bool) -> String {
-        let mut releases = self.imp().component.get().unwrap().releases.clone();
+        let mut releases = self.component().0.releases;
         releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
 
         let branch = self.imp().package.get().unwrap().branch();
@@ -176,65 +192,5 @@ impl SkPackageAppstream {
             branch
         };
         i18n_f("Version {}", &[&version])
-    }
-
-    pub fn summary(&self) -> String {
-        let imp = self.imp();
-        let component = imp.component.get().unwrap();
-        let package = imp.package.get().unwrap();
-
-        match package.subref_kind() {
-            SkPackageSubrefKind::Locale => return i18n("Translations for various languages"),
-            SkPackageSubrefKind::Debug => return i18n("Development and diagnostics data"),
-            SkPackageSubrefKind::Sources => return i18n("Source code"),
-            SkPackageSubrefKind::None => (),
-        }
-
-        if let Some(value) = &component.summary {
-            self.translated_value(value)
-        } else if package.kind() == SkPackageKind::Runtime {
-            i18n("A Flatpak Runtime")
-        } else {
-            i18n("A Flatpak Application")
-        }
-    }
-
-    fn fallback_component(package: &PackageInfo) -> Component {
-        let ref_ = Ref::parse(&package.ref_).unwrap();
-        let app_id = ref_.name().unwrap().to_string();
-        let name = TranslatableString::with_default(&app_id);
-
-        ComponentBuilder::default()
-            .id(AppId(app_id))
-            .name(name)
-            .build()
-    }
-
-    fn fallback_icon() -> Paintable {
-        gdk::Texture::from_resource(
-            "/de/haeckerfelix/Souk/icons/128x128/emblems/system-component.svg",
-        )
-        .upcast()
-    }
-
-    fn translated_value(&self, value: &TranslatableString) -> String {
-        let locale = self.locale().unwrap_or("C".to_string());
-        value
-            .get_for_locale(&locale)
-            .unwrap_or_else(|| value.get_default().unwrap())
-            .to_string()
-    }
-
-    fn locale(&self) -> Option<String> {
-        let f_inst = Installation::from(
-            &SkApplication::default()
-                .worker()
-                .installations()
-                .preferred()
-                .info(),
-        );
-
-        let locale = f_inst.default_languages().ok()?.first()?.to_string();
-        Some(locale)
     }
 }

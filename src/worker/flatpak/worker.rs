@@ -502,7 +502,7 @@ impl FlatpakWorker {
                     if (pos+1) ==  operation_count {
                         // Package
                         let package = DryRunPackage{
-                            package: PackageInfo::new(operation_ref, remote_info),
+                            info: PackageInfo::new(operation_ref, remote_info),
                             operation_type: operation.operation_type().into(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
@@ -554,7 +554,7 @@ impl FlatpakWorker {
                         }
                     }else{
                         let runtime = DryRunPackage{
-                            package: PackageInfo::new(operation_ref, remote_info),
+                            info: PackageInfo::new(operation_ref, remote_info),
                             operation_type: operation.operation_type().into(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),

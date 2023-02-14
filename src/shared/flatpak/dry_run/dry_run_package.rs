@@ -26,7 +26,7 @@ use crate::shared::flatpak::FlatpakOperationType;
 #[boxed_type(name = "DryRunPackage")]
 #[derivative(Debug)]
 pub struct DryRunPackage {
-    pub package: PackageInfo,
+    pub info: PackageInfo,
     pub operation_type: FlatpakOperationType,
 
     pub download_size: u64,
@@ -47,7 +47,7 @@ pub struct DryRunPackage {
 impl Default for DryRunPackage {
     fn default() -> Self {
         Self {
-            package: PackageInfo::default(),
+            info: PackageInfo::default(),
             operation_type: FlatpakOperationType::default(),
             download_size: u64::default(),
             installed_size: u64::default(),

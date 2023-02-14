@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{KeyFile, KeyFileFlags, ParamSpec, Properties};
+use glib::{Bytes, KeyFile, KeyFileFlags, ParamSpec, Properties};
+use gtk::gdk::Paintable;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -22,7 +23,7 @@ use once_cell::unsync::OnceCell;
 use url::Url;
 
 use crate::main::context::{SkContext, SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
-use crate::main::flatpak::package::{SkPackage, SkPackageAppstream, SkPackageImpl};
+use crate::main::flatpak::package::{SkPackage, SkPackageAppstream, SkPackageExt, SkPackageImpl};
 use crate::main::flatpak::permissions::SkAppPermissions;
 use crate::main::flatpak::SkFlatpakOperationType;
 use crate::main::i18n::i18n_f;
@@ -36,11 +37,12 @@ mod imp {
     pub struct SkDryRunPackage {
         #[property(get)]
         pub package: OnceCell<SkPackage>,
-        #[property(get)]
+        #[property(name = "appstream", get)]
+        pub appstream: OnceCell<SkPackageAppstream>,
+        #[property(get, set, construct_only)]
         #[property(name = "operation-type", get = Self::operation_type, type = SkFlatpakOperationType, builder(SkFlatpakOperationType::None))]
         #[property(name = "download-size", get, type = u64, member = download_size)]
         #[property(name = "installed-size", get, type = u64, member = installed_size)]
-        #[property(name = "appstream", get = Self::appstream, type = SkPackageAppstream)]
         pub data: OnceCell<DryRunPackage>,
     }
 
@@ -59,6 +61,39 @@ mod imp {
         fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
             Self::derived_property(self, id, pspec)
         }
+
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
+        }
+
+        fn constructed(&self) {
+            self.parent_constructed();
+            let data = self.obj().data();
+
+            // Set appstream
+            let icon: Paintable = if let Some(icon) = data.icon.as_ref() {
+                let bytes = Bytes::from_owned(icon.clone());
+                if let Ok(texture) = gdk::Texture::from_bytes(&bytes) {
+                    texture.upcast()
+                } else {
+                    SkPackageAppstream::fallback_icon().upcast()
+                }
+            } else {
+                SkPackageAppstream::fallback_icon().upcast()
+            };
+
+            let package_info = self.obj().info();
+            let component = if let Some(json) = data.appstream_component.as_ref() {
+                serde_json::from_str(&json)
+                    .unwrap_or_else(|_| SkPackageAppstream::fallback_component(&package_info))
+            } else {
+                SkPackageAppstream::fallback_component(&package_info)
+            };
+
+            let package: SkPackage = self.obj().clone().upcast();
+            let appstream = SkPackageAppstream::new(&package, &icon, component);
+            self.appstream.set(appstream).unwrap();
+        }
     }
 
     impl SkPackageImpl for SkDryRunPackage {}
@@ -66,14 +101,6 @@ mod imp {
     impl SkDryRunPackage {
         fn operation_type(&self) -> SkFlatpakOperationType {
             self.obj().data().operation_type.into()
-        }
-
-        fn appstream(&self) -> SkPackageAppstream {
-            SkPackageAppstream::new(
-                self.obj().data().appstream_component.into(),
-                self.obj().data().icon.into(),
-                self.obj().upcast_ref(),
-            )
         }
 
         pub fn metadata(&self) -> KeyFile {
@@ -105,14 +132,10 @@ glib::wrapper! {
 
 impl SkDryRunPackage {
     pub fn new(data: DryRunPackage) -> Self {
-        let runtime: Self = glib::Object::builder()
-            .property("info", &data.package)
-            .build();
-
-        let imp = runtime.imp();
-        imp.data.set(data).unwrap();
-
-        runtime
+        glib::Object::builder()
+            .property("info", &data.info)
+            .property("data", &data)
+            .build()
     }
 
     pub fn size_context_detail(&self, download_size: bool) -> SkContextDetail {
