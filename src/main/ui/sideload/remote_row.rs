@@ -16,10 +16,9 @@
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{clone, ParamSpec, Properties};
 use gtk::gio::File;
 use gtk::{glib, CompositeTemplate};
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::flatpak::installation::SkRemote;
@@ -28,15 +27,17 @@ use crate::main::i18n::i18n;
 mod imp {
     use super::*;
 
-    #[derive(Default, Debug, CompositeTemplate)]
+    #[derive(Default, Debug, CompositeTemplate, Properties)]
+    #[properties(wrapper_type = super::SkRemoteRow)]
     #[template(resource = "/de/haeckerfelix/Souk/gtk/remote_row.ui")]
     pub struct SkRemoteRow {
+        #[property(get, set, construct_only)]
+        pub remote: OnceCell<SkRemote>,
+
         #[template_child]
         pub icon_image: TemplateChild<gtk::Image>,
         #[template_child]
         pub external_link_image: TemplateChild<gtk::Image>,
-
-        pub remote: OnceCell<SkRemote>,
     }
 
     #[glib::object_subclass]
@@ -49,37 +50,22 @@ mod imp {
             Self::bind_template(klass);
         }
 
-        fn instance_init(obj: &subclass::InitializingObject<Self>) {
+        fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
             obj.init_template();
         }
     }
 
     impl ObjectImpl for SkRemoteRow {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![ParamSpecObject::new(
-                    "remote",
-                    "",
-                    "",
-                    SkRemote::static_type(),
-                    ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-                )]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "remote" => self.obj().remote().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "remote" => self.remote.set(value.get().unwrap()).unwrap(),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
 
         fn constructed(&self) {
@@ -152,9 +138,5 @@ glib::wrapper! {
 impl SkRemoteRow {
     pub fn new(remote: &SkRemote) -> Self {
         glib::Object::builder().property("remote", &remote).build()
-    }
-
-    pub fn remote(&self) -> SkRemote {
-        self.imp().remote.get().unwrap().clone()
     }
 }
