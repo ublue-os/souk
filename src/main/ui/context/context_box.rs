@@ -17,7 +17,7 @@
 use std::cell::RefCell;
 
 use adw::prelude::*;
-use glib::{clone, subclass, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{clone, subclass, ParamSpec, Properties};
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
@@ -30,9 +30,13 @@ use crate::main::ui::utils;
 mod imp {
     use super::*;
 
-    #[derive(Debug, CompositeTemplate, Default)]
+    #[derive(Debug, CompositeTemplate, Default, Properties)]
+    #[properties(wrapper_type = super::SkContextBox)]
     #[template(resource = "/de/haeckerfelix/Souk/gtk/context_box.ui")]
     pub struct SkContextBox {
+        #[property(get, set = Self::set_context)]
+        pub context: RefCell<Option<SkContext>>,
+
         #[template_child]
         pub type_stack: TemplateChild<gtk::Stack>,
         #[template_child]
@@ -46,8 +50,6 @@ mod imp {
         pub description_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub details_listbox: TemplateChild<gtk::ListBox>,
-
-        pub context: RefCell<Option<SkContext>>,
     }
 
     #[glib::object_subclass]
@@ -70,37 +72,92 @@ mod imp {
 
     impl ObjectImpl for SkContextBox {
         fn properties() -> &'static [ParamSpec] {
-            use once_cell::sync::Lazy;
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![ParamSpecObject::new(
-                    "context",
-                    "",
-                    "",
-                    SkContextDetail::static_type(),
-                    ParamFlags::READWRITE,
-                )]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "context" => self.obj().context().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "context" => self.obj().set_context(&value.get().unwrap()),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
     }
 
     impl WidgetImpl for SkContextBox {}
 
     impl BoxImpl for SkContextBox {}
+
+    impl SkContextBox {
+        fn set_context(&self, value: &SkContext) {
+            *self.context.borrow_mut() = Some(value.clone());
+            self.obj().notify("context");
+            self.update_widgets();
+        }
+
+        fn update_widgets(&self) {
+            let context = self.obj().context().unwrap();
+            let summary = context.summary();
+
+            if summary.kind() == SkContextDetailKind::Icon {
+                self.type_stack.set_visible_child(&self.icon_image.get());
+                self.icon_image.set_icon_name(Some(&summary.kind_value()));
+            } else if summary.kind() == SkContextDetailKind::Size {
+                let markup = utils::size_to_markup(&summary.kind_value());
+                self.text_label.set_markup(&markup);
+            } else {
+                self.type_stack.set_visible_child(&self.text_label.get());
+                self.text_label.set_markup(&summary.kind_value());
+            }
+
+            // Remove previous set css classes
+            utils::remove_css_colors(&self.icon_image.get());
+            utils::remove_css_colors(&self.text_label.get());
+
+            let css = match summary.level() {
+                SkContextDetailLevel::Neutral => "color-neutral",
+                SkContextDetailLevel::Good => "color-good",
+                SkContextDetailLevel::Minor => "color-minor",
+                SkContextDetailLevel::Moderate => "color-moderate",
+                SkContextDetailLevel::Warning => "color-warning",
+                SkContextDetailLevel::Bad => "color-bad",
+            };
+            self.icon_image.add_css_class(css);
+            self.text_label.add_css_class(css);
+
+            self.title_label.set_text(&context.summary().title());
+            self.description_label
+                .set_markup(&context.summary().description());
+
+            self.details_listbox.bind_model(
+                Some(&context.details()),
+                clone!(@weak self as this => @default-panic, move |detail_group| {
+                    let detail_group = detail_group.downcast_ref::<SkContextDetailGroup>().unwrap();
+
+                    let group_box = adw::PreferencesGroup::new();
+                    group_box.set_margin_bottom(12);
+
+                    if let Some(title) = detail_group.title(){
+                        group_box.set_title(&title);
+                    }
+                    if let Some(description) = detail_group.description(){
+                        group_box.set_description(Some(&description));
+                    }
+
+                    for detail in detail_group.snapshot().iter(){
+                        let detail = detail.downcast_ref::<SkContextDetail>().unwrap();
+                        group_box.add(&SkContextDetailRow::new(detail, false));
+                    }
+
+                    let row = gtk::ListBoxRow::new();
+                    row.set_child(Some(&group_box));
+                    row.set_activatable(false);
+
+                    row.upcast()
+                }),
+            );
+        }
+    }
 }
 
 glib::wrapper! {
@@ -112,79 +169,5 @@ glib::wrapper! {
 impl SkContextBox {
     pub fn new(context: &SkContext) -> Self {
         glib::Object::builder().property("context", context).build()
-    }
-
-    pub fn context(&self) -> SkContext {
-        self.imp().context.borrow().as_ref().unwrap().clone()
-    }
-
-    pub fn set_context(&self, value: &SkContext) {
-        *self.imp().context.borrow_mut() = Some(value.clone());
-        self.notify("context");
-        self.update_widgets();
-    }
-
-    fn update_widgets(&self) {
-        let imp = self.imp();
-        let context = self.context();
-        let summary = context.summary();
-
-        if summary.kind() == SkContextDetailKind::Icon {
-            imp.type_stack.set_visible_child(&imp.icon_image.get());
-            imp.icon_image.set_icon_name(Some(&summary.kind_value()));
-        } else if summary.kind() == SkContextDetailKind::Size {
-            let markup = utils::size_to_markup(&summary.kind_value());
-            imp.text_label.set_markup(&markup);
-        } else {
-            imp.type_stack.set_visible_child(&imp.text_label.get());
-            imp.text_label.set_markup(&summary.kind_value());
-        }
-
-        // Remove previous set css classes
-        utils::remove_css_colors(&imp.icon_image.get());
-        utils::remove_css_colors(&imp.text_label.get());
-
-        let css = match summary.level() {
-            SkContextDetailLevel::Neutral => "color-neutral",
-            SkContextDetailLevel::Good => "color-good",
-            SkContextDetailLevel::Minor => "color-minor",
-            SkContextDetailLevel::Moderate => "color-moderate",
-            SkContextDetailLevel::Warning => "color-warning",
-            SkContextDetailLevel::Bad => "color-bad",
-        };
-        imp.icon_image.add_css_class(css);
-        imp.text_label.add_css_class(css);
-
-        imp.title_label.set_text(&context.summary().title());
-        imp.description_label
-            .set_markup(&context.summary().description());
-
-        imp.details_listbox.bind_model(
-            Some(&context.details()),
-            clone!(@weak self as this => @default-panic, move |detail_group| {
-                let detail_group = detail_group.downcast_ref::<SkContextDetailGroup>().unwrap();
-
-                let group_box = adw::PreferencesGroup::new();
-                group_box.set_margin_bottom(12);
-
-                if let Some(title) = detail_group.title(){
-                    group_box.set_title(&title);
-                }
-                if let Some(description) = detail_group.description(){
-                    group_box.set_description(Some(&description));
-                }
-
-                for detail in detail_group.snapshot().iter(){
-                    let detail = detail.downcast_ref::<SkContextDetail>().unwrap();
-                    group_box.add(&SkContextDetailRow::new(detail, false));
-                }
-
-                let row = gtk::ListBoxRow::new();
-                row.set_child(Some(&group_box));
-                row.set_activatable(false);
-
-                row.upcast()
-            }),
-        );
     }
 }
