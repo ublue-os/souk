@@ -679,4 +679,3 @@ impl FlatpakWorker {
         Ok(Remote::from_file("remote", &bytes)?)
     }
 }
-

@@ -1,5 +1,5 @@
-// Souk - filesystem_permission_type.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - filesystem_permission_kind.rs
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@ use gtk::glib;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkFilesystemPermissionType")]
-pub enum SkFilesystemPermissionType {
+#[enum_type(name = "SkFilesystemPermissionKind")]
+pub enum SkFilesystemPermissionKind {
     ReadOnly,
     ReadWrite,
     Create,

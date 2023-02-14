@@ -96,7 +96,7 @@ impl SkContext {
             summary |= value.summary();
         }
         if permissions.filesystems().n_items() == 0 {
-            filesystem_details.push(SkFilesystemPermission::no_permission_context());
+            filesystem_details.push(SkFilesystemPermission::no_access_context());
         }
 
         let title = i18n("Filesystem Permissions");

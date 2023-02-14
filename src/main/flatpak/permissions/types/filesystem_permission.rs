@@ -14,14 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecString, ToValue};
+use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
-use super::SkFilesystemPermissionType;
+use super::SkFilesystemPermissionKind;
 use crate::main::context::{SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
 use crate::main::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::main::i18n::{i18n, i18n_f};
@@ -29,9 +28,17 @@ use crate::main::i18n::{i18n, i18n_f};
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkFilesystemPermission)]
     pub struct SkFilesystemPermission {
-        pub type_: OnceCell<SkFilesystemPermissionType>,
+        #[property(
+            get,
+            set,
+            construct_only,
+            builder(SkFilesystemPermissionKind::ReadWrite)
+        )]
+        pub kind: OnceCell<SkFilesystemPermissionKind>,
+        #[property(get, set, construct_only)]
         pub path: OnceCell<String>,
     }
 
@@ -43,28 +50,15 @@ mod imp {
 
     impl ObjectImpl for SkFilesystemPermission {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecEnum::new(
-                        "type",
-                        "",
-                        "",
-                        SkFilesystemPermissionType::static_type(),
-                        SkFilesystemPermissionType::ReadOnly as i32,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecString::new("path", "", "", None, ParamFlags::READABLE),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "type" => self.obj().type_().to_value(),
-                "path" => self.obj().path().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
+        }
+
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
     }
 }
@@ -74,40 +68,33 @@ glib::wrapper! {
 }
 
 impl SkFilesystemPermission {
-    pub fn new(value: &str) -> Self {
-        let perm: Self = glib::Object::new();
-        let imp = perm.imp();
+    pub fn new(kind: &SkFilesystemPermissionKind, path: &str) -> Self {
+        glib::Object::builder()
+            .property("kind", kind)
+            .property("path", path)
+            .build()
+    }
 
+    pub fn from_flatpak(value: &str) -> Self {
         let path: &str;
-        let type_ = if value.ends_with(":rw") {
+        let kind = if value.ends_with(":rw") {
             path = value.trim_end_matches(":rw");
-            SkFilesystemPermissionType::ReadWrite
+            SkFilesystemPermissionKind::ReadWrite
         } else if value.ends_with(":create") {
             path = value.trim_end_matches(":create");
-            SkFilesystemPermissionType::Create
+            SkFilesystemPermissionKind::Create
         } else if value.ends_with(":ro") {
             path = value.trim_end_matches(":ro");
-            SkFilesystemPermissionType::ReadOnly
+            SkFilesystemPermissionKind::ReadOnly
         } else {
             path = value;
-            SkFilesystemPermissionType::ReadWrite
+            SkFilesystemPermissionKind::ReadWrite
         };
 
-        imp.type_.set(type_).unwrap();
-        imp.path.set(path.to_string()).unwrap();
-
-        perm
+        Self::new(&kind, path)
     }
 
-    pub fn type_(&self) -> SkFilesystemPermissionType {
-        *self.imp().type_.get().unwrap()
-    }
-
-    pub fn path(&self) -> String {
-        self.imp().path.get().unwrap().to_string()
-    }
-
-    pub fn no_permission_context() -> SkContextDetail {
+    pub fn no_access_context() -> SkContextDetail {
         let type_ = SkContextDetailKind::Icon;
         let icon_name = "folder-documents-symbolic".to_string();
         let level = SkContextDetailLevel::Good;
@@ -123,14 +110,14 @@ impl PermissionDetails for SkFilesystemPermission {
     fn summary(&self) -> SkPermissionSummary {
         let mut summary = SkPermissionSummary::empty();
 
-        let s = if self.type_() == SkFilesystemPermissionType::ReadOnly {
+        let s = if self.kind() == SkFilesystemPermissionKind::ReadOnly {
             SkPermissionSummary::READ_DATA
         } else {
             SkPermissionSummary::READWRITE_DATA
         };
         summary |= s;
 
-        if self.type_() != SkFilesystemPermissionType::ReadOnly
+        if self.kind() != SkFilesystemPermissionKind::ReadOnly
             && self.path().contains("flatpak/overrides")
         {
             summary |= SkPermissionSummary::SANDBOX_ESCAPE;
@@ -156,9 +143,9 @@ impl PermissionDetails for SkFilesystemPermission {
             path.clone()
         };
 
-        let type_ = SkContextDetailKind::Icon;
+        let kind = SkContextDetailKind::Icon;
         let mut icon_name = "folder-documents-symbolic".to_string();
-        let mut level = if self.type_() == SkFilesystemPermissionType::ReadOnly {
+        let mut level = if self.kind() == SkFilesystemPermissionKind::ReadOnly {
             SkContextDetailLevel::Moderate
         } else {
             SkContextDetailLevel::Warning
@@ -176,7 +163,7 @@ impl PermissionDetails for SkFilesystemPermission {
                 level = SkContextDetailLevel::Bad;
 
                 if subdir.is_none() {
-                    if self.type_() == SkFilesystemPermissionType::ReadOnly {
+                    if self.kind() == SkFilesystemPermissionKind::ReadOnly {
                         permission_title = Some(i18n("Home Folder Read/Write Access"));
                         permission_description =
                             Some(i18n("Can read and write all data in your home directory"));
@@ -194,7 +181,7 @@ impl PermissionDetails for SkFilesystemPermission {
                 is_folder = false;
 
                 if subdir.is_none() {
-                    if self.type_() == SkFilesystemPermissionType::ReadOnly {
+                    if self.kind() == SkFilesystemPermissionKind::ReadOnly {
                         permission_title = Some(i18n("Full File System Read/Write Access"));
                         permission_description =
                             Some(i18n("Can read and write all data on the file system"));
@@ -295,7 +282,7 @@ impl PermissionDetails for SkFilesystemPermission {
             }
         }
 
-        if self.type_() != SkFilesystemPermissionType::ReadOnly
+        if self.kind() != SkFilesystemPermissionKind::ReadOnly
             && path.contains("/flatpak/overrides")
         {
             permission_title = Some(i18n("Explicit Access to Flatpak System Folder"));
@@ -313,7 +300,7 @@ impl PermissionDetails for SkFilesystemPermission {
 
         let title = if let Some(title) = permission_title {
             title
-        } else if self.type_() == SkFilesystemPermissionType::ReadOnly {
+        } else if self.kind() == SkFilesystemPermissionKind::ReadOnly {
             i18n_f("{} Read-Only Access", &[&title_object_name])
         } else {
             i18n_f("{} Read/Write Access", &[&title_object_name])
@@ -321,7 +308,7 @@ impl PermissionDetails for SkFilesystemPermission {
 
         let description = if let Some(description) = permission_description {
             description
-        } else if self.type_() == SkFilesystemPermissionType::ReadOnly {
+        } else if self.kind() == SkFilesystemPermissionKind::ReadOnly {
             if let Some(subdir) = subdir {
                 i18n_f(
                     "Can read “{}” in the “{}” directory",
@@ -347,7 +334,7 @@ impl PermissionDetails for SkFilesystemPermission {
         };
 
         vec![SkContextDetail::new(
-            type_,
+            kind,
             &icon_name,
             level,
             &title,

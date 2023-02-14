@@ -110,7 +110,7 @@ impl SkAppPermissions {
         let filesystems = ListStore::new(SkFilesystemPermission::static_type());
         if let Ok(filesystem_list) = keyfile.string_list("Context", "filesystems") {
             for filesystem in filesystem_list {
-                let value = SkFilesystemPermission::new(filesystem.to_str());
+                let value = SkFilesystemPermission::from_flatpak(filesystem.to_str());
                 filesystems.append(&value);
             }
         }

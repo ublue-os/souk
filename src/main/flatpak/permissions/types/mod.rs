@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,14 +16,14 @@
 
 mod device_permission;
 mod filesystem_permission;
-mod filesystem_permission_type;
+mod filesystem_permission_kind;
 mod service_permission;
 mod socket_permission;
 mod subsystem_permission;
 
 pub use device_permission::SkDevicePermission;
 pub use filesystem_permission::SkFilesystemPermission;
-pub use filesystem_permission_type::SkFilesystemPermissionType;
+pub use filesystem_permission_kind::SkFilesystemPermissionKind;
 pub use service_permission::SkServicePermission;
 pub use socket_permission::SkSocketPermission;
 pub use subsystem_permission::SkSubsystemPermission;
