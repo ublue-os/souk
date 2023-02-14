@@ -15,12 +15,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use gio::ListStore;
-use glib::{KeyFile, ParamFlags, ParamSpec, ParamSpecFlags, ParamSpecObject, ToValue};
+use glib::{KeyFile, ParamSpec, Properties};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use lazy_static::lazy_static;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use super::types::*;
@@ -40,13 +39,18 @@ lazy_static! {
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkAppPermissions)]
     pub struct SkAppPermissions {
+        #[property(get, set, construct_only)]
         pub filesystems: OnceCell<ListStore>,
+        #[property(get, set, construct_only)]
         pub services: OnceCell<ListStore>,
-
+        #[property(get, set, construct_only)]
         pub devices: OnceCell<SkDevicePermission>,
+        #[property(get, set, construct_only)]
         pub sockets: OnceCell<SkSocketPermission>,
+        #[property(get, set, construct_only)]
         pub subsystems: OnceCell<SkSubsystemPermission>,
     }
 
@@ -58,60 +62,25 @@ mod imp {
 
     impl ObjectImpl for SkAppPermissions {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new(
-                        "filesystems",
-                        "",
-                        "",
-                        ListStore::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "services",
-                        "",
-                        "",
-                        ListStore::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecFlags::new(
-                        "devices",
-                        "",
-                        "",
-                        SkDevicePermission::static_type(),
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecFlags::new(
-                        "sockets",
-                        "",
-                        "",
-                        SkSocketPermission::static_type(),
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecFlags::new(
-                        "subsystems",
-                        "",
-                        "",
-                        SkSubsystemPermission::static_type(),
-                        0,
-                        ParamFlags::READABLE,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "filesystems" => self.obj().filesystems().to_value(),
-                "services" => self.obj().services().to_value(),
-                "devices" => self.obj().devices().to_value(),
-                "sockets" => self.obj().sockets().to_value(),
-                "subsystems" => self.obj().subsystems().to_value(),
-                _ => unimplemented!(),
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
+        }
+
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
+        }
+    }
+
+    impl SkAppPermissions {
+        pub fn is_whitelisted(list: Vec<&str>, value: &str) -> bool {
+            let res = list.iter().any(|i| value.starts_with(i));
+            if res {
+                debug!("Ignoring whitelisted permission entry: {}", value);
             }
+            res
         }
     }
 }
@@ -121,10 +90,23 @@ glib::wrapper! {
 }
 
 impl SkAppPermissions {
-    pub fn from_metadata(keyfile: &KeyFile) -> Self {
-        let permissions: Self = glib::Object::new();
-        let imp = permissions.imp();
+    pub fn new(
+        filesystems: &ListStore,
+        services: &ListStore,
+        devices: &SkDevicePermission,
+        sockets: &SkSocketPermission,
+        subsystems: &SkSubsystemPermission,
+    ) -> Self {
+        glib::Object::builder()
+            .property("filesystems", filesystems)
+            .property("services", services)
+            .property("devices", devices)
+            .property("sockets", sockets)
+            .property("subsystems", subsystems)
+            .build()
+    }
 
+    pub fn from_metadata(keyfile: &KeyFile) -> Self {
         let filesystems = ListStore::new(SkFilesystemPermission::static_type());
         if let Ok(filesystem_list) = keyfile.string_list("Context", "filesystems") {
             for filesystem in filesystem_list {
@@ -132,12 +114,14 @@ impl SkAppPermissions {
                 filesystems.append(&value);
             }
         }
-        imp.filesystems.set(filesystems).unwrap();
 
         let services = ListStore::new(SkServicePermission::static_type());
         if let Ok(session_list) = keyfile.keys("Session Bus Policy") {
             for service in session_list {
-                if Self::is_whitelisted(SERVICE_WHITELIST.to_vec(), service.to_str()) {
+                if imp::SkAppPermissions::is_whitelisted(
+                    SERVICE_WHITELIST.to_vec(),
+                    service.to_str(),
+                ) {
                     continue;
                 }
                 let value = SkServicePermission::new(service.to_str(), false);
@@ -146,14 +130,16 @@ impl SkAppPermissions {
         }
         if let Ok(system_list) = keyfile.keys("System Bus Policy") {
             for service in system_list {
-                if Self::is_whitelisted(SERVICE_WHITELIST.to_vec(), service.to_str()) {
+                if imp::SkAppPermissions::is_whitelisted(
+                    SERVICE_WHITELIST.to_vec(),
+                    service.to_str(),
+                ) {
                     continue;
                 }
                 let value = SkServicePermission::new(service.to_str(), true);
                 services.append(&value);
             }
         }
-        imp.services.set(services).unwrap();
 
         let mut devices = SkDevicePermission::NONE;
         if let Ok(device_list) = keyfile.string_list("Context", "devices") {
@@ -162,7 +148,6 @@ impl SkAppPermissions {
                 devices.remove(SkDevicePermission::NONE);
             }
         }
-        imp.devices.set(devices).unwrap();
 
         let mut sockets = SkSocketPermission::NONE;
         if let Ok(socket_list) = keyfile.string_list("Context", "sockets") {
@@ -171,7 +156,6 @@ impl SkAppPermissions {
                 sockets.remove(SkSocketPermission::NONE);
             }
         }
-        imp.sockets.set(sockets).unwrap();
 
         let mut subsystems = SkSubsystemPermission::NONE;
         if let Ok(subsystem_list) = keyfile.string_list("Context", "shared") {
@@ -180,9 +164,8 @@ impl SkAppPermissions {
                 subsystems.remove(SkSubsystemPermission::NONE);
             }
         }
-        imp.subsystems.set(subsystems).unwrap();
 
-        permissions
+        Self::new(&filesystems, &services, &devices, &sockets, &subsystems)
     }
 
     /// Compares with a different `SkAppPermissions` object, and returns the
@@ -225,33 +208,5 @@ impl SkAppPermissions {
         imp.subsystems.set(subsystems).unwrap();
 
         permissions
-    }
-
-    pub fn filesystems(&self) -> ListStore {
-        self.imp().filesystems.get().unwrap().clone()
-    }
-
-    pub fn services(&self) -> ListStore {
-        self.imp().services.get().unwrap().clone()
-    }
-
-    pub fn devices(&self) -> SkDevicePermission {
-        *self.imp().devices.get().unwrap()
-    }
-
-    pub fn sockets(&self) -> SkSocketPermission {
-        *self.imp().sockets.get().unwrap()
-    }
-
-    pub fn subsystems(&self) -> SkSubsystemPermission {
-        *self.imp().subsystems.get().unwrap()
-    }
-
-    fn is_whitelisted(list: Vec<&str>, value: &str) -> bool {
-        let res = list.iter().any(|i| value.starts_with(i));
-        if res {
-            debug!("Ignoring whitelisted permission entry: {}", value);
-        }
-        res
     }
 }
