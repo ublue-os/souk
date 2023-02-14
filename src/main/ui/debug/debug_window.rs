@@ -54,7 +54,133 @@ mod imp {
     impl ObjectImpl for SkDebugWindow {
         fn constructed(&self) {
             self.parent_constructed();
-            self.obj().setup_widgets();
+
+            let worker = SkApplication::default().worker();
+
+            let tree_model = gtk::TreeListModel::new(worker.tasks(), false, true, |item| {
+                let task: &SkTask = item.downcast_ref().unwrap();
+                Some(task.dependencies().upcast())
+            });
+
+            let model = gtk::NoSelection::new(Some(tree_model));
+            self.current_tasks_columnview.set_model(Some(&model));
+
+            // Setup table columns
+            let factory = gtk::SignalListItemFactory::new();
+            factory.connect_setup(|_factory, item| {
+                let text = gtk::Label::new(None);
+                let expander = gtk::TreeExpander::new();
+                expander.set_child(Some(&text));
+
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+                item.set_child(Some(&expander));
+            });
+
+            factory.connect_bind(move |_factory, item| {
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+                let expander = item
+                    .child()
+                    .unwrap()
+                    .downcast::<gtk::TreeExpander>()
+                    .unwrap();
+
+                // Hide expander icon if there are no dependency tasks
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkTask>("dependencies")
+                    .chain_closure::<bool>(closure!(
+                        |_: Option<glib::Object>, deps: Option<SkTaskModel>| {
+                            if let Some(deps) = deps {
+                                deps.n_items() == 0
+                            } else {
+                                false
+                            }
+                        }
+                    ))
+                    .bind(&expander, "hide-expander", None::<&SkTask>);
+
+                let listrow = item.item().unwrap().downcast::<gtk::TreeListRow>().unwrap();
+                expander.set_list_row(Some(&listrow));
+
+                let task = listrow.item().unwrap().downcast::<SkTask>().unwrap();
+
+                let text = expander.child().unwrap().downcast::<gtk::Label>().unwrap();
+                text.set_text(&task.uuid());
+            });
+            self.add_column("Task", factory);
+
+            let factory = gtk::SignalListItemFactory::new();
+            factory.connect_setup(|_factory, item| {
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+                let text = Self::setup_text_widget(item);
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkTask>("kind")
+                    .bind(&text, "label", None::<&SkTask>);
+            });
+            self.add_column("Type", factory);
+
+            let factory = gtk::SignalListItemFactory::new();
+            factory.connect_setup(|_factory, item| {
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+                let text = Self::setup_text_widget(item);
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkTask>("status")
+                    .bind(&text, "label", None::<&SkTask>);
+            });
+            self.add_column("Status", factory);
+
+            let factory = gtk::SignalListItemFactory::new();
+            factory.connect_setup(|_factory, item| {
+                let progressbar = SkTaskProgressBar::new();
+
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+                item.set_child(Some(&progressbar));
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .bind(&progressbar, "task", None::<&gtk::TreeListRow>);
+            });
+            self.add_column("Progress", factory);
+
+            let factory = gtk::SignalListItemFactory::new();
+            factory.connect_setup(|_factory, item| {
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+                let text = Self::setup_text_widget(item);
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkTask>("package")
+                    .chain_property::<SkPackage>("name")
+                    .bind(&text, "label", None::<&SkPackage>);
+            });
+            self.add_column("Ref", factory);
+
+            let factory = gtk::SignalListItemFactory::new();
+            factory.connect_setup(|_factory, item| {
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+                let text = Self::setup_text_widget(item);
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkTask>("package")
+                    .chain_property::<SkPackage>("remote")
+                    .chain_property::<SkRemote>("name")
+                    .bind(&text, "label", None::<&SkRemote>);
+            });
+            self.add_column("Remote", factory);
+
+            let factory = gtk::SignalListItemFactory::new();
+            factory.connect_setup(|_factory, item| {
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+                let text = Self::setup_text_widget(item);
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkTask>("package")
+                    .chain_property::<SkPackage>("remote")
+                    .chain_property::<SkRemote>("installation")
+                    .chain_property::<SkInstallation>("name")
+                    .bind(&text, "label", None::<&SkInstallation>);
+            });
+            self.add_column("Installation", factory);
         }
     }
 
@@ -63,6 +189,22 @@ mod imp {
     impl WindowImpl for SkDebugWindow {}
 
     impl AdwWindowImpl for SkDebugWindow {}
+
+    impl SkDebugWindow {
+        fn add_column(&self, name: &str, factory: gtk::SignalListItemFactory) {
+            let column = gtk::ColumnViewColumn::new(Some(name), Some(factory));
+            self.current_tasks_columnview.append_column(&column);
+        }
+
+        fn setup_text_widget(item: &gtk::ListItem) -> gtk::Label {
+            // TODO: Use gtk inscription
+            let text = gtk::Label::new(None);
+            text.set_xalign(0.0);
+
+            item.set_child(Some(&text));
+            text
+        }
+    }
 }
 
 glib::wrapper! {
@@ -75,150 +217,6 @@ glib::wrapper! {
 impl SkDebugWindow {
     pub fn new() -> Self {
         glib::Object::new()
-    }
-
-    fn setup_widgets(&self) {
-        let imp = self.imp();
-        let worker = SkApplication::default().worker();
-
-        let tree_model = gtk::TreeListModel::new(worker.tasks(), false, true, |item| {
-            let task: &SkTask = item.downcast_ref().unwrap();
-            Some(task.dependencies().upcast())
-        });
-
-        let model = gtk::NoSelection::new(Some(tree_model));
-        imp.current_tasks_columnview.set_model(Some(&model));
-
-        // Setup table columns
-        let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(|_factory, item| {
-            let text = gtk::Label::new(None);
-            let expander = gtk::TreeExpander::new();
-            expander.set_child(Some(&text));
-
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            item.set_child(Some(&expander));
-        });
-
-        factory.connect_bind(move |_factory, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let expander = item
-                .child()
-                .unwrap()
-                .downcast::<gtk::TreeExpander>()
-                .unwrap();
-
-            // Hide expander icon if there are no dependency tasks
-            item.property_expression("item")
-                .chain_property::<gtk::TreeListRow>("item")
-                .chain_property::<SkTask>("dependencies")
-                .chain_closure::<bool>(closure!(
-                    |_: Option<glib::Object>, deps: Option<SkTaskModel>| {
-                        if let Some(deps) = deps {
-                            deps.n_items() == 0
-                        } else {
-                            false
-                        }
-                    }
-                ))
-                .bind(&expander, "hide-expander", None::<&SkTask>);
-
-            let listrow = item.item().unwrap().downcast::<gtk::TreeListRow>().unwrap();
-            expander.set_list_row(Some(&listrow));
-
-            let task = listrow.item().unwrap().downcast::<SkTask>().unwrap();
-
-            let text = expander.child().unwrap().downcast::<gtk::Label>().unwrap();
-            text.set_text(&task.uuid());
-        });
-        self.add_column("Task", factory);
-
-        let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(|_factory, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let text = Self::setup_text_widget(item);
-            item.property_expression("item")
-                .chain_property::<gtk::TreeListRow>("item")
-                .chain_property::<SkTask>("kind")
-                .bind(&text, "label", None::<&SkTask>);
-        });
-        self.add_column("Type", factory);
-
-        let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(|_factory, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let text = Self::setup_text_widget(item);
-            item.property_expression("item")
-                .chain_property::<gtk::TreeListRow>("item")
-                .chain_property::<SkTask>("status")
-                .bind(&text, "label", None::<&SkTask>);
-        });
-        self.add_column("Status", factory);
-
-        let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(|_factory, item| {
-            let progressbar = SkTaskProgressBar::new();
-
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            item.set_child(Some(&progressbar));
-            item.property_expression("item")
-                .chain_property::<gtk::TreeListRow>("item")
-                .bind(&progressbar, "task", None::<&gtk::TreeListRow>);
-        });
-        self.add_column("Progress", factory);
-
-        let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(|_factory, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let text = Self::setup_text_widget(item);
-            item.property_expression("item")
-                .chain_property::<gtk::TreeListRow>("item")
-                .chain_property::<SkTask>("package")
-                .chain_property::<SkPackage>("name")
-                .bind(&text, "label", None::<&SkPackage>);
-        });
-        self.add_column("Ref", factory);
-
-        let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(|_factory, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let text = Self::setup_text_widget(item);
-            item.property_expression("item")
-                .chain_property::<gtk::TreeListRow>("item")
-                .chain_property::<SkTask>("package")
-                .chain_property::<SkPackage>("remote")
-                .chain_property::<SkRemote>("name")
-                .bind(&text, "label", None::<&SkRemote>);
-        });
-        self.add_column("Remote", factory);
-
-        let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(|_factory, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let text = Self::setup_text_widget(item);
-            item.property_expression("item")
-                .chain_property::<gtk::TreeListRow>("item")
-                .chain_property::<SkTask>("package")
-                .chain_property::<SkPackage>("remote")
-                .chain_property::<SkRemote>("installation")
-                .chain_property::<SkInstallation>("name")
-                .bind(&text, "label", None::<&SkInstallation>);
-        });
-        self.add_column("Installation", factory);
-    }
-
-    fn add_column(&self, name: &str, factory: gtk::SignalListItemFactory) {
-        let column = gtk::ColumnViewColumn::new(Some(name), Some(factory));
-        self.imp().current_tasks_columnview.append_column(&column);
-    }
-
-    fn setup_text_widget(item: &gtk::ListItem) -> gtk::Label {
-        // TODO: Use gtk inscription
-        let text = gtk::Label::new(None);
-        text.set_xalign(0.0);
-
-        item.set_child(Some(&text));
-        text
     }
 }
 
