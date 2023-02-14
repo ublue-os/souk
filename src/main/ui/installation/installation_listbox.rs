@@ -18,9 +18,8 @@ use std::cell::RefCell;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{clone, ParamSpec, Properties};
 use gtk::glib;
-use once_cell::sync::Lazy;
 
 use crate::main::app::SkApplication;
 use crate::main::flatpak::installation::SkInstallation;
@@ -29,10 +28,13 @@ use crate::main::ui::installation::SkInstallationRow;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkInstallationListBox)]
     pub struct SkInstallationListBox {
-        pub listbox: gtk::ListBox,
+        #[property(get, set = Self::set_selected_installation)]
         pub selected_installation: RefCell<Option<SkInstallation>>,
+
+        pub listbox: gtk::ListBox,
     }
 
     #[glib::object_subclass]
@@ -44,23 +46,15 @@ mod imp {
 
     impl ObjectImpl for SkInstallationListBox {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![ParamSpecObject::new(
-                    "selected-installation",
-                    "",
-                    "",
-                    SkInstallation::static_type(),
-                    ParamFlags::READABLE,
-                )]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "selected-installation" => self.obj().selected_installation().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
+        }
+
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
 
         fn constructed(&self) {
@@ -70,90 +64,81 @@ mod imp {
             self.listbox.set_selection_mode(gtk::SelectionMode::None);
             self.listbox.add_css_class("boxed-list");
 
-            self.obj().setup_signals();
+            let worker = SkApplication::default().worker();
+
+            self.listbox
+                .connect_row_activated(clone!(@weak self as this => move |_, row|{
+                    let row = row.downcast_ref::<SkInstallationRow>().unwrap();
+
+                    this.unselect_all();
+                    row.set_selected(true);
+
+                    *this.selected_installation.borrow_mut() = Some(row.installation());
+                    this.obj().notify("selected-installation");
+                }));
+
+            self.listbox
+                .bind_model(Some(&worker.installations()), |installation| {
+                    let installation = installation.downcast_ref::<SkInstallation>().unwrap();
+                    SkInstallationRow::new(installation).upcast()
+                });
+
+            worker.installations().connect_items_changed(
+                clone!(@weak self as this => move |_, _, _, _|{
+                    if let Some(selected) = this.obj().selected_installation(){
+                        let mut index = 0;
+                        while let Some(row) = this.listbox.row_at_index(index) {
+                            let row = row.downcast_ref::<SkInstallationRow>().unwrap();
+                            if row.installation() == selected{
+                                row.set_selected(true);
+                                return;
+                            }
+
+                            index += 1;
+                        }
+                    }
+                }),
+            );
         }
     }
 
     impl WidgetImpl for SkInstallationListBox {}
 
     impl BinImpl for SkInstallationListBox {}
+
+    impl SkInstallationListBox {
+        fn set_selected_installation(&self, selected_installation: &SkInstallation) {
+            let mut index = 0;
+            while let Some(row) = self.listbox.row_at_index(index) {
+                let row = row.downcast_ref::<SkInstallationRow>().unwrap();
+                if &row.installation() == selected_installation {
+                    row.set_selected(true);
+
+                    *self.selected_installation.borrow_mut() = Some(row.installation());
+                    self.obj().notify("selected-installation");
+                    return;
+                }
+
+                index += 1;
+            }
+        }
+
+        fn unselect_all(&self) {
+            let mut index = 0;
+            while let Some(row) = self.listbox.row_at_index(index) {
+                let row = row.downcast_ref::<SkInstallationRow>().unwrap();
+                row.set_selected(false);
+
+                index += 1;
+            }
+        }
+    }
 }
 
 glib::wrapper! {
     pub struct SkInstallationListBox(
         ObjectSubclass<imp::SkInstallationListBox>)
         @extends gtk::Widget, adw::Bin;
-}
-
-impl SkInstallationListBox {
-    fn setup_signals(&self) {
-        let imp = self.imp();
-        let worker = SkApplication::default().worker();
-
-        imp.listbox
-            .connect_row_activated(clone!(@weak self as this => move |_, row|{
-                let row = row.downcast_ref::<SkInstallationRow>().unwrap();
-
-                this.unselect_all();
-                row.set_selected(true);
-
-                *this.imp().selected_installation.borrow_mut() = Some(row.installation());
-                this.notify("selected-installation");
-            }));
-
-        imp.listbox
-            .bind_model(Some(&worker.installations()), |installation| {
-                let installation = installation.downcast_ref::<SkInstallation>().unwrap();
-                SkInstallationRow::new(installation).upcast()
-            });
-
-        worker.installations().connect_items_changed(
-            clone!(@weak self as this => move |_, _, _, _|{
-                if let Some(selected) = this.selected_installation(){
-                    let mut index = 0;
-                    while let Some(row) = this.imp().listbox.row_at_index(index) {
-                        let row = row.downcast_ref::<SkInstallationRow>().unwrap();
-                        if row.installation() == selected{
-                            row.set_selected(true);
-                            return;
-                        }
-
-                        index += 1;
-                    }
-                }
-            }),
-        );
-    }
-
-    pub fn set_selected_installation(&self, selected_installation: &SkInstallation) {
-        let mut index = 0;
-        while let Some(row) = self.imp().listbox.row_at_index(index) {
-            let row = row.downcast_ref::<SkInstallationRow>().unwrap();
-            if &row.installation() == selected_installation {
-                row.set_selected(true);
-
-                *self.imp().selected_installation.borrow_mut() = Some(row.installation());
-                self.notify("selected-installation");
-                return;
-            }
-
-            index += 1;
-        }
-    }
-
-    pub fn selected_installation(&self) -> Option<SkInstallation> {
-        self.imp().selected_installation.borrow().clone()
-    }
-
-    fn unselect_all(&self) {
-        let mut index = 0;
-        while let Some(row) = self.imp().listbox.row_at_index(index) {
-            let row = row.downcast_ref::<SkInstallationRow>().unwrap();
-            row.set_selected(false);
-
-            index += 1;
-        }
-    }
 }
 
 impl Default for SkInstallationListBox {
