@@ -192,7 +192,7 @@ impl SkWorker {
         file: &File,
         installation: &SkInstallation,
     ) -> Result<SkSideloadable, Error> {
-        let kind = SkSideloadKind::determine_type(file);
+        let kind = SkSideloadKind::determine_kind(file);
 
         let task = match kind {
             SkSideloadKind::Bundle => {

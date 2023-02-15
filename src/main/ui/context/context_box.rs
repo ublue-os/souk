@@ -38,7 +38,7 @@ mod imp {
         context: RefCell<Option<SkContext>>,
 
         #[template_child]
-        type_stack: TemplateChild<gtk::Stack>,
+        kind_stack: TemplateChild<gtk::Stack>,
         #[template_child]
         icon_image: TemplateChild<gtk::Image>,
         #[template_child]
@@ -100,13 +100,13 @@ mod imp {
             let summary = context.summary();
 
             if summary.kind() == SkContextDetailKind::Icon {
-                self.type_stack.set_visible_child(&self.icon_image.get());
+                self.kind_stack.set_visible_child(&self.icon_image.get());
                 self.icon_image.set_icon_name(Some(&summary.kind_value()));
             } else if summary.kind() == SkContextDetailKind::Size {
                 let markup = utils::size_to_markup(&summary.kind_value());
                 self.text_label.set_markup(&markup);
             } else {
-                self.type_stack.set_visible_child(&self.text_label.get());
+                self.kind_stack.set_visible_child(&self.text_label.get());
                 self.text_label.set_markup(&summary.kind_value());
             }
 

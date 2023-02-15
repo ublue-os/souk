@@ -2,7 +2,7 @@
 <interface>
   <template class="SkContextDetailRow" parent="AdwActionRow">
     <child type="prefix">
-      <object class="GtkStack" id="type_stack">
+      <object class="GtkStack" id="kind_stack">
         <property name="hhomogeneous">false</property>
         <property name="vhomogeneous">false</property>
         <child>

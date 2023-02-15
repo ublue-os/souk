@@ -31,8 +31,8 @@ use isahc::ReadResponseExt;
 
 use crate::shared::flatpak::dry_run::{DryRun, DryRunPackage};
 use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
-use crate::shared::flatpak::FlatpakOperationType;
-use crate::shared::task::{FlatpakTask, FlatpakTaskType, TaskProgress, TaskResponse, TaskResult};
+use crate::shared::flatpak::FlatpakOperationKind;
+use crate::shared::task::{FlatpakTask, FlatpakTaskKind, TaskProgress, TaskResponse, TaskResult};
 use crate::shared::WorkerError;
 use crate::worker::appstream;
 
@@ -51,8 +51,8 @@ impl FlatpakWorker {
     }
 
     pub fn process_task(&self, task: FlatpakTask, task_uuid: &str) {
-        let result = match task.type_ {
-            FlatpakTaskType::Install => {
+        let result = match task.kind {
+            FlatpakTaskKind::Install => {
                 if task.dry_run {
                     unimplemented!();
                 } else {
@@ -65,7 +65,7 @@ impl FlatpakWorker {
                     )
                 }
             }
-            FlatpakTaskType::InstallBundleFile => {
+            FlatpakTaskKind::InstallBundleFile => {
                 if task.dry_run {
                     self.install_flatpak_bundle_file_dry_run(
                         task_uuid,
@@ -81,7 +81,7 @@ impl FlatpakWorker {
                     )
                 }
             }
-            FlatpakTaskType::InstallRefFile => {
+            FlatpakTaskKind::InstallRefFile => {
                 if task.dry_run {
                     self.install_flatpak_ref_file_dry_run(
                         task_uuid,
@@ -97,16 +97,16 @@ impl FlatpakWorker {
                     )
                 }
             }
-            FlatpakTaskType::Update => {
+            FlatpakTaskKind::Update => {
                 unimplemented!();
             }
-            FlatpakTaskType::UpdateInstallation => {
+            FlatpakTaskKind::UpdateInstallation => {
                 unimplemented!();
             }
-            FlatpakTaskType::Uninstall => {
+            FlatpakTaskKind::Uninstall => {
                 unimplemented!();
             }
-            FlatpakTaskType::None => return,
+            FlatpakTaskKind::None => return,
         };
 
         if let Err(err) = result {
@@ -502,7 +502,7 @@ impl FlatpakWorker {
                         // Package
                         let package = DryRunPackage{
                             info: PackageInfo::new(operation_ref, remote_info),
-                            operation_type: operation.operation_type().into(),
+                            operation_kind: operation.operation_type().into(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
                             icon: icon.into(),
@@ -542,19 +542,19 @@ impl FlatpakWorker {
 
                             if installed.commit().unwrap() == operation_commit {
                                 // Commit is the same -> ref is already installed -> No operation
-                                result.package.operation_type = FlatpakOperationType::None;
+                                result.package.operation_kind = FlatpakOperationKind::None;
                             }else{
                                 // Commit differs -> is update
                                 // Manually set operation type to `Update`, since technically it's
                                 // not possible to "update" Flatpak bundles, from libflatpak side
                                 // it's always `InstallBundle` operation.
-                                result.package.operation_type = FlatpakOperationType::Update;
+                                result.package.operation_kind = FlatpakOperationKind::Update;
                             }
                         }
                     }else{
                         let runtime = DryRunPackage{
                             info: PackageInfo::new(operation_ref, remote_info),
-                            operation_type: operation.operation_type().into(),
+                            operation_kind: operation.operation_type().into(),
                             download_size: operation.download_size(),
                             installed_size: operation.installed_size(),
                             icon: icon.into(),

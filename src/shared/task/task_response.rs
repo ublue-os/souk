@@ -23,7 +23,7 @@ use crate::shared::task::{TaskProgress, TaskResult};
 pub struct TaskResponse {
     /// The UUID of the corresponding task
     pub uuid: String,
-    pub type_: TaskResponseType,
+    pub kind: TaskResponseKind,
 
     // This should have been an enum, unfortunately not supported by zbus / dbus
     /// Initial response that provides information about this task and all
@@ -37,7 +37,7 @@ impl TaskResponse {
     pub fn new_initial(uuid: String, steps: Vec<TaskProgress>) -> Self {
         Self {
             uuid,
-            type_: TaskResponseType::Initial,
+            kind: TaskResponseKind::Initial,
             initial_response: Some(steps).into(),
             update_response: None.into(),
             result_response: None.into(),
@@ -47,7 +47,7 @@ impl TaskResponse {
     pub fn new_update(uuid: String, step: TaskProgress) -> Self {
         Self {
             uuid,
-            type_: TaskResponseType::Update,
+            kind: TaskResponseKind::Update,
             initial_response: None.into(),
             update_response: Some(step).into(),
             result_response: None.into(),
@@ -57,7 +57,7 @@ impl TaskResponse {
     pub fn new_result(uuid: String, result: TaskResult) -> Self {
         Self {
             uuid,
-            type_: TaskResponseType::Result,
+            kind: TaskResponseKind::Result,
             initial_response: None.into(),
             update_response: None.into(),
             result_response: Some(result).into(),
@@ -66,7 +66,7 @@ impl TaskResponse {
 }
 
 #[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
-pub enum TaskResponseType {
+pub enum TaskResponseKind {
     /// Initial (first) response of a task. This includes a detailed list of all
     /// steps, see [TaskResponse.initial_response].
     Initial,

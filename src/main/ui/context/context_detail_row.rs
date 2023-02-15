@@ -36,7 +36,7 @@ mod imp {
         show_arrow: OnceCell<bool>,
 
         #[template_child]
-        type_stack: TemplateChild<gtk::Stack>,
+        kind_stack: TemplateChild<gtk::Stack>,
         #[template_child]
         icon_image: TemplateChild<gtk::Image>,
         #[template_child]
@@ -79,15 +79,15 @@ mod imp {
             let detail = self.obj().detail();
 
             if detail.kind() == SkContextDetailKind::Icon {
-                self.type_stack.set_visible_child(&self.icon_image.get());
+                self.kind_stack.set_visible_child(&self.icon_image.get());
                 self.icon_image.set_icon_name(Some(&detail.kind_value()));
             } else if detail.kind() == SkContextDetailKind::Size {
-                self.type_stack.set_visible_child(&self.text_label.get());
+                self.kind_stack.set_visible_child(&self.text_label.get());
                 let markup = utils::size_to_markup(&detail.kind_value());
                 self.text_label.set_markup(&markup);
                 self.text_label.add_css_class("size");
             } else {
-                self.type_stack.set_visible_child(&self.text_label.get());
+                self.kind_stack.set_visible_child(&self.text_label.get());
                 self.text_label.set_markup(&detail.kind_value());
                 self.text_label.remove_css_class("size");
             }

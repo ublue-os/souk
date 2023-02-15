@@ -22,7 +22,7 @@ use crate::shared::WorkerError;
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
 pub struct TaskResult {
-    pub type_: TaskResultType,
+    pub kind: TaskResultKind,
     pub dry_run: Optional<DryRun>,
     pub error: Optional<WorkerError>,
 }
@@ -30,7 +30,7 @@ pub struct TaskResult {
 impl TaskResult {
     pub fn new_done() -> Self {
         Self {
-            type_: TaskResultType::Done,
+            kind: TaskResultKind::Done,
             dry_run: None.into(),
             error: None.into(),
         }
@@ -38,7 +38,7 @@ impl TaskResult {
 
     pub fn new_dry_run(dry_run: DryRun) -> Self {
         Self {
-            type_: TaskResultType::DoneDryRun,
+            kind: TaskResultKind::DoneDryRun,
             dry_run: Some(dry_run).into(),
             error: None.into(),
         }
@@ -46,7 +46,7 @@ impl TaskResult {
 
     pub fn new_error(error: WorkerError) -> Self {
         Self {
-            type_: TaskResultType::Error,
+            kind: TaskResultKind::Error,
             dry_run: None.into(),
             error: Some(error).into(),
         }
@@ -54,7 +54,7 @@ impl TaskResult {
 
     pub fn new_cancelled() -> Self {
         Self {
-            type_: TaskResultType::Cancelled,
+            kind: TaskResultKind::Cancelled,
             dry_run: None.into(),
             error: None.into(),
         }
@@ -64,7 +64,7 @@ impl TaskResult {
 impl Default for TaskResult {
     fn default() -> Self {
         Self {
-            type_: TaskResultType::None,
+            kind: TaskResultKind::None,
             dry_run: None.into(),
             error: None.into(),
         }
@@ -72,7 +72,7 @@ impl Default for TaskResult {
 }
 
 #[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
-pub enum TaskResultType {
+pub enum TaskResultKind {
     /// Task completed successfully.
     Done,
     /// Task completed successfully, with an [DryRun] as result

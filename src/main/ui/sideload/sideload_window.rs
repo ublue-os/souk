@@ -30,7 +30,7 @@ use crate::main::error::Error;
 use crate::main::flatpak::installation::SkRemote;
 use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageKind};
 use crate::main::flatpak::sideload::{SkSideloadKind, SkSideloadable};
-use crate::main::flatpak::SkFlatpakOperationType;
+use crate::main::flatpak::SkFlatpakOperationKind;
 use crate::main::i18n::{i18n, i18n_f};
 use crate::main::task::{SkTask, SkTaskStatus};
 use crate::main::ui::badge::SkBadge;
@@ -42,7 +42,7 @@ use crate::shared::{config, WorkerError};
 mod imp {
     use super::*;
 
-    enum LabelType {
+    enum LabelKind {
         PackageInstall,
         PackageUpdate,
         Repo,
@@ -256,10 +256,10 @@ mod imp {
                 let package = dry_run.package();
 
                 // Set labels
-                if package.operation_type() == SkFlatpakOperationType::Update {
-                    self.set_labels(LabelType::PackageUpdate);
+                if package.operation_kind() == SkFlatpakOperationKind::Update {
+                    self.set_labels(LabelKind::PackageUpdate);
                 } else {
-                    self.set_labels(LabelType::PackageInstall);
+                    self.set_labels(LabelKind::PackageInstall);
                 }
 
                 // Only display launch button if it's an app
@@ -328,10 +328,10 @@ mod imp {
                 // We don't support updating .flatpakrefs through sideloading, since the
                 // installation would fail with "x is already installed". Only bundles can be
                 // updated.
-                if package.operation_type() == SkFlatpakOperationType::Update
+                if package.operation_kind() == SkFlatpakOperationKind::Update
                     && sideloadable.kind() == SkSideloadKind::Ref
                 {
-                    self.set_labels(LabelType::PackageInstall);
+                    self.set_labels(LabelKind::PackageInstall);
                     self.sideload_leaflet.set_visible_child_name("already-done");
                     return;
                 }
@@ -346,7 +346,7 @@ mod imp {
 
                 if sideloadable.dry_run().is_none() {
                     self.package_box.set_visible(false);
-                    self.set_labels(LabelType::Repo);
+                    self.set_labels(LabelKind::Repo);
 
                     // Retrieve remote name
                     let remote: SkRemote = remotes.item(0).unwrap().downcast().unwrap();
@@ -448,7 +448,7 @@ mod imp {
                 );
         }
 
-        fn set_labels(&self, type_: LabelType) {
+        fn set_labels(&self, kind: LabelKind) {
             // Label of the button which starts the sideloading
             let start_button = vec![i18n("Install"), i18n("Update"), i18n("Add")];
 
@@ -491,10 +491,10 @@ mod imp {
                 i18n("Successfully added!"),
             ];
 
-            let i = match type_ {
-                LabelType::PackageInstall => 0,
-                LabelType::PackageUpdate => 1,
-                LabelType::Repo => 2,
+            let i = match kind {
+                LabelKind::PackageInstall => 0,
+                LabelKind::PackageUpdate => 1,
+                LabelKind::Repo => 2,
             };
 
             self.start_button.set_label(&start_button[i]);

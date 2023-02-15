@@ -29,7 +29,7 @@ use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::package::SkPackage;
 use crate::main::task::{SkTaskKind, SkTaskModel, SkTaskStatus};
-use crate::shared::task::{Task, TaskProgress, TaskResponse, TaskResponseType, TaskResultType};
+use crate::shared::task::{Task, TaskProgress, TaskResponse, TaskResponseKind, TaskResultKind};
 use crate::shared::WorkerError;
 
 mod imp {
@@ -111,7 +111,7 @@ mod imp {
             self.parent_constructed();
 
             // Only set the task kind for ¬dependency tasks, since those get the kind set
-            // from the [TaskResponseType::Initial] response.
+            // from the [TaskResponseKind::Initial] response.
             if let Some(data) = self.data.get().unwrap() {
                 self.kind.set(SkTaskKind::from_task_data(data)).unwrap();
             }
@@ -147,11 +147,11 @@ mod imp {
         }
 
         /// Sets the initial data of a [TaskProgress] which comes via a
-        /// [TaskResponseType::Initial] response
+        /// [TaskResponseKind::Initial] response
         pub fn set_initial(&self, initial: &TaskProgress) {
             self.index.set(initial.index).unwrap();
             self.kind
-                .set(initial.operation_type.clone().into())
+                .set(initial.operation_kind.clone().into())
                 .unwrap();
 
             if let Some(package_info) = initial.package.clone().into() {
@@ -207,8 +207,8 @@ impl SkTask {
     pub fn handle_response(&self, response: &TaskResponse) {
         let imp = self.imp();
 
-        match response.type_ {
-            TaskResponseType::Initial => {
+        match response.kind {
+            TaskResponseKind::Initial => {
                 let initial_response = response.initial_response.as_ref().unwrap();
                 for task_progress in initial_response {
                     let is_last_task = task_progress.index as usize == (initial_response.len() - 1);
@@ -232,7 +232,7 @@ impl SkTask {
                     }
                 }
             }
-            TaskResponseType::Update => {
+            TaskResponseKind::Update => {
                 let update = response.update_response.as_ref().unwrap();
                 let uuid = format!("{}:{}", self.uuid(), update.index);
 
@@ -251,18 +251,18 @@ impl SkTask {
                 // subtasks
                 self.imp().update(update);
             }
-            TaskResponseType::Result => {
+            TaskResponseKind::Result => {
                 let result = response.result_response.as_ref().unwrap();
 
-                let status = match result.type_ {
-                    TaskResultType::Done => {
+                let status = match result.kind {
+                    TaskResultKind::Done => {
                         imp.progress.set(1.0);
                         self.notify("progress");
                         self.emit_by_name::<()>("done", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                         SkTaskStatus::Done
                     }
-                    TaskResultType::DoneDryRun => {
+                    TaskResultKind::DoneDryRun => {
                         let dry_run = result.dry_run.as_ref().unwrap().clone();
                         let result_dry_run = SkDryRun::new(dry_run);
                         imp.result_dry_run.set(result_dry_run).unwrap();
@@ -273,7 +273,7 @@ impl SkTask {
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                         SkTaskStatus::Done
                     }
-                    TaskResultType::Error => {
+                    TaskResultKind::Error => {
                         let result_error = result.error.as_ref().unwrap().clone();
                         imp.result_error.set(result_error.clone()).unwrap();
 
@@ -281,7 +281,7 @@ impl SkTask {
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                         SkTaskStatus::Error
                     }
-                    TaskResultType::Cancelled => {
+                    TaskResultKind::Cancelled => {
                         self.emit_by_name::<()>("cancelled", &[]);
                         imp.finished_sender.get().unwrap().try_send(()).unwrap();
                         SkTaskStatus::Cancelled

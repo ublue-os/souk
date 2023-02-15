@@ -16,6 +16,6 @@
 
 pub mod dry_run;
 pub mod info;
-mod operation_type;
+mod operation_kind;
 
-pub use operation_type::FlatpakOperationType;
+pub use operation_kind::FlatpakOperationKind;

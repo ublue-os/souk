@@ -25,7 +25,7 @@ use url::Url;
 use crate::main::context::{SkContext, SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
 use crate::main::flatpak::package::{SkPackage, SkPackageAppstream, SkPackageExt, SkPackageImpl};
 use crate::main::flatpak::permissions::SkAppPermissions;
-use crate::main::flatpak::SkFlatpakOperationType;
+use crate::main::flatpak::SkFlatpakOperationKind;
 use crate::main::i18n::i18n_f;
 use crate::shared::flatpak::dry_run::DryRunPackage;
 
@@ -40,7 +40,7 @@ mod imp {
         #[property(name = "appstream", get)]
         appstream: OnceCell<SkPackageAppstream>,
         #[property(get, set, construct_only)]
-        #[property(name = "operation-type", get = Self::operation_type, type = SkFlatpakOperationType, builder(SkFlatpakOperationType::None))]
+        #[property(name = "operation-kind", get = Self::operation_kind, type = SkFlatpakOperationKind, builder(SkFlatpakOperationKind::None))]
         #[property(name = "download-size", get, type = u64, member = download_size)]
         #[property(name = "installed-size", get, type = u64, member = installed_size)]
         data: OnceCell<DryRunPackage>,
@@ -99,8 +99,8 @@ mod imp {
     impl SkPackageImpl for SkDryRunPackage {}
 
     impl SkDryRunPackage {
-        fn operation_type(&self) -> SkFlatpakOperationType {
-            self.obj().data().operation_type.into()
+        fn operation_kind(&self) -> SkFlatpakOperationKind {
+            self.obj().data().operation_kind.into()
         }
 
         pub fn metadata(&self) -> KeyFile {
@@ -162,12 +162,12 @@ impl SkDryRunPackage {
 
         // Version line
         let mut version_line = self.appstream().version_text(true);
-        if self.operation_type() != SkFlatpakOperationType::Install
-            && self.operation_type() != SkFlatpakOperationType::InstallBundle
+        if self.operation_kind() != SkFlatpakOperationKind::Install
+            && self.operation_kind() != SkFlatpakOperationKind::InstallBundle
         {
             version_line = i18n_f(
                 "{} – {}",
-                &[&version_line, &self.operation_type().to_string()],
+                &[&version_line, &self.operation_kind().to_string()],
             );
         }
 

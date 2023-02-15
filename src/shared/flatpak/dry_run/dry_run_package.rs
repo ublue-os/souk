@@ -20,14 +20,14 @@ use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
 use crate::shared::flatpak::info::PackageInfo;
-use crate::shared::flatpak::FlatpakOperationType;
+use crate::shared::flatpak::FlatpakOperationKind;
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash, glib::Boxed)]
 #[boxed_type(name = "DryRunPackage")]
 #[derivative(Debug)]
 pub struct DryRunPackage {
     pub info: PackageInfo,
-    pub operation_type: FlatpakOperationType,
+    pub operation_kind: FlatpakOperationKind,
 
     pub download_size: u64,
     pub installed_size: u64,
@@ -48,7 +48,7 @@ impl Default for DryRunPackage {
     fn default() -> Self {
         Self {
             info: PackageInfo::default(),
-            operation_type: FlatpakOperationType::default(),
+            operation_kind: FlatpakOperationKind::default(),
             download_size: u64::default(),
             installed_size: u64::default(),
             icon: None.into(),

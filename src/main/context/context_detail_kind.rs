@@ -1,4 +1,4 @@
-// Souk - context_detail_type.rs
+// Souk - context_detail_kind.rs
 // Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify

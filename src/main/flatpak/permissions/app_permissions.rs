@@ -180,7 +180,7 @@ impl SkAppPermissions {
             let filesystem: SkFilesystemPermission = filesystem.downcast().unwrap();
             if !self.filesystems().snapshot().iter().any(|a| {
                 let a: &SkFilesystemPermission = a.downcast_ref().unwrap();
-                a.path() == filesystem.path() && a.type_() == filesystem.type_()
+                a.path() == filesystem.path() && a.kind() == filesystem.kind()
             }) {
                 filesystems.append(&filesystem);
             }

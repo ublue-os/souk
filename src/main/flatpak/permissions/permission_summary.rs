@@ -44,7 +44,7 @@ pub enum SkPermissionSummary {
 
 impl SkPermissionSummary {
     pub fn as_context_detail(&self) -> SkContextDetail {
-        let type_ = SkContextDetailKind::Icon;
+        let kind = SkContextDetailKind::Icon;
         let kind_value = "security-high-symbolic".to_string();
         let level = SkContextDetailLevel::Neutral;
         let title = i18n("Isolated with restricted permissions");
@@ -93,6 +93,6 @@ impl SkPermissionSummary {
             write!(&mut description, "{d} ").unwrap();
         }
 
-        SkContextDetail::new(type_, &kind_value, level, &title, &description)
+        SkContextDetail::new(kind, &kind_value, level, &title, &description)
     }
 }

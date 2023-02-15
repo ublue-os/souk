@@ -1,5 +1,5 @@
 // Souk - device_permission.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ impl PermissionDetails for SkDevicePermission {
 
     fn context_details(&self) -> Vec<SkContextDetail> {
         let mut details = Vec::new();
-        let type_ = SkContextDetailKind::Icon;
+        let kind = SkContextDetailKind::Icon;
         let icon_name = "drive-harddisk-usb-symbolic";
 
         if self == &Self::NONE || self == &SkDevicePermission::DRI {
@@ -66,7 +66,7 @@ impl PermissionDetails for SkDevicePermission {
             let description = i18n("Has no access to connected devices");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -81,7 +81,7 @@ impl PermissionDetails for SkDevicePermission {
                 i18n("Can access all connected devices, e.g. webcams or game controllers");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -96,7 +96,7 @@ impl PermissionDetails for SkDevicePermission {
             let description = i18n("Can access and run virtual machines");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -111,7 +111,7 @@ impl PermissionDetails for SkDevicePermission {
             let description = i18n("Can access memory which is shared with other applications");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -126,7 +126,7 @@ impl PermissionDetails for SkDevicePermission {
             let description = i18n("Can access an unknown device");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,

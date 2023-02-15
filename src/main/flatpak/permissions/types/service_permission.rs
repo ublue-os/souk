@@ -84,14 +84,14 @@ impl SkServicePermission {
     }
 
     pub fn no_access_context() -> SkContextDetail {
-        let type_ = SkContextDetailKind::Icon;
+        let kind = SkContextDetailKind::Icon;
         let icon_name = "system-run-symbolic".to_string();
         let level = SkContextDetailLevel::Good;
 
         let title = i18n("No Access to Services");
         let description = i18n("Does not communicate with any service");
 
-        SkContextDetail::new(type_, &icon_name, level, &title, &description)
+        SkContextDetail::new(kind, &icon_name, level, &title, &description)
     }
 }
 
@@ -114,7 +114,7 @@ impl PermissionDetails for SkServicePermission {
     }
 
     fn context_details(&self) -> Vec<SkContextDetail> {
-        let type_ = SkContextDetailKind::Icon;
+        let kind = SkContextDetailKind::Icon;
         let icon_name = "system-run-symbolic".to_string();
         let mut level = if !self.is_system() {
             SkContextDetailLevel::Neutral
@@ -198,7 +198,7 @@ impl PermissionDetails for SkServicePermission {
         }
 
         vec![SkContextDetail::new(
-            type_,
+            kind,
             &icon_name,
             level,
             &title,

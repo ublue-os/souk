@@ -17,8 +17,8 @@
 use glib::Enum;
 use gtk::glib;
 
-use crate::shared::flatpak::FlatpakOperationType;
-use crate::shared::task::{FlatpakTaskType, Task};
+use crate::shared::flatpak::FlatpakOperationKind;
+use crate::shared::task::{FlatpakTaskKind, Task};
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
@@ -46,7 +46,7 @@ impl SkTaskKind {
             if flatpak_task.dry_run {
                 return Self::FlatpakDryRun;
             } else {
-                return flatpak_task.type_.into();
+                return flatpak_task.kind.into();
             }
         }
 
@@ -60,28 +60,28 @@ impl SkTaskKind {
     }
 }
 
-impl From<FlatpakTaskType> for SkTaskKind {
-    fn from(type_: FlatpakTaskType) -> Self {
-        match type_ {
-            FlatpakTaskType::Install => Self::FlatpakInstall,
-            FlatpakTaskType::InstallRefFile => Self::FlatpakInstall,
-            FlatpakTaskType::InstallBundleFile => Self::FlatpakInstall,
-            FlatpakTaskType::Update => Self::FlatpakUpdate,
-            FlatpakTaskType::UpdateInstallation => Self::FlatpakUpdateInstallation,
-            FlatpakTaskType::Uninstall => Self::FlatpakUninstall,
-            FlatpakTaskType::None => Self::None,
+impl From<FlatpakTaskKind> for SkTaskKind {
+    fn from(kind: FlatpakTaskKind) -> Self {
+        match kind {
+            FlatpakTaskKind::Install => Self::FlatpakInstall,
+            FlatpakTaskKind::InstallRefFile => Self::FlatpakInstall,
+            FlatpakTaskKind::InstallBundleFile => Self::FlatpakInstall,
+            FlatpakTaskKind::Update => Self::FlatpakUpdate,
+            FlatpakTaskKind::UpdateInstallation => Self::FlatpakUpdateInstallation,
+            FlatpakTaskKind::Uninstall => Self::FlatpakUninstall,
+            FlatpakTaskKind::None => Self::None,
         }
     }
 }
 
-impl From<FlatpakOperationType> for SkTaskKind {
-    fn from(type_: FlatpakOperationType) -> Self {
-        match type_ {
-            FlatpakOperationType::Install => Self::FlatpakInstall,
-            FlatpakOperationType::InstallBundle => Self::FlatpakInstall,
-            FlatpakOperationType::Update => Self::FlatpakUpdate,
-            FlatpakOperationType::Uninstall => Self::FlatpakUninstall,
-            FlatpakOperationType::None => Self::None,
+impl From<FlatpakOperationKind> for SkTaskKind {
+    fn from(kind: FlatpakOperationKind) -> Self {
+        match kind {
+            FlatpakOperationKind::Install => Self::FlatpakInstall,
+            FlatpakOperationKind::InstallBundle => Self::FlatpakInstall,
+            FlatpakOperationKind::Update => Self::FlatpakUpdate,
+            FlatpakOperationKind::Uninstall => Self::FlatpakUninstall,
+            FlatpakOperationKind::None => Self::None,
         }
     }
 }

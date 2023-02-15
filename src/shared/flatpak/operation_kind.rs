@@ -1,4 +1,4 @@
-// Souk - operation_type.rs
+// Souk - operation_kind.rs
 // Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use zbus::zvariant::Type;
 
 #[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
-pub enum FlatpakOperationType {
+pub enum FlatpakOperationKind {
     Install,
     InstallBundle,
     Uninstall,
@@ -28,7 +28,7 @@ pub enum FlatpakOperationType {
     None,
 }
 
-impl From<TransactionOperationType> for FlatpakOperationType {
+impl From<TransactionOperationType> for FlatpakOperationKind {
     fn from(op: TransactionOperationType) -> Self {
         match op {
             TransactionOperationType::Install => Self::Install,

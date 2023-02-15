@@ -22,14 +22,14 @@ use zbus::zvariant::{Optional, Type};
 
 use super::TaskStatus;
 use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
-use crate::shared::flatpak::FlatpakOperationType;
+use crate::shared::flatpak::FlatpakOperationKind;
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
 pub struct TaskProgress {
     /// A task can consist of several steps. The index indicates for which step
     /// this progress information is.
     pub index: u32,
-    pub operation_type: FlatpakOperationType,
+    pub operation_kind: FlatpakOperationKind,
     pub status: TaskStatus,
     pub progress: i32,
     pub download_rate: u64,
@@ -79,11 +79,11 @@ impl TaskProgress {
         let remote_info = RemoteInfo::from_flatpak(&remote, Some(&installation));
 
         let package = PackageInfo::new(ref_.to_string(), remote_info);
-        let operation_type = operation.operation_type().into();
+        let operation_kind = operation.operation_type().into();
 
         Self {
             index,
-            operation_type,
+            operation_kind,
             status,
             progress,
             download_rate,
@@ -96,7 +96,7 @@ impl Default for TaskProgress {
     fn default() -> Self {
         Self {
             index: u32::default(),
-            operation_type: FlatpakOperationType::default(),
+            operation_kind: FlatpakOperationKind::default(),
             status: TaskStatus::default(),
             progress: i32::default(),
             download_rate: u64::default(),

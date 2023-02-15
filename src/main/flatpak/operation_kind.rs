@@ -1,4 +1,4 @@
-// Souk - flatpak_operation_type.rs
+// Souk - flatpak_operation_kind.rs
 // Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -20,12 +20,12 @@ use glib::Enum;
 use gtk::glib;
 
 use crate::main::i18n::i18n;
-use crate::shared::flatpak::FlatpakOperationType;
+use crate::shared::flatpak::FlatpakOperationKind;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkFlatpakOperationType")]
-pub enum SkFlatpakOperationType {
+#[enum_type(name = "SkFlatpakOperationKind")]
+pub enum SkFlatpakOperationKind {
     Install,
     InstallBundle,
     Uninstall,
@@ -33,19 +33,19 @@ pub enum SkFlatpakOperationType {
     None,
 }
 
-impl From<FlatpakOperationType> for SkFlatpakOperationType {
-    fn from(op: FlatpakOperationType) -> Self {
+impl From<FlatpakOperationKind> for SkFlatpakOperationKind {
+    fn from(op: FlatpakOperationKind) -> Self {
         match op {
-            FlatpakOperationType::Install => Self::Install,
-            FlatpakOperationType::InstallBundle => Self::InstallBundle,
-            FlatpakOperationType::Update => Self::Update,
-            FlatpakOperationType::Uninstall => Self::Uninstall,
-            FlatpakOperationType::None => Self::None,
+            FlatpakOperationKind::Install => Self::Install,
+            FlatpakOperationKind::InstallBundle => Self::InstallBundle,
+            FlatpakOperationKind::Update => Self::Update,
+            FlatpakOperationKind::Uninstall => Self::Uninstall,
+            FlatpakOperationKind::None => Self::None,
         }
     }
 }
 
-impl fmt::Display for SkFlatpakOperationType {
+impl fmt::Display for SkFlatpakOperationKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let text = match self {
             Self::Install => i18n("Install"),
@@ -59,8 +59,8 @@ impl fmt::Display for SkFlatpakOperationType {
     }
 }
 
-impl Default for SkFlatpakOperationType {
+impl Default for SkFlatpakOperationKind {
     fn default() -> Self {
-        SkFlatpakOperationType::None
+        SkFlatpakOperationKind::None
     }
 }

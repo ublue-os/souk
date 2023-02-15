@@ -30,7 +30,7 @@ pub enum SkSideloadKind {
 }
 
 impl SkSideloadKind {
-    pub fn determine_type(file: &File) -> SkSideloadKind {
+    pub fn determine_kind(file: &File) -> SkSideloadKind {
         let file = file.path().unwrap();
 
         match file.extension().unwrap_or_default().to_str().unwrap() {

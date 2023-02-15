@@ -27,7 +27,7 @@ use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote, SkRemoteModel};
 use crate::main::flatpak::sideload::SkSideloadKind;
-use crate::main::flatpak::SkFlatpakOperationType;
+use crate::main::flatpak::SkFlatpakOperationKind;
 use crate::main::task::SkTask;
 use crate::main::worker::SkWorker;
 
@@ -110,7 +110,7 @@ impl SkSideloadable {
             kind,
             Some(dry_run),
             &dry_run.remotes(),
-            dry_run.package().operation_type() == SkFlatpakOperationType::None,
+            dry_run.package().operation_kind() == SkFlatpakOperationKind::None,
             installation,
         )
     }

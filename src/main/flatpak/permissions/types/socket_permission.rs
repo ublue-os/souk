@@ -79,7 +79,7 @@ impl PermissionDetails for SkSocketPermission {
 
     fn context_details(&self) -> Vec<SkContextDetail> {
         let mut details = Vec::new();
-        let type_ = SkContextDetailKind::Icon;
+        let kind = SkContextDetailKind::Icon;
         let level = SkContextDetailLevel::Bad;
 
         if self.contains(Self::X11) && !self.contains(Self::FALLBACK_X11) {
@@ -88,7 +88,7 @@ impl PermissionDetails for SkSocketPermission {
             let description = i18n("Uses a legacy windowing system, can access the contents of other windows and intercept keyboard inputs");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -102,7 +102,7 @@ impl PermissionDetails for SkSocketPermission {
             let description = i18n("Has access to all session services");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -116,7 +116,7 @@ impl PermissionDetails for SkSocketPermission {
             let description = i18n("Has access to all system services");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -130,7 +130,7 @@ impl PermissionDetails for SkSocketPermission {
             let description = i18n("Can access SSH keys / can perform authentications");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -144,7 +144,7 @@ impl PermissionDetails for SkSocketPermission {
             let description = i18n("Can access smartcards and security devices");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -159,7 +159,7 @@ impl PermissionDetails for SkSocketPermission {
             let description = i18n("Unrestricted access to printer management");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,
@@ -174,7 +174,7 @@ impl PermissionDetails for SkSocketPermission {
             let description = i18n("Can access an unknown socket");
 
             details.push(SkContextDetail::new(
-                type_,
+                kind,
                 icon_name,
                 level,
                 &title,

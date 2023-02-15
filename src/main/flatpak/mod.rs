@@ -21,5 +21,5 @@ pub mod permissions;
 pub mod sideload;
 pub mod utils;
 
-mod operation_type;
-pub use operation_type::SkFlatpakOperationType;
+mod operation_kind;
+pub use operation_kind::SkFlatpakOperationKind;
