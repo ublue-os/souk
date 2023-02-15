@@ -84,7 +84,7 @@ mod imp {
 
             let package_info = self.obj().info();
             let component = if let Some(json) = data.appstream_component.as_ref() {
-                serde_json::from_str(&json)
+                serde_json::from_str(json)
                     .unwrap_or_else(|_| SkPackageAppstream::fallback_component(&package_info))
             } else {
                 SkPackageAppstream::fallback_component(&package_info)

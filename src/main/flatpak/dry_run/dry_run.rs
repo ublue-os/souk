@@ -75,7 +75,7 @@ mod imp {
             self.package.set(package).unwrap();
 
             self.runtimes.set_packages(data.runtimes.clone());
-            self.remotes.set_remotes(data.remotes.clone());
+            self.remotes.set_remotes(data.remotes);
         }
     }
 

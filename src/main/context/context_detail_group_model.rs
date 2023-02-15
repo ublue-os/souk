@@ -75,3 +75,9 @@ impl SkContextDetailGroupModel {
         }
     }
 }
+
+impl Default for SkContextDetailGroupModel {
+    fn default() -> Self {
+        Self::new()
+    }
+}

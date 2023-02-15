@@ -113,7 +113,7 @@ mod imp {
             // Only set the task kind for ¬dependency tasks, since those get the kind set
             // from the [TaskResponseType::Initial] response.
             if let Some(data) = self.data.get().unwrap() {
-                self.kind.set(SkTaskKind::from_task_data(&data)).unwrap();
+                self.kind.set(SkTaskKind::from_task_data(data)).unwrap();
             }
 
             *self.status.borrow_mut() = SkTaskStatus::Pending;
