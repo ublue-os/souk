@@ -20,6 +20,7 @@
         "--filesystem=host",
         "--filesystem=/var/lib/flatpak/",
         "--filesystem=/var/tmp:rw",
+        "--filesystem=/tmp:rw",
         "--filesystem=~/.local/share/flatpak:rw",
         "--talk-name=org.freedesktop.Flatpak",
         "--system-talk-name=org.freedesktop.Flatpak.SystemHelper",

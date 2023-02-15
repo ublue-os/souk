@@ -16,6 +16,7 @@
 
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
@@ -142,10 +143,10 @@ impl FlatpakWorker {
     ) -> Result<(), WorkerError> {
         info!("Install Flatpak: {}", ref_);
 
-        let transaction = self.new_transaction(installation_info, false)?;
+        let transaction = self.new_transaction(task_uuid, installation_info, false)?;
 
         if uninstall_before_install {
-            self.uninstall_ref(ref_, installation_info)?;
+            self.uninstall_ref(task_uuid, ref_, installation_info)?;
         }
         transaction.add_install(&remote.name, ref_, &[])?;
 
@@ -164,12 +165,12 @@ impl FlatpakWorker {
         info!("Install Flatpak bundle: {}", path);
         let file = gio::File::for_parse_name(path);
 
-        let transaction = self.new_transaction(installation_info, false)?;
+        let transaction = self.new_transaction(task_uuid, installation_info, false)?;
 
         if uninstall_before_install {
             let bundle = BundleRef::new(&file)?;
             let ref_ = bundle.format_ref().unwrap();
-            self.uninstall_ref(&ref_, installation_info)?;
+            self.uninstall_ref(task_uuid, &ref_, installation_info)?;
         }
         transaction.add_install_bundle(&file, None)?;
 
@@ -188,10 +189,11 @@ impl FlatpakWorker {
         let file = gio::File::for_parse_name(path);
         let bundle = BundleRef::new(&file)?;
 
-        let transaction = self.new_transaction(installation_info, true)?;
+        let transaction = self.new_transaction(task_uuid, installation_info, true)?;
         transaction.add_install_bundle(&file, None)?;
 
-        let mut results = self.run_dry_run_transaction(transaction, installation_info)?;
+        let mut results =
+            self.run_dry_run_transaction(task_uuid, transaction, installation_info)?;
 
         // Installed bundle size
         results.package.installed_size = bundle.installed_size();
@@ -241,7 +243,7 @@ impl FlatpakWorker {
         let file = gio::File::for_parse_name(path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
 
-        let transaction = self.new_transaction(installation_info, false)?;
+        let transaction = self.new_transaction(task_uuid, installation_info, false)?;
 
         if uninstall_before_install {
             let keyfile = KeyFile::new();
@@ -251,7 +253,7 @@ impl FlatpakWorker {
             let arch = flatpak::functions::default_arch().unwrap();
 
             let ref_ = format!("app/{name}/{arch}/{branch}");
-            self.uninstall_ref(&ref_, installation_info)?;
+            self.uninstall_ref(task_uuid, &ref_, installation_info)?;
         }
         transaction.add_install_flatpakref(&bytes)?;
 
@@ -270,10 +272,11 @@ impl FlatpakWorker {
         let file = gio::File::for_parse_name(path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
 
-        let transaction = self.new_transaction(installation_info, true)?;
+        let transaction = self.new_transaction(task_uuid, installation_info, true)?;
         transaction.add_install_flatpakref(&bytes)?;
 
-        let mut results = self.run_dry_run_transaction(transaction, installation_info)?;
+        let mut results =
+            self.run_dry_run_transaction(task_uuid, transaction, installation_info)?;
 
         // Up to two remotes can be added during a *.flatpakref installation:
         // 1) `Url` value (= the repository where the ref is located)
@@ -398,6 +401,7 @@ impl FlatpakWorker {
 
     fn run_dry_run_transaction(
         &self,
+        task_uuid: &str,
         transaction: Transaction,
         // We need the "real" installation (not the dry-run one) to check what's already installed
         installation_info: &InstallationInfo,
@@ -584,12 +588,18 @@ impl FlatpakWorker {
                     WorkerError::DryRunRuntimeNotFound("unknown-runtime".to_string())
                 };
 
+                Self::cleanup_dry_run_installation(task_uuid);
                 return Err(error);
             } else if err.kind::<flatpak::Error>() != Some(flatpak::Error::Aborted) {
                 error!("Error during transaction dry run: {}", err.message());
+
+                Self::cleanup_dry_run_installation(task_uuid);
                 return Err(err.into());
             }
         }
+
+        // Remove temporary dry run installation directory again
+        Self::cleanup_dry_run_installation(task_uuid);
 
         let result = result.borrow().clone();
         Ok(result)
@@ -597,6 +607,7 @@ impl FlatpakWorker {
 
     fn new_transaction(
         &self,
+        task_uuid: &str,
         installation_info: &InstallationInfo,
         dry_run: bool,
     ) -> Result<Transaction, WorkerError> {
@@ -606,44 +617,21 @@ impl FlatpakWorker {
         // installation as dependency source. This way the dry run transaction
         // doesn't touch the specified installation, but has nevertheless the same local
         // runtimes available.
-
-        // TODO: There's a race condition when you run multiple dry-run transactions at
-        // the same time, since they use the same installation
         let transaction = if dry_run {
-            let remotes = installation.list_remotes(Cancellable::NONE)?;
-            let mut dry_run_path = glib::tmp_dir();
-            dry_run_path.push("souk-dry-run");
+            let mut path = glib::tmp_dir();
+            path.push(format!("souk-dry-run-{}", task_uuid));
 
-            // Remove previous dry run installation
-            let _ = std::fs::remove_dir_all(&dry_run_path);
-
-            // New temporary dry run installation
-            std::fs::create_dir_all(&dry_run_path).expect("Unable to create dry run installation");
-            let file = gio::File::for_path(dry_run_path);
-            let dry_run = Installation::for_path(&file, true, Cancellable::NONE)?;
-
-            // Add the same remotes to the dry run installation
-            for remote in remotes {
-                if remote.url().unwrap().is_empty() || remote.is_disabled() {
-                    debug!(
-                        "Skip remote {} for dry run installation, no url or disabled.",
-                        remote.name().unwrap()
-                    );
-                    continue;
+            let dry_run_installation = match Self::dry_run_installation(&path, &installation) {
+                Ok(i) => i,
+                Err(err) => {
+                    error!("Unable to setup dry run installation: {}", err.to_string());
+                    Self::cleanup_dry_run_installation(task_uuid);
+                    return Err(err);
                 }
-
-                // For whatever reason we have to create a new remote object
-                let remote_to_add = Remote::new(&remote.name().unwrap());
-                remote_to_add.set_url(&remote.url().unwrap());
-                // We can't retrieve the public key of the added remote, so we trust that the
-                // the added remotes are valid, and disable gpg verify for the dry run
-                // transaction
-                remote_to_add.set_gpg_verify(false);
-                dry_run.add_remote(&remote_to_add, true, Cancellable::NONE)?;
-            }
+            };
 
             // Create new transaction, and add the "real" installation as dependency source
-            let t = Transaction::for_installation(&dry_run, Cancellable::NONE)?;
+            let t = Transaction::for_installation(&dry_run_installation, Cancellable::NONE)?;
             t.add_dependency_source(&installation);
 
             t
@@ -658,14 +646,62 @@ impl FlatpakWorker {
         Ok(transaction)
     }
 
+    fn dry_run_installation(
+        path: &PathBuf,
+        real_installation: &Installation,
+    ) -> Result<Installation, WorkerError> {
+        // New temporary dry run installation
+        std::fs::create_dir_all(&path).expect("Unable to create dry run installation");
+        let file = gio::File::for_path(path);
+
+        let dry_run_installation = Installation::for_path(&file, true, Cancellable::NONE)?;
+
+        // Add the same remotes to the dry run installation
+        let remotes = real_installation.list_remotes(Cancellable::NONE)?;
+        for remote in remotes {
+            if remote.url().unwrap().is_empty() || remote.is_disabled() {
+                debug!(
+                    "Skip remote {} for dry run installation, no url or disabled.",
+                    remote.name().unwrap()
+                );
+                continue;
+            }
+
+            // For whatever reason we have to create a new remote object
+            let remote_to_add = Remote::new(&remote.name().unwrap());
+            remote_to_add.set_url(&remote.url().unwrap());
+
+            // We can't retrieve the public key of the added remote, so we trust that the
+            // the added remotes are valid, and disable gpg verify for the dry run
+            // transaction
+            remote_to_add.set_gpg_verify(false);
+            dry_run_installation.add_remote(&remote_to_add, false, Cancellable::NONE)?;
+        }
+
+        Ok(dry_run_installation)
+    }
+
+    fn cleanup_dry_run_installation(task_uuid: &str) {
+        let mut path = glib::tmp_dir();
+        path.push(format!("souk-dry-run-{}", task_uuid));
+
+        if let Err(err) = std::fs::remove_dir_all(&path) {
+            warn!(
+                "Unable to remove dry run installation directory: {}",
+                err.to_string()
+            );
+        }
+    }
+
     fn uninstall_ref(
         &self,
+        task_uuid: &str,
         ref_: &str,
         installation_info: &InstallationInfo,
     ) -> Result<(), WorkerError> {
         debug!("Uninstall: {}", ref_);
 
-        let transaction = self.new_transaction(installation_info, false)?;
+        let transaction = self.new_transaction(task_uuid, installation_info, false)?;
         transaction.add_uninstall(ref_)?;
         transaction.run(Cancellable::NONE)?;
         Ok(())
