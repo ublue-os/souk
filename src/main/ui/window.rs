@@ -54,7 +54,7 @@ mod imp {
 
             // Add devel style class for development builds
             if config::PROFILE == "development" {
-                self.add_css_class("devel");
+                self.obj().add_css_class("devel");
             }
 
             // DND support for sideloading

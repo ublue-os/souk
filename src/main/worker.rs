@@ -17,11 +17,10 @@
 use flatpak::Remote;
 use futures_util::stream::StreamExt;
 use gio::File;
-use glib::{clone, KeyFile, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{clone, KeyFile, ParamSpec, Properties};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use once_cell::sync::Lazy;
 
 use crate::main::dbus_proxy::WorkerProxy;
 use crate::main::error::Error;
@@ -39,9 +38,12 @@ const KEEP_COMPLETED_TASKS: u32 = 5;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkWorker)]
     pub struct SkWorker {
+        #[property(get)]
         pub tasks: SkTaskModel,
+        #[property(get)]
         pub installations: SkInstallationModel,
 
         pub proxy: WorkerProxy<'static>,
@@ -55,42 +57,55 @@ mod imp {
 
     impl ObjectImpl for SkWorker {
         fn properties() -> &'static [ParamSpec] {
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![
-                    ParamSpecObject::new(
-                        "tasks",
-                        "",
-                        "",
-                        SkTaskModel::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                    ParamSpecObject::new(
-                        "installations",
-                        "",
-                        "",
-                        SkInstallationModel::static_type(),
-                        ParamFlags::READABLE,
-                    ),
-                ]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "tasks" => self.obj().tasks().to_value(),
-                "installations" => self.obj().installations().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
         fn constructed(&self) {
             self.parent_constructed();
 
             let fut = clone!(@weak self as this => async move {
-                this.obj().receive_task_response().await;
+                this.receive_task_response().await;
             });
             gtk_macros::spawn!(fut);
+        }
+    }
+
+    impl SkWorker {
+        pub async fn run_task(&self, task: &SkTask) -> Result<(), Error> {
+            // Remove finished tasks from model
+            task.connect_local(
+                "completed",
+                false,
+                clone!(@weak self as this => @default-return None, move |_|{
+                    this.obj().tasks().remove_completed_tasks(KEEP_COMPLETED_TASKS);
+                    None
+                }),
+            );
+
+            self.obj().tasks().add_task(task);
+            self.proxy.run_task(task.data()).await?;
+
+            Ok(())
+        }
+
+        /// Handle incoming task responses from worker process
+        pub async fn receive_task_response(&self) {
+            let mut response = self.proxy.receive_task_response().await.unwrap();
+
+            while let Some(response) = response.next().await {
+                let response = response.args().unwrap().task_response;
+                debug!("Task response: {:#?}", response);
+
+                let task_uuid = response.uuid.clone();
+                match self.obj().tasks().task(&task_uuid) {
+                    Some(task) => task.handle_response(&response),
+                    None => warn!("Received response for unknown active task!"),
+                }
+            }
         }
     }
 }
@@ -100,15 +115,6 @@ glib::wrapper! {
 }
 
 impl SkWorker {
-    pub fn tasks(&self) -> SkTaskModel {
-        self.imp().tasks.clone()
-    }
-
-    /// Returns all available Flatpak installations
-    pub fn installations(&self) -> SkInstallationModel {
-        self.imp().installations.clone()
-    }
-
     /// Install new Flatpak by ref name
     pub async fn install_flatpak(
         &self,
@@ -120,7 +126,7 @@ impl SkWorker {
             FlatpakTask::new_install(&package.info(), uninstall_before_install, dry_run);
 
         let task = SkTask::new(Some(&task_data), None);
-        self.run_task(&task).await?;
+        self.imp().run_task(&task).await?;
 
         Ok(task)
     }
@@ -144,7 +150,7 @@ impl SkWorker {
         );
 
         let task = SkTask::new(Some(&task_data), None);
-        self.run_task(&task).await?;
+        self.imp().run_task(&task).await?;
 
         Ok(task)
     }
@@ -168,48 +174,15 @@ impl SkWorker {
         );
 
         let task = SkTask::new(Some(&task_data), None);
-        self.run_task(&task).await?;
+        self.imp().run_task(&task).await?;
 
         Ok(task)
-    }
-
-    async fn run_task(&self, task: &SkTask) -> Result<(), Error> {
-        // Remove finished tasks from model
-        task.connect_local(
-            "completed",
-            false,
-            clone!(@weak self as this => @default-return None, move |_|{
-                this.tasks().remove_completed_tasks(KEEP_COMPLETED_TASKS);
-                None
-            }),
-        );
-
-        self.tasks().add_task(task);
-        self.imp().proxy.run_task(task.data()).await?;
-
-        Ok(())
     }
 
     /// Cancel a worker task
     pub async fn cancel_task(&self, task: &SkTask) -> Result<(), Error> {
         self.imp().proxy.cancel_task(task.data()).await?;
         Ok(())
-    }
-
-    /// Handle incoming task responses from worker process
-    async fn receive_task_response(&self) {
-        let mut response = self.imp().proxy.receive_task_response().await.unwrap();
-
-        while let Some(response) = response.next().await {
-            let response = response.args().unwrap().task_response;
-            debug!("Task response: {:#?}", response);
-
-            let task_uuid = response.uuid.clone();
-            match self.tasks().task(&task_uuid) {
-                Some(task) => task.handle_response(&response),
-                None => warn!("Received response for unknown active task!"),
-            }
-        }
     }
 
     /// Opens a sideloadable Flatpak file and load it into a `SkSideloadable`
