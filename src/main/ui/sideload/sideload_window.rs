@@ -414,8 +414,8 @@ mod imp {
                 "error",
                 false,
                 clone!(@weak self as this => @default-return None, move |error|{
-                    let msg: String = error[1].get().unwrap();
-                    this.show_error_message(&msg);
+                    let error: WorkerError = error[1].get().unwrap();
+                    this.show_error_message(&error.to_string());
                     None
                 }),
             );
