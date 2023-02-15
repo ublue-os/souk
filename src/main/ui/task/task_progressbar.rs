@@ -108,18 +108,8 @@ mod imp {
 
             *self.task.borrow_mut() = task.cloned();
             self.obj().notify("task");
-        }
 
-        fn update_fraction(&self) {
-            let animation = self.animation.get().unwrap();
-            let current_value = animation.value();
-
-            if let Some(task) = self.obj().task() {
-                animation.reset();
-                animation.set_value_from(current_value);
-                animation.set_value_to(task.progress() as f64);
-                animation.play();
-            }
+            self.update_fraction();
         }
 
         fn update(&self) {
@@ -145,6 +135,18 @@ mod imp {
                 } else {
                     self.is_pulsing.set(false);
                 }
+            }
+        }
+
+        fn update_fraction(&self) {
+            let animation = self.animation.get().unwrap();
+            let current_value = animation.value();
+
+            if let Some(task) = self.obj().task() {
+                animation.reset();
+                animation.set_value_from(current_value);
+                animation.set_value_to(task.progress() as f64);
+                animation.play();
             }
         }
     }
