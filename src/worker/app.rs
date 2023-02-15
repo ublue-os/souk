@@ -173,9 +173,7 @@ mod imp {
             Ok(())
         }
 
-        async fn start_task(&self, task: Task) {
-            let (sender, mut receiver) = unbounded();
-
+        fn start_task(&self, task: Task) {
             // Activate gio application to ensure that thread pool is started
             self.activate();
 
@@ -191,9 +189,8 @@ mod imp {
                     // Flatpak task
                     if let Some(task) = task.flatpak_task() {
                         thread_pool.spawn(
-                            clone!(@strong sender, @strong self.flatpak_worker as worker, @strong task, @strong uuid => async move {
+                            clone!(@strong self.flatpak_worker as worker, @strong task, @strong uuid => async move {
                                 worker.process_task(task, &uuid);
-                                sender.send(()).await.unwrap();
                             }),
                         );
                     }
@@ -201,9 +198,8 @@ mod imp {
                     // Appstream task
                     if let Some(task) = task.appstream_task() {
                         thread_pool.spawn(
-                            clone!(@strong sender, @strong self.appstream_worker as worker, @strong task, @strong uuid => async move {
+                            clone!(@strong self.appstream_worker as worker, @strong task, @strong uuid => async move {
                                 worker.process_task(task, &uuid);
-                                sender.send(()).await.unwrap();
                             }),
                         );
                     }
@@ -212,8 +208,6 @@ mod imp {
                     return;
                 }
             }
-
-            receiver.next().await;
         }
 
         async fn cancel_task(&self, task: Task) {
@@ -238,7 +232,7 @@ mod imp {
         async fn receive_tasks(&self) {
             let mut task_receiver = self.task_receiver.clone();
             while let Some(task) = task_receiver.next().await {
-                self.start_task(task).await;
+                self.start_task(task);
             }
 
             debug!("Stopped receiving tasks.");
