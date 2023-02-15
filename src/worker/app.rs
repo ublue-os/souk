@@ -205,7 +205,6 @@ mod imp {
                     }
                 } else {
                     error!("Unable to start task, thread pool is not available.");
-                    return;
                 }
             }
         }

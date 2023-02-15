@@ -619,7 +619,7 @@ impl FlatpakWorker {
         // runtimes available.
         let transaction = if dry_run {
             let mut path = glib::tmp_dir();
-            path.push(format!("souk-dry-run-{}", task_uuid));
+            path.push(format!("souk-dry-run-{task_uuid}"));
 
             let dry_run_installation = match Self::dry_run_installation(&path, &installation) {
                 Ok(i) => i,
@@ -651,7 +651,7 @@ impl FlatpakWorker {
         real_installation: &Installation,
     ) -> Result<Installation, WorkerError> {
         // New temporary dry run installation
-        std::fs::create_dir_all(&path).expect("Unable to create dry run installation");
+        std::fs::create_dir_all(path).expect("Unable to create dry run installation");
         let file = gio::File::for_path(path);
 
         let dry_run_installation = Installation::for_path(&file, true, Cancellable::NONE)?;
@@ -683,7 +683,7 @@ impl FlatpakWorker {
 
     fn cleanup_dry_run_installation(task_uuid: &str) {
         let mut path = glib::tmp_dir();
-        path.push(format!("souk-dry-run-{}", task_uuid));
+        path.push(format!("souk-dry-run-{task_uuid}"));
 
         if let Err(err) = std::fs::remove_dir_all(&path) {
             warn!(
