@@ -534,7 +534,7 @@ impl FlatpakWorker {
                             // If yes, it the already installed ref needs to get uninstalled first,
                             // before the new one can get installed.
                             if installed_origin != operation_remote {
-                                let f_remote = real_installation.remote_by_name(&remote_name, Cancellable::NONE).unwrap();
+                                let f_remote = real_installation.remote_by_name(&installed_origin, Cancellable::NONE).unwrap();
                                 let remote_info = RemoteInfo::from_flatpak(&f_remote, Some(&real_installation));
 
                                 result.is_replacing_remote = Some(remote_info).into();
