@@ -52,9 +52,23 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
 
-            self.obj().setup_widgets();
-            self.obj().setup_signals();
-            self.obj().setup_gactions();
+            // Add devel style class for development builds
+            if config::PROFILE == "development" {
+                self.add_css_class("devel");
+            }
+
+            // DND support for sideloading
+            let drop_target =
+                gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
+            drop_target.connect_drop(move |_, data, _, _| {
+                if let Ok(filelist) = data.get::<gdk::FileList>() {
+                    let app = SkApplication::default();
+                    app.open(&filelist.files(), "");
+                    return true;
+                }
+                false
+            });
+            self.status_page.add_controller(drop_target);
         }
     }
 
@@ -79,31 +93,6 @@ impl SkApplicationWindow {
     pub fn new() -> Self {
         glib::Object::new()
     }
-
-    fn setup_widgets(&self) {
-        let imp = self.imp();
-
-        // Add devel style class for development builds
-        if config::PROFILE == "development" {
-            self.add_css_class("devel");
-        }
-
-        // DND support for sideloading
-        let drop_target = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
-        drop_target.connect_drop(move |_, data, _, _| {
-            if let Ok(filelist) = data.get::<gdk::FileList>() {
-                let app = SkApplication::default();
-                app.open(&filelist.files(), "");
-                return true;
-            }
-            false
-        });
-        imp.status_page.add_controller(drop_target);
-    }
-
-    fn setup_signals(&self) {}
-
-    fn setup_gactions(&self) {}
 }
 
 impl Default for SkApplicationWindow {
