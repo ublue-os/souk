@@ -42,9 +42,9 @@ mod imp {
     #[properties(wrapper_type = super::SkWorker)]
     pub struct SkWorker {
         #[property(get)]
-        pub tasks: SkTaskModel,
+        tasks: SkTaskModel,
         #[property(get)]
-        pub installations: SkInstallationModel,
+        installations: SkInstallationModel,
 
         pub proxy: WorkerProxy<'static>,
     }

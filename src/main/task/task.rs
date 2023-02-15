@@ -40,9 +40,9 @@ mod imp {
     pub struct SkTask {
         // Static values
         #[property(get)]
-        pub index: OnceCell<u32>,
+        index: OnceCell<u32>,
         #[property(get, builder(SkTaskKind::None))]
-        pub kind: OnceCell<SkTaskKind>,
+        kind: OnceCell<SkTaskKind>,
 
         // Dynamic values
         #[property(get)]
@@ -52,16 +52,16 @@ mod imp {
         #[property(get)]
         pub progress: Cell<f32>,
         #[property(get)]
-        pub download_rate: Cell<u64>,
+        download_rate: Cell<u64>,
 
         #[property(get)]
-        pub dependencies: SkTaskModel,
+        dependencies: SkTaskModel,
         #[property(get, set, construct_only)]
-        pub dependency_of: OnceCell<Option<super::SkTask>>,
+        dependency_of: OnceCell<Option<super::SkTask>>,
 
         #[property(get = Self::data, set, construct_only, type = Task)]
         #[property(name = "uuid", get = Self::uuid, type = String)]
-        pub data: OnceCell<Option<Task>>,
+        data: OnceCell<Option<Task>>,
 
         // Gets called when task finishes (done/error/cancelled)
         pub finished_sender: OnceCell<Sender<()>>,

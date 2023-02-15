@@ -32,12 +32,12 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/remote_row.ui")]
     pub struct SkRemoteRow {
         #[property(get, set, construct_only)]
-        pub remote: OnceCell<SkRemote>,
+        remote: OnceCell<SkRemote>,
 
         #[template_child]
-        pub icon_image: TemplateChild<gtk::Image>,
+        icon_image: TemplateChild<gtk::Image>,
         #[template_child]
-        pub external_link_image: TemplateChild<gtk::Image>,
+        external_link_image: TemplateChild<gtk::Image>,
     }
 
     #[glib::object_subclass]

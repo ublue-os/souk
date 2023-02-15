@@ -37,9 +37,9 @@ mod imp {
     #[properties(wrapper_type = super::SkApplication)]
     pub struct SkApplication {
         #[property(get)]
-        pub worker: SkWorker,
+        worker: SkWorker,
 
-        pub window: OnceCell<WeakRef<SkApplicationWindow>>,
+        window: OnceCell<WeakRef<SkApplicationWindow>>,
     }
 
     #[glib::object_subclass]

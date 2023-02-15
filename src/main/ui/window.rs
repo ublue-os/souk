@@ -29,7 +29,7 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/window.ui")]
     pub struct SkApplicationWindow {
         #[template_child]
-        pub status_page: TemplateChild<adw::StatusPage>,
+        status_page: TemplateChild<adw::StatusPage>,
     }
 
     #[glib::object_subclass]

@@ -34,16 +34,16 @@ mod imp {
     #[properties(wrapper_type = super::SkPackage)]
     pub struct SkPackage {
         #[property(get)]
-        pub remote: OnceCell<SkRemote>,
+        remote: OnceCell<SkRemote>,
         #[property(name = "kind", get = Self::kind, type = SkPackageKind, builder(SkPackageKind::App))]
         #[property(name = "subref-kind", get = Self::subref_kind, type = SkPackageSubrefKind, builder(SkPackageSubrefKind::None))]
         #[property(name = "name", get = Self::name, type = String)]
         #[property(name = "architecture", get = Self::architecture, type = String)]
         #[property(name = "branch", get = Self::branch, type = String)]
         #[property(get, set, construct_only)]
-        pub info: OnceCell<PackageInfo>,
+        info: OnceCell<PackageInfo>,
 
-        pub flatpak_ref: OnceCell<Ref>,
+        flatpak_ref: OnceCell<Ref>,
     }
 
     #[glib::object_subclass]

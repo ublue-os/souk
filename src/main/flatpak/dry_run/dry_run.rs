@@ -38,15 +38,15 @@ mod imp {
     #[properties(wrapper_type = super::SkDryRun)]
     pub struct SkDryRun {
         #[property(get)]
-        pub package: OnceCell<SkDryRunPackage>,
+        package: OnceCell<SkDryRunPackage>,
         #[property(get)]
-        pub runtimes: SkDryRunPackageModel,
+        runtimes: SkDryRunPackageModel,
         #[property(get)]
-        pub remotes: SkRemoteModel,
+        remotes: SkRemoteModel,
         #[property(get, set, construct_only)]
         #[property(name = "has-update-source", get, type = bool, member = has_update_source)]
         #[property(name = "is-replacing-remote", get = Self::is_replacing_remote, type = Option<SkRemote>)]
-        pub data: OnceCell<DryRun>,
+        data: OnceCell<DryRun>,
     }
 
     #[glib::object_subclass]

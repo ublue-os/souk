@@ -29,15 +29,15 @@ mod imp {
     #[properties(wrapper_type = super::SkContextDetail)]
     pub struct SkContextDetail {
         #[property(get, set, construct_only, builder(SkContextDetailKind::Icon))]
-        pub kind: OnceCell<SkContextDetailKind>,
+        kind: OnceCell<SkContextDetailKind>,
         #[property(get, set, construct_only)]
-        pub kind_value: OnceCell<String>,
+        kind_value: OnceCell<String>,
         #[property(get, set, construct_only, builder(SkContextDetailLevel::Neutral))]
-        pub level: OnceCell<SkContextDetailLevel>,
+        level: OnceCell<SkContextDetailLevel>,
         #[property(get, set, construct_only)]
-        pub title: OnceCell<String>,
+        title: OnceCell<String>,
         #[property(get, set, construct_only)]
-        pub description: OnceCell<String>,
+        description: OnceCell<String>,
     }
 
     #[glib::object_subclass]

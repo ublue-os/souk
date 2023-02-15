@@ -36,14 +36,14 @@ mod imp {
     #[properties(wrapper_type = super::SkDryRunPackage)]
     pub struct SkDryRunPackage {
         #[property(get)]
-        pub package: OnceCell<SkPackage>,
+        package: OnceCell<SkPackage>,
         #[property(name = "appstream", get)]
-        pub appstream: OnceCell<SkPackageAppstream>,
+        appstream: OnceCell<SkPackageAppstream>,
         #[property(get, set, construct_only)]
         #[property(name = "operation-type", get = Self::operation_type, type = SkFlatpakOperationType, builder(SkFlatpakOperationType::None))]
         #[property(name = "download-size", get, type = u64, member = download_size)]
         #[property(name = "installed-size", get, type = u64, member = installed_size)]
-        pub data: OnceCell<DryRunPackage>,
+        data: OnceCell<DryRunPackage>,
     }
 
     #[glib::object_subclass]

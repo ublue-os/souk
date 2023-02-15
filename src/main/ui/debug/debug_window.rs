@@ -32,7 +32,7 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/debug_window.ui")]
     pub struct SkDebugWindow {
         #[template_child]
-        pub current_tasks_columnview: TemplateChild<gtk::ColumnView>,
+        current_tasks_columnview: TemplateChild<gtk::ColumnView>,
     }
 
     #[glib::object_subclass]

@@ -45,9 +45,9 @@ mod imp {
     #[properties(wrapper_type = super::SkServicePermission)]
     pub struct SkServicePermission {
         #[property(get, set, construct_only)]
-        pub name: OnceCell<String>,
+        name: OnceCell<String>,
         #[property(get, set, construct_only)]
-        pub is_system: OnceCell<bool>,
+        is_system: OnceCell<bool>,
     }
 
     #[glib::object_subclass]

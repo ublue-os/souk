@@ -38,20 +38,20 @@ mod imp {
     #[properties(wrapper_type = super::SkSideloadable)]
     pub struct SkSideloadable {
         #[property(get, set, construct_only)]
-        pub file: OnceCell<File>,
+        file: OnceCell<File>,
         #[property(get, set, construct_only, builder(SkSideloadKind::None))]
-        pub kind: OnceCell<SkSideloadKind>,
+        kind: OnceCell<SkSideloadKind>,
         /// Package which gets installed during sideload process (evaluated as
         /// [SkDryRun])
         #[property(get, set, construct_only)]
-        pub dry_run: OnceCell<Option<SkDryRun>>,
+        dry_run: OnceCell<Option<SkDryRun>>,
         /// Remotes which are getting added during the sideload process
         #[property(get, set, construct_only)]
-        pub remotes: OnceCell<SkRemoteModel>,
+        remotes: OnceCell<SkRemoteModel>,
         #[property(get, set, construct_only)]
-        pub no_changes: OnceCell<bool>,
+        no_changes: OnceCell<bool>,
         #[property(get, set, construct_only)]
-        pub installation: OnceCell<SkInstallation>,
+        installation: OnceCell<SkInstallation>,
     }
 
     #[glib::object_subclass]

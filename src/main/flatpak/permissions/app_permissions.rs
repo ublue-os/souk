@@ -43,15 +43,15 @@ mod imp {
     #[properties(wrapper_type = super::SkAppPermissions)]
     pub struct SkAppPermissions {
         #[property(get, set, construct_only)]
-        pub filesystems: OnceCell<ListStore>,
+        filesystems: OnceCell<ListStore>,
         #[property(get, set, construct_only)]
-        pub services: OnceCell<ListStore>,
+        services: OnceCell<ListStore>,
         #[property(get, set, construct_only)]
-        pub devices: OnceCell<SkDevicePermission>,
+        devices: OnceCell<SkDevicePermission>,
         #[property(get, set, construct_only)]
-        pub sockets: OnceCell<SkSocketPermission>,
+        sockets: OnceCell<SkSocketPermission>,
         #[property(get, set, construct_only)]
-        pub subsystems: OnceCell<SkSubsystemPermission>,
+        subsystems: OnceCell<SkSubsystemPermission>,
     }
 
     #[glib::object_subclass]
@@ -197,16 +197,6 @@ impl SkAppPermissions {
             }
         }
 
-        let permissions: Self = glib::Object::new();
-
-        let imp = permissions.imp();
-        imp.filesystems.set(filesystems).unwrap();
-        imp.services.set(services).unwrap();
-
-        imp.devices.set(devices).unwrap();
-        imp.sockets.set(sockets).unwrap();
-        imp.subsystems.set(subsystems).unwrap();
-
-        permissions
+        Self::new(&filesystems, &services, &devices, &sockets, &subsystems)
     }
 }

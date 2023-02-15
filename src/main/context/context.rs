@@ -32,9 +32,9 @@ mod imp {
     #[properties(wrapper_type = super::SkContext)]
     pub struct SkContext {
         #[property(get, set, construct_only)]
-        pub summary: OnceCell<SkContextDetail>,
+        summary: OnceCell<SkContextDetail>,
         #[property(get, set, construct_only)]
-        pub details: OnceCell<SkContextDetailGroupModel>,
+        details: OnceCell<SkContextDetailGroupModel>,
     }
 
     #[glib::object_subclass]

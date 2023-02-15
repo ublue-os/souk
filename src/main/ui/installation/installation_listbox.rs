@@ -32,9 +32,9 @@ mod imp {
     #[properties(wrapper_type = super::SkInstallationListBox)]
     pub struct SkInstallationListBox {
         #[property(get, set = Self::set_selected_installation)]
-        pub selected_installation: RefCell<Option<SkInstallation>>,
+        selected_installation: RefCell<Option<SkInstallation>>,
 
-        pub listbox: gtk::ListBox,
+        listbox: gtk::ListBox,
     }
 
     #[glib::object_subclass]

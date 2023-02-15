@@ -31,7 +31,7 @@ mod imp {
     #[properties(wrapper_type = super::SkRemote)]
     pub struct SkRemote {
         #[property(get)]
-        pub installation: OnceCell<Option<SkInstallation>>,
+        installation: OnceCell<Option<SkInstallation>>,
         #[property(name = "name", get, type = String, member = name)]
         #[property(name = "repository-url", get, type = String, member = repository_url)]
         #[property(name = "title", get, type = String, member = title)]
@@ -40,7 +40,7 @@ mod imp {
         #[property(name = "homepage", get, type = String, member = homepage)]
         #[property(name = "icon", get, type = String, member = icon)]
         #[property(get, set, construct_only)]
-        pub info: OnceCell<RemoteInfo>,
+        info: OnceCell<RemoteInfo>,
     }
 
     #[glib::object_subclass]

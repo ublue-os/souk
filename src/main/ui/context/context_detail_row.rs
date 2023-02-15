@@ -31,18 +31,18 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/context_detail_row.ui")]
     pub struct SkContextDetailRow {
         #[property(get, set, construct_only)]
-        pub detail: OnceCell<SkContextDetail>,
+        detail: OnceCell<SkContextDetail>,
         #[property(get, set, construct_only)]
-        pub show_arrow: OnceCell<bool>,
+        show_arrow: OnceCell<bool>,
 
         #[template_child]
-        pub type_stack: TemplateChild<gtk::Stack>,
+        type_stack: TemplateChild<gtk::Stack>,
         #[template_child]
-        pub icon_image: TemplateChild<gtk::Image>,
+        icon_image: TemplateChild<gtk::Image>,
         #[template_child]
-        pub text_label: TemplateChild<gtk::Label>,
+        text_label: TemplateChild<gtk::Label>,
         #[template_child]
-        pub arrow: TemplateChild<gtk::Image>,
+        arrow: TemplateChild<gtk::Image>,
     }
 
     #[glib::object_subclass]

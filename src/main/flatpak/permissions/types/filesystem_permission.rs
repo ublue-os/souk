@@ -37,9 +37,9 @@ mod imp {
             construct_only,
             builder(SkFilesystemPermissionKind::ReadWrite)
         )]
-        pub kind: OnceCell<SkFilesystemPermissionKind>,
+        kind: OnceCell<SkFilesystemPermissionKind>,
         #[property(get, set, construct_only)]
-        pub path: OnceCell<String>,
+        path: OnceCell<String>,
     }
 
     #[glib::object_subclass]

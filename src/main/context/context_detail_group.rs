@@ -33,9 +33,9 @@ mod imp {
     #[properties(wrapper_type = super::SkContextDetailGroup)]
     pub struct SkContextDetailGroup {
         #[property(get, set, construct_only)]
-        pub title: OnceCell<Option<String>>,
+        title: OnceCell<Option<String>>,
         #[property(get, set, construct_only)]
-        pub description: OnceCell<Option<String>>,
+        description: OnceCell<Option<String>>,
 
         pub map: RefCell<IndexMap<String, SkContextDetail>>,
     }

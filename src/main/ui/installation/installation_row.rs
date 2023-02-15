@@ -32,12 +32,12 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/installation_row.ui")]
     pub struct SkInstallationRow {
         #[property(get, set, construct_only)]
-        pub installation: OnceCell<SkInstallation>,
+        installation: OnceCell<SkInstallation>,
         #[property(get, set)]
-        pub selected: Cell<bool>,
+        selected: Cell<bool>,
 
         #[template_child]
-        pub checkmark: TemplateChild<gtk::Image>,
+        checkmark: TemplateChild<gtk::Image>,
     }
 
     #[glib::object_subclass]

@@ -37,23 +37,23 @@ mod imp {
     #[properties(wrapper_type = super::SkInstallation)]
     pub struct SkInstallation {
         #[property(get)]
-        pub name: OnceCell<String>,
+        name: OnceCell<String>,
         #[property(get)]
-        pub title: OnceCell<String>,
+        title: OnceCell<String>,
         #[property(get)]
-        pub description: OnceCell<String>,
+        description: OnceCell<String>,
         #[property(get)]
-        pub icon_name: OnceCell<String>,
+        icon_name: OnceCell<String>,
         #[property(get)]
-        pub remotes: SkRemoteModel,
+        remotes: SkRemoteModel,
         #[property(get)]
-        pub packages: SkPackageModel,
+        packages: SkPackageModel,
         #[property(name = "path", get = Self::path, type = File)]
         #[property(name = "is-user", get, type = bool, member = is_user)]
         #[property(get, set, construct_only)]
-        pub info: OnceCell<InstallationInfo>,
+        info: OnceCell<InstallationInfo>,
 
-        pub monitor: OnceCell<FileMonitor>,
+        monitor: OnceCell<FileMonitor>,
     }
 
     #[glib::object_subclass]

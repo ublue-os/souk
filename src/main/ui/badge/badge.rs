@@ -32,14 +32,14 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/badge.ui")]
     pub struct SkBadge {
         #[property(get, set = Self::set_kind, builder(SkBadgeKind::Branch))]
-        pub kind: RefCell<SkBadgeKind>,
+        kind: RefCell<SkBadgeKind>,
         #[property(get, set = Self::set_value)]
-        pub value: RefCell<String>,
+        value: RefCell<String>,
 
         #[template_child]
-        pub image: TemplateChild<gtk::Image>,
+        image: TemplateChild<gtk::Image>,
         #[template_child]
-        pub label: TemplateChild<gtk::Label>,
+        label: TemplateChild<gtk::Label>,
     }
 
     #[glib::object_subclass]

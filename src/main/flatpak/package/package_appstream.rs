@@ -43,13 +43,13 @@ mod imp {
         #[property(get, set, construct_only)]
         pub package: OnceCell<SkPackage>,
         #[property(get, set, construct_only)]
-        pub icon: OnceCell<Paintable>,
+        icon: OnceCell<Paintable>,
         #[property(get, set, construct_only)]
         #[property(name = "name", get = Self::name, type = String)]
         #[property(name = "developer-name", get = Self::developer_name, type = String)]
         #[property(name = "version", get = Self::version, type = String)]
         #[property(name = "summary", get = Self::summary, type = String)]
-        pub component: OnceCell<BoxedComponent>,
+        component: OnceCell<BoxedComponent>,
     }
 
     #[glib::object_subclass]

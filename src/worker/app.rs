@@ -47,19 +47,19 @@ mod imp {
     use super::*;
 
     pub struct SkWorkerApplication {
-        pub task_sender: Sender<Task>,
-        pub task_receiver: Receiver<Task>,
-        pub cancel_sender: Sender<Task>,
-        pub cancel_receiver: Receiver<Task>,
-        pub response_receiver: Receiver<TaskResponse>,
+        task_sender: Sender<Task>,
+        task_receiver: Receiver<Task>,
+        cancel_sender: Sender<Task>,
+        cancel_receiver: Receiver<Task>,
+        response_receiver: Receiver<TaskResponse>,
 
-        pub flatpak_worker: FlatpakWorker,
-        pub appstream_worker: AppstreamWorker,
+        flatpak_worker: FlatpakWorker,
+        appstream_worker: AppstreamWorker,
 
-        pub dbus_connection: RefCell<Option<Connection>>,
-        pub thread_pool: RefCell<Option<ThreadPool>>,
+        dbus_connection: RefCell<Option<Connection>>,
+        thread_pool: RefCell<Option<ThreadPool>>,
 
-        pub hold_guard: OnceCell<gio::ApplicationHoldGuard>,
+        hold_guard: OnceCell<gio::ApplicationHoldGuard>,
     }
 
     #[glib::object_subclass]

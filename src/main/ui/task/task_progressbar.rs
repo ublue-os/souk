@@ -33,14 +33,13 @@ mod imp {
     #[properties(wrapper_type = super::SkTaskProgressBar)]
     pub struct SkTaskProgressBar {
         #[property(get, set = Self::set_task)]
-        pub task: RefCell<Option<SkTask>>,
+        task: RefCell<Option<SkTask>>,
 
-        pub progressbar: gtk::ProgressBar,
-        pub animation: OnceCell<TimedAnimation>,
-        pub is_pulsing: Cell<bool>,
+        progressbar: gtk::ProgressBar,
+        animation: OnceCell<TimedAnimation>,
+        is_pulsing: Cell<bool>,
 
-        pub fraction: Cell<f64>,
-        pub watches: RefCell<Vec<gtk::ExpressionWatch>>,
+        watches: RefCell<Vec<gtk::ExpressionWatch>>,
     }
 
     #[glib::object_subclass]

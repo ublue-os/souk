@@ -35,21 +35,21 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/context_box.ui")]
     pub struct SkContextBox {
         #[property(get, set = Self::set_context)]
-        pub context: RefCell<Option<SkContext>>,
+        context: RefCell<Option<SkContext>>,
 
         #[template_child]
-        pub type_stack: TemplateChild<gtk::Stack>,
+        type_stack: TemplateChild<gtk::Stack>,
         #[template_child]
-        pub icon_image: TemplateChild<gtk::Image>,
+        icon_image: TemplateChild<gtk::Image>,
         #[template_child]
-        pub text_label: TemplateChild<gtk::Label>,
+        text_label: TemplateChild<gtk::Label>,
 
         #[template_child]
-        pub title_label: TemplateChild<gtk::Label>,
+        title_label: TemplateChild<gtk::Label>,
         #[template_child]
-        pub description_label: TemplateChild<gtk::Label>,
+        description_label: TemplateChild<gtk::Label>,
         #[template_child]
-        pub details_listbox: TemplateChild<gtk::ListBox>,
+        details_listbox: TemplateChild<gtk::ListBox>,
     }
 
     #[glib::object_subclass]
