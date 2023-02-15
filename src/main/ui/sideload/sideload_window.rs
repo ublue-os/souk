@@ -422,7 +422,7 @@ mod imp {
 
             // Setup progress view
             self.sideload_leaflet.set_visible_child_name("progress");
-            self.progress_bar.set_task(Some(task));
+            self.progress_bar.set_task(task);
 
             task.property_expression("status")
                 .chain_closure::<String>(closure!(

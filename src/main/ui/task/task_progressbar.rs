@@ -15,13 +15,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::cell::{Cell, RefCell};
-use std::rc::Rc;
 use std::time::Duration;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use adw::{PropertyAnimationTarget, TimedAnimation};
-use glib::{clone, ParamFlags, ParamSpec, ParamSpecObject};
+use glib::{clone, ParamSpec, Properties};
 use gtk::glib;
 use once_cell::unsync::OnceCell;
 
@@ -30,15 +29,17 @@ use crate::main::task::SkTask;
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Properties)]
+    #[properties(wrapper_type = super::SkTaskProgressBar)]
     pub struct SkTaskProgressBar {
+        #[property(get, set = Self::set_task)]
+        pub task: RefCell<Option<SkTask>>,
+
         pub progressbar: gtk::ProgressBar,
         pub animation: OnceCell<TimedAnimation>,
-        pub is_pulsing: Rc<Cell<bool>>,
+        pub is_pulsing: Cell<bool>,
 
-        pub task: RefCell<Option<SkTask>>,
         pub fraction: Cell<f64>,
-
         pub watches: RefCell<Vec<gtk::ExpressionWatch>>,
     }
 
@@ -51,31 +52,15 @@ mod imp {
 
     impl ObjectImpl for SkTaskProgressBar {
         fn properties() -> &'static [ParamSpec] {
-            use once_cell::sync::Lazy;
-            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
-                vec![ParamSpecObject::new(
-                    "task",
-                    "",
-                    "",
-                    SkTask::static_type(),
-                    ParamFlags::READWRITE,
-                )]
-            });
-            PROPERTIES.as_ref()
+            Self::derived_properties()
         }
 
-        fn property(&self, _id: usize, pspec: &ParamSpec) -> glib::Value {
-            match pspec.name() {
-                "task" => self.obj().task().to_value(),
-                _ => unimplemented!(),
-            }
+        fn property(&self, id: usize, pspec: &ParamSpec) -> glib::Value {
+            Self::derived_property(self, id, pspec)
         }
 
-        fn set_property(&self, _id: usize, value: &glib::Value, pspec: &ParamSpec) {
-            match pspec.name() {
-                "task" => self.obj().set_task(value.get().ok()),
-                _ => unimplemented!(),
-            }
+        fn set_property(&self, id: usize, value: &glib::Value, pspec: &ParamSpec) {
+            Self::derived_set_property(self, id, value, pspec)
         }
 
         fn constructed(&self) {
@@ -101,6 +86,69 @@ mod imp {
     impl WidgetImpl for SkTaskProgressBar {}
 
     impl BinImpl for SkTaskProgressBar {}
+
+    impl SkTaskProgressBar {
+        fn set_task(&self, task: Option<&SkTask>) {
+            while let Some(watch) = self.watches.borrow_mut().pop() {
+                watch.unwatch();
+            }
+
+            if let Some(task) = task {
+                let watch = task.property_expression("progress").watch(
+                    glib::Object::NONE,
+                    clone!(@weak self as this => move|| this.update_fraction()),
+                );
+                self.watches.borrow_mut().push(watch);
+
+                let watch = task.property_expression("status").watch(
+                    glib::Object::NONE,
+                    clone!(@weak self as this => move|| this.update()),
+                );
+                self.watches.borrow_mut().push(watch);
+            }
+
+            *self.task.borrow_mut() = task.cloned();
+            self.obj().notify("task");
+        }
+
+        fn update_fraction(&self) {
+            let animation = self.animation.get().unwrap();
+            let current_value = animation.value();
+
+            if let Some(task) = self.obj().task() {
+                animation.reset();
+                animation.set_value_from(current_value);
+                animation.set_value_to(task.progress() as f64);
+                animation.play();
+            }
+        }
+
+        fn update(&self) {
+            if let Some(task) = self.obj().task() {
+                // Show a pulse animation, since we don't have any progress information
+                // available when a Flatpak bundle gets installed.
+                if task.status().has_no_detailed_progress() && !self.is_pulsing.get() {
+                    self.is_pulsing.set(true);
+                    glib::timeout_add_local(
+                        Duration::from_secs(1),
+                        clone!(@weak self as this => @default-return Continue(false), move || {
+                            let is_pulsing = this.is_pulsing.get();
+
+                            if is_pulsing {
+                                this.progressbar.pulse();
+                            } else {
+                                this.update_fraction();
+                            }
+
+                            Continue(is_pulsing)
+                        }),
+                    );
+                } else {
+                    self.is_pulsing.set(false);
+                }
+            }
+        }
+    }
 }
 
 glib::wrapper! {
@@ -112,75 +160,6 @@ glib::wrapper! {
 impl SkTaskProgressBar {
     pub fn new() -> Self {
         glib::Object::new()
-    }
-
-    pub fn task(&self) -> Option<SkTask> {
-        self.imp().task.borrow().clone()
-    }
-
-    pub fn set_task(&self, task: Option<&SkTask>) {
-        let imp = self.imp();
-
-        while let Some(watch) = imp.watches.borrow_mut().pop() {
-            watch.unwatch();
-        }
-
-        if let Some(task) = task {
-            let watch = task.property_expression("progress").watch(
-                glib::Object::NONE,
-                clone!(@weak self as this => move|| this.update_fraction()),
-            );
-            imp.watches.borrow_mut().push(watch);
-
-            let watch = task.property_expression("status").watch(
-                glib::Object::NONE,
-                clone!(@weak self as this => move|| this.update()),
-            );
-            imp.watches.borrow_mut().push(watch);
-        }
-
-        *imp.task.borrow_mut() = task.cloned();
-        self.notify("task");
-    }
-
-    pub fn update_fraction(&self) {
-        let animation = self.imp().animation.get().unwrap();
-        let current_value = animation.value();
-
-        if let Some(task) = self.task() {
-            animation.reset();
-            animation.set_value_from(current_value);
-            animation.set_value_to(task.progress() as f64);
-            animation.play();
-        }
-    }
-
-    pub fn update(&self) {
-        if let Some(task) = self.task() {
-            let is_pulsing = self.imp().is_pulsing.get();
-
-            // Show a pulse animation, since we don't have any progress information
-            // available when a Flatpak bundle gets installed.
-            if task.status().has_no_detailed_progress() && !is_pulsing {
-                self.imp().is_pulsing.set(true);
-                glib::timeout_add_local(
-                    Duration::from_secs(1),
-                    clone!(@weak self as this => @default-return Continue(false), move || {
-                        let is_pulsing = this.imp().is_pulsing.get();
-
-                        if is_pulsing {
-                            this.imp().progressbar.pulse();
-                        } else {
-                            this.update_fraction();
-                        }
-
-                        Continue(is_pulsing)
-                    }),
-                );
-            } else {
-                self.imp().is_pulsing.set(false);
-            }
-        }
     }
 }
 
