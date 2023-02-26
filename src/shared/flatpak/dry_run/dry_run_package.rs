@@ -15,11 +15,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use derivative::Derivative;
+use flatpak::TransactionOperation;
 use gtk::glib;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::shared::flatpak::info::PackageInfo;
+use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
 use crate::shared::flatpak::FlatpakOperationKind;
 
 #[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash, glib::Boxed)]
@@ -42,6 +43,26 @@ pub struct DryRunPackage {
     pub metadata: String,
     #[derivative(Debug = "ignore")]
     pub old_metadata: Optional<String>,
+}
+
+impl DryRunPackage {
+    pub fn from_flatpak_operation(
+        operation: &TransactionOperation,
+        remote_info: &RemoteInfo,
+    ) -> Self {
+        Self {
+            info: PackageInfo::new(
+                operation.get_ref().unwrap().to_string(),
+                remote_info.clone(),
+            ),
+            operation_kind: operation.operation_type().into(),
+            download_size: operation.download_size(),
+            installed_size: operation.installed_size(),
+            metadata: operation.metadata().unwrap().to_data().to_string(),
+            old_metadata: operation.metadata().map(|m| m.to_data().to_string()).into(),
+            ..Default::default()
+        }
+    }
 }
 
 impl Default for DryRunPackage {

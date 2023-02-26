@@ -31,7 +31,7 @@ use gtk::{gio, glib};
 use isahc::ReadResponseExt;
 
 use crate::shared::flatpak::dry_run::{DryRun, DryRunPackage};
-use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
+use crate::shared::flatpak::info::{InstallationInfo, RemoteInfo};
 use crate::shared::flatpak::FlatpakOperationKind;
 use crate::shared::task::{FlatpakTask, FlatpakTaskKind, TaskProgress, TaskResponse, TaskResult};
 use crate::shared::WorkerError;
@@ -57,45 +57,21 @@ impl FlatpakWorker {
                 if task.dry_run {
                     unimplemented!();
                 } else {
-                    self.install_flatpak(
-                        task_uuid,
-                        task.ref_.as_ref().unwrap(),
-                        task.remote.as_ref().unwrap(),
-                        &task.installation,
-                        task.uninstall_before_install,
-                    )
+                    self.install_flatpak(task_uuid, task)
                 }
             }
             FlatpakTaskKind::InstallBundleFile => {
                 if task.dry_run {
-                    self.install_flatpak_bundle_file_dry_run(
-                        task_uuid,
-                        task.path.as_ref().unwrap(),
-                        &task.installation,
-                    )
+                    self.install_flatpak_bundle_file_dry_run(task_uuid, task)
                 } else {
-                    self.install_flatpak_bundle_file(
-                        task_uuid,
-                        task.path.as_ref().unwrap(),
-                        &task.installation,
-                        task.uninstall_before_install,
-                    )
+                    self.install_flatpak_bundle_file(task_uuid, task)
                 }
             }
             FlatpakTaskKind::InstallRefFile => {
                 if task.dry_run {
-                    self.install_flatpak_ref_file_dry_run(
-                        task_uuid,
-                        task.path.as_ref().unwrap(),
-                        &task.installation,
-                    )
+                    self.install_flatpak_ref_file_dry_run(task_uuid, task)
                 } else {
-                    self.install_flatpak_ref_file(
-                        task_uuid,
-                        task.path.as_ref().unwrap(),
-                        &task.installation,
-                        task.uninstall_before_install,
-                    )
+                    self.install_flatpak_ref_file(task_uuid, task)
                 }
             }
             FlatpakTaskKind::Update => {
@@ -133,23 +109,17 @@ impl FlatpakWorker {
         }
     }
 
-    fn install_flatpak(
-        &self,
-        task_uuid: &str,
-        ref_: &str,
-        remote: &RemoteInfo,
-        installation_info: &InstallationInfo,
-        uninstall_before_install: bool,
-    ) -> Result<(), WorkerError> {
+    fn install_flatpak(&self, task_uuid: &str, task: FlatpakTask) -> Result<(), WorkerError> {
+        let ref_ = task.ref_.as_ref().unwrap();
+        let remote = task.remote.as_ref().unwrap();
         info!("Install Flatpak: {}", ref_);
 
-        let transaction = self.new_transaction(task_uuid, installation_info, false)?;
-
-        if uninstall_before_install {
-            self.uninstall_ref(task_uuid, ref_, installation_info)?;
+        let transaction = self.new_transaction(task_uuid, &task.installation, false)?;
+        if task.uninstall_before_install {
+            self.uninstall_ref(task_uuid, &ref_, &task.installation)?;
         }
-        transaction.add_install(&remote.name, ref_, &[])?;
 
+        transaction.add_install(&remote.name, &ref_, &[])?;
         self.run_transaction(task_uuid.to_string(), transaction)?;
 
         Ok(())
@@ -158,22 +128,20 @@ impl FlatpakWorker {
     fn install_flatpak_bundle_file(
         &self,
         task_uuid: &str,
-        path: &str,
-        installation_info: &InstallationInfo,
-        uninstall_before_install: bool,
+        task: FlatpakTask,
     ) -> Result<(), WorkerError> {
+        let path = task.path.as_ref().unwrap();
+        let file = gio::File::for_parse_name(&path);
         info!("Install Flatpak bundle: {}", path);
-        let file = gio::File::for_parse_name(path);
 
-        let transaction = self.new_transaction(task_uuid, installation_info, false)?;
-
-        if uninstall_before_install {
+        let transaction = self.new_transaction(task_uuid, &task.installation, false)?;
+        if task.uninstall_before_install {
             let bundle = BundleRef::new(&file)?;
             let ref_ = bundle.format_ref().unwrap();
-            self.uninstall_ref(task_uuid, &ref_, installation_info)?;
+            self.uninstall_ref(task_uuid, &ref_, &task.installation)?;
         }
-        transaction.add_install_bundle(&file, None)?;
 
+        transaction.add_install_bundle(&file, None)?;
         self.run_transaction(task_uuid.to_string(), transaction)?;
 
         Ok(())
@@ -182,18 +150,18 @@ impl FlatpakWorker {
     fn install_flatpak_bundle_file_dry_run(
         &self,
         task_uuid: &str,
-        path: &str,
-        installation_info: &InstallationInfo,
+        task: FlatpakTask,
     ) -> Result<(), WorkerError> {
-        info!("Install Flatpak bundle (dry run): {}", path);
-        let file = gio::File::for_parse_name(path);
+        let path = task.path.as_ref().unwrap();
+        let file = gio::File::for_parse_name(&path);
         let bundle = BundleRef::new(&file)?;
+        info!("Install Flatpak bundle (dry run): {}", path);
 
-        let transaction = self.new_transaction(task_uuid, installation_info, true)?;
+        let transaction = self.new_transaction(task_uuid, &task.installation, true)?;
         transaction.add_install_bundle(&file, None)?;
 
         let mut results =
-            self.run_dry_run_transaction(task_uuid, transaction, installation_info)?;
+            self.run_dry_run_transaction(task_uuid, transaction, &task.installation)?;
 
         // Installed bundle size
         results.package.installed_size = bundle.installed_size();
@@ -235,25 +203,21 @@ impl FlatpakWorker {
     fn install_flatpak_ref_file(
         &self,
         task_uuid: &str,
-        path: &str,
-        installation_info: &InstallationInfo,
-        uninstall_before_install: bool,
+        task: FlatpakTask,
     ) -> Result<(), WorkerError> {
-        info!("Install Flatpak ref: {}", path);
-        let file = gio::File::for_parse_name(path);
+        let path = task.path.as_ref().unwrap();
+        let file = gio::File::for_parse_name(&path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
+        info!("Install Flatpak ref: {}", path);
 
-        let transaction = self.new_transaction(task_uuid, installation_info, false)?;
+        let transaction = self.new_transaction(task_uuid, &task.installation, false)?;
 
-        if uninstall_before_install {
+        if task.uninstall_before_install {
             let keyfile = KeyFile::new();
             keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
-            let name = keyfile.value("Flatpak Ref", "Name")?;
-            let branch = keyfile.value("Flatpak Ref", "Branch")?;
-            let arch = flatpak::functions::default_arch().unwrap();
 
-            let ref_ = format!("app/{name}/{arch}/{branch}");
-            self.uninstall_ref(task_uuid, &ref_, installation_info)?;
+            let ref_ = Self::parse_ref_file(&keyfile)?;
+            self.uninstall_ref(task_uuid, &ref_, &task.installation)?;
         }
         transaction.add_install_flatpakref(&bytes)?;
 
@@ -265,18 +229,18 @@ impl FlatpakWorker {
     fn install_flatpak_ref_file_dry_run(
         &self,
         task_uuid: &str,
-        path: &str,
-        installation_info: &InstallationInfo,
+        task: FlatpakTask,
     ) -> Result<(), WorkerError> {
-        info!("Install Flatpak ref (dry run): {}", path);
-        let file = gio::File::for_parse_name(path);
+        let path = task.path.as_ref().unwrap();
+        let file = gio::File::for_parse_name(&path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
+        info!("Install Flatpak ref (dry run): {}", path);
 
-        let transaction = self.new_transaction(task_uuid, installation_info, true)?;
+        let transaction = self.new_transaction(task_uuid, &task.installation, true)?;
         transaction.add_install_flatpakref(&bytes)?;
 
         let mut results =
-            self.run_dry_run_transaction(task_uuid, transaction, installation_info)?;
+            self.run_dry_run_transaction(task_uuid, transaction, &task.installation)?;
 
         // Up to two remotes can be added during a *.flatpakref installation:
         // 1) `Url` value (= the repository where the ref is located)
@@ -403,180 +367,128 @@ impl FlatpakWorker {
         &self,
         task_uuid: &str,
         transaction: Transaction,
-        // We need the "real" installation (not the dry-run one) to check what's already installed
-        installation_info: &InstallationInfo,
+        real_installation_info: &InstallationInfo,
     ) -> Result<DryRun, WorkerError> {
-        let result = Rc::new(RefCell::new(DryRun::default()));
-        let real_installation = Installation::from(installation_info);
+        let result: Rc<RefCell<DryRun>> = Rc::default();
+        let real_installation = Installation::from(real_installation_info);
+        let dry_run_installation = transaction.installation().unwrap();
 
-        // Check if new remotes are added during the transaction
-        let installation_info = installation_info.clone();
+        // Check if new remotes are getting added during the transaction
         transaction.connect_add_new_remote(
-            clone!(@weak result, @strong installation_info => @default-return false, move |_, _, _, name, url|{
+            clone!(@weak result => @default-return false, move |_, _, _, name, url|{
                 let remote_info = RemoteInfo::new(name.into(), url.into(), None);
                 result.borrow_mut().remotes.push(remote_info);
                 true
             }),
         );
 
-        // Ready -> Everything got resolved, so we can check the transaction operations
-        transaction.connect_ready(
-            clone!(@weak result, @weak real_installation => @default-return false, move |transaction|{
-                let mut result = result.borrow_mut();
-                let operation_count = transaction.operations().len();
+        // Ready -> Everything got resolved.
+        transaction.connect_ready_pre_auth(move |_| {
+            // Do not allow the transaction to start, since it's a dry run
+            false
+        });
 
-                for (pos, operation) in transaction.operations().iter().enumerate () {
-                    let operation_ref = operation.get_ref().unwrap().to_string();
-                    let operation_commit = operation.commit().unwrap().to_string();
-                    let operation_metadata = operation.metadata().unwrap().to_data().to_string();
-                    let operation_old_metadata = operation.metadata().map(|m| m.to_data().to_string());
+        // Run transaction
+        let transaction_result = transaction.run(Cancellable::NONE);
+        let mut result = result.borrow_mut();
 
-                    // Retrieve remote
-                    let remote_name = operation.remote().unwrap().to_string();
-                    let remote_info = if let Ok(f_remote) = real_installation.remote_by_name(&remote_name, Cancellable::NONE){
-                        RemoteInfo::from_flatpak(&f_remote, Some(&real_installation))
-                    } else {
-                        // Remote doesn't exist in real installation
-                        let f_remote = transaction.installation().unwrap().remote_by_name(&remote_name, Cancellable::NONE).unwrap();
-                        RemoteInfo::from_flatpak(&f_remote, None)
-                    };
+        // Retrieve operations that would be performed during the transaction
+        let ops = transaction.operations();
+        let mut operations = ops.iter().peekable();
 
-                    // Load appstream
-                    let mut appstream = None;
-                    let mut icon = None;
+        // Iterate through the operations and set the values for `DryRun`
+        while let Some(operation) = operations.next() {
+            let op_ref = Ref::parse(&operation.get_ref().unwrap())?;
+            let op_ref_str = operation.get_ref().unwrap().to_string();
+            let op_commit = operation.commit().unwrap().to_string();
 
-                    // We can't load appstream for bundles from the remote, since it's included in the bundle file
-                    if operation.operation_type() != TransactionOperationType::InstallBundle {
-                        let dry_run_installation = transaction.installation().unwrap();
-                        let remote_name = operation.remote().unwrap().to_string();
-                        let ref_ = Ref::parse(&operation.get_ref().unwrap()).unwrap();
-                        let ref_name = ref_.name().unwrap().to_string();
-                        let arch = ref_.arch().unwrap().to_string();
+            // Retrieve remote
+            let remote_name = operation.remote().unwrap().to_string();
+            let (remote, remote_info) = match real_installation
+                .remote_by_name(&remote_name, Cancellable::NONE)
+            {
+                Ok(remote) => {
+                    let remote_info = RemoteInfo::from_flatpak(&remote, Some(&real_installation));
+                    (remote, remote_info)
+                }
+                Err(_) => {
+                    // Remote doesn't exist in real installation
+                    let r = dry_run_installation.remote_by_name(&remote_name, Cancellable::NONE)?;
+                    let remote_info = RemoteInfo::from_flatpak(&r, None);
+                    (r, remote_info)
+                }
+            };
 
-                        // Those Flatpak subrefs usually don't include appstream data.
-                        // So we strip the suffixes, and retrieve the appstream data of the actual ref.
-                        //
-                        // We use here the same subrefs as Flatpak, see:
-                        // https://github.com/flatpak/flatpak/blob/600e18567c538ecd306d021534dbb418dc490676/common/flatpak-ref-utils.c#L451
-                        let ref_name = if ref_name.ends_with(".Locale")
-                            || ref_name.ends_with(".Debug")
-                            || ref_name.ends_with(".Sources")
-                        {
-                            let mut rn = ref_name.replace(".Locale", "");
-                            rn = rn.replace(".Debug", "");
-                            rn = rn.replace(".Sources", "");
-                            rn
-                        }else{
-                            ref_name.to_string()
-                        };
+            // Check if last operation, which is the target of the transaction
+            if operations.peek().is_none() {
+                result.package = DryRunPackage::from_flatpak_operation(operation, &remote_info);
 
-                        // Check if remote is already added (and we don't need to update the appstram data)
-                        let remote = match real_installation.remote_by_name(&remote_name, Cancellable::NONE) {
-                            Ok(remote) => remote,
-                            Err(_) => {
-                                debug!("Update appstream data for remote \"{}\" in dry run installation...", remote_name);
-                                let res = dry_run_installation.update_appstream_sync(&remote_name, Some(&arch), Cancellable::NONE);
-                                if let Err(err) = res {
-                                    warn!("Unable to update appstream data: {}", err.to_string());
-                                }
-
-                                dry_run_installation.remote_by_name(&remote_name, Cancellable::NONE).unwrap()
-                            }
-                        };
-
-                        // TODO: This currently compiles the appstream into xmlb every single time for every single runtime / package....
-                        if let Some(component) = appstream::utils::component_from_remote(&ref_name, &arch, &remote) {
-                            // Appstream
-                            let json = serde_json::to_string(&component).unwrap();
-                            appstream = Some(json);
-
-                            // Icon
-                            let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
-                            let icon_file = appstream_dir.child(format!("icons/128x128/{}.png", ref_.name().unwrap()));
-                            if let Ok((bytes, _)) = icon_file.load_bytes(Cancellable::NONE) {
-                                icon = Some(bytes.to_vec());
-                            }
-                        } else {
-                            warn!("Couldn't find appstream component for {operation_ref}");
-                        }
-                    }
-
-                    // Check if it's the last operation, which is the targeted app / runtime
-                    if (pos+1) ==  operation_count {
-                        // Package
-                        let package = DryRunPackage{
-                            info: PackageInfo::new(operation_ref, remote_info),
-                            operation_kind: operation.operation_type().into(),
-                            download_size: operation.download_size(),
-                            installed_size: operation.installed_size(),
-                            icon: icon.into(),
-                            appstream_component: appstream.into(),
-                            metadata: operation_metadata,
-                            old_metadata: operation_old_metadata.into(),
-                        };
-                        result.package = package;
-
-                        if operation.operation_type() == TransactionOperationType::InstallBundle{
-                            result.has_update_source = false;
-                        }
-
-                        // Check if ref is already installed
-                        let ref_ = Ref::parse(&operation.get_ref().unwrap()).unwrap();
-                        let installed = real_installation.installed_ref(
-                            ref_.kind(),
-                            &ref_.name().unwrap(),
-                            Some(&ref_.arch().unwrap()),
-                            Some(&ref_.branch().unwrap()),
-                            Cancellable::NONE
-                        );
-
-                        if let Ok(installed) = installed {
-                            let installed_origin = installed.origin().unwrap();
-                            let operation_remote = operation.remote().unwrap();
-
-                            // Check if the ref is already installed, but from a different remote
-                            // If yes, it the already installed ref needs to get uninstalled first,
-                            // before the new one can get installed.
-                            if installed_origin != operation_remote {
-                                let f_remote = real_installation.remote_by_name(&installed_origin, Cancellable::NONE).unwrap();
-                                let remote_info = RemoteInfo::from_flatpak(&f_remote, Some(&real_installation));
-
-                                result.is_replacing_remote = Some(remote_info).into();
-                            }
-
-                            if installed.commit().unwrap() == operation_commit {
-                                // Commit is the same -> ref is already installed -> No operation
-                                result.package.operation_kind = FlatpakOperationKind::None;
-                            }else{
-                                // Commit differs -> is update
-                                // Manually set operation type to `Update`, since technically it's
-                                // not possible to "update" Flatpak bundles, from libflatpak side
-                                // it's always `InstallBundle` operation.
-                                result.package.operation_kind = FlatpakOperationKind::Update;
-                            }
-                        }
-                    }else{
-                        let runtime = DryRunPackage{
-                            info: PackageInfo::new(operation_ref, remote_info),
-                            operation_kind: operation.operation_type().into(),
-                            download_size: operation.download_size(),
-                            installed_size: operation.installed_size(),
-                            icon: icon.into(),
-                            appstream_component: appstream.into(),
-                            metadata: operation_metadata,
-                            old_metadata: operation_old_metadata.into(),
-                        };
-
-                        result.runtimes.push(runtime);
-                    }
+                // Retrieve appstream data unless it is a Flatpak bundle which includes the data
+                // in the file itself (and doesn't have a "real" remote)
+                if operation.operation_type() != TransactionOperationType::InstallBundle {
+                    appstream::utils::set_dry_run_package_appstream(
+                        &mut result.package,
+                        &op_ref_str,
+                        &remote,
+                    );
                 }
 
-                // Do not allow the install to start, since it's a dry run
-                false
-            }),
-        );
+                // TODO: Rework this. Bundles can have update sources!
+                if operation.operation_type() == TransactionOperationType::InstallBundle {
+                    result.has_update_source = false;
+                }
 
-        if let Err(err) = transaction.run(Cancellable::NONE) {
+                // Check if ref is already installed in real installation
+                let installed = real_installation.installed_ref(
+                    op_ref.kind(),
+                    &op_ref.name().unwrap(),
+                    Some(&op_ref.arch().unwrap()),
+                    Some(&op_ref.branch().unwrap()),
+                    Cancellable::NONE,
+                );
+
+                if let Ok(installed) = installed {
+                    let installed_origin = installed.origin().unwrap();
+                    let operation_remote = operation.remote().unwrap();
+
+                    // Check if the ref is already installed, but from a different remote
+                    // If yes, it the already installed ref needs to get uninstalled first,
+                    // before the new one can get installed.
+                    if installed_origin != operation_remote {
+                        let remote = real_installation
+                            .remote_by_name(&installed_origin, Cancellable::NONE)?;
+                        let remote_info =
+                            RemoteInfo::from_flatpak(&remote, Some(&real_installation));
+                        result.is_replacing_remote = Some(remote_info).into();
+                    }
+
+                    if installed.commit().unwrap() == op_commit {
+                        // Commit is the same -> ref is already installed -> No operation
+                        result.package.operation_kind = FlatpakOperationKind::None;
+                    } else {
+                        // Commit differs -> is update
+                        // Manually set operation type to `Update`, since technically it's
+                        // not possible to "update" Flatpak bundles, from libflatpak side
+                        // it's always `InstallBundle` operation.
+                        result.package.operation_kind = FlatpakOperationKind::Update;
+                    }
+                }
+            } else {
+                let mut runtime = DryRunPackage::from_flatpak_operation(operation, &remote_info);
+                if operation.operation_type() != TransactionOperationType::InstallBundle {
+                    // We can't load appstream, since it's included in the bundle file
+                    appstream::utils::set_dry_run_package_appstream(
+                        &mut runtime,
+                        &op_ref_str,
+                        &remote,
+                    );
+                }
+
+                result.runtimes.push(runtime);
+            }
+        }
+
+        if let Err(err) = transaction_result {
             if err.kind::<flatpak::Error>() == Some(flatpak::Error::RuntimeNotFound) {
                 // Unfortunately there's no clean way to find out which runtime is missing
                 // so we have to parse the error message to find the runtime ref.
@@ -601,8 +513,7 @@ impl FlatpakWorker {
         // Remove temporary dry run installation directory again
         Self::cleanup_dry_run_installation(task_uuid);
 
-        let result = result.borrow().clone();
-        Ok(result)
+        Ok(result.clone())
     }
 
     fn new_transaction(
@@ -701,6 +612,8 @@ impl FlatpakWorker {
     ) -> Result<(), WorkerError> {
         debug!("Uninstall: {}", ref_);
 
+        // TODO: Add progress reporting, and explain why it's not possible to do it in
+        // the same transaction
         let transaction = self.new_transaction(task_uuid, installation_info, false)?;
         transaction.add_uninstall(ref_)?;
         transaction.run(Cancellable::NONE)?;
@@ -713,5 +626,23 @@ impl FlatpakWorker {
         let bytes = glib::Bytes::from_owned(response.bytes()?);
 
         Ok(Remote::from_file("remote", &bytes)?)
+    }
+
+    fn parse_ref_file(keyfile: &KeyFile) -> Result<String, WorkerError> {
+        let kind = if let Ok(is_runtime) = keyfile.boolean("Flatpak Ref", "IsRuntime") {
+            if is_runtime {
+                "runtime"
+            } else {
+                "app"
+            }
+        } else {
+            "app"
+        };
+
+        let name = keyfile.value("Flatpak Ref", "Name")?;
+        let branch = keyfile.value("Flatpak Ref", "Branch")?;
+        let arch = flatpak::functions::default_arch().unwrap();
+
+        Ok(format!("{kind}/{name}/{arch}/{branch}"))
     }
 }

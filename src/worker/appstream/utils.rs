@@ -16,13 +16,31 @@
 
 use appstream::Component;
 use flatpak::prelude::*;
-use flatpak::Remote;
+use flatpak::{Ref, Remote};
 use gtk::gio::Cancellable;
 use gtk::prelude::*;
 use xb::prelude::*;
 
-pub fn component_from_remote(name: &str, arch: &str, remote: &Remote) -> Option<Component> {
-    let appstream_dir = remote.appstream_dir(Some(arch)).unwrap();
+use crate::shared::flatpak::dry_run::DryRunPackage;
+
+// TODO: This currently compiles the appstream into xmlb every single time for
+// every single runtime / package.... TODO: Check if appstream for remote
+// exists, otherwise update
+pub fn set_dry_run_package_appstream(package: &mut DryRunPackage, ref_str: &str, remote: &Remote) {
+    let ref_ = Ref::parse(&ref_str).unwrap();
+    let name = ref_.name().unwrap().to_string();
+    let arch = ref_.arch().unwrap().to_string();
+
+    // Those Flatpak subrefs usually don't include appstream data.
+    // So we strip the suffixes, and retrieve the appstream data of the actual ref.
+    //
+    // We use here the same subrefs as Flatpak, see:
+    // https://github.com/flatpak/flatpak/blob/600e18567c538ecd306d021534dbb418dc490676/common/flatpak-ref-utils.c#L451
+    let name = name.trim_end_matches(".Locale");
+    let name = name.trim_end_matches(".Debug");
+    let name = name.trim_end_matches(".Sources");
+
+    let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
     let appstream_file = appstream_dir.child("appstream.xml");
 
     debug!("Load appstream file {:?}", appstream_file.path().unwrap());
@@ -36,7 +54,7 @@ pub fn component_from_remote(name: &str, arch: &str, remote: &Remote) -> Option<
     );
     if let Err(err) = res {
         error!("Unable to load appstream file: {}", err.to_string());
-        return None;
+        return;
     }
 
     add_source_fixups(&source);
@@ -53,10 +71,19 @@ pub fn component_from_remote(name: &str, arch: &str, remote: &Remote) -> Option<
     if let Ok(node) = silo.query_first(&xpath) {
         let xml = node.export(xb::NodeExportFlags::NONE).unwrap().to_string();
         let element = xmltree::Element::parse(xml.as_bytes()).unwrap();
-        return Component::try_from(&element).ok();
+
+        if let Ok(component) = Component::try_from(&element) {
+            package.appstream_component = Some(serde_json::to_string(&component).unwrap()).into();
+        } else {
+            warn!("Couldn't find appstream component for {name}");
+        }
     }
 
-    None
+    // Icon
+    let icon_file = appstream_dir.child(format!("icons/128x128/{}.png", name));
+    if let Ok((bytes, _)) = icon_file.load_bytes(Cancellable::NONE) {
+        package.icon = Some(bytes.to_vec()).into();
+    }
 }
 
 // Based on the gnome-software fixups
