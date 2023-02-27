@@ -18,13 +18,16 @@
         "--socket=wayland",
         "--device=dri",
         "--filesystem=host",
+        /* Default Flatpak installations so Souk is able to access them */
         "--filesystem=/var/lib/flatpak/",
+        "--filesystem=~/.local/share/flatpak:rw",
         "--filesystem=/var/tmp:rw",
         "--filesystem=/tmp:rw",
-        "--filesystem=~/.local/share/flatpak:rw",
         "--talk-name=org.freedesktop.Flatpak",
         "--system-talk-name=org.freedesktop.Flatpak.SystemHelper",
         "--system-talk-name=org.freedesktop.PolicyKit1",
+        /* Required for libflatpak for detecting system language */
+        "--system-talk-name=org.freedesktop.Accounts",
         "--talk-name=org.gtk.vfs.*",
         "--filesystem=xdg-run/gvfsd",
         "--env=RUST_LOG=souk=debug",

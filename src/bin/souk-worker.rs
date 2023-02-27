@@ -16,6 +16,7 @@
 
 use std::env;
 use std::path::Path;
+use std::process::Command;
 
 use gtk::glib;
 use souk::shared::{config, path};
@@ -28,7 +29,7 @@ fn main() -> glib::ExitCode {
     // Check if Souk gets executed as Flatpak
     let flatpak_info = Path::new("/.flatpak-info");
     if flatpak_info.exists() {
-        log::debug!("Running in Flatpak sandbox, overwriting Flatpak paths...");
+        log::debug!("Running in Flatpak sandbox, overwriting environment variables...");
         // We need to overwrite `FLATPAK_BINARY`, otherwise the exported files (eg.
         // desktop or DBus services) would have the wrong path ("/app/bin/flatpak").
         //
@@ -36,6 +37,35 @@ fn main() -> glib::ExitCode {
         // getting handled by Flatpak SystemHelper on host side.
         env::set_var("FLATPAK_BINARY", "/usr/bin/flatpak");
         env::set_var("FLATPAK_BWRAP", "/app/bin/flatpak-bwrap");
+
+        // Mirror language / locale env variables from host side. We need to set these
+        // so that libflatpak correctly detects the languages, and correctly
+        // installs the `.Locale` refs. If we would not do this, then on the
+        // host side during a "flatpak update" the `.Locale` refs would be
+        // installed / updated again with the appropriate translation.
+        let vars = vec![
+            "LANG",
+            "LANGUAGE",
+            "LC_ALL",
+            "LC_MESSAGES",
+            "LC_ADDRESS",
+            "LC_COLLATE",
+            "LC_CTYPE",
+            "LC_IDENTIFICATION",
+            "LC_MONETARY",
+            "LC_MEASUREMENT",
+            "LC_NAME",
+            "LC_NUMERIC",
+            "LC_PAPER",
+            "LC_TELEPHONE",
+            "LC_TIME",
+        ];
+
+        for var in vars {
+            if let Some(env) = retrieve_host_env(var) {
+                env::set_var(var, env);
+            }
+        }
     }
 
     // Initialize paths
@@ -49,4 +79,17 @@ fn main() -> glib::ExitCode {
 
     // Run app itself
     SkWorkerApplication::run()
+}
+
+fn retrieve_host_env(env: &str) -> Option<String> {
+    if let Ok(output) = Command::new("flatpak-spawn")
+        .arg("--host")
+        .arg("printenv")
+        .arg(env)
+        .output()
+    {
+        return String::from_utf8(output.stdout).ok();
+    }
+
+    None
 }
