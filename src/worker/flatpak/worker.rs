@@ -160,18 +160,21 @@ impl FlatpakWorker {
         let transaction = self.new_transaction(task_uuid, &task.installation, true)?;
         transaction.add_install_bundle(&file, None)?;
 
-        let mut results =
+        let mut result =
             self.run_dry_run_transaction(task_uuid, transaction, &task.installation)?;
 
+        // TODO: Rework this. This is not necessary true.
+        result.has_update_source = bundle.origin().is_some();
+
         // Installed bundle size
-        results.package.installed_size = bundle.installed_size();
+        result.package.installed_size = bundle.installed_size();
 
         // Remotes
         if let Some(runtime_repo_url) = bundle.runtime_repo_url() {
             // Download Flatpak repofile for additional remote metadata
             let bundle_remote = self.retrieve_flatpak_remote(&runtime_repo_url)?;
 
-            for remote_info in &mut results.remotes {
+            for remote_info in &mut result.remotes {
                 if bundle_remote.url().unwrap().as_str() == remote_info.repository_url {
                     remote_info.update_metadata(&bundle_remote);
                     break;
@@ -181,7 +184,7 @@ impl FlatpakWorker {
 
         // Icon
         if let Some(bytes) = bundle.icon(128) {
-            results.package.icon = Some(bytes.to_vec()).into();
+            result.package.icon = Some(bytes.to_vec()).into();
         }
 
         // Appstream
@@ -190,10 +193,10 @@ impl FlatpakWorker {
             let component = &collection.components[0];
 
             let json = serde_json::to_string(component).unwrap();
-            results.package.appstream_component = Some(json).into();
+            result.package.appstream_component = Some(json).into();
         }
 
-        let result = TaskResult::new_dry_run(results);
+        let result = TaskResult::new_dry_run(result);
         let response = TaskResponse::new_result(task_uuid.to_string(), result);
         self.sender.try_send(response).unwrap();
 
@@ -239,7 +242,7 @@ impl FlatpakWorker {
         let transaction = self.new_transaction(task_uuid, &task.installation, true)?;
         transaction.add_install_flatpakref(&bytes)?;
 
-        let mut results =
+        let mut result =
             self.run_dry_run_transaction(task_uuid, transaction, &task.installation)?;
 
         // Up to two remotes can be added during a *.flatpakref installation:
@@ -255,7 +258,7 @@ impl FlatpakWorker {
                 let ref_repo = self.retrieve_flatpak_remote(&repo_url)?;
                 let ref_repo_url = ref_repo.url().unwrap().to_string();
 
-                for remote_info in &mut results.remotes {
+                for remote_info in &mut result.remotes {
                     if ref_repo_url == remote_info.repository_url {
                         remote_info.update_metadata(&ref_repo);
                         break;
@@ -264,7 +267,7 @@ impl FlatpakWorker {
             }
         }
 
-        let result = TaskResult::new_dry_run(results);
+        let result = TaskResult::new_dry_run(result);
         let response = TaskResponse::new_result(task_uuid.to_string(), result);
         self.sender.try_send(response).unwrap();
 
@@ -402,6 +405,10 @@ impl FlatpakWorker {
             let op_ref_str = operation.get_ref().unwrap().to_string();
             let op_commit = operation.commit().unwrap().to_string();
 
+            // Check if this is the last operation. This ref is the target of the Flatpak
+            // transaction.
+            let is_targeted_ref = operations.peek().is_none();
+
             // Retrieve remote
             let remote_name = operation.remote().unwrap().to_string();
             let (remote, remote_info) = match real_installation
@@ -419,41 +426,64 @@ impl FlatpakWorker {
                 }
             };
 
-            // Check if last operation, which is the target of the transaction
-            if operations.peek().is_none() {
-                result.package = DryRunPackage::from_flatpak_operation(operation, &remote_info);
+            // Package
+            let mut package = DryRunPackage::from_flatpak_operation(operation, &remote_info);
 
-                // Retrieve appstream data unless it is a Flatpak bundle which includes the data
-                // in the file itself (and doesn't have a "real" remote)
-                if operation.operation_type() != TransactionOperationType::InstallBundle {
-                    appstream::utils::set_dry_run_package_appstream(
-                        &mut result.package,
-                        &op_ref_str,
-                        &remote,
-                    );
-                }
+            // Retrieve appstream data unless it is a Flatpak bundle which includes the data
+            // in the bundle file itself (and doesn't have a "real" remote)
+            if operation.operation_type() != TransactionOperationType::InstallBundle {
+                appstream::utils::set_dry_run_package_appstream(&mut package, &op_ref_str, &remote);
+            }
 
-                // TODO: Rework this. Bundles can have update sources!
-                if operation.operation_type() == TransactionOperationType::InstallBundle {
-                    result.has_update_source = false;
-                }
-
-                // Check if ref is already installed in real installation
-                let installed = real_installation.installed_ref(
+            // Check if ref is already installed
+            let installed_ref = real_installation
+                .installed_ref(
                     op_ref.kind(),
                     &op_ref.name().unwrap(),
                     Some(&op_ref.arch().unwrap()),
                     Some(&op_ref.branch().unwrap()),
                     Cancellable::NONE,
-                );
+                )
+                .ok();
 
-                if let Ok(installed) = installed {
-                    let installed_origin = installed.origin().unwrap();
+            // Check if the ref is already installed, and if so, compare the commit to
+            // determine if it is an update.
+            if let Some(installed_ref) = &installed_ref {
+                if installed_ref.commit().unwrap() == op_commit {
+                    // Same commit is already installed - nothing to do!
+                    if !is_targeted_ref {
+                        // Skip this operation, except it's the targeted ref
+                        continue;
+                    }
+                } else {
+                    // Commit differs - Ref gets updated during transaction!
+                    package.operation_kind = FlatpakOperationKind::Update;
+
+                    // Set `old_metadata` value from the installed ref. This is necessary, for
+                    // example, to determine new permissions.
+                    let utf8 = installed_ref.load_metadata(Cancellable::NONE)?.to_vec();
+                    let metadata = String::from_utf8(utf8).unwrap();
+                    package.old_metadata = Some(metadata).into();
+                }
+            } else {
+                if operation.operation_type() == TransactionOperationType::InstallBundle {
+                    package.operation_kind = FlatpakOperationKind::InstallBundle;
+                } else {
+                    package.operation_kind = FlatpakOperationKind::Install;
+                }
+            }
+
+            // Is this the targeted ref? (Normally the application that is to be installed)
+            if is_targeted_ref {
+                result.package = package;
+
+                if let Some(installed_ref) = &installed_ref {
+                    let installed_origin = installed_ref.origin().unwrap();
                     let operation_remote = operation.remote().unwrap();
 
                     // Check if the ref is already installed, but from a different remote
-                    // If yes, it the already installed ref needs to get uninstalled first,
-                    // before the new one can get installed.
+                    // If yes, it then uninstall the installed ref first. This is not strictly
+                    // necessary, but can prevent some common issues (eg. gpg mismatch)
                     if installed_origin != operation_remote {
                         let remote = real_installation
                             .remote_by_name(&installed_origin, Cancellable::NONE)?;
@@ -461,30 +491,10 @@ impl FlatpakWorker {
                             RemoteInfo::from_flatpak(&remote, Some(&real_installation));
                         result.is_replacing_remote = Some(remote_info).into();
                     }
-
-                    if installed.commit().unwrap() == op_commit {
-                        // Commit is the same -> ref is already installed -> No operation
-                        result.package.operation_kind = FlatpakOperationKind::None;
-                    } else {
-                        // Commit differs -> is update
-                        // Manually set operation type to `Update`, since technically it's
-                        // not possible to "update" Flatpak bundles, from libflatpak side
-                        // it's always `InstallBundle` operation.
-                        result.package.operation_kind = FlatpakOperationKind::Update;
-                    }
                 }
             } else {
-                let mut runtime = DryRunPackage::from_flatpak_operation(operation, &remote_info);
-                if operation.operation_type() != TransactionOperationType::InstallBundle {
-                    // We can't load appstream, since it's included in the bundle file
-                    appstream::utils::set_dry_run_package_appstream(
-                        &mut runtime,
-                        &op_ref_str,
-                        &remote,
-                    );
-                }
-
-                result.runtimes.push(runtime);
+                // No, it's a dependency / runtime.
+                result.runtimes.push(package);
             }
         }
 
@@ -524,10 +534,6 @@ impl FlatpakWorker {
     ) -> Result<Transaction, WorkerError> {
         let installation = Installation::from(installation_info);
 
-        // Setup a own installation for dry run transactions, and add the specified
-        // installation as dependency source. This way the dry run transaction
-        // doesn't touch the specified installation, but has nevertheless the same local
-        // runtimes available.
         let transaction = if dry_run {
             let mut path = glib::tmp_dir();
             path.push(format!("souk-dry-run-{task_uuid}"));
@@ -541,18 +547,14 @@ impl FlatpakWorker {
                 }
             };
 
-            // Create new transaction, and add the "real" installation as dependency source
-            let t = Transaction::for_installation(&dry_run_installation, Cancellable::NONE)?;
-            t.add_dependency_source(&installation);
-
-            t
+            Transaction::for_installation(&dry_run_installation, Cancellable::NONE)?
         } else {
-            Transaction::for_installation(&installation, Cancellable::NONE)?
+            let t = Transaction::for_installation(&installation, Cancellable::NONE)?;
+            // Add all default installations (= system wide installations) as dependency
+            // source
+            t.add_default_dependency_sources();
+            t
         };
-
-        // Add all default installations (= system wide installations) as dependency
-        // source
-        transaction.add_default_dependency_sources();
 
         Ok(transaction)
     }
