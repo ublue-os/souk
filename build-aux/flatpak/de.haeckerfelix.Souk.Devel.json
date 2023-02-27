@@ -5,7 +5,6 @@
     "sdk" : "org.gnome.Sdk",
     "sdk-extensions" : [
     	"org.freedesktop.Sdk.Extension.rust-stable",
-        "org.freedesktop.Sdk.Extension.rust-nightly",
         "org.freedesktop.Sdk.Extension.llvm14"
     ],
     "command" : "souk",
@@ -33,7 +32,7 @@
         "--env=GOBJECT_DEBUG=instance-count"
     ],
     "build-options" : {
-        "append-path" : "/usr/lib/sdk/rust-nightly/bin:/usr/lib/sdk/llvm14/bin",
+        "append-path" : "/usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm14/bin",
         "env": {
             "MOUNT_FUSE_PATH" : "../tmp/",
             "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER": "clang",
