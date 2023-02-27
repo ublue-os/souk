@@ -39,10 +39,10 @@ fn main() -> glib::ExitCode {
         env::set_var("FLATPAK_BWRAP", "/app/bin/flatpak-bwrap");
 
         // Mirror language / locale env variables from host side. We need to set these
-        // so that libflatpak correctly detects the languages, and correctly
-        // installs the `.Locale` refs. If we would not do this, then on the
-        // host side during a "flatpak update" the `.Locale` refs would be
-        // installed / updated again with the appropriate translation.
+        // so that libflatpak correctly detects the languages, and correctly installs
+        // the `.Locale` refs. If we would not do this, then on the host side during a
+        // "flatpak update" the `.Locale` refs would be installed / updated again with
+        // the appropriate translation.
         let vars = vec![
             "LANG",
             "LANGUAGE",
