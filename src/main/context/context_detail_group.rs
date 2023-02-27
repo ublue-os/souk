@@ -86,8 +86,8 @@ glib::wrapper! {
 impl SkContextDetailGroup {
     pub fn new(title: Option<&str>, description: Option<&str>) -> Self {
         glib::Object::builder()
-            .property("title", &title)
-            .property("description", &description)
+            .property("title", title)
+            .property("description", description)
             .build()
     }
 

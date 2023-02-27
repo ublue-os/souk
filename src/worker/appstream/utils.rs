@@ -27,7 +27,7 @@ use crate::shared::flatpak::dry_run::DryRunPackage;
 // every single runtime / package.... TODO: Check if appstream for remote
 // exists, otherwise update
 pub fn set_dry_run_package_appstream(package: &mut DryRunPackage, ref_str: &str, remote: &Remote) {
-    let ref_ = Ref::parse(&ref_str).unwrap();
+    let ref_ = Ref::parse(ref_str).unwrap();
     let name = ref_.name().unwrap().to_string();
     let arch = ref_.arch().unwrap().to_string();
 

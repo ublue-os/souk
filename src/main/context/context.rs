@@ -65,8 +65,8 @@ glib::wrapper! {
 impl SkContext {
     pub fn new(summary: &SkContextDetail, details: &SkContextDetailGroupModel) -> Self {
         glib::Object::builder()
-            .property("summary", &summary)
-            .property("details", &details)
+            .property("summary", summary)
+            .property("details", details)
             .build()
     }
 

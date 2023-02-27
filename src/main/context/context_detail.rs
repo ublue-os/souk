@@ -74,31 +74,31 @@ impl SkContextDetail {
         description: &str,
     ) -> Self {
         glib::Object::builder()
-            .property("kind", &kind)
-            .property("kind-value", &kind_value)
-            .property("level", &level)
-            .property("title", &title)
-            .property("description", &description)
+            .property("kind", kind)
+            .property("kind-value", kind_value)
+            .property("level", level)
+            .property("title", title)
+            .property("description", description)
             .build()
     }
 
     pub fn new_neutral_size(size: u64, title: &str, description: &str) -> Self {
         glib::Object::builder()
-            .property("kind", &SkContextDetailKind::Size)
+            .property("kind", SkContextDetailKind::Size)
             .property("kind-value", &size.to_string())
-            .property("level", &SkContextDetailLevel::Neutral)
-            .property("title", &title)
-            .property("description", &description)
+            .property("level", SkContextDetailLevel::Neutral)
+            .property("title", title)
+            .property("description", description)
             .build()
     }
 
     pub fn new_neutral_text(text: &str, title: &str, description: &str) -> Self {
         glib::Object::builder()
-            .property("kind", &SkContextDetailKind::Text)
+            .property("kind", SkContextDetailKind::Text)
             .property("kind-value", &text.to_string())
-            .property("level", &SkContextDetailLevel::Neutral)
-            .property("title", &title)
-            .property("description", &description)
+            .property("level", SkContextDetailLevel::Neutral)
+            .property("title", title)
+            .property("description", description)
             .build()
     }
 }

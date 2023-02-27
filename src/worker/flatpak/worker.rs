@@ -116,10 +116,10 @@ impl FlatpakWorker {
 
         let transaction = self.new_transaction(task_uuid, &task.installation, false)?;
         if task.uninstall_before_install {
-            self.uninstall_ref(task_uuid, &ref_, &task.installation)?;
+            self.uninstall_ref(task_uuid, ref_, &task.installation)?;
         }
 
-        transaction.add_install(&remote.name, &ref_, &[])?;
+        transaction.add_install(&remote.name, ref_, &[])?;
         self.run_transaction(task_uuid.to_string(), transaction)?;
 
         Ok(())
@@ -131,7 +131,7 @@ impl FlatpakWorker {
         task: FlatpakTask,
     ) -> Result<(), WorkerError> {
         let path = task.path.as_ref().unwrap();
-        let file = gio::File::for_parse_name(&path);
+        let file = gio::File::for_parse_name(path);
         info!("Install Flatpak bundle: {}", path);
 
         let transaction = self.new_transaction(task_uuid, &task.installation, false)?;
@@ -153,7 +153,7 @@ impl FlatpakWorker {
         task: FlatpakTask,
     ) -> Result<(), WorkerError> {
         let path = task.path.as_ref().unwrap();
-        let file = gio::File::for_parse_name(&path);
+        let file = gio::File::for_parse_name(path);
         let bundle = BundleRef::new(&file)?;
         info!("Install Flatpak bundle (dry run): {}", path);
 
@@ -209,7 +209,7 @@ impl FlatpakWorker {
         task: FlatpakTask,
     ) -> Result<(), WorkerError> {
         let path = task.path.as_ref().unwrap();
-        let file = gio::File::for_parse_name(&path);
+        let file = gio::File::for_parse_name(path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
         info!("Install Flatpak ref: {}", path);
 
@@ -235,7 +235,7 @@ impl FlatpakWorker {
         task: FlatpakTask,
     ) -> Result<(), WorkerError> {
         let path = task.path.as_ref().unwrap();
-        let file = gio::File::for_parse_name(&path);
+        let file = gio::File::for_parse_name(path);
         let bytes = file.load_bytes(Cancellable::NONE)?.0;
         info!("Install Flatpak ref (dry run): {}", path);
 
@@ -465,12 +465,10 @@ impl FlatpakWorker {
                     let metadata = String::from_utf8(utf8).unwrap();
                     package.old_metadata = Some(metadata).into();
                 }
+            } else if operation.operation_type() == TransactionOperationType::InstallBundle {
+                package.operation_kind = FlatpakOperationKind::InstallBundle;
             } else {
-                if operation.operation_type() == TransactionOperationType::InstallBundle {
-                    package.operation_kind = FlatpakOperationKind::InstallBundle;
-                } else {
-                    package.operation_kind = FlatpakOperationKind::Install;
-                }
+                package.operation_kind = FlatpakOperationKind::Install;
             }
 
             // Is this the targeted ref? (Normally the application that is to be installed)

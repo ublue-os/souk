@@ -23,6 +23,7 @@ use crate::shared::task::{FlatpakTaskKind, Task};
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
 #[enum_type(name = "SkTaskKind")]
+#[derive(Default)]
 pub enum SkTaskKind {
     /// A Flatpak operation gets dry ran
     FlatpakDryRun,
@@ -36,6 +37,7 @@ pub enum SkTaskKind {
     FlatpakUpdateInstallation,
     /// Never should be get used (placeholder)
     Unknown,
+    #[default]
     None,
     // Appstream...,
 }
@@ -83,11 +85,5 @@ impl From<FlatpakOperationKind> for SkTaskKind {
             FlatpakOperationKind::Uninstall => Self::FlatpakUninstall,
             FlatpakOperationKind::None => Self::None,
         }
-    }
-}
-
-impl Default for SkTaskKind {
-    fn default() -> Self {
-        SkTaskKind::None
     }
 }

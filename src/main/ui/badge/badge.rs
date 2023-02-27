@@ -135,8 +135,8 @@ glib::wrapper! {
 impl SkBadge {
     pub fn new(kind: SkBadgeKind, value: &str) -> Self {
         glib::Object::builder()
-            .property("kind", &kind)
-            .property("value", &value)
+            .property("kind", kind)
+            .property("value", value)
             .build()
     }
 }

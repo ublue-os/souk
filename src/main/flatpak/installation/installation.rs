@@ -150,7 +150,7 @@ glib::wrapper! {
 
 impl SkInstallation {
     pub(super) fn new(info: &InstallationInfo) -> Self {
-        glib::Object::builder().property("info", &info).build()
+        glib::Object::builder().property("info", info).build()
     }
 
     pub fn launch_app(&self, app: &SkPackage) {

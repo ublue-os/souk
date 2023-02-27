@@ -128,7 +128,7 @@ glib::wrapper! {
 
 impl SkPackage {
     pub fn new(info: &PackageInfo) -> Self {
-        glib::Object::builder().property("info", &info).build()
+        glib::Object::builder().property("info", info).build()
     }
 }
 

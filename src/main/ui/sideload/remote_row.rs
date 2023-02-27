@@ -137,6 +137,6 @@ glib::wrapper! {
 
 impl SkRemoteRow {
     pub fn new(remote: &SkRemote) -> Self {
-        glib::Object::builder().property("remote", &remote).build()
+        glib::Object::builder().property("remote", remote).build()
     }
 }

@@ -25,11 +25,13 @@ use crate::shared::flatpak::FlatpakOperationKind;
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
 #[enum_type(name = "SkFlatpakOperationKind")]
+#[derive(Default)]
 pub enum SkFlatpakOperationKind {
     Install,
     InstallBundle,
     Uninstall,
     Update,
+    #[default]
     None,
 }
 
@@ -56,11 +58,5 @@ impl fmt::Display for SkFlatpakOperationKind {
         };
 
         write!(f, "{text}")
-    }
-}
-
-impl Default for SkFlatpakOperationKind {
-    fn default() -> Self {
-        SkFlatpakOperationKind::None
     }
 }

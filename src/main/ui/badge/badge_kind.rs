@@ -20,13 +20,9 @@ use gtk::glib;
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
 #[enum_type(name = "SkBadgeKind")]
+#[derive(Default)]
 pub enum SkBadgeKind {
     Repository,
+    #[default]
     Branch,
-}
-
-impl Default for SkBadgeKind {
-    fn default() -> Self {
-        SkBadgeKind::Branch
-    }
 }

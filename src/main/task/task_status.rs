@@ -25,7 +25,9 @@ use crate::shared::task::TaskStatus;
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
 #[enum_type(name = "SkTaskStatus")]
+#[derive(Default)]
 pub enum SkTaskStatus {
+    #[default]
     None,
     Pending,
     Preparing,
@@ -78,11 +80,5 @@ impl fmt::Display for SkTaskStatus {
         };
 
         write!(f, "{text}")
-    }
-}
-
-impl Default for SkTaskStatus {
-    fn default() -> Self {
-        SkTaskStatus::None
     }
 }
