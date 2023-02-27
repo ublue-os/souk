@@ -451,8 +451,10 @@ impl FlatpakWorker {
             if let Some(installed_ref) = &installed_ref {
                 if installed_ref.commit().unwrap() == op_commit {
                     // Same commit is already installed - nothing to do!
+                    package.operation_kind = FlatpakOperationKind::None;
+
+                    // Skip this operation, except it's the targeted ref
                     if !is_targeted_ref {
-                        // Skip this operation, except it's the targeted ref
                         continue;
                     }
                 } else {
