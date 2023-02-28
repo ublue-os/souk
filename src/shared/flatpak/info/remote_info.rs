@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use base64::engine::general_purpose;
+use base64::Engine as _;
 use flatpak::prelude::*;
 use flatpak::{Installation, Remote};
 use gtk::glib;
@@ -116,13 +118,22 @@ impl TryInto<Remote> for RemoteInfo {
     type Error = Error;
 
     fn try_into(self) -> Result<Remote, Self::Error> {
-        let remote = Remote::new(&self.name);
-        remote.set_url(&self.repository_url);
-
         if self.gpg_key.is_empty() {
             return Err(Error::new(
                 flatpak::Error::Untrusted,
                 "Can't create Flatpak remote object without gpg key.",
+            ));
+        }
+
+        let remote = Remote::new(&self.name);
+        remote.set_url(&self.repository_url);
+
+        if let Ok(bytes) = general_purpose::STANDARD.decode(self.gpg_key) {
+            remote.set_gpg_key(&glib::Bytes::from(&bytes));
+        } else {
+            return Err(Error::new(
+                flatpak::Error::Untrusted,
+                "Unable to retrieve GPG key.",
             ));
         }
 

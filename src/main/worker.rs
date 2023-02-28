@@ -205,10 +205,8 @@ impl SkWorker {
             }
             SkSideloadKind::Repo => {
                 let bytes = file.load_bytes(gio::Cancellable::NONE)?.0;
-
                 let keyfile = KeyFile::new();
                 keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
-                let key = keyfile.value("Flatpak Repo", "GPGKey")?;
 
                 // Flatpak needs a name for the remote. Try using the `Title` value for it,
                 // otherwise fall back to the filename.
@@ -223,7 +221,9 @@ impl SkWorker {
 
                 let flatpak_remote = Remote::from_file(&remote_name, &bytes)?;
                 let mut remote_info = RemoteInfo::from_flatpak(&flatpak_remote, None);
+                let key = keyfile.value("Flatpak Repo", "GPGKey")?;
                 remote_info.set_gpg_key(&key);
+
                 let sk_remote = SkRemote::new(&remote_info);
 
                 // Check if remote is already added

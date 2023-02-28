@@ -28,6 +28,7 @@ thiserror = "1.0"
 isahc = "1.7"
 derivative = "2.2"
 rusty_pool = "0.7"
+base64 = "0.21.0"
 
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
 adw = { version = "0.3", package = "libadwaita", features = ["v1_2"] }

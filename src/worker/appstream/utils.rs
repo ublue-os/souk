@@ -78,7 +78,7 @@ pub fn set_dry_run_package_appstream(package: &mut DryRunPackage, ref_str: &str,
 
     // Xpath encodes `/` as `\/`
     let ref_ = format!("{}/{}/{}/{}", kind, name, arch, branch);
-    let ref_ = ref_.replace("/", r"\/");
+    let ref_ = ref_.replace('/', r"\/");
 
     // Query for appstream component
     let xpath = format!("components/component/bundle[text()='{ref_}']/..");
