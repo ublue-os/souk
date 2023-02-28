@@ -61,7 +61,7 @@ impl RemoteInfo {
 
         let mut info = Self {
             name: remote.name().unwrap().into(),
-            repository_url: remote.url().unwrap().into(),
+            repository_url: remote.url().unwrap_or_default().into(),
             installation: installation.into(),
             ..Default::default()
         };
