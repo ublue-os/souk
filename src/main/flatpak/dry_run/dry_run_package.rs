@@ -157,7 +157,7 @@ impl SkDryRunPackage {
             };
 
             extra_data_line =
-                format!("\n<small><b><span foreground=\"orange\" baseline_shift=\"-18pt\">{msg}</span></b></small>");
+                format!("\n<small><b><span foreground=\"#ff7800\" baseline_shift=\"-18pt\">{msg}</span></b></small>");
         }
 
         // Version line
@@ -166,7 +166,7 @@ impl SkDryRunPackage {
             && self.operation_kind() != SkFlatpakOperationKind::InstallBundle
         {
             version_line = i18n_f(
-                "{} – {}",
+                "{} – <b><span foreground=\"#3584e4\">{}</span></b>",
                 &[&version_line, &self.operation_kind().to_string()],
             );
         }
