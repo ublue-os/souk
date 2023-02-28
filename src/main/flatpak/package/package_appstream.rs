@@ -96,7 +96,7 @@ mod imp {
         /// Returns just the version as number, eg. "3.1"
         fn version(&self) -> String {
             let mut releases = self.obj().component().0.releases;
-            releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
+            releases.sort_by(|r1, r2| r2.version.cmp(&r1.version));
             if let Some(release) = releases.get(0) {
                 release.version.clone()
             } else {
@@ -179,7 +179,7 @@ impl SkPackageAppstream {
     /// Version"
     pub fn version_text(&self, include_branch: bool) -> String {
         let mut releases = self.component().0.releases;
-        releases.sort_by(|r1, r2| r1.version.cmp(&r2.version));
+        releases.sort_by(|r1, r2| r2.version.cmp(&r1.version));
 
         let branch = self.imp().package.get().unwrap().branch();
         let version = if let Some(release) = releases.get(0) {
