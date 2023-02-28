@@ -130,6 +130,7 @@ impl TryInto<Remote> for RemoteInfo {
 
         if let Ok(bytes) = general_purpose::STANDARD.decode(self.gpg_key) {
             remote.set_gpg_key(&glib::Bytes::from(&bytes));
+            remote.set_gpg_verify(true);
         } else {
             return Err(Error::new(
                 flatpak::Error::Untrusted,
