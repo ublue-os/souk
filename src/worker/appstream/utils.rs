@@ -16,7 +16,7 @@
 
 use appstream::Component;
 use flatpak::prelude::*;
-use flatpak::{Ref, Remote};
+use flatpak::{Ref, RefKind, Remote};
 use gtk::gio::Cancellable;
 use gtk::prelude::*;
 use xb::prelude::*;
@@ -28,17 +28,27 @@ use crate::shared::flatpak::dry_run::DryRunPackage;
 // exists, otherwise update
 pub fn set_dry_run_package_appstream(package: &mut DryRunPackage, ref_str: &str, remote: &Remote) {
     let ref_ = Ref::parse(ref_str).unwrap();
-    let name = ref_.name().unwrap().to_string();
+
+    let mut kind = if ref_.kind() == RefKind::App {
+        "app"
+    } else {
+        "runtime"
+    };
+    let mut name = ref_.name().unwrap().to_string();
     let arch = ref_.arch().unwrap().to_string();
+    let branch = ref_.branch().unwrap().to_string();
 
     // Those Flatpak subrefs usually don't include appstream data.
     // So we strip the suffixes, and retrieve the appstream data of the actual ref.
     //
     // We use here the same subrefs as Flatpak, see:
     // https://github.com/flatpak/flatpak/blob/600e18567c538ecd306d021534dbb418dc490676/common/flatpak-ref-utils.c#L451
-    let name = name.trim_end_matches(".Locale");
-    let name = name.trim_end_matches(".Debug");
-    let name = name.trim_end_matches(".Sources");
+    if name.ends_with(".Locale") || name.ends_with(".Debug") || name.ends_with(".Sources") {
+        name = name.trim_end_matches(".Locale").into();
+        name = name.trim_end_matches(".Debug").into();
+        name = name.trim_end_matches(".Sources").into();
+        kind = "app";
+    }
 
     let appstream_dir = remote.appstream_dir(Some(&arch)).unwrap();
     let appstream_file = appstream_dir.child("appstream.xml");
@@ -66,8 +76,12 @@ pub fn set_dry_run_package_appstream(package: &mut DryRunPackage, ref_str: &str,
         .compile(xb::BuilderCompileFlags::NONE, Cancellable::NONE)
         .unwrap();
 
+    // Xpath encodes `/` as `\/`
+    let ref_ = format!("{}/{}/{}/{}", kind, name, arch, branch);
+    let ref_ = ref_.replace("/", r"\/");
+
     // Query for appstream component
-    let xpath = format!("components/component/id[text()='{name}']/..");
+    let xpath = format!("components/component/bundle[text()='{ref_}']/..");
     if let Ok(node) = silo.query_first(&xpath) {
         let xml = node.export(xb::NodeExportFlags::NONE).unwrap().to_string();
         let element = xmltree::Element::parse(xml.as_bytes()).unwrap();
