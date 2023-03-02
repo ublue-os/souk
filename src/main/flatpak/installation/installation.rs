@@ -215,11 +215,19 @@ impl SkInstallation {
         let f_packages = f_inst.list_installed_refs(Cancellable::NONE)?;
         let mut packages = Vec::new();
         for f_package in &f_packages {
-            let f_remote = f_inst
-                .remote_by_name(&f_package.origin().unwrap(), Cancellable::NONE)
-                .unwrap();
-            let package_info = PackageInfo::from_flatpak(f_package, &f_remote, &f_inst);
-            packages.push(package_info);
+            if let Ok(f_remote) =
+                f_inst.remote_by_name(&f_package.origin().unwrap(), Cancellable::NONE)
+            {
+                let package_info = PackageInfo::from_flatpak(f_package, &f_remote, &f_inst);
+                packages.push(package_info);
+            } else {
+                // TODO: Maybe we shouldn't ignore it, but add it to some kind of dummy remote?
+                // Can happen when you delete a remote during a running Flatpak transaction.
+                warn!(
+                    "Ignoring package without remote: {}",
+                    f_package.format_ref().unwrap_or_default()
+                );
+            }
         }
         self.packages().set_packages(packages);
 
