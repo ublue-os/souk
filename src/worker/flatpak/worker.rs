@@ -171,11 +171,12 @@ impl FlatpakWorker {
         // Remotes
         if let Some(runtime_repo_url) = bundle.runtime_repo_url() {
             // Download Flatpak repofile for additional remote metadata
-            let bundle_remote = self.retrieve_flatpak_remote(&runtime_repo_url)?;
+            let repo_bytes = self.retrieve_flatpak_remote(&runtime_repo_url)?;
+            let bundle_remote = Remote::from_file("remote", &repo_bytes)?;
 
             for remote_info in &mut res.remotes {
                 if bundle_remote.url().unwrap().as_str() == remote_info.repository_url {
-                    remote_info.update_metadata(&bundle_remote);
+                    remote_info.set_repo_bytes(repo_bytes.to_vec());
                     break;
                 }
             }
@@ -251,12 +252,13 @@ impl FlatpakWorker {
 
         if let Ok(repo_url) = keyfile.value("Flatpak Ref", "RuntimeRepo") {
             if !repo_url.is_empty() {
-                let ref_repo = self.retrieve_flatpak_remote(&repo_url)?;
+                let repo_bytes = self.retrieve_flatpak_remote(&repo_url)?;
+                let ref_repo = Remote::from_file("remote", &repo_bytes)?;
                 let ref_repo_url = ref_repo.url().unwrap().to_string();
 
                 for remote_info in &mut res.remotes {
                     if ref_repo_url == remote_info.repository_url {
-                        remote_info.update_metadata(&ref_repo);
+                        remote_info.set_repo_bytes(repo_bytes.to_vec());
                         break;
                     }
                 }
@@ -412,13 +414,17 @@ impl FlatpakWorker {
                 .remote_by_name(&remote_name, Cancellable::NONE)
             {
                 Ok(remote) => {
-                    let remote_info = RemoteInfo::from_flatpak(&remote, Some(&real_installation));
+                    let remote_info = RemoteInfo::from_flatpak(&remote, &real_installation);
                     (remote, remote_info)
                 }
                 Err(_) => {
                     // Remote doesn't exist in real installation
                     let r = dry_run_installation.remote_by_name(&remote_name, Cancellable::NONE)?;
-                    let remote_info = RemoteInfo::from_flatpak(&r, None);
+                    let remote_info = RemoteInfo::new(
+                        r.name().unwrap().into(),
+                        r.url().unwrap_or_default().into(),
+                        None,
+                    );
                     (r, remote_info)
                 }
             };
@@ -454,7 +460,7 @@ impl FlatpakWorker {
                     // necessary, but can prevent some common issues (eg. gpg mismatch)
                     if is_targeted_ref {
                         let r = real_installation.remote_by_name(&origin, Cancellable::NONE)?;
-                        let remote_info = RemoteInfo::from_flatpak(&r, Some(&real_installation));
+                        let remote_info = RemoteInfo::from_flatpak(&r, &real_installation);
                         result.is_replacing_remote = Some(remote_info).into();
                     } else {
                         warn!("Non-targeted ref {op_ref_str} is already installed in {origin} instead of {op_remote}. This behaviour is undefined.");
@@ -617,11 +623,9 @@ impl FlatpakWorker {
     }
 
     /// Downloads the .flatpakrepo file for a remote
-    fn retrieve_flatpak_remote(&self, repo_url: &str) -> Result<Remote, WorkerError> {
+    fn retrieve_flatpak_remote(&self, repo_url: &str) -> Result<glib::Bytes, WorkerError> {
         let mut response = isahc::get(repo_url)?;
-        let bytes = glib::Bytes::from_owned(response.bytes()?);
-
-        Ok(Remote::from_file("remote", &bytes)?)
+        Ok(glib::Bytes::from_owned(response.bytes()?))
     }
 
     fn parse_ref_file(keyfile: &KeyFile) -> Result<String, WorkerError> {

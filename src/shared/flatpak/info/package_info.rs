@@ -42,7 +42,7 @@ impl PackageInfo {
         installation: &Installation,
     ) -> Self {
         let ref_ = installed_ref.format_ref().unwrap().to_string();
-        let remote = RemoteInfo::from_flatpak(remote, Some(installation));
+        let remote = RemoteInfo::from_flatpak(remote, installation);
 
         Self { ref_, remote }
     }

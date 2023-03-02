@@ -207,7 +207,7 @@ impl SkInstallation {
         let f_remotes = f_inst.list_remotes(Cancellable::NONE)?;
         let mut remotes = Vec::new();
         for f_remote in &f_remotes {
-            let remote_info = RemoteInfo::from_flatpak(f_remote, Some(&f_inst));
+            let remote_info = RemoteInfo::from_flatpak(f_remote, &f_inst);
             remotes.push(remote_info);
         }
         self.remotes().set_remotes(remotes);

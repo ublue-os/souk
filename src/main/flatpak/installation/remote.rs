@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::RefCell;
+
+use flatpak::prelude::*;
+use flatpak::{Installation, Remote};
 use glib::{ParamSpec, Properties};
-use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
+use gtk::{gio, glib};
 use once_cell::unsync::OnceCell;
 
 use super::SkInstallation;
@@ -31,14 +35,19 @@ mod imp {
     #[properties(wrapper_type = super::SkRemote)]
     pub struct SkRemote {
         #[property(get)]
+        title: RefCell<String>,
+        #[property(get)]
+        description: RefCell<String>,
+        #[property(get)]
+        comment: RefCell<String>,
+        #[property(get)]
+        homepage: RefCell<String>,
+        #[property(get)]
+        icon: RefCell<String>,
+        #[property(get)]
         installation: OnceCell<Option<SkInstallation>>,
         #[property(name = "name", get, type = String, member = name)]
         #[property(name = "repository-url", get, type = String, member = repository_url)]
-        #[property(name = "title", get, type = String, member = title)]
-        #[property(name = "description", get, type = String, member = description)]
-        #[property(name = "comment", get, type = String, member = comment)]
-        #[property(name = "homepage", get, type = String, member = homepage)]
-        #[property(name = "icon", get, type = String, member = icon)]
         #[property(get, set, construct_only)]
         info: OnceCell<RemoteInfo>,
     }
@@ -67,7 +76,21 @@ mod imp {
 
             let info = self.obj().info();
 
+            // Try to convert the `RemoteInfo` into a Flatpak `Remote` object.
+            // This only works, when the `RemoteInfo` has `repo_bytes` set.
+            let flatpak_remote: Option<Remote> = info.clone().try_into().ok();
+            if let Some(flatpak_remote) = flatpak_remote {
+                self.set_remote_data(&flatpak_remote);
+            }
+
             if let Some(inst_info) = &info.installation.into() {
+                let flatpak_inst = Installation::from(inst_info);
+                if let Ok(flatpak_remote) =
+                    flatpak_inst.remote_by_name(&info.name, gio::Cancellable::NONE)
+                {
+                    self.set_remote_data(&flatpak_remote);
+                }
+
                 let installations = SkApplication::default().worker().installations();
                 let installation = installations
                     .installation(inst_info)
@@ -76,6 +99,16 @@ mod imp {
             } else {
                 self.installation.set(None).unwrap();
             }
+        }
+    }
+
+    impl SkRemote {
+        fn set_remote_data(&self, remote: &Remote) {
+            *self.title.borrow_mut() = remote.title().unwrap_or_default().to_string();
+            *self.description.borrow_mut() = remote.description().unwrap_or_default().to_string();
+            *self.comment.borrow_mut() = remote.comment().unwrap_or_default().to_string();
+            *self.homepage.borrow_mut() = remote.homepage().unwrap_or_default().to_string();
+            *self.icon.borrow_mut() = remote.icon().unwrap_or_default().to_string();
         }
     }
 }

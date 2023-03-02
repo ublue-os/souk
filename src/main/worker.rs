@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use flatpak::Remote;
 use futures_util::stream::StreamExt;
 use gio::File;
 use glib::{clone, KeyFile, ParamSpec, Properties};
@@ -205,6 +204,7 @@ impl SkWorker {
             }
             SkSideloadKind::Repo => {
                 let bytes = file.load_bytes(gio::Cancellable::NONE)?.0;
+
                 let keyfile = KeyFile::new();
                 keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
 
@@ -219,11 +219,7 @@ impl SkWorker {
                     utils::normalize_string(&basename.to_string_lossy())
                 };
 
-                let flatpak_remote = Remote::from_file(&remote_name, &bytes)?;
-                let mut remote_info = RemoteInfo::from_flatpak(&flatpak_remote, None);
-                let key = keyfile.value("Flatpak Repo", "GPGKey")?;
-                remote_info.set_gpg_key(&key);
-
+                let remote_info = RemoteInfo::from_repo_file(&remote_name, bytes.to_vec())?;
                 let sk_remote = SkRemote::new(&remote_info);
 
                 // Check if remote is already added

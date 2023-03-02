@@ -76,7 +76,7 @@ impl TaskProgress {
         let remote = installation
             .remote_by_name(&remote_name, gio::Cancellable::NONE)
             .unwrap();
-        let remote_info = RemoteInfo::from_flatpak(&remote, Some(&installation));
+        let remote_info = RemoteInfo::from_flatpak(&remote, &installation);
 
         let package = PackageInfo::new(ref_.to_string(), remote_info);
         let operation_kind = operation.operation_type().into();

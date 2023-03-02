@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use base64::engine::general_purpose;
-use base64::Engine as _;
 use flatpak::prelude::*;
 use flatpak::{Installation, Remote};
 use gtk::glib;
@@ -24,6 +22,7 @@ use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
 use super::InstallationInfo;
+use crate::shared::WorkerError;
 
 #[derive(Deserialize, Serialize, Hash, Type, Debug, Clone, Eq, PartialEq, glib::Boxed)]
 #[boxed_type(name = "RemoteInfo", nullable)]
@@ -32,14 +31,7 @@ pub struct RemoteInfo {
     pub repository_url: String,
     pub installation: Optional<InstallationInfo>,
 
-    gpg_key: String,
-
-    // Optional metadata from .flatpakrepo file
-    pub title: String,
-    pub description: String,
-    pub comment: String,
-    pub homepage: String,
-    pub icon: String,
+    repo_bytes: Optional<Vec<u8>>,
 }
 
 impl RemoteInfo {
@@ -56,45 +48,30 @@ impl RemoteInfo {
         }
     }
 
-    pub fn from_flatpak(remote: &Remote, installation: Option<&Installation>) -> Self {
-        let installation: Option<InstallationInfo> = installation.map(|i| i.into());
+    pub fn from_flatpak(remote: &Remote, installation: &Installation) -> Self {
+        Self::new(
+            remote.name().unwrap().into(),
+            remote.url().unwrap_or_default().into(),
+            Some(installation.into()),
+        )
+    }
 
-        let mut info = Self {
+    pub fn from_repo_file(name: &str, bytes: Vec<u8>) -> Result<Self, WorkerError> {
+        let g_bytes = glib::Bytes::from(&bytes);
+
+        // Verify that bytes can be read into a Flatpak `Remote` object
+        let remote = Remote::from_file(name, &g_bytes)?;
+
+        Ok(Self {
             name: remote.name().unwrap().into(),
             repository_url: remote.url().unwrap_or_default().into(),
-            installation: installation.into(),
+            repo_bytes: Some(bytes).into(),
             ..Default::default()
-        };
-        info.update_metadata(remote);
-
-        info
+        })
     }
 
-    pub fn set_gpg_key(&mut self, key: &str) {
-        self.gpg_key = key.into();
-    }
-
-    /// Updates the optional metadata fields using a Flatpak [Remote] object
-    pub fn update_metadata(&mut self, remote: &Remote) {
-        if let Some(value) = remote.title() {
-            self.title = value.into();
-        }
-
-        if let Some(value) = remote.description() {
-            self.description = value.into();
-        }
-
-        if let Some(value) = remote.comment() {
-            self.comment = value.into();
-        }
-
-        if let Some(value) = remote.homepage() {
-            self.homepage = value.into();
-        }
-
-        if let Some(value) = remote.icon() {
-            self.icon = value.into();
-        }
+    pub fn set_repo_bytes(&mut self, bytes: Vec<u8>) {
+        self.repo_bytes = Some(bytes.to_vec()).into();
     }
 }
 
@@ -104,12 +81,7 @@ impl Default for RemoteInfo {
             name: String::default(),
             repository_url: String::default(),
             installation: None.into(),
-            gpg_key: String::default(),
-            title: String::default(),
-            description: String::default(),
-            comment: String::default(),
-            homepage: String::default(),
-            icon: String::default(),
+            repo_bytes: None.into(),
         }
     }
 }
@@ -118,46 +90,16 @@ impl TryInto<Remote> for RemoteInfo {
     type Error = Error;
 
     fn try_into(self) -> Result<Remote, Self::Error> {
-        if self.gpg_key.is_empty() {
-            return Err(Error::new(
-                flatpak::Error::Untrusted,
-                "Can't create Flatpak remote object without gpg key.",
-            ));
-        }
-
-        let remote = Remote::new(&self.name);
-        remote.set_url(&self.repository_url);
-
-        if let Ok(bytes) = general_purpose::STANDARD.decode(self.gpg_key) {
-            remote.set_gpg_key(&glib::Bytes::from(&bytes));
-            remote.set_gpg_verify(true);
+        if let Some(bytes) = self.repo_bytes.as_ref() {
+            let g_bytes = glib::Bytes::from(bytes);
+            let r = Remote::from_file(&self.name, &g_bytes)?;
+            r.set_gpg_verify(true);
+            Ok(r)
         } else {
-            return Err(Error::new(
-                flatpak::Error::Untrusted,
-                "Unable to retrieve GPG key.",
-            ));
+            Err(Error::new(
+                flatpak::Error::RemoteNotFound,
+                "Unable to create Flatpak remote object, no repodata available.",
+            ))
         }
-
-        if !self.title.is_empty() {
-            remote.set_title(&self.title);
-        }
-
-        if !self.description.is_empty() {
-            remote.set_description(&self.description);
-        }
-
-        if !self.comment.is_empty() {
-            remote.set_comment(&self.comment);
-        }
-
-        if !self.homepage.is_empty() {
-            remote.set_homepage(&self.homepage);
-        }
-
-        if !self.icon.is_empty() {
-            remote.set_icon(&self.icon);
-        }
-
-        Ok(remote)
     }
 }
