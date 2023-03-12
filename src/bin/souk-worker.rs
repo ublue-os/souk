@@ -83,6 +83,7 @@ fn main() -> glib::ExitCode {
 
 fn retrieve_host_env(env: &str) -> Option<String> {
     if let Ok(output) = Command::new("flatpak-spawn")
+        .env_clear()
         .arg("--host")
         .arg("printenv")
         .arg(env)
