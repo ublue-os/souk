@@ -35,15 +35,15 @@ fn main() -> glib::ExitCode {
         //
         // This only applies to `user` installations, since `system` operations are
         // getting handled by Flatpak SystemHelper on host side.
-        env::set_var("FLATPAK_BINARY", "/usr/bin/flatpak");
-        env::set_var("FLATPAK_BWRAP", "/app/bin/flatpak-bwrap");
+        set_env_var("FLATPAK_BINARY", "/usr/bin/flatpak");
+        set_env_var("FLATPAK_BWRAP", "/app/bin/flatpak-bwrap");
 
         // Mirror language / locale env variables from host side. We need to set these
         // so that libflatpak correctly detects the languages, and correctly installs
         // the `.Locale` refs. If we would not do this, then on the host side during a
         // "flatpak update" the `.Locale` refs would be installed / updated again with
         // the appropriate translation.
-        let vars = vec![
+        let envs = vec![
             "LANG",
             "LANGUAGE",
             "LC_ALL",
@@ -61,9 +61,9 @@ fn main() -> glib::ExitCode {
             "LC_TIME",
         ];
 
-        for var in vars {
-            if let Some(env) = retrieve_host_env(var) {
-                env::set_var(var, env);
+        for env in envs {
+            if let Some(var) = retrieve_host_env(env) {
+                set_env_var(env, var.trim());
             }
         }
     }
@@ -83,7 +83,8 @@ fn main() -> glib::ExitCode {
 
 fn retrieve_host_env(env: &str) -> Option<String> {
     if let Ok(output) = Command::new("flatpak-spawn")
-        .env_clear()
+        // Messes up flatpak-spawn output with debug prints
+        .env_remove("G_MESSAGES_DEBUG")
         .arg("--host")
         .arg("printenv")
         .arg(env)
@@ -93,4 +94,9 @@ fn retrieve_host_env(env: &str) -> Option<String> {
     }
 
     None
+}
+
+fn set_env_var(env: &str, var: &str) {
+    log::debug!("Set env var \"{env}\" to \"{var}\"");
+    env::set_var(env, var);
 }

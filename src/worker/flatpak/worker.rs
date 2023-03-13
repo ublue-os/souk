@@ -370,6 +370,8 @@ impl FlatpakWorker {
         transaction: Transaction,
         real_installation_info: &InstallationInfo,
     ) -> Result<DryRun, WorkerError> {
+        debug!("Run dry run transaction: {task_uuid}");
+
         let result: Rc<RefCell<DryRun>> = Rc::default();
         let real_installation = Installation::from(real_installation_info);
         let dry_run_installation = transaction.installation().unwrap();
@@ -452,6 +454,7 @@ impl FlatpakWorker {
                 if origin != op_remote {
                     // If yes, it then uninstall the installed ref first. This is not strictly
                     // necessary, but can prevent some common issues (eg. gpg mismatch)
+                    debug!("[remote] {op_ref_str}: Already installed from different origin \"{origin}\".");
                     if is_targeted_ref {
                         let r = real_installation.remote_by_name(&origin, Cancellable::NONE)?;
                         let remote_info = RemoteInfo::from_flatpak(&r, &real_installation);
@@ -461,6 +464,7 @@ impl FlatpakWorker {
                     }
                 } else if installed_ref.commit().unwrap() == op_commit {
                     // Same commit is already installed - nothing to do!
+                    debug!("[skip] {op_ref_str}: commit is already installed.");
                     package.operation_kind = FlatpakOperationKind::None;
 
                     // Skip this operation, except it's the targeted ref
@@ -469,6 +473,7 @@ impl FlatpakWorker {
                     }
                 } else {
                     // Commit differs - Ref gets updated during transaction!
+                    debug!("[update] {op_ref_str}: installed, but commit differs.");
                     package.operation_kind = FlatpakOperationKind::Update;
 
                     // Set `old_metadata` value from the installed ref. This is necessary, for
@@ -478,8 +483,10 @@ impl FlatpakWorker {
                     package.old_metadata = Some(metadata).into();
                 }
             } else if operation.operation_type() == TransactionOperationType::InstallBundle {
+                debug!("[install] {op_ref_str}: is not installed.");
                 package.operation_kind = FlatpakOperationKind::InstallBundle;
             } else {
+                debug!("[install] {op_ref_str}: is not installed.");
                 package.operation_kind = FlatpakOperationKind::Install;
             }
 
@@ -523,6 +530,7 @@ impl FlatpakWorker {
         // Remove temporary dry run installation directory again
         Self::cleanup_dry_run_installation(task_uuid);
 
+        debug!("Dry run transaction done: {task_uuid}");
         Ok(result.clone())
     }
 
