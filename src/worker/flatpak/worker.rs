@@ -432,12 +432,6 @@ impl FlatpakWorker {
             // Package
             let mut package = DryRunPackage::from_flatpak_operation(operation, &remote_info);
 
-            // Retrieve appstream data unless it is a Flatpak bundle which includes the data
-            // in the bundle file itself (and doesn't have a "real" remote)
-            if operation.operation_type() != TransactionOperationType::InstallBundle {
-                appstream::utils::set_dry_run_package_appstream(&mut package, &op_ref_str, &remote);
-            }
-
             // Check if ref is already installed
             let installed_ref = real_installation
                 .installed_ref(
@@ -487,6 +481,12 @@ impl FlatpakWorker {
                 package.operation_kind = FlatpakOperationKind::InstallBundle;
             } else {
                 package.operation_kind = FlatpakOperationKind::Install;
+            }
+
+            // Retrieve appstream data unless it is a Flatpak bundle which includes the data
+            // in the bundle file itself (and doesn't have a "real" remote)
+            if operation.operation_type() != TransactionOperationType::InstallBundle {
+                appstream::utils::set_dry_run_package_appstream(&mut package, &op_ref_str, &remote);
             }
 
             if is_targeted_ref {
