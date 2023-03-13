@@ -215,10 +215,7 @@
                 "/etc/profile.d",
                 "/lib/systemd",
                 "/share/dbus-1/interfaces/org.freedesktop.*",
-                "/share/dbus-1/services/org.freedesktop.*",
-                "/share/flatpak/triggers",
-                "/share/gdm",
-                "/share/zsh"
+                "/share/dbus-1/services/org.freedesktop.*"
             ],
             "post-install" : [
                 "cp /usr/bin/update-mime-database /app/bin",
@@ -229,7 +226,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/flatpak/flatpak.git",
-                    "branch" : "1.14.1"
+                    "branch" : "1.14.3"
                 },
                 {
                     "type" : "file",
