@@ -68,9 +68,12 @@ mod imp {
             // Setup table columns
             let factory = gtk::SignalListItemFactory::new();
             factory.connect_setup(|_factory, item| {
-                let text = gtk::Label::new(None);
+                let text = gtk::Inscription::new(None);
+                text.set_hexpand(true);
+
                 let expander = gtk::TreeExpander::new();
                 expander.set_child(Some(&text));
+                expander.set_width_request(350);
 
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 item.set_child(Some(&expander));
@@ -104,8 +107,12 @@ mod imp {
 
                 let task = listrow.item().unwrap().downcast::<SkTask>().unwrap();
 
-                let text = expander.child().unwrap().downcast::<gtk::Label>().unwrap();
-                text.set_text(&task.uuid());
+                let text = expander
+                    .child()
+                    .unwrap()
+                    .downcast::<gtk::Inscription>()
+                    .unwrap();
+                text.set_text(Some(&task.uuid()));
             });
             self.add_column("Task", factory);
 
@@ -116,7 +123,7 @@ mod imp {
                 item.property_expression("item")
                     .chain_property::<gtk::TreeListRow>("item")
                     .chain_property::<SkTask>("kind")
-                    .bind(&text, "label", None::<&SkTask>);
+                    .bind(&text, "text", None::<&SkTask>);
             });
             self.add_column("Type", factory);
 
@@ -127,7 +134,7 @@ mod imp {
                 item.property_expression("item")
                     .chain_property::<gtk::TreeListRow>("item")
                     .chain_property::<SkTask>("status")
-                    .bind(&text, "label", None::<&SkTask>);
+                    .bind(&text, "text", None::<&SkTask>);
             });
             self.add_column("Status", factory);
 
@@ -151,7 +158,7 @@ mod imp {
                     .chain_property::<gtk::TreeListRow>("item")
                     .chain_property::<SkTask>("package")
                     .chain_property::<SkPackage>("name")
-                    .bind(&text, "label", None::<&SkPackage>);
+                    .bind(&text, "text", None::<&SkPackage>);
             });
             self.add_column("Ref", factory);
 
@@ -164,7 +171,7 @@ mod imp {
                     .chain_property::<SkTask>("package")
                     .chain_property::<SkPackage>("remote")
                     .chain_property::<SkRemote>("name")
-                    .bind(&text, "label", None::<&SkRemote>);
+                    .bind(&text, "text", None::<&SkRemote>);
             });
             self.add_column("Remote", factory);
 
@@ -178,7 +185,7 @@ mod imp {
                     .chain_property::<SkPackage>("remote")
                     .chain_property::<SkRemote>("installation")
                     .chain_property::<SkInstallation>("name")
-                    .bind(&text, "label", None::<&SkInstallation>);
+                    .bind(&text, "text", None::<&SkInstallation>);
             });
             self.add_column("Installation", factory);
         }
@@ -193,13 +200,13 @@ mod imp {
     impl SkDebugWindow {
         fn add_column(&self, name: &str, factory: gtk::SignalListItemFactory) {
             let column = gtk::ColumnViewColumn::new(Some(name), Some(factory));
+            column.set_resizable(true);
             self.current_tasks_columnview.append_column(&column);
         }
 
-        fn setup_text_widget(item: &gtk::ListItem) -> gtk::Label {
-            // TODO: Use gtk inscription
-            let text = gtk::Label::new(None);
-            text.set_xalign(0.0);
+        fn setup_text_widget(item: &gtk::ListItem) -> gtk::Inscription {
+            let text = gtk::Inscription::new(None);
+            text.set_width_request(100);
 
             item.set_child(Some(&text));
             text
