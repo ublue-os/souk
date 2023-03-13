@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use derivative::Derivative;
 use flatpak::prelude::*;
 use flatpak::{Installation, Remote};
 use gtk::glib;
@@ -24,13 +25,15 @@ use zbus::zvariant::{Optional, Type};
 use super::InstallationInfo;
 use crate::shared::WorkerError;
 
-#[derive(Deserialize, Serialize, Hash, Type, Debug, Clone, Eq, PartialEq, glib::Boxed)]
+#[derive(Derivative, Deserialize, Serialize, Hash, Type, Clone, Eq, PartialEq, glib::Boxed)]
 #[boxed_type(name = "RemoteInfo", nullable)]
+#[derivative(Debug)]
 pub struct RemoteInfo {
     pub name: String,
     pub repository_url: String,
     pub installation: Optional<InstallationInfo>,
 
+    #[derivative(Debug = "ignore")]
     repo_bytes: Optional<Vec<u8>>,
 }
 

@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use derivative::Derivative;
 use gtk::glib;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
@@ -22,9 +21,8 @@ use zbus::zvariant::{Optional, Type};
 use super::DryRunPackage;
 use crate::shared::flatpak::info::RemoteInfo;
 
-#[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash, glib::Boxed)]
+#[derive(Deserialize, Debug, Serialize, Type, Clone, PartialEq, Eq, Hash, glib::Boxed)]
 #[boxed_type(name = "DryRun", nullable)]
-#[derivative(Debug)]
 pub struct DryRun {
     /// The Flatpak package for which the dry-run is performed (can be an
     /// application or runtime)
