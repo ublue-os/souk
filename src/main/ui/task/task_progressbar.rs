@@ -140,9 +140,11 @@ mod imp {
 
         fn update_fraction(&self) {
             let animation = self.animation.get().unwrap();
-            let current_value = animation.value();
 
             if let Some(task) = self.obj().task() {
+                animation.skip();
+                let current_value = animation.value();
+
                 animation.reset();
                 animation.set_value_from(current_value);
                 animation.set_value_to(task.progress() as f64);

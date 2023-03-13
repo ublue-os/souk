@@ -306,7 +306,7 @@ impl FlatpakWorker {
                 let response = TaskResponse::new_update(task_uuid.to_string(), task_progress);
                 this.sender.try_send(response).unwrap();
 
-                progress.set_update_frequency(500);
+                progress.set_update_frequency(750);
                 progress.connect_changed(
                     clone!(@weak this, @strong task_uuid, @weak transaction, @weak operation => move |progress|{
                         let task_progress = TaskProgress::new_flatpak(
