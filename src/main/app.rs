@@ -110,13 +110,7 @@ mod imp {
                 "refresh-installations",
                 clone!(@weak obj => move |_, _| {
                     let installations = obj.worker().installations();
-                    if let Err(err) = installations.refresh() {
-                        error!(
-                            "Unable to refresh Flatpak installations: {}",
-                            err.to_string()
-                        );
-                        // TODO: Expose this in UI
-                    }
+                    installations.refresh();
                 })
             );
             obj.set_accels_for_action("app.refresh-installations", &["<primary>r"]);
@@ -126,6 +120,9 @@ mod imp {
                 SkDebugWindow::new().show();
             });
             obj.set_accels_for_action("app.debug", &["<primary>d"]);
+
+            // Trigger refresh of all available Flatpak installations/remotes
+            self.obj().activate_action("refresh-installations", None);
         }
 
         fn activate(&self) {
@@ -143,9 +140,6 @@ mod imp {
             let window = self.create_window();
             let _ = self.window.set(window.downgrade());
             info!("Created application window.");
-
-            // Trigger refresh of all available Flatpak installations/remotes
-            self.obj().activate_action("refresh-installations", None);
         }
 
         fn open(&self, files: &[gio::File], hint: &str) {

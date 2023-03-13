@@ -89,10 +89,7 @@ mod imp {
             let monitor = f_inst.create_monitor(Cancellable::NONE).unwrap();
             monitor.connect_changed(clone!(@weak obj as this => move |_,_,_,_|{
                 debug!("Detected change in Flatpak installation.");
-                if let Err(err) = this.refresh(){
-                    error!("Unable to refresh Flatpak installation: {}", err.to_string());
-                    // TODO: Should this be exposed in the UI?
-                }
+                this.refresh();
             }));
             self.monitor.set(monitor).unwrap();
 
@@ -190,12 +187,12 @@ impl SkInstallation {
         let f_inst = Installation::from(&self.info());
         f_inst.add_remote(&f_remote, false, Cancellable::NONE)?;
 
-        self.refresh()?;
+        self.refresh();
 
         Ok(())
     }
 
-    pub fn refresh(&self) -> Result<(), Error> {
+    pub fn refresh(&self) {
         debug!(
             "Refresh Flatpak \"{}\" ({}) installation...",
             self.title(),
@@ -204,7 +201,7 @@ impl SkInstallation {
 
         let f_inst = Installation::from(&self.info());
 
-        let f_remotes = f_inst.list_remotes(Cancellable::NONE)?;
+        let f_remotes = f_inst.list_remotes(Cancellable::NONE).unwrap();
         let mut remotes = Vec::new();
         for f_remote in &f_remotes {
             let remote_info = RemoteInfo::from_flatpak(f_remote, &f_inst);
@@ -212,7 +209,7 @@ impl SkInstallation {
         }
         self.remotes().set_remotes(remotes);
 
-        let f_packages = f_inst.list_installed_refs(Cancellable::NONE)?;
+        let f_packages = f_inst.list_installed_refs(Cancellable::NONE).unwrap();
         let mut packages = Vec::new();
         for f_package in &f_packages {
             if let Ok(f_remote) =
@@ -230,7 +227,5 @@ impl SkInstallation {
             }
         }
         self.packages().set_packages(packages);
-
-        Ok(())
     }
 }

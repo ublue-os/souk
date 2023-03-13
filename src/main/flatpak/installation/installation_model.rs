@@ -25,7 +25,6 @@ use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
 
-use crate::main::error::Error;
 use crate::main::flatpak::installation::SkInstallation;
 use crate::shared::flatpak::info::InstallationInfo;
 
@@ -133,7 +132,7 @@ impl SkInstallationModel {
         glib::Object::new()
     }
 
-    pub fn refresh(&self) -> Result<(), Error> {
+    pub fn refresh(&self) {
         debug!("Refresh Flatpak installations...");
         let imp = self.imp();
 
@@ -150,11 +149,9 @@ impl SkInstallationModel {
             if info.name != "user" && !extra_infos.contains(info) {
                 imp.remove_info(info);
             } else {
-                sk_inst.refresh()?;
+                sk_inst.refresh();
             }
         }
-
-        Ok(())
     }
 
     pub fn installation(&self, info: &InstallationInfo) -> Option<SkInstallation> {
