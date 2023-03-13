@@ -29,7 +29,8 @@ use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::package::SkPackage;
 use crate::main::task::{SkTaskKind, SkTaskModel, SkTaskStatus};
-use crate::shared::task::{Task, TaskProgress, TaskResponse, TaskResponseKind, TaskResultKind};
+use crate::shared::task::response::{TaskResponse, TaskResponseKind, TaskResultKind, TaskUpdate};
+use crate::shared::task::Task;
 use crate::shared::WorkerError;
 
 mod imp {
@@ -146,9 +147,9 @@ mod imp {
             }
         }
 
-        /// Sets the initial data of a [TaskProgress] which comes via a
+        /// Sets the initial data of a [TaskUpdate] which comes via a
         /// [TaskResponseKind::Initial] response
-        pub fn set_initial(&self, initial: &TaskProgress) {
+        pub fn set_initial(&self, initial: &TaskUpdate) {
             self.index.set(initial.index).unwrap();
             self.kind
                 .set(initial.operation_kind.clone().into())
@@ -163,8 +164,8 @@ mod imp {
             self.update(initial);
         }
 
-        pub fn update(&self, task_progress: &TaskProgress) {
-            let status = SkTaskStatus::from(task_progress.status.clone());
+        pub fn update(&self, task_update: &TaskUpdate) {
+            let status = SkTaskStatus::from(task_update.status.clone());
             if self.obj().status() != status {
                 *self.status.borrow_mut() = status;
                 self.obj().notify("status");
@@ -172,20 +173,20 @@ mod imp {
 
             // +1 since this task also counts to the total progress, and is not a dependency
             let total_tasks = self.obj().dependencies().n_items() + 1;
-            let mut task_index = task_progress.index;
+            let mut task_index = task_update.index;
 
             if self.obj().dependencies().n_items() == 0 {
                 task_index = 0;
             }
-            let progress = ((task_index * 100) + task_progress.progress as u32) as f32
+            let progress = ((task_index * 100) + task_update.progress as u32) as f32
                 / (total_tasks as f32 * 100.0);
-            if progress != task_progress.progress as f32 {
+            if progress != task_update.progress as f32 {
                 self.progress.set(progress);
                 self.obj().notify("progress");
             }
 
-            if self.obj().download_rate() != task_progress.download_rate {
-                self.download_rate.set(task_progress.download_rate);
+            if self.obj().download_rate() != task_update.download_rate {
+                self.download_rate.set(task_update.download_rate);
                 self.obj().notify("download-rate");
             }
         }

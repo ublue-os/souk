@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,13 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod response;
+mod task_response;
+mod task_result;
+mod task_status;
+mod task_update;
 
-mod appstream_task;
-mod flatpak_task;
-#[allow(clippy::module_inception)]
-mod task;
-
-pub use appstream_task::AppstreamTask;
-pub use flatpak_task::{FlatpakTask, FlatpakTaskKind};
-pub use task::Task;
+pub use task_response::{TaskResponse, TaskResponseKind};
+pub use task_result::{TaskResult, TaskResultKind};
+pub use task_status::TaskStatus;
+pub use task_update::TaskUpdate;

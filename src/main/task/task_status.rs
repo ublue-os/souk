@@ -20,7 +20,7 @@ use glib::Enum;
 use gtk::glib;
 
 use crate::main::i18n::i18n;
-use crate::shared::task::TaskStatus;
+use crate::shared::task::response::TaskStatus;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]

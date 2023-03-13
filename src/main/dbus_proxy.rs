@@ -15,7 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::shared::config;
-use crate::shared::task::{Task, TaskResponse as TaskResponse_};
+use crate::shared::task::response::TaskResponse as TaskResponse_;
+use crate::shared::task::Task;
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {

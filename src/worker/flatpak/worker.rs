@@ -33,7 +33,8 @@ use isahc::ReadResponseExt;
 use crate::shared::flatpak::dry_run::{DryRun, DryRunPackage};
 use crate::shared::flatpak::info::{InstallationInfo, RemoteInfo};
 use crate::shared::flatpak::FlatpakOperationKind;
-use crate::shared::task::{FlatpakTask, FlatpakTaskKind, TaskProgress, TaskResponse, TaskResult};
+use crate::shared::task::response::{TaskResponse, TaskResult, TaskUpdate};
+use crate::shared::task::{FlatpakTask, FlatpakTaskKind};
 use crate::shared::WorkerError;
 use crate::worker::appstream;
 
@@ -283,7 +284,7 @@ impl FlatpakWorker {
             clone!(@strong task_uuid, @weak self.sender as sender => @default-return true, move |transaction|{
                 let mut task_operations = Vec::new();
                 for operation in transaction.operations(){
-                    let task_operation = TaskProgress::new_flatpak(transaction, &operation, None, false);
+                    let task_operation = TaskUpdate::new_flatpak(transaction, &operation, None, false);
                     task_operations.push(task_operation);
                 }
 
@@ -297,7 +298,7 @@ impl FlatpakWorker {
 
         transaction.connect_new_operation(
             clone!(@weak self as this, @strong task_uuid => move |transaction, operation, progress| {
-                let task_progress = TaskProgress::new_flatpak(
+                let task_progress = TaskUpdate::new_flatpak(
                     transaction,
                     operation,
                     Some(progress),
@@ -309,7 +310,7 @@ impl FlatpakWorker {
                 progress.set_update_frequency(750);
                 progress.connect_changed(
                     clone!(@weak this, @strong task_uuid, @weak transaction, @weak operation => move |progress|{
-                        let task_progress = TaskProgress::new_flatpak(
+                        let task_progress = TaskUpdate::new_flatpak(
                             &transaction,
                             &operation,
                             Some(progress),
@@ -324,7 +325,7 @@ impl FlatpakWorker {
 
         transaction.connect_operation_done(
             clone!(@weak self as this, @strong task_uuid => move |transaction, operation, _, _| {
-                let task_progress = TaskProgress::new_flatpak(
+                let task_progress = TaskUpdate::new_flatpak(
                             transaction,
                             operation,
                             None,

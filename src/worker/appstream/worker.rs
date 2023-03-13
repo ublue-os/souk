@@ -1,5 +1,5 @@
 // Souk - worker.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@ use async_std::channel::Sender;
 use glib::Downgrade;
 use gtk::glib;
 
-use crate::shared::task::{AppstreamTask, TaskResponse};
+use crate::shared::task::response::TaskResponse;
+use crate::shared::task::AppstreamTask;
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct AppstreamWorker {

@@ -1,5 +1,5 @@
 // Souk - dbus_server.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,8 @@
 use async_std::channel::Sender;
 use zbus::{dbus_interface, SignalContext};
 
-use crate::shared::task::{Task, TaskResponse};
+use crate::shared::task::response::TaskResponse;
+use crate::shared::task::Task;
 
 #[derive(Debug)]
 pub struct WorkerServer {

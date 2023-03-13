@@ -17,7 +17,7 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{Optional, Type};
 
-use crate::shared::task::{TaskProgress, TaskResult};
+use crate::shared::task::response::{TaskResult, TaskUpdate};
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
 pub struct TaskResponse {
@@ -28,13 +28,13 @@ pub struct TaskResponse {
     // This should have been an enum, unfortunately not supported by zbus / dbus
     /// Initial response that provides information about this task and all
     /// related steps / subtasks
-    pub initial_response: Optional<Vec<TaskProgress>>,
-    pub update_response: Optional<TaskProgress>,
+    pub initial_response: Optional<Vec<TaskUpdate>>,
+    pub update_response: Optional<TaskUpdate>,
     pub result_response: Optional<TaskResult>,
 }
 
 impl TaskResponse {
-    pub fn new_initial(uuid: String, steps: Vec<TaskProgress>) -> Self {
+    pub fn new_initial(uuid: String, steps: Vec<TaskUpdate>) -> Self {
         Self {
             uuid,
             kind: TaskResponseKind::Initial,
@@ -44,7 +44,7 @@ impl TaskResponse {
         }
     }
 
-    pub fn new_update(uuid: String, step: TaskProgress) -> Self {
+    pub fn new_update(uuid: String, step: TaskUpdate) -> Self {
         Self {
             uuid,
             kind: TaskResponseKind::Update,

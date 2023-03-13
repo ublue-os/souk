@@ -1,4 +1,4 @@
-// Souk - task_step.rs
+// Souk - task_update.rs
 // Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -25,9 +25,9 @@ use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
 use crate::shared::flatpak::FlatpakOperationKind;
 
 #[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
-pub struct TaskProgress {
+pub struct TaskUpdate {
     /// A task can consist of several steps. The index indicates for which step
-    /// this progress information is.
+    /// this update information is.
     pub index: u32,
     pub operation_kind: FlatpakOperationKind,
     pub status: TaskStatus,
@@ -37,7 +37,7 @@ pub struct TaskProgress {
     pub package: Optional<PackageInfo>,
 }
 
-impl TaskProgress {
+impl TaskUpdate {
     pub fn new_flatpak(
         transaction: &Transaction,
         operation: &TransactionOperation,
@@ -92,7 +92,7 @@ impl TaskProgress {
     }
 }
 
-impl Default for TaskProgress {
+impl Default for TaskUpdate {
     fn default() -> Self {
         Self {
             index: u32::default(),

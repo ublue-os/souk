@@ -31,7 +31,8 @@ use rusty_pool::ThreadPool;
 use zbus::{Connection, ConnectionBuilder, SignalContext};
 
 use crate::shared::config;
-use crate::shared::task::{Task, TaskResponse};
+use crate::shared::task::response::TaskResponse;
+use crate::shared::task::Task;
 use crate::worker::appstream::AppstreamWorker;
 use crate::worker::dbus_server::WorkerServer;
 use crate::worker::flatpak::FlatpakWorker;
