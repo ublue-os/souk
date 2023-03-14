@@ -17,7 +17,6 @@
 use async_std::channel::Sender;
 use zbus::{dbus_interface, SignalContext};
 
-use crate::shared::task::response::TaskResponse;
 use crate::shared::task::Task;
 
 #[derive(Debug)]
@@ -28,17 +27,29 @@ pub struct WorkerServer {
 
 #[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
 impl WorkerServer {
-    async fn run_task(&self, task: Task) {
-        self.task_sender.send(task).await.unwrap();
+    async fn run_task(&self, task_json: &str) {
+        match serde_json::from_str(task_json) {
+            Ok(task) => self.task_sender.send(task).await.unwrap(),
+            Err(err) => error!(
+                "Unable to run task, deserialization failed: {}",
+                err.to_string()
+            ),
+        }
     }
 
-    async fn cancel_task(&self, task: Task) {
-        self.cancel_sender.send(task).await.unwrap();
+    async fn cancel_task(&self, task_json: &str) {
+        match serde_json::from_str(task_json) {
+            Ok(task) => self.cancel_sender.send(task).await.unwrap(),
+            Err(err) => error!(
+                "Unable to cancel task, deserialization failed: {}",
+                err.to_string()
+            ),
+        }
     }
 
     #[dbus_interface(signal)]
     pub async fn task_response(
         signal_ctxt: &SignalContext<'_>,
-        task_response: TaskResponse,
+        task_response_json: &str,
     ) -> zbus::Result<()>;
 }

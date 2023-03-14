@@ -256,7 +256,8 @@ mod imp {
 
             let mut receiver = self.response_receiver.clone();
             while let Some(response) = receiver.next().await {
-                WorkerServer::task_response(&signal_ctxt, response)
+                let json = serde_json::to_string(&response).expect("Unable to serialize response");
+                WorkerServer::task_response(&signal_ctxt, &json)
                     .await
                     .unwrap()
             }

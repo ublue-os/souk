@@ -15,17 +15,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::shared::config;
-use crate::shared::task::response::TaskResponse as TaskResponse_;
-use crate::shared::task::Task;
 
 #[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
-    fn run_task(&self, task: Task) -> zbus::Result<()>;
+    fn run_task(&self, task_json: &str) -> zbus::Result<()>;
 
-    fn cancel_task(&self, task: Task) -> zbus::Result<()>;
+    fn cancel_task(&self, task_json: &str) -> zbus::Result<()>;
 
     #[dbus_proxy(signal)]
-    fn task_response(&self, task_response: TaskResponse_) -> zbus::Result<()>;
+    fn task_response(&self, task_response_json: &str) -> zbus::Result<()>;
 }
 
 impl Default for WorkerProxy<'static> {
@@ -36,7 +34,6 @@ impl Default for WorkerProxy<'static> {
 
             WorkerProxy::builder(&session)
                 .destination(name)?
-                // TODO: Don't hardcode path here
                 .path(config::DBUS_PATH)?
                 .build()
                 .await

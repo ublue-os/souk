@@ -521,32 +521,15 @@ mod imp {
 
             match sideloadable {
                 Ok(sideloadable) => self.set_sideloadable(Some(&sideloadable)),
-                Err(err) => {
-                    if let Error::Worker(worker_error) = &err {
-                        match worker_error {
-                            WorkerError::DryRunRuntimeNotFound(runtime) => {
-                                self.show_missing_runtime_message(runtime)
-                            }
-                            _ => self.show_error_message(&err.message()),
+                Err(err) => match err {
+                    Error::Worker(err) => match err {
+                        WorkerError::DryRunRuntimeNotFound(runtime) => {
+                            self.show_missing_runtime_message(&runtime)
                         }
-                    }
-
-                    match err {
-                        Error::Worker(_) => (),
-                        Error::UnsupportedSideloadType => {
-                            let message = i18n("Unknown or unsupported file format.");
-                            self.show_error_message(&message);
-                        }
-                        Error::GLib(err) => self.show_error_message(err.message()),
-                        Error::ZBus(err) => {
-                            let message = i18n_f(
-                                "Unable to communicate with worker process: {}",
-                                &[&err.to_string()],
-                            );
-                            self.show_error_message(&message);
-                        }
-                    }
-                }
+                        _ => self.show_error_message(&err.to_string()),
+                    },
+                    _ => self.show_error_message(&err.message()),
+                },
             }
         }
 

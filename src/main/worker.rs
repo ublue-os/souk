@@ -29,6 +29,7 @@ use crate::main::flatpak::sideload::{SkSideloadKind, SkSideloadable};
 use crate::main::flatpak::utils;
 use crate::main::task::{SkTask, SkTaskModel};
 use crate::shared::flatpak::info::RemoteInfo;
+use crate::shared::task::response::TaskResponse;
 use crate::shared::task::FlatpakTask;
 
 /// Number of tasks that are completed and still remain in log
@@ -86,7 +87,9 @@ mod imp {
             );
 
             self.obj().tasks().add_task(task);
-            self.proxy.run_task(task.data()).await?;
+
+            let task_json = serde_json::to_string(&task.data())?;
+            self.proxy.run_task(&task_json).await?;
 
             Ok(())
         }
@@ -96,13 +99,18 @@ mod imp {
             let mut response = self.proxy.receive_task_response().await.unwrap();
 
             while let Some(response) = response.next().await {
-                let response = response.args().unwrap().task_response;
-                debug!("Task response: {:#?}", response);
+                let response_json = response.args().unwrap().task_response_json;
+                match serde_json::from_str::<TaskResponse>(&response_json) {
+                    Ok(response) => {
+                        debug!("Task response: {:#?}", response);
 
-                let task_uuid = response.uuid.clone();
-                match self.obj().tasks().task(&task_uuid) {
-                    Some(task) => task.handle_response(&response),
-                    None => warn!("Received response for unknown active task!"),
+                        let task_uuid = response.uuid.clone();
+                        match self.obj().tasks().task(&task_uuid) {
+                            Some(task) => task.handle_response(&response),
+                            None => warn!("Received response for unknown active task!"),
+                        }
+                    }
+                    Err(err) => error!("Unable to deserialize response: {}", err.to_string()),
                 }
             }
         }
@@ -180,7 +188,8 @@ impl SkWorker {
 
     /// Cancel a worker task
     pub async fn cancel_task(&self, task: &SkTask) -> Result<(), Error> {
-        self.imp().proxy.cancel_task(task.data()).await?;
+        let task_json = serde_json::to_string(&task.data())?;
+        self.imp().proxy.cancel_task(&task_json).await?;
         Ok(())
     }
 

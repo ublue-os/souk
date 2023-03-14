@@ -23,7 +23,7 @@ pub enum Error {
     #[error("Souk worker error")]
     Worker(#[from] WorkerError),
 
-    #[error("Unsupported sideload type")]
+    #[error("Unknown or unsupported sideload file format")]
     UnsupportedSideloadType,
 
     #[error("GLib error")]
@@ -31,6 +31,9 @@ pub enum Error {
 
     #[error("ZBus error")]
     ZBus(#[from] zbus::Error),
+
+    #[error("Serde JSON error")]
+    SerdeJson(#[from] serde_json::Error),
 }
 
 impl Error {
