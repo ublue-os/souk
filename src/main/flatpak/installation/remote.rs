@@ -83,7 +83,7 @@ mod imp {
                 self.set_remote_data(&flatpak_remote);
             }
 
-            if let Some(inst_info) = &info.installation.into() {
+            if let Some(inst_info) = &info.installation {
                 let flatpak_inst = Installation::from(inst_info);
                 if let Ok(flatpak_remote) =
                     flatpak_inst.remote_by_name(&info.name, gio::Cancellable::NONE)

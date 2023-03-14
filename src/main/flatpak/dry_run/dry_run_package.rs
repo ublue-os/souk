@@ -112,7 +112,7 @@ mod imp {
         }
 
         pub fn old_metadata(&self) -> Option<KeyFile> {
-            if let Some(metadata) = self.obj().data().old_metadata.into() {
+            if let Some(metadata) = self.obj().data().old_metadata {
                 let metadata: String = metadata;
                 let keyfile = KeyFile::new();
                 keyfile

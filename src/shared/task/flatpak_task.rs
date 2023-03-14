@@ -15,12 +15,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::{Optional, Type};
 
 use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
 use crate::shared::task::Task;
 
-#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+#[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 // TODO: This could be simplified by using PackageInfo
 pub struct FlatpakTask {
     /// The Flatpak operation of this task
@@ -32,12 +31,12 @@ pub struct FlatpakTask {
     pub dry_run: bool,
 
     /// A Flatpak ref. Needed for [FlatpakTaskKind::Install] operations.
-    pub ref_: Optional<String>,
+    pub ref_: Option<String>,
     /// A Flatpak remote. Needed for [FlatpakTaskKind::Install] operations.
-    pub remote: Optional<RemoteInfo>,
+    pub remote: Option<RemoteInfo>,
     /// The path of a Flatpak ref file ([FlatpakTaskKind::InstallRefFile])
     /// or a Flatpak bundle file ([FlatpakTaskKind::InstallBundleFile])
-    pub path: Optional<String>,
+    pub path: Option<String>,
     /// There are cases where it isn't possible to update an already installed
     /// ref directly, and the previously installed ref have to get
     /// uninstalled first. This can be the case when a ref gets installed
@@ -57,8 +56,8 @@ impl FlatpakTask {
             kind: FlatpakTaskKind::Install,
             installation,
             dry_run,
-            ref_: Some(package.ref_.clone()).into(),
-            remote: Some(package.remote.clone()).into(),
+            ref_: Some(package.ref_.clone()),
+            remote: Some(package.remote.clone()),
             uninstall_before_install,
             ..Default::default()
         };
@@ -76,7 +75,7 @@ impl FlatpakTask {
             kind: FlatpakTaskKind::InstallRefFile,
             installation: installation.clone(),
             dry_run,
-            path: Some(path.to_owned()).into(),
+            path: Some(path.to_owned()),
             uninstall_before_install,
             ..Default::default()
         };
@@ -94,7 +93,7 @@ impl FlatpakTask {
             kind: FlatpakTaskKind::InstallBundleFile,
             installation: installation.clone(),
             dry_run,
-            path: Some(path.to_owned()).into(),
+            path: Some(path.to_owned()),
             uninstall_before_install,
             ..Default::default()
         };
@@ -107,8 +106,8 @@ impl FlatpakTask {
             kind: FlatpakTaskKind::Install,
             installation: installation.clone(),
             dry_run: false,
-            ref_: Some(ref_.to_owned()).into(),
-            remote: Some(remote.to_owned()).into(),
+            ref_: Some(ref_.to_owned()),
+            remote: Some(remote.to_owned()),
             uninstall_before_install: false,
             ..Default::default()
         };
@@ -117,21 +116,7 @@ impl FlatpakTask {
     }
 }
 
-impl Default for FlatpakTask {
-    fn default() -> Self {
-        Self {
-            kind: FlatpakTaskKind::default(),
-            installation: InstallationInfo::default(),
-            dry_run: false,
-            ref_: None.into(),
-            remote: None.into(),
-            path: None.into(),
-            uninstall_before_install: false,
-        }
-    }
-}
-
-#[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+#[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum FlatpakTaskKind {
     Install,
     InstallRefFile,

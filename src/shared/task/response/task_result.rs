@@ -15,63 +15,52 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::{Optional, Type};
 
 use crate::shared::flatpak::dry_run::DryRun;
 use crate::shared::WorkerError;
 
-#[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
+#[derive(Default, Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct TaskResult {
     pub kind: TaskResultKind,
-    pub dry_run: Optional<DryRun>,
-    pub error: Optional<WorkerError>,
+    pub dry_run: Option<DryRun>,
+    pub error: Option<WorkerError>,
 }
 
 impl TaskResult {
     pub fn new_done() -> Self {
         Self {
             kind: TaskResultKind::Done,
-            dry_run: None.into(),
-            error: None.into(),
+            dry_run: None,
+            error: None,
         }
     }
 
     pub fn new_dry_run(dry_run: DryRun) -> Self {
         Self {
             kind: TaskResultKind::DoneDryRun,
-            dry_run: Some(dry_run).into(),
-            error: None.into(),
+            dry_run: Some(dry_run),
+            error: None,
         }
     }
 
     pub fn new_error(error: WorkerError) -> Self {
         Self {
             kind: TaskResultKind::Error,
-            dry_run: None.into(),
-            error: Some(error).into(),
+            dry_run: None,
+            error: Some(error),
         }
     }
 
     pub fn new_cancelled() -> Self {
         Self {
             kind: TaskResultKind::Cancelled,
-            dry_run: None.into(),
-            error: None.into(),
+            dry_run: None,
+            error: None,
         }
     }
 }
 
-impl Default for TaskResult {
-    fn default() -> Self {
-        Self {
-            kind: TaskResultKind::None,
-            dry_run: None.into(),
-            error: None.into(),
-        }
-    }
-}
-
-#[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+#[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum TaskResultKind {
     /// Task completed successfully.
     Done,

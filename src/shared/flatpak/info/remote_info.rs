@@ -20,21 +20,20 @@ use flatpak::{Installation, Remote};
 use gtk::glib;
 use gtk::glib::Error;
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::{Optional, Type};
 
 use super::InstallationInfo;
 use crate::shared::WorkerError;
 
-#[derive(Derivative, Deserialize, Serialize, Hash, Type, Clone, Eq, PartialEq, glib::Boxed)]
+#[derive(Default, Derivative, Deserialize, Serialize, Hash, Clone, Eq, PartialEq, glib::Boxed)]
 #[boxed_type(name = "RemoteInfo", nullable)]
 #[derivative(Debug)]
 pub struct RemoteInfo {
     pub name: String,
     pub repository_url: String,
-    pub installation: Optional<InstallationInfo>,
+    pub installation: Option<InstallationInfo>,
 
     #[derivative(Debug = "ignore")]
-    repo_bytes: Optional<Vec<u8>>,
+    repo_bytes: Option<Vec<u8>>,
 }
 
 impl RemoteInfo {
@@ -46,7 +45,7 @@ impl RemoteInfo {
         Self {
             name,
             repository_url,
-            installation: installation.into(),
+            installation,
             ..Default::default()
         }
     }
@@ -68,24 +67,13 @@ impl RemoteInfo {
         Ok(Self {
             name: remote.name().unwrap().into(),
             repository_url: remote.url().unwrap_or_default().into(),
-            repo_bytes: Some(bytes).into(),
+            repo_bytes: Some(bytes),
             ..Default::default()
         })
     }
 
     pub fn set_repo_bytes(&mut self, bytes: Vec<u8>) {
-        self.repo_bytes = Some(bytes.to_vec()).into();
-    }
-}
-
-impl Default for RemoteInfo {
-    fn default() -> Self {
-        Self {
-            name: String::default(),
-            repository_url: String::default(),
-            installation: None.into(),
-            repo_bytes: None.into(),
-        }
+        self.repo_bytes = Some(bytes.to_vec());
     }
 }
 

@@ -100,7 +100,7 @@ mod imp {
 
             while let Some(response) = response.next().await {
                 let response_json = response.args().unwrap().task_response_json;
-                match serde_json::from_str::<TaskResponse>(&response_json) {
+                match serde_json::from_str::<TaskResponse>(response_json) {
                     Ok(response) => {
                         debug!("Task response: {:#?}", response);
 

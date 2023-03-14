@@ -16,9 +16,8 @@
 
 use flatpak::TransactionOperationType;
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::Type;
 
-#[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+#[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum FlatpakOperationKind {
     Install,
     InstallBundle,

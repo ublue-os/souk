@@ -15,11 +15,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::{Optional, Type};
 
 use crate::shared::task::response::{TaskResult, TaskUpdate};
 
-#[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct TaskResponse {
     /// The UUID of the corresponding task
     pub uuid: String,
@@ -28,9 +27,9 @@ pub struct TaskResponse {
     // This should have been an enum, unfortunately not supported by zbus / dbus
     /// Initial response that provides information about this task and all
     /// related steps / subtasks
-    pub initial_response: Optional<Vec<TaskUpdate>>,
-    pub update_response: Optional<TaskUpdate>,
-    pub result_response: Optional<TaskResult>,
+    pub initial_response: Option<Vec<TaskUpdate>>,
+    pub update_response: Option<TaskUpdate>,
+    pub result_response: Option<TaskResult>,
 }
 
 impl TaskResponse {
@@ -38,9 +37,9 @@ impl TaskResponse {
         Self {
             uuid,
             kind: TaskResponseKind::Initial,
-            initial_response: Some(steps).into(),
-            update_response: None.into(),
-            result_response: None.into(),
+            initial_response: Some(steps),
+            update_response: None,
+            result_response: None,
         }
     }
 
@@ -48,9 +47,9 @@ impl TaskResponse {
         Self {
             uuid,
             kind: TaskResponseKind::Update,
-            initial_response: None.into(),
-            update_response: Some(step).into(),
-            result_response: None.into(),
+            initial_response: None,
+            update_response: Some(step),
+            result_response: None,
         }
     }
 
@@ -58,14 +57,14 @@ impl TaskResponse {
         Self {
             uuid,
             kind: TaskResponseKind::Result,
-            initial_response: None.into(),
-            update_response: None.into(),
-            result_response: Some(result).into(),
+            initial_response: None,
+            update_response: None,
+            result_response: Some(result),
         }
     }
 }
 
-#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+#[derive(Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum TaskResponseKind {
     /// Initial (first) response of a task. This includes a detailed list of all
     /// steps, see [TaskResponse.initial_response].

@@ -21,9 +21,8 @@ use gtk::glib;
 use gtk::glib::Error as GLibError;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use zbus::zvariant::Type;
 
-#[derive(Deserialize, Clone, Serialize, Type, Error, Debug, PartialEq, glib::Boxed)]
+#[derive(Deserialize, Clone, Serialize, Error, Debug, PartialEq, glib::Boxed)]
 #[boxed_type(name = "WorkerError")]
 pub enum WorkerError {
     IO(String),

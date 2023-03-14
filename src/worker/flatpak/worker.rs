@@ -185,7 +185,7 @@ impl FlatpakWorker {
 
         // Icon
         if let Some(bytes) = bundle.icon(128) {
-            res.package.icon = Some(bytes.to_vec()).into();
+            res.package.icon = Some(bytes.to_vec());
         }
 
         // Appstream
@@ -194,7 +194,7 @@ impl FlatpakWorker {
             let component = &collection.components[0];
 
             let json = serde_json::to_string(component).unwrap();
-            res.package.appstream_component = Some(json).into();
+            res.package.appstream_component = Some(json);
         }
 
         let result = TaskResult::new_dry_run(res);
@@ -459,7 +459,7 @@ impl FlatpakWorker {
                     if is_targeted_ref {
                         let r = real_installation.remote_by_name(&origin, Cancellable::NONE)?;
                         let remote_info = RemoteInfo::from_flatpak(&r, &real_installation);
-                        result.is_replacing_remote = Some(remote_info).into();
+                        result.is_replacing_remote = Some(remote_info);
                     } else {
                         warn!("Non-targeted ref {op_ref_str} is already installed in {origin} instead of {op_remote}. This behaviour is undefined.");
                     }
@@ -481,7 +481,7 @@ impl FlatpakWorker {
                     // example, to determine new permissions.
                     let utf8 = installed_ref.load_metadata(Cancellable::NONE)?.to_vec();
                     let metadata = String::from_utf8(utf8).unwrap();
-                    package.old_metadata = Some(metadata).into();
+                    package.old_metadata = Some(metadata);
                 }
             } else if operation.operation_type() == TransactionOperationType::InstallBundle {
                 debug!("[install] {op_ref_str}: is not installed.");

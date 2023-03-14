@@ -81,7 +81,7 @@ mod imp {
 
     impl SkDryRun {
         fn is_replacing_remote(&self) -> Option<SkRemote> {
-            let remote_info: Option<RemoteInfo> = self.obj().data().is_replacing_remote.into();
+            let remote_info: Option<RemoteInfo> = self.obj().data().is_replacing_remote;
             remote_info.map(|remote_info| SkRemote::new(&remote_info))
         }
 

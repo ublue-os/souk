@@ -17,11 +17,10 @@
 use gtk::glib;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use zbus::zvariant::{Optional, Type};
 
 use crate::shared::task::{AppstreamTask, FlatpakTask};
 
-#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash, glib::Boxed)]
+#[derive(Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash, glib::Boxed)]
 #[boxed_type(name = "Task", nullable)]
 pub struct Task {
     /// Each task has a unique UUID that can be used for identification. This is
@@ -31,8 +30,8 @@ pub struct Task {
     pub cancellable: bool,
 
     // This should have been an enum, unfortunately not supported by zbus / dbus
-    flatpak_task: Optional<FlatpakTask>,
-    appstream_task: Optional<AppstreamTask>,
+    flatpak_task: Option<FlatpakTask>,
+    appstream_task: Option<AppstreamTask>,
 }
 
 impl Task {
@@ -41,8 +40,8 @@ impl Task {
         Self {
             uuid,
             cancellable,
-            flatpak_task: Some(task).into(),
-            appstream_task: None.into(),
+            flatpak_task: Some(task),
+            appstream_task: None,
         }
     }
 
@@ -51,18 +50,18 @@ impl Task {
         Self {
             uuid,
             cancellable,
-            flatpak_task: None.into(),
-            appstream_task: Some(task).into(),
+            flatpak_task: None,
+            appstream_task: Some(task),
         }
     }
 
     /// Returns [FlatpakTask] if this is a Flatpak task.
     pub fn flatpak_task(&self) -> Option<FlatpakTask> {
-        self.flatpak_task.clone().into()
+        self.flatpak_task.clone()
     }
 
     /// Returns [AppstreamTask] if this is a Flatpak task
     pub fn appstream_task(&self) -> Option<AppstreamTask> {
-        self.appstream_task.clone().into()
+        self.appstream_task.clone()
     }
 }

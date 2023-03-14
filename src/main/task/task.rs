@@ -155,7 +155,7 @@ mod imp {
                 .set(initial.operation_kind.clone().into())
                 .unwrap();
 
-            if let Some(package_info) = initial.package.clone().into() {
+            if let Some(package_info) = initial.package.clone() {
                 let package = SkPackage::new(&package_info);
                 *self.package.borrow_mut() = Some(package);
             } else {

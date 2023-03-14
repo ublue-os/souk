@@ -19,9 +19,8 @@ use flatpak::Installation;
 use gtk::prelude::*;
 use gtk::{gio, glib};
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::Type;
 
-#[derive(Deserialize, Serialize, Type, Eq, PartialEq, Default, Debug, Clone, Hash, glib::Boxed)]
+#[derive(Deserialize, Serialize, Eq, PartialEq, Default, Debug, Clone, Hash, glib::Boxed)]
 #[boxed_type(name = "InstallationInfo", nullable)]
 pub struct InstallationInfo {
     /// Flatpak installation id/name. For example `default` or `user`.

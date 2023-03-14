@@ -1,5 +1,5 @@
 // Souk - task.rs
-// Copyright (C) 2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::Type;
 
-#[derive(Default, Deserialize, Serialize, Type, Eq, PartialEq, Debug, Clone, Hash)]
+#[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub struct AppstreamTask {
     // implement
     pub dummy: String,

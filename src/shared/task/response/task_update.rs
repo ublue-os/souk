@@ -18,13 +18,12 @@ use flatpak::prelude::*;
 use flatpak::{Transaction, TransactionOperation, TransactionProgress};
 use gtk::gio;
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::{Optional, Type};
 
 use super::TaskStatus;
 use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
 use crate::shared::flatpak::FlatpakOperationKind;
 
-#[derive(Deserialize, Serialize, Type, PartialEq, Debug, Clone)]
+#[derive(Default, Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct TaskUpdate {
     /// A task can consist of several steps. The index indicates for which step
     /// this update information is.
@@ -34,7 +33,7 @@ pub struct TaskUpdate {
     pub progress: i32,
     pub download_rate: u64,
 
-    pub package: Optional<PackageInfo>,
+    pub package: Option<PackageInfo>,
 }
 
 impl TaskUpdate {
@@ -87,20 +86,7 @@ impl TaskUpdate {
             status,
             progress,
             download_rate,
-            package: Some(package).into(),
-        }
-    }
-}
-
-impl Default for TaskUpdate {
-    fn default() -> Self {
-        Self {
-            index: u32::default(),
-            operation_kind: FlatpakOperationKind::default(),
-            status: TaskStatus::default(),
-            progress: i32::default(),
-            download_rate: u64::default(),
-            package: None.into(),
+            package: Some(package),
         }
     }
 }

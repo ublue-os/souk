@@ -16,12 +16,11 @@
 
 use gtk::glib;
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::{Optional, Type};
 
 use super::DryRunPackage;
 use crate::shared::flatpak::info::RemoteInfo;
 
-#[derive(Deserialize, Debug, Serialize, Type, Clone, PartialEq, Eq, Hash, glib::Boxed)]
+#[derive(Default, Deserialize, Debug, Serialize, Clone, PartialEq, Eq, Hash, glib::Boxed)]
 #[boxed_type(name = "DryRun", nullable)]
 pub struct DryRun {
     /// The Flatpak package for which the dry-run is performed (can be an
@@ -39,17 +38,5 @@ pub struct DryRun {
     pub has_update_source: bool,
     /// Whether the package is already installed from a different remote, and
     /// the old app needs to get uninstalled first
-    pub is_replacing_remote: Optional<RemoteInfo>,
-}
-
-impl Default for DryRun {
-    fn default() -> Self {
-        Self {
-            package: DryRunPackage::default(),
-            runtimes: Vec::default(),
-            remotes: Vec::default(),
-            has_update_source: true,
-            is_replacing_remote: None.into(),
-        }
-    }
+    pub is_replacing_remote: Option<RemoteInfo>,
 }

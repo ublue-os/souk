@@ -73,7 +73,7 @@ mod imp {
             let flatpak_ref = Ref::parse(&info.ref_).unwrap();
             self.flatpak_ref.set(flatpak_ref).unwrap();
 
-            if let Some(inst_info) = &info.remote.installation.clone().into() {
+            if let Some(inst_info) = &info.remote.installation {
                 let installations = SkApplication::default().worker().installations();
                 let installation = installations
                     .installation(inst_info)

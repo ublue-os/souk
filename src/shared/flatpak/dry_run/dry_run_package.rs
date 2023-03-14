@@ -18,12 +18,11 @@ use derivative::Derivative;
 use flatpak::TransactionOperation;
 use gtk::glib;
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::{Optional, Type};
 
 use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
 use crate::shared::flatpak::FlatpakOperationKind;
 
-#[derive(Derivative, Deserialize, Serialize, Type, Clone, PartialEq, Eq, Hash, glib::Boxed)]
+#[derive(Default, Derivative, Deserialize, Serialize, Clone, PartialEq, Eq, Hash, glib::Boxed)]
 #[boxed_type(name = "DryRunPackage")]
 #[derivative(Debug)]
 pub struct DryRunPackage {
@@ -34,15 +33,15 @@ pub struct DryRunPackage {
     pub installed_size: u64,
 
     #[derivative(Debug = "ignore")]
-    pub icon: Optional<Vec<u8>>,
+    pub icon: Option<Vec<u8>>,
     /// Json serialized appstream component
     #[derivative(Debug = "ignore")]
-    pub appstream_component: Optional<String>,
+    pub appstream_component: Option<String>,
     /// Flatpak metadata
     #[derivative(Debug = "ignore")]
     pub metadata: String,
     #[derivative(Debug = "ignore")]
-    pub old_metadata: Optional<String>,
+    pub old_metadata: Option<String>,
 }
 
 impl DryRunPackage {
@@ -59,23 +58,8 @@ impl DryRunPackage {
             download_size: operation.download_size(),
             installed_size: operation.installed_size(),
             metadata: operation.metadata().unwrap().to_data().to_string(),
-            old_metadata: operation.metadata().map(|m| m.to_data().to_string()).into(),
+            old_metadata: operation.metadata().map(|m| m.to_data().to_string()),
             ..Default::default()
-        }
-    }
-}
-
-impl Default for DryRunPackage {
-    fn default() -> Self {
-        Self {
-            info: PackageInfo::default(),
-            operation_kind: FlatpakOperationKind::default(),
-            download_size: u64::default(),
-            installed_size: u64::default(),
-            icon: None.into(),
-            appstream_component: None.into(),
-            metadata: String::default(),
-            old_metadata: None.into(),
         }
     }
 }

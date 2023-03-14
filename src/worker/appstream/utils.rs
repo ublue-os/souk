@@ -87,7 +87,7 @@ pub fn set_dry_run_package_appstream(package: &mut DryRunPackage, ref_str: &str,
         let element = xmltree::Element::parse(xml.as_bytes()).unwrap();
 
         if let Ok(component) = Component::try_from(&element) {
-            package.appstream_component = Some(serde_json::to_string(&component).unwrap()).into();
+            package.appstream_component = Some(serde_json::to_string(&component).unwrap());
         } else {
             warn!("Couldn't find appstream component for {name}");
         }
@@ -96,7 +96,7 @@ pub fn set_dry_run_package_appstream(package: &mut DryRunPackage, ref_str: &str,
     // Icon
     let icon_file = appstream_dir.child(format!("icons/128x128/{}.png", name));
     if let Ok((bytes, _)) = icon_file.load_bytes(Cancellable::NONE) {
-        package.icon = Some(bytes.to_vec()).into();
+        package.icon = Some(bytes.to_vec());
     }
 }
 

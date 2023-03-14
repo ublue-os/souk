@@ -20,11 +20,10 @@ use flatpak::prelude::*;
 use flatpak::{Installation, InstalledRef, Remote};
 use gtk::glib;
 use serde::{Deserialize, Serialize};
-use zbus::zvariant::Type;
 
 use crate::shared::flatpak::info::RemoteInfo;
 
-#[derive(Default, Deserialize, Serialize, Type, Debug, Clone, Eq, PartialEq, Hash, glib::Boxed)]
+#[derive(Default, Deserialize, Serialize, Debug, Clone, Eq, PartialEq, Hash, glib::Boxed)]
 #[boxed_type(name = "PackageInfo", nullable)]
 pub struct PackageInfo {
     pub ref_: String,
