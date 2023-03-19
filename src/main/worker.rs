@@ -29,7 +29,7 @@ use crate::main::flatpak::sideload::{SkSideloadKind, SkSideloadable};
 use crate::main::flatpak::utils;
 use crate::main::task::{SkTask, SkTaskModel};
 use crate::shared::flatpak::info::RemoteInfo;
-use crate::shared::task::response::TaskResponse;
+use crate::shared::task::response::{TaskResponse, TaskResponseKind};
 use crate::shared::task::FlatpakTask;
 
 /// Number of tasks that are completed and still remain in log
@@ -104,10 +104,27 @@ mod imp {
                     Ok(response) => {
                         debug!("Task response: {:#?}", response);
 
-                        let task_uuid = response.uuid.clone();
-                        match self.obj().tasks().task(&task_uuid) {
-                            Some(task) => task.handle_response(&response),
-                            None => warn!("Received response for unknown active task!"),
+                        match response.kind {
+                            TaskResponseKind::Activity(activity) => {
+                                match self.obj().tasks().task(&response.task.uuid) {
+                                    Some(task) => task.handle_activity(&activity),
+                                    None => {
+                                        debug!("Received activity response for unknown task!");
+                                        let task = SkTask::new(
+                                            Some(&response.task),
+                                            Some(&activity),
+                                            None,
+                                        );
+                                        self.obj().tasks().add_task(&task);
+                                    }
+                                }
+                            }
+                            TaskResponseKind::Result(result) => {
+                                match self.obj().tasks().task(&response.task.uuid) {
+                                    Some(task) => task.handle_result(&result),
+                                    None => warn!("Received result response for unknown task!"),
+                                }
+                            }
                         }
                     }
                     Err(err) => error!("Unable to deserialize response: {}", err.to_string()),
@@ -132,7 +149,7 @@ impl SkWorker {
         let task_data =
             FlatpakTask::new_install(&package.info(), uninstall_before_install, dry_run);
 
-        let task = SkTask::new(Some(&task_data), None);
+        let task = SkTask::new(Some(&task_data.into()), None, None);
         self.imp().run_task(&task).await?;
 
         Ok(task)
@@ -156,7 +173,7 @@ impl SkWorker {
             dry_run,
         );
 
-        let task = SkTask::new(Some(&task_data), None);
+        let task = SkTask::new(Some(&task_data.into()), None, None);
         self.imp().run_task(&task).await?;
 
         Ok(task)
@@ -180,7 +197,7 @@ impl SkWorker {
             dry_run,
         );
 
-        let task = SkTask::new(Some(&task_data), None);
+        let task = SkTask::new(Some(&task_data.into()), None, None);
         self.imp().run_task(&task).await?;
 
         Ok(task)

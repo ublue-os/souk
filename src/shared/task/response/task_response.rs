@@ -16,62 +16,34 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::shared::task::response::{TaskResult, TaskUpdate};
+use crate::shared::task::response::{TaskActivity, TaskResult};
+use crate::shared::task::Task;
 
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct TaskResponse {
-    /// The UUID of the corresponding task
-    pub uuid: String,
+    /// The [Task] to which this [TaskResponse] belongs
+    pub task: Task,
     pub kind: TaskResponseKind,
-
-    // This should have been an enum, unfortunately not supported by zbus / dbus
-    /// Initial response that provides information about this task and all
-    /// related steps / subtasks
-    pub initial_response: Option<Vec<TaskUpdate>>,
-    pub update_response: Option<TaskUpdate>,
-    pub result_response: Option<TaskResult>,
 }
 
 impl TaskResponse {
-    pub fn new_initial(uuid: String, steps: Vec<TaskUpdate>) -> Self {
+    pub fn new_activity(task: Task, activity: TaskActivity) -> Self {
         Self {
-            uuid,
-            kind: TaskResponseKind::Initial,
-            initial_response: Some(steps),
-            update_response: None,
-            result_response: None,
+            task,
+            kind: TaskResponseKind::Activity(activity),
         }
     }
 
-    pub fn new_update(uuid: String, step: TaskUpdate) -> Self {
+    pub fn new_result(task: Task, result: TaskResult) -> Self {
         Self {
-            uuid,
-            kind: TaskResponseKind::Update,
-            initial_response: None,
-            update_response: Some(step),
-            result_response: None,
-        }
-    }
-
-    pub fn new_result(uuid: String, result: TaskResult) -> Self {
-        Self {
-            uuid,
-            kind: TaskResponseKind::Result,
-            initial_response: None,
-            update_response: None,
-            result_response: Some(result),
+            task,
+            kind: TaskResponseKind::Result(result),
         }
     }
 }
 
 #[derive(Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum TaskResponseKind {
-    /// Initial (first) response of a task. This includes a detailed list of all
-    /// steps, see [TaskResponse.initial_response].
-    Initial,
-    /// Update response of a task, contains updated information of a single
-    /// step, see [TaskResponse.update_response].
-    Update,
-    /// Task ended. See [TaskResponse.result_response] for more details.
-    Result,
+    Activity(TaskActivity),
+    Result(TaskResult),
 }

@@ -54,12 +54,6 @@ impl SkTaskKind {
 
         Self::Unknown
     }
-
-    pub fn targets_single_package(&self) -> bool {
-        self == &Self::FlatpakInstall
-            || self == &Self::FlatpakUninstall
-            || self == &Self::FlatpakUpdate
-    }
 }
 
 impl From<FlatpakTaskKind> for SkTaskKind {

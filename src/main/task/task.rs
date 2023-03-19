@@ -29,7 +29,7 @@ use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;
 use crate::main::flatpak::package::SkPackage;
 use crate::main::task::{SkTaskKind, SkTaskModel, SkTaskStatus};
-use crate::shared::task::response::{TaskResponse, TaskResponseKind, TaskResultKind, TaskUpdate};
+use crate::shared::task::response::{TaskActivity, TaskResult};
 use crate::shared::task::Task;
 use crate::shared::WorkerError;
 
@@ -40,9 +40,13 @@ mod imp {
     #[properties(wrapper_type = super::SkTask)]
     pub struct SkTask {
         // Static values
-        #[property(get)]
-        index: OnceCell<u32>,
-        #[property(get, builder(SkTaskKind::None))]
+        #[property(get = Self::data, set, construct_only, type = Task)]
+        #[property(name = "uuid", get = Self::uuid, type = String)]
+        data: OnceCell<Option<Task>>,
+
+        #[property(get, set, construct_only)]
+        pub index: OnceCell<u32>,
+        #[property(get, set, construct_only, builder(SkTaskKind::None))]
         kind: OnceCell<SkTaskKind>,
 
         // Dynamic values
@@ -59,10 +63,6 @@ mod imp {
         dependencies: SkTaskModel,
         #[property(get, set, construct_only)]
         dependency_of: OnceCell<Option<super::SkTask>>,
-
-        #[property(get = Self::data, set, construct_only, type = Task)]
-        #[property(name = "uuid", get = Self::uuid, type = String)]
-        data: OnceCell<Option<Task>>,
 
         // Gets called when task finishes (done/error/cancelled)
         pub finished_sender: OnceCell<Sender<()>>,
@@ -110,13 +110,6 @@ mod imp {
 
         fn constructed(&self) {
             self.parent_constructed();
-
-            // Only set the task kind for ¬dependency tasks, since those get the kind set
-            // from the [TaskResponseKind::Initial] response.
-            if let Some(data) = self.data.get().unwrap() {
-                self.kind.set(SkTaskKind::from_task_data(data)).unwrap();
-            }
-
             *self.status.borrow_mut() = SkTaskStatus::Pending;
 
             let (finished_sender, finished_receiver) = unbounded();
@@ -138,56 +131,40 @@ mod imp {
         }
 
         fn uuid(&self) -> String {
-            let task_data = self.data();
-
             if let Some(dependent_task) = self.obj().dependency_of() {
                 format!("{}:{}", dependent_task.uuid(), self.obj().index())
             } else {
+                let task_data = self.data();
                 task_data.uuid
             }
         }
 
-        /// Sets the initial data of a [TaskUpdate] which comes via a
-        /// [TaskResponseKind::Initial] response
-        pub fn set_initial(&self, initial: &TaskUpdate) {
-            self.index.set(initial.index).unwrap();
-            self.kind
-                .set(initial.operation_kind.clone().into())
-                .unwrap();
-
-            if let Some(package_info) = initial.package.clone() {
-                let package = SkPackage::new(&package_info);
-                *self.package.borrow_mut() = Some(package);
-            } else {
-                *self.package.borrow_mut() = None;
-            }
-            self.update(initial);
-        }
-
-        pub fn update(&self, task_update: &TaskUpdate) {
-            let status = SkTaskStatus::from(task_update.status.clone());
+        pub fn update(&self, activity: &TaskActivity) {
+            // status
+            let status = SkTaskStatus::from(activity.status.clone());
             if self.obj().status() != status {
                 *self.status.borrow_mut() = status;
                 self.obj().notify("status");
             }
 
-            // +1 since this task also counts to the total progress, and is not a dependency
-            let total_tasks = self.obj().dependencies().n_items() + 1;
-            let mut task_index = task_update.index;
-
-            if self.obj().dependencies().n_items() == 0 {
-                task_index = 0;
-            }
-            let progress = ((task_index * 100) + task_update.progress as u32) as f32
-                / (total_tasks as f32 * 100.0);
-            if progress != task_update.progress as f32 {
+            // progress
+            let progress = activity.progress as f32 / 100.0;
+            if self.obj().progress() != progress {
                 self.progress.set(progress);
                 self.obj().notify("progress");
             }
 
-            if self.obj().download_rate() != task_update.download_rate {
-                self.download_rate.set(task_update.download_rate);
+            // download rate
+            if self.obj().download_rate() != activity.download_rate {
+                self.download_rate.set(activity.download_rate);
                 self.obj().notify("download-rate");
+            }
+
+            // package
+            let package = activity.package.as_ref().map(SkPackage::new);
+            if self.obj().package() != package {
+                self.package.set(package);
+                self.obj().notify("package");
             }
         }
     }
@@ -198,107 +175,97 @@ glib::wrapper! {
 }
 
 impl SkTask {
-    pub fn new(data: Option<&Task>, dependency_of: Option<&SkTask>) -> Self {
-        glib::Object::builder()
+    pub fn new(
+        data: Option<&Task>,
+        activity: Option<&TaskActivity>,
+        dependency_of: Option<&SkTask>,
+    ) -> Self {
+        let index = if let Some(activity) = activity {
+            activity.index
+        } else {
+            0
+        };
+
+        let kind = if let Some(kind) = data {
+            SkTaskKind::from_task_data(kind)
+        } else if let Some(activity) = activity {
+            SkTaskKind::from(activity.operation_kind.clone())
+        } else {
+            SkTaskKind::Unknown
+        };
+
+        let task: Self = glib::Object::builder()
             .property("data", data)
+            .property("index", index)
+            .property("kind", kind)
             .property("dependency-of", dependency_of)
-            .build()
+            .build();
+
+        if let Some(activity) = activity {
+            task.handle_activity(activity);
+        }
+
+        task
     }
 
-    pub fn handle_response(&self, response: &TaskResponse) {
+    pub fn handle_activity(&self, activity: &TaskActivity) {
         let imp = self.imp();
+        imp.update(activity);
 
-        match response.kind {
-            TaskResponseKind::Initial => {
-                let initial_response = response.initial_response.as_ref().unwrap();
-                for task_progress in initial_response {
-                    let is_last_task = task_progress.index as usize == (initial_response.len() - 1);
-
-                    if self.kind().targets_single_package() && is_last_task {
-                        // It only affects one particular package, and the update response has the
-                        // last index -> it affects this task
-                        if let Some(package) = task_progress.package.as_ref() {
-                            let package = SkPackage::new(package);
-                            *imp.package.borrow_mut() = Some(package);
-                            self.notify("package");
-                        }
-                    } else {
-                        // Check if the update is *not* for the last task (which would be `self`,
-                        // and not a dependency), and if the task targets a single package.
-                        let task = SkTask::new(None, Some(self));
-                        task.imp().set_initial(task_progress);
-
-                        self.dependencies().add_task(&task);
-                        self.notify("dependencies");
-                    }
-                }
-            }
-            TaskResponseKind::Update => {
-                let update = response.update_response.as_ref().unwrap();
-                let uuid = format!("{}:{}", self.uuid(), update.index);
-
-                let is_last_task = update.index == self.dependencies().n_items();
-
-                if let Some(task) = self.dependencies().task(&uuid) {
-                    task.imp().update(update);
-                } else if !(self.kind().targets_single_package() && is_last_task) {
-                    error!(
-                        "Unable to retrieve dependency task for progress update: {}",
-                        uuid
-                    );
-                }
-
-                // Always update this task as well, so it mirrors the information of all
-                // subtasks
-                self.imp().update(update);
-            }
-            TaskResponseKind::Result => {
-                let result = response.result_response.as_ref().unwrap();
-
-                let status = match result.kind {
-                    TaskResultKind::Done => {
-                        imp.progress.set(1.0);
-                        self.notify("progress");
-                        self.emit_by_name::<()>("done", &[]);
-                        imp.finished_sender.get().unwrap().try_send(()).unwrap();
-                        SkTaskStatus::Done
-                    }
-                    TaskResultKind::DoneDryRun => {
-                        let dry_run = result.dry_run.as_ref().unwrap().clone();
-                        let result_dry_run = SkDryRun::new(dry_run);
-                        imp.result_dry_run.set(result_dry_run).unwrap();
-
-                        imp.progress.set(1.0);
-                        self.notify("progress");
-                        self.emit_by_name::<()>("done", &[]);
-                        imp.finished_sender.get().unwrap().try_send(()).unwrap();
-                        SkTaskStatus::Done
-                    }
-                    TaskResultKind::Error => {
-                        let result_error = result.error.as_ref().unwrap().clone();
-                        imp.result_error.set(result_error.clone()).unwrap();
-
-                        self.emit_by_name::<()>("error", &[&result_error]);
-                        imp.finished_sender.get().unwrap().try_send(()).unwrap();
-                        SkTaskStatus::Error
-                    }
-                    TaskResultKind::Cancelled => {
-                        self.emit_by_name::<()>("cancelled", &[]);
-                        imp.finished_sender.get().unwrap().try_send(()).unwrap();
-                        SkTaskStatus::Cancelled
-                    }
-                    _ => {
-                        warn!("Unknown response type");
-                        SkTaskStatus::None
-                    }
-                };
-
-                *imp.status.borrow_mut() = status;
-                self.notify("status");
-
-                self.emit_by_name::<()>("completed", &[]);
+        for dependency in &activity.dependencies {
+            let uuid = format!("{}:{}", self.uuid(), dependency.index);
+            if let Some(task) = self.dependencies().task(&uuid) {
+                task.handle_activity(dependency);
+            } else {
+                let task = Self::new(None, Some(dependency), Some(self));
+                self.dependencies().add_task(&task);
             }
         }
+    }
+
+    pub fn handle_result(&self, result: &TaskResult) {
+        let imp = self.imp();
+
+        let status = match result {
+            TaskResult::Done => {
+                imp.progress.set(1.0);
+                self.notify("progress");
+                self.emit_by_name::<()>("done", &[]);
+                imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                SkTaskStatus::Done
+            }
+            TaskResult::DoneDryRun(dry_run) => {
+                let result_dry_run = SkDryRun::new(dry_run.clone());
+                imp.result_dry_run.set(result_dry_run).unwrap();
+
+                imp.progress.set(1.0);
+                self.notify("progress");
+                self.emit_by_name::<()>("done", &[]);
+                imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                SkTaskStatus::Done
+            }
+            TaskResult::Error(worker_error) => {
+                imp.result_error.set(worker_error.clone()).unwrap();
+
+                self.emit_by_name::<()>("error", &[&worker_error]);
+                imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                SkTaskStatus::Error
+            }
+            TaskResult::Cancelled => {
+                self.emit_by_name::<()>("cancelled", &[]);
+                imp.finished_sender.get().unwrap().try_send(()).unwrap();
+                SkTaskStatus::Cancelled
+            }
+            _ => {
+                warn!("Unknown response type");
+                SkTaskStatus::None
+            }
+        };
+
+        *imp.status.borrow_mut() = status;
+        self.notify("status");
+
+        self.emit_by_name::<()>("completed", &[]);
     }
 
     pub async fn await_result(&self) -> Result<(), Error> {

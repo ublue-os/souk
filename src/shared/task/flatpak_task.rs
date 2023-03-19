@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
 use crate::shared::task::Task;
@@ -22,6 +23,8 @@ use crate::shared::task::Task;
 #[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 // TODO: This could be simplified by using PackageInfo
 pub struct FlatpakTask {
+    pub uuid: String,
+
     /// The Flatpak operation of this task
     pub kind: FlatpakTaskKind,
     /// The Flatpak installation in which the operation is to be performed.
@@ -49,10 +52,11 @@ impl FlatpakTask {
         package: &PackageInfo,
         uninstall_before_install: bool,
         dry_run: bool,
-    ) -> Task {
+    ) -> Self {
         let installation = package.remote.installation.as_ref().unwrap().clone();
 
-        let flatpak_task = Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
             kind: FlatpakTaskKind::Install,
             installation,
             dry_run,
@@ -60,9 +64,7 @@ impl FlatpakTask {
             remote: Some(package.remote.clone()),
             uninstall_before_install,
             ..Default::default()
-        };
-
-        Task::new_flatpak(flatpak_task, true)
+        }
     }
 
     pub fn new_install_ref_file(
@@ -70,17 +72,16 @@ impl FlatpakTask {
         path: &str,
         uninstall_before_install: bool,
         dry_run: bool,
-    ) -> Task {
-        let flatpak_task = Self {
+    ) -> Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
             kind: FlatpakTaskKind::InstallRefFile,
             installation: installation.clone(),
             dry_run,
             path: Some(path.to_owned()),
             uninstall_before_install,
             ..Default::default()
-        };
-
-        Task::new_flatpak(flatpak_task, true)
+        }
     }
 
     pub fn new_install_bundle_file(
@@ -88,31 +89,40 @@ impl FlatpakTask {
         path: &str,
         uninstall_before_install: bool,
         dry_run: bool,
-    ) -> Task {
-        let flatpak_task = Self {
+    ) -> Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
             kind: FlatpakTaskKind::InstallBundleFile,
             installation: installation.clone(),
             dry_run,
             path: Some(path.to_owned()),
             uninstall_before_install,
             ..Default::default()
-        };
-
-        Task::new_flatpak(flatpak_task, true)
+        }
     }
 
-    pub fn new_uninstall(installation: &InstallationInfo, remote: &RemoteInfo, ref_: &str) -> Task {
-        let flatpak_task = Self {
-            kind: FlatpakTaskKind::Install,
+    pub fn new_uninstall(installation: &InstallationInfo, remote: &RemoteInfo, ref_: &str) -> Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            kind: FlatpakTaskKind::Uninstall,
             installation: installation.clone(),
             dry_run: false,
             ref_: Some(ref_.to_owned()),
             remote: Some(remote.to_owned()),
             uninstall_before_install: false,
             ..Default::default()
-        };
+        }
+    }
+}
 
-        Task::new_flatpak(flatpak_task, false)
+impl From<FlatpakTask> for Task {
+    fn from(flatpak_task: FlatpakTask) -> Self {
+        Task {
+            uuid: flatpak_task.uuid.clone(),
+            cancellable: flatpak_task.kind != FlatpakTaskKind::Uninstall,
+            flatpak_task: Some(flatpak_task),
+            appstream_task: None,
+        }
     }
 }
 
@@ -126,4 +136,14 @@ pub enum FlatpakTaskKind {
     UpdateInstallation,
     #[default]
     None,
+}
+
+impl FlatpakTaskKind {
+    pub fn targets_single_package(&self) -> bool {
+        self == &Self::Install
+            || self == &Self::InstallRefFile
+            || self == &Self::InstallBundleFile
+            || self == &Self::Uninstall
+            || self == &Self::Update
+    }
 }

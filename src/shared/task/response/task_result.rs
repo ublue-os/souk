@@ -19,55 +19,14 @@ use serde::{Deserialize, Serialize};
 use crate::shared::flatpak::dry_run::DryRun;
 use crate::shared::WorkerError;
 
-#[derive(Default, Deserialize, Serialize, PartialEq, Debug, Clone)]
-pub struct TaskResult {
-    pub kind: TaskResultKind,
-    pub dry_run: Option<DryRun>,
-    pub error: Option<WorkerError>,
-}
-
-impl TaskResult {
-    pub fn new_done() -> Self {
-        Self {
-            kind: TaskResultKind::Done,
-            dry_run: None,
-            error: None,
-        }
-    }
-
-    pub fn new_dry_run(dry_run: DryRun) -> Self {
-        Self {
-            kind: TaskResultKind::DoneDryRun,
-            dry_run: Some(dry_run),
-            error: None,
-        }
-    }
-
-    pub fn new_error(error: WorkerError) -> Self {
-        Self {
-            kind: TaskResultKind::Error,
-            dry_run: None,
-            error: Some(error),
-        }
-    }
-
-    pub fn new_cancelled() -> Self {
-        Self {
-            kind: TaskResultKind::Cancelled,
-            dry_run: None,
-            error: None,
-        }
-    }
-}
-
 #[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
-pub enum TaskResultKind {
+pub enum TaskResult {
     /// Task completed successfully.
     Done,
     /// Task completed successfully, with an [DryRun] as result
-    DoneDryRun,
+    DoneDryRun(DryRun),
     /// Task failed. See [ResponseType.error] for more details.
-    Error,
+    Error(WorkerError),
     /// Task got cancelled (most likely by user).
     Cancelled,
     #[default]

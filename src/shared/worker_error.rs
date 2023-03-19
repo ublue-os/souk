@@ -22,7 +22,7 @@ use gtk::glib::Error as GLibError;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Deserialize, Clone, Serialize, Error, Debug, PartialEq, glib::Boxed)]
+#[derive(Deserialize, Clone, Serialize, Error, Debug, Eq, Hash, PartialEq, glib::Boxed)]
 #[boxed_type(name = "WorkerError")]
 pub enum WorkerError {
     IO(String),

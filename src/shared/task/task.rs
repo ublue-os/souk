@@ -16,7 +16,6 @@
 
 use gtk::glib;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::shared::task::{AppstreamTask, FlatpakTask};
 
@@ -29,32 +28,12 @@ pub struct Task {
     /// Whether the task can be cancelled
     pub cancellable: bool,
 
-    // This should have been an enum, unfortunately not supported by zbus / dbus
-    flatpak_task: Option<FlatpakTask>,
-    appstream_task: Option<AppstreamTask>,
+    // TODO: This should have been an enum, unfortunately not supported by zbus / dbus
+    pub flatpak_task: Option<FlatpakTask>,
+    pub appstream_task: Option<AppstreamTask>,
 }
 
 impl Task {
-    pub fn new_flatpak(task: FlatpakTask, cancellable: bool) -> Self {
-        let uuid = Uuid::new_v4().to_string();
-        Self {
-            uuid,
-            cancellable,
-            flatpak_task: Some(task),
-            appstream_task: None,
-        }
-    }
-
-    pub fn new_appstream(task: AppstreamTask, cancellable: bool) -> Self {
-        let uuid = Uuid::new_v4().to_string();
-        Self {
-            uuid,
-            cancellable,
-            flatpak_task: None,
-            appstream_task: Some(task),
-        }
-    }
-
     /// Returns [FlatpakTask] if this is a Flatpak task.
     pub fn flatpak_task(&self) -> Option<FlatpakTask> {
         self.flatpak_task.clone()

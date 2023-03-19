@@ -185,13 +185,11 @@ mod imp {
             {
                 let thread_pool = self.thread_pool.borrow();
                 if let Some(thread_pool) = &*thread_pool {
-                    let uuid = task.uuid.clone();
-
                     // Flatpak task
                     if let Some(task) = task.flatpak_task() {
                         thread_pool.spawn(
-                            clone!(@strong self.flatpak_worker as worker, @strong task, @strong uuid => async move {
-                                worker.process_task(task, &uuid);
+                            clone!(@strong self.flatpak_worker as worker, @strong task => async move {
+                                worker.process_task(task);
                             }),
                         );
                     }
@@ -199,8 +197,8 @@ mod imp {
                     // Appstream task
                     if let Some(task) = task.appstream_task() {
                         thread_pool.spawn(
-                            clone!(@strong self.appstream_worker as worker, @strong task, @strong uuid => async move {
-                                worker.process_task(task, &uuid);
+                            clone!(@strong self.appstream_worker as worker, @strong task => async move {
+                                worker.process_task(task);
                             }),
                         );
                     }
