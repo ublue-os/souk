@@ -23,4 +23,4 @@ mod task;
 
 pub use appstream_task::AppstreamTask;
 pub use flatpak_task::{FlatpakTask, FlatpakTaskKind};
-pub use task::Task;
+pub use task::{Task, TaskKind};

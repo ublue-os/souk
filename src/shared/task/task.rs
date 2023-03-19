@@ -27,20 +27,12 @@ pub struct Task {
     pub uuid: String,
     /// Whether the task can be cancelled
     pub cancellable: bool,
-
-    // TODO: This should have been an enum, unfortunately not supported by zbus / dbus
-    pub flatpak_task: Option<FlatpakTask>,
-    pub appstream_task: Option<AppstreamTask>,
+    /// The actual task data
+    pub kind: TaskKind,
 }
 
-impl Task {
-    /// Returns [FlatpakTask] if this is a Flatpak task.
-    pub fn flatpak_task(&self) -> Option<FlatpakTask> {
-        self.flatpak_task.clone()
-    }
-
-    /// Returns [AppstreamTask] if this is a Flatpak task
-    pub fn appstream_task(&self) -> Option<AppstreamTask> {
-        self.appstream_task.clone()
-    }
+#[derive(Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
+pub enum TaskKind {
+    Flatpak(FlatpakTask),
+    Appstream(AppstreamTask),
 }

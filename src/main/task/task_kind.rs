@@ -18,7 +18,7 @@ use glib::Enum;
 use gtk::glib;
 
 use crate::shared::flatpak::FlatpakOperationKind;
-use crate::shared::task::{FlatpakTaskKind, Task};
+use crate::shared::task::{FlatpakTaskKind, Task, TaskKind};
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
@@ -44,11 +44,11 @@ pub enum SkTaskKind {
 
 impl SkTaskKind {
     pub fn from_task_data(data: &Task) -> Self {
-        if let Some(flatpak_task) = data.flatpak_task() {
+        if let TaskKind::Flatpak(flatpak_task) = &data.kind {
             if flatpak_task.dry_run {
                 return Self::FlatpakDryRun;
             } else {
-                return flatpak_task.kind.into();
+                return flatpak_task.kind.clone().into();
             }
         }
 

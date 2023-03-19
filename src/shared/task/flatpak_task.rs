@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::shared::flatpak::info::{InstallationInfo, PackageInfo, RemoteInfo};
-use crate::shared::task::Task;
+use crate::shared::task::{Task, TaskKind};
 
 #[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 // TODO: This could be simplified by using PackageInfo
@@ -120,8 +120,7 @@ impl From<FlatpakTask> for Task {
         Task {
             uuid: flatpak_task.uuid.clone(),
             cancellable: flatpak_task.kind != FlatpakTaskKind::Uninstall,
-            flatpak_task: Some(flatpak_task),
-            appstream_task: None,
+            kind: TaskKind::Flatpak(flatpak_task),
         }
     }
 }

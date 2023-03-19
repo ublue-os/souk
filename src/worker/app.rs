@@ -32,7 +32,7 @@ use zbus::{Connection, ConnectionBuilder, SignalContext};
 
 use crate::shared::config;
 use crate::shared::task::response::TaskResponse;
-use crate::shared::task::Task;
+use crate::shared::task::{Task, TaskKind};
 use crate::worker::appstream::AppstreamWorker;
 use crate::worker::dbus_server::WorkerServer;
 use crate::worker::flatpak::FlatpakWorker;
@@ -185,22 +185,21 @@ mod imp {
             {
                 let thread_pool = self.thread_pool.borrow();
                 if let Some(thread_pool) = &*thread_pool {
-                    // Flatpak task
-                    if let Some(task) = task.flatpak_task() {
-                        thread_pool.spawn(
-                            clone!(@strong self.flatpak_worker as worker, @strong task => async move {
-                                worker.process_task(task);
-                            }),
-                        );
-                    }
-
-                    // Appstream task
-                    if let Some(task) = task.appstream_task() {
-                        thread_pool.spawn(
-                            clone!(@strong self.appstream_worker as worker, @strong task => async move {
-                                worker.process_task(task);
-                            }),
-                        );
+                    match task.kind {
+                        TaskKind::Flatpak(task) => {
+                            thread_pool.spawn(
+                                clone!(@strong self.flatpak_worker as worker, @strong task => async move {
+                                    worker.process_task(task);
+                                }),
+                            );
+                        }
+                        TaskKind::Appstream(task) => {
+                            thread_pool.spawn(
+                                clone!(@strong self.appstream_worker as worker, @strong task => async move {
+                                    worker.process_task(task);
+                                }),
+                            );
+                        }
                     }
                 } else {
                     error!("Unable to start task, thread pool is not available.");
@@ -216,14 +215,9 @@ mod imp {
                 return;
             }
 
-            // Flatpak task
-            if task.flatpak_task().is_some() {
-                self.flatpak_worker.cancel_task(&task.uuid);
-            }
-
-            // Appstream task
-            if task.appstream_task().is_some() {
-                self.appstream_worker.cancel_task(&task.uuid);
+            match task.kind {
+                TaskKind::Flatpak(_) => self.flatpak_worker.cancel_task(&task.uuid),
+                TaskKind::Appstream(_) => self.appstream_worker.cancel_task(&task.uuid),
             }
         }
 
