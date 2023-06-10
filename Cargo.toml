@@ -31,7 +31,7 @@ rusty_pool = "0.7"
 base64 = "0.21.0"
 
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
-adw = { version = "0.3", package = "libadwaita", features = ["v1_2"] }
+adw = { version = "0.4", package = "libadwaita", features = ["v1_4"] }
 gtk = { version = "0.6", package = "gtk4", features = ["v4_8"] }
 gdk = { version = "0.6", package = "gdk4", features = ["v4_6"] }
 gtk-macros = "0.3"

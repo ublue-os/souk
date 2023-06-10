@@ -62,7 +62,7 @@ mod imp {
         #[template_child]
         sideload_stack: TemplateChild<gtk::Stack>,
         #[template_child]
-        sideload_leaflet: TemplateChild<adw::Leaflet>,
+        sideload_nav: TemplateChild<adw::NavigationView>,
 
         #[template_child]
         cancel_sideload_button: TemplateChild<gtk::Button>,
@@ -72,7 +72,7 @@ mod imp {
         package_box: TemplateChild<gtk::Box>,
 
         #[template_child]
-        details_title: TemplateChild<adw::WindowTitle>,
+        details_page: TemplateChild<adw::NavigationPage>,
         #[template_child]
         package_icon_image: TemplateChild<gtk::Image>,
         #[template_child]
@@ -105,7 +105,7 @@ mod imp {
         installation_listbox: TemplateChild<SkInstallationListBox>,
 
         #[template_child]
-        progress_title: TemplateChild<adw::WindowTitle>,
+        progress_page: TemplateChild<adw::NavigationPage>,
         #[template_child]
         progress_bar: TemplateChild<SkTaskProgressBar>,
         #[template_child]
@@ -114,19 +114,19 @@ mod imp {
         progress_download_label: TemplateChild<gtk::Label>,
 
         #[template_child]
-        done_title: TemplateChild<adw::WindowTitle>,
+        done_page: TemplateChild<adw::NavigationPage>,
         #[template_child]
         done_spage: TemplateChild<adw::StatusPage>,
         #[template_child]
         launch_button: TemplateChild<gtk::Button>,
 
         #[template_child]
-        error_title: TemplateChild<adw::WindowTitle>,
+        error_page: TemplateChild<adw::NavigationPage>,
         #[template_child]
         error_spage: TemplateChild<adw::StatusPage>,
 
         #[template_child]
-        already_done_title: TemplateChild<adw::WindowTitle>,
+        already_done_page: TemplateChild<adw::NavigationPage>,
         #[template_child]
         already_done_spage: TemplateChild<adw::StatusPage>,
 
@@ -143,10 +143,6 @@ mod imp {
         fn class_init(klass: &mut Self::Class) {
             Self::bind_template(klass);
             Self::bind_template_callbacks(klass);
-            klass.install_action("window.go-back", None, move |w, _, _| w.imp().go_back());
-            klass.install_action("window.select-installation", None, move |w, _, _| {
-                w.imp().go_back()
-            });
         }
 
         fn instance_init(obj: &subclass::InitializingObject<Self>) {
@@ -179,28 +175,6 @@ mod imp {
             // Setup actions
             let actions = gio::SimpleActionGroup::new();
             self.obj().insert_action_group("sideload", Some(&actions));
-
-            // sideload.select-installation
-            let action = gio::SimpleAction::new("select-installation", None);
-            action.connect_activate(clone!(@weak self as this => move |_, _| {
-                let current = this.sideload_leaflet.visible_child_name().unwrap().to_string();
-                let select_installation = this.sideload_leaflet.child_by_name("select-installation").unwrap();
-
-                let page = match current.as_str() {
-                    "details" => Some(this.sideload_leaflet.child_by_name("details").unwrap()),
-                    "missing-runtime" => Some(this.sideload_leaflet.child_by_name("missing-runtime").unwrap()),
-                    "already-done" => Some(this.sideload_leaflet.child_by_name("already-done").unwrap()),
-                    _ => None,
-                };
-
-                // Reorder select-installation to the correct position, so that "navigate-back" works properly
-                if let Some(page) = page {
-                    this.sideload_leaflet.reorder_child_after(&select_installation, Some(&page));
-                }
-
-                this.sideload_leaflet.set_visible_child_name("select-installation");
-            }));
-            actions.add_action(&action);
 
             // Preselect preferred installation
             let preferred = worker.installations().preferred();
@@ -247,8 +221,6 @@ mod imp {
             } else {
                 return;
             };
-
-            self.sideload_stack.set_visible_child_name("leaflet");
 
             // Package
             if let Some(dry_run) = sideloadable.dry_run() {
@@ -300,7 +272,7 @@ mod imp {
 
                         row.connect_activated(clone!(@weak this, @weak context => move |_|{
                             this.context_box.set_context(&context);
-                            this.sideload_leaflet.set_visible_child_name("context-information");
+                            this.sideload_nav.push_by_tag("context-information");
                         }));
 
                         row.upcast()
@@ -332,7 +304,8 @@ mod imp {
                     && sideloadable.kind() == SkSideloadKind::Ref
                 {
                     self.set_labels(LabelKind::PackageInstall);
-                    self.sideload_leaflet.set_visible_child_name("already-done");
+                    self.sideload_nav.push_by_tag("already-done");
+                    self.sideload_stack.set_visible_child_name("nav");
                     return;
                 }
             }
@@ -381,10 +354,10 @@ mod imp {
 
             // Show "already done" page when there are no changes
             if sideloadable.no_changes() {
-                self.sideload_leaflet.set_visible_child_name("already-done");
-            } else {
-                self.sideload_leaflet.set_visible_child_name("details");
+                self.sideload_nav.push_by_tag("already-done");
             }
+
+            self.sideload_stack.set_visible_child_name("nav");
         }
 
         fn set_task(&self, task: &SkTask) {
@@ -396,7 +369,7 @@ mod imp {
                 "done",
                 false,
                 clone!(@weak self as this => @default-return None, move |_|{
-                    this.sideload_leaflet.set_visible_child_name("done");
+                    this.sideload_nav.push_by_tag("done");
                     None
                 }),
             );
@@ -421,7 +394,7 @@ mod imp {
             );
 
             // Setup progress view
-            self.sideload_leaflet.set_visible_child_name("progress");
+            self.sideload_nav.push_by_tag("progress");
             self.progress_bar.set_task(task);
 
             task.property_expression("current-operation")
@@ -500,11 +473,11 @@ mod imp {
             };
 
             self.start_button.set_label(&start_button[i]);
-            self.details_title.set_title(&details_title[i]);
-            self.progress_title.set_title(&progress_title[i]);
-            self.already_done_title.set_title(&already_done_title[i]);
-            self.done_title.set_title(&done_title[i]);
-            self.error_title.set_title(&error_title[i]);
+            self.details_page.set_title(&details_title[i]);
+            self.progress_page.set_title(&progress_title[i]);
+            self.already_done_page.set_title(&already_done_title[i]);
+            self.done_page.set_title(&done_title[i]);
+            self.error_page.set_title(&error_title[i]);
 
             self.already_done_spage
                 .set_description(Some(&already_done_desc[i]));
@@ -553,7 +526,7 @@ mod imp {
                 }
                 SkSideloadKind::Repo => {
                     match sideloadable.sideload(&worker).await {
-                        Ok(_) => self.sideload_leaflet.set_visible_child_name("done"),
+                        Ok(_) => self.sideload_nav.push_by_tag("done"),
                         Err(err) => self.show_error_message(&err.message()),
                     };
                 }
@@ -562,27 +535,21 @@ mod imp {
         }
 
         fn show_error_message(&self, message: &str) {
-            self.sideload_leaflet.set_visible_child_name("error");
-            self.sideload_stack.set_visible_child_name("leaflet");
+            self.sideload_nav.push_by_tag("error");
+            self.sideload_stack.set_visible_child_name("nav");
 
             self.error_spage.set_description(Some(message));
         }
 
         fn show_missing_runtime_message(&self, runtime: &str) {
-            self.sideload_leaflet
-                .set_visible_child_name("missing-runtime");
-            self.sideload_stack.set_visible_child_name("leaflet");
+            self.sideload_nav.push_by_tag("missing-runtime");
+            self.sideload_stack.set_visible_child_name("nav");
 
             let message = i18n_f(
                 "The required runtime <tt>{}</tt> could not be found. Possibly the runtime is available in a different installation.",
                 &[runtime],
             );
             self.missing_runtime_spage.set_description(Some(&message));
-        }
-
-        fn go_back(&self) {
-            self.sideload_leaflet
-                .navigate(adw::NavigationDirection::Back);
         }
 
         #[template_callback]

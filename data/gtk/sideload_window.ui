@@ -40,29 +40,24 @@
             </child>
             <child>
               <object class="GtkStackPage">
-                <property name="name">leaflet</property>
+                <property name="name">nav</property>
                 <property name="child">
-                  <object class="AdwLeaflet" id="sideload_leaflet">
-                    <property name="transition_type">over</property>
-                    <property name="can_unfold">False</property>
-                    <property name="can_navigate_back">True</property>
+                  <object class="AdwNavigationView" id="sideload_nav">
                     <child>
-                      <object class="AdwLeafletPage">
-                        <property name="name">details</property>
+                      <object class="AdwNavigationPage" id="details_page">
+                        <property name="tag">details</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkHeaderBar">
-                                <property name="show_title_buttons">False</property>
+                              <object class="AdwHeaderBar">
+                                <property name="show_start_title_buttons">False</property>
+                                <property name="show_end_title_buttons">False</property>
                                 <child>
                                   <object class="GtkButton">
                                     <property name="label" translatable="yes">Cancel</property>
                                     <property name="action-name">window.close</property>
                                   </object>
-                                </child>
-                                <child type="title">
-                                  <object class="AdwWindowTitle" id="details_title"/>
                                 </child>
                                 <child type="end">
                                   <object class="GtkButton" id="start_button">
@@ -209,7 +204,8 @@
                                               <object class="AdwActionRow">
                                                 <property name="title" translatable="yes">Installation</property>
                                                 <property name="activatable">True</property>
-                                                <property name="action-name">sideload.select-installation</property>
+                                                <property name="action-name">navigation.push</property>
+                                                <property name="action-target">'select-installation'</property>
                                                 <child>
                                                   <object class="GtkLabel">
                                                     <binding name="label">
@@ -252,26 +248,14 @@
                       </object>
                     </child>
                     <child>
-                      <object class="AdwLeafletPage">
-                        <property name="name">context-information</property>
-                        <property name="navigatable">False</property>
+                      <object class="AdwNavigationPage">
+                        <property name="tag">context-information</property>
+                        <property name="title" translatable="yes">Information</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkHeaderBar">
-                                <child>
-                                  <object class="GtkButton">
-                                    <property name="icon_name">go-previous-symbolic</property>
-                                    <property name="action-name">window.go-back</property>
-                                  </object>
-                                </child>
-                                <child type="title">
-                                  <object class="AdwWindowTitle">
-                                    <property name="title" translatable="yes">Information</property>
-                                  </object>
-                                </child>
-                              </object>
+                              <object class="AdwHeaderBar"/>
                             </child>
                             <child>
                               <object class="GtkScrolledWindow">
@@ -295,26 +279,14 @@
                       </object>
                     </child>
                     <child>
-                      <object class="AdwLeafletPage">
-                        <property name="name">select-installation</property>
-                        <property name="navigatable">False</property>
+                      <object class="AdwNavigationPage">
+                        <property name="tag">select-installation</property>
+                        <property name="title" translatable="yes">Select Installation</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkHeaderBar">
-                                <child>
-                                  <object class="GtkButton">
-                                    <property name="icon_name">go-previous-symbolic</property>
-                                    <property name="action-name">window.go-back</property>
-                                  </object>
-                                </child>
-                                <child type="title">
-                                  <object class="AdwWindowTitle">
-                                    <property name="title" translatable="yes">Select Installation</property>
-                                  </object>
-                                </child>
-                              </object>
+                              <object class="AdwHeaderBar"/>
                             </child>
                             <child>
                               <object class="AdwClamp">
@@ -364,23 +336,21 @@
                       </object>
                     </child>
                     <child>
-                      <object class="AdwLeafletPage">
-                        <property name="name">progress</property>
-                        <property name="navigatable">False</property>
+                      <object class="AdwNavigationPage" id="progress_page">
+                        <property name="tag">progress</property>
+                        <property name="can-pop">False</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkHeaderBar">
-                                <property name="show_title_buttons">False</property>
+                              <object class="AdwHeaderBar">
+                                <property name="show_start_title_buttons">False</property>
+                                <property name="show_end_title_buttons">False</property>
                                 <child>
                                   <object class="GtkButton" id="cancel_sideload_button">
                                     <property name="label" translatable="yes">Cancel</property>
                                     <signal name="clicked" handler="cancel_sideload_clicked" swapped="true"/>
                                   </object>
-                                </child>
-                                <child type="title">
-                                  <object class="AdwWindowTitle" id="progress_title"/>
                                 </child>
                               </object>
                             </child>
@@ -433,18 +403,14 @@
                       </object>
                     </child>
                     <child>
-                      <object class="AdwLeafletPage">
-                        <property name="name">done</property>
-                        <property name="navigatable">False</property>
+                      <object class="AdwNavigationPage" id="done_page">
+                        <property name="tag">done</property>
+                        <property name="can-pop">False</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkHeaderBar">
-                                <child type="title">
-                                  <object class="AdwWindowTitle" id="done_title"/>
-                                </child>
-                              </object>
+                              <object class="AdwHeaderBar"/>
                             </child>
                             <child>
                               <object class="AdwStatusPage" id="done_spage">
@@ -474,20 +440,15 @@
                       </object>
                     </child>
                     <child>
-                      <object class="AdwLeafletPage">
-                        <property name="name">error</property>
-                        <property name="navigatable">False</property>
+                      <object class="AdwNavigationPage" id="error_page">
+                        <property name="tag">error</property>
+                        <property name="title" translatable="yes">Failure</property>
+                        <property name="can-pop">False</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkHeaderBar">
-                                <child type="title">
-                                  <object class="AdwWindowTitle" id="error_title">
-                                    <property name="title" translatable="yes">Failure</property>
-                                  </object>
-                                </child>
-                              </object>
+                              <object class="AdwHeaderBar"/>
                             </child>
                             <child>
                               <object class="AdwStatusPage" id="error_spage">
@@ -511,17 +472,14 @@
                       </object>
                     </child>
                     <child>
-                      <object class="AdwLeafletPage">
-                        <property name="name">already-done</property>
+                      <object class="AdwNavigationPage" id="already_done_page">
+                        <property name="tag">already-done</property>
+                        <property name="can-pop">False</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkHeaderBar">
-                                <child type="title">
-                                  <object class="AdwWindowTitle" id="already_done_title"/>
-                                </child>
-                              </object>
+                              <object class="AdwHeaderBar"/>
                             </child>
                             <child>
                               <object class="AdwStatusPage" id="already_done_spage">
@@ -537,7 +495,8 @@
                                       <object class="GtkButton">
                                         <property name="halign">center</property>
                                         <property name="label" translatable="yes">Change Installation</property>
-                                        <property name="action-name">sideload.select-installation</property>
+                                        <property name="action-name">navigation.push</property>
+                                        <property name="action-target">'select-installation'</property>
                                         <style>
                                           <class name="pill"/>
                                         </style>
@@ -555,19 +514,15 @@
                       </object>
                     </child>
                     <child>
-                      <object class="AdwLeafletPage">
-                        <property name="name">missing-runtime</property>
+                      <object class="AdwNavigationPage">
+                        <property name="tag">missing-runtime</property>
+                        <property name="title" translatable="yes">Missing Dependency</property>
+                        <property name="can-pop">False</property>
                         <property name="child">
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkHeaderBar">
-                                <child type="title">
-                                  <object class="AdwWindowTitle">
-                                    <property name="title" translatable="yes">Missing Dependency</property>
-                                  </object>
-                                </child>
-                              </object>
+                              <object class="AdwHeaderBar"/>
                             </child>
                             <child>
                               <object class="AdwStatusPage" id="missing_runtime_spage">
@@ -578,7 +533,8 @@
                                   <object class="GtkButton">
                                     <property name="halign">center</property>
                                     <property name="label" translatable="yes">Change Installation</property>
-                                    <property name="action-name">sideload.select-installation</property>
+                                    <property name="action-name">navigation.push</property>
+                                    <property name="action-target">'select-installation'</property>
                                     <style>
                                       <class name="pill"/>
                                     </style>
@@ -600,4 +556,3 @@
     </child>
   </template>
 </interface>
-
