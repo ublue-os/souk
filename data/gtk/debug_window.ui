@@ -7,28 +7,23 @@
     <property name="default_height">500</property>
     <property name="title" translatable="yes">Debug Information</property>
     <child>
-      <object class="GtkBox">
-        <property name="orientation">vertical</property>
-        <child>
+      <object class="AdwToolbarView">
+        <child type="top">
           <object class="GtkHeaderBar"/>
         </child>
-        <child>
-          <object class="GtkBox">
-            <property name="orientation">vertical</property>
+        <property name="content">
+          <object class="GtkScrolledWindow">
             <child>
-              <object class="GtkScrolledWindow">
-                <property name="vexpand">true</property>
-                <child>
-                  <object class="GtkColumnView" id="current_tasks_columnview">
-                    <property name="hexpand">true</property>
-                  </object>
-                </child>
+              <object class="GtkColumnView" id="current_tasks_columnview">
+                <property name="hexpand">true</property>
               </object>
             </child>
           </object>
-        </child>
+        </property>
       </object>
     </child>
+    <style>
+      <class name="view"/>
+    </style>
   </template>
 </interface>
-
