@@ -15,9 +15,8 @@
               <object class="GtkStackPage">
                 <property name="name">loading</property>
                 <property name="child">
-                  <object class="GtkBox">
-                    <property name="orientation">vertical</property>
-                    <child>
+                  <object class="AdwToolbarView">
+                    <child type="top">
                       <object class="GtkHeaderBar">
                         <child type="title">
                           <object class="AdwWindowTitle" id="loading_title">
@@ -26,14 +25,13 @@
                         </child>
                       </object>
                     </child>
-                    <child>
+                    <property name="content">
                       <object class="GtkSpinner">
                         <property name="spinning">True</property>
-                        <property name="vexpand">True</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                       </object>
-                    </child>
+                    </property>
                   </object>
                 </property>
               </object>
@@ -47,9 +45,8 @@
                       <object class="AdwNavigationPage" id="details_page">
                         <property name="tag">details</property>
                         <property name="child">
-                          <object class="GtkBox">
-                            <property name="orientation">vertical</property>
-                            <child>
+                          <object class="AdwToolbarView">
+                            <child type="top">
                               <object class="AdwHeaderBar">
                                 <property name="show_start_title_buttons">False</property>
                                 <property name="show_end_title_buttons">False</property>
@@ -69,9 +66,8 @@
                                 </child>
                               </object>
                             </child>
-                            <child>
+                            <property name="content">
                               <object class="GtkScrolledWindow">
-                                <property name="vexpand">True</property>
                                 <child>
                                   <object class="AdwClamp">
                                     <property name="margin_start">12</property>
@@ -242,7 +238,7 @@
                                   </object>
                                 </child>
                               </object>
-                            </child>
+                            </property>
                           </object>
                         </property>
                       </object>
@@ -252,14 +248,12 @@
                         <property name="tag">context-information</property>
                         <property name="title" translatable="yes">Information</property>
                         <property name="child">
-                          <object class="GtkBox">
-                            <property name="orientation">vertical</property>
-                            <child>
+                          <object class="AdwToolbarView">
+                            <child type="top">
                               <object class="AdwHeaderBar"/>
                             </child>
-                            <child>
+                            <property name="content">
                               <object class="GtkScrolledWindow">
-                                <property name="vexpand">True</property>
                                 <child>
                                   <object class="AdwClamp">
                                     <property name="margin_top">24</property>
@@ -273,7 +267,7 @@
                                   </object>
                                 </child>
                               </object>
-                            </child>
+                            </property>
                           </object>
                         </property>
                       </object>
@@ -283,12 +277,11 @@
                         <property name="tag">select-installation</property>
                         <property name="title" translatable="yes">Select Installation</property>
                         <property name="child">
-                          <object class="GtkBox">
-                            <property name="orientation">vertical</property>
-                            <child>
+                          <object class="AdwToolbarView">
+                            <child type="top">
                               <object class="AdwHeaderBar"/>
                             </child>
-                            <child>
+                            <property name="content">
                               <object class="AdwClamp">
                                 <property name="margin_top">12</property>
                                 <property name="margin_bottom">12</property>
@@ -330,7 +323,7 @@
                                   </object>
                                 </child>
                               </object>
-                            </child>
+                            </property>
                           </object>
                         </property>
                       </object>
@@ -340,9 +333,8 @@
                         <property name="tag">progress</property>
                         <property name="can-pop">False</property>
                         <property name="child">
-                          <object class="GtkBox">
-                            <property name="orientation">vertical</property>
-                            <child>
+                          <object class="AdwToolbarView">
+                            <child type="top">
                               <object class="AdwHeaderBar">
                                 <property name="show_start_title_buttons">False</property>
                                 <property name="show_end_title_buttons">False</property>
@@ -354,9 +346,8 @@
                                 </child>
                               </object>
                             </child>
-                            <child>
+                            <property name="content">
                               <object class="AdwStatusPage" id="progress_spage">
-                                <property name="vexpand">True</property>
                                 <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
                                 <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
                                 <child>
@@ -397,7 +388,7 @@
                                   <class name="icon-dropshadow"/>
                                 </style>
                               </object>
-                            </child>
+                            </property>
                           </object>
                         </property>
                       </object>
@@ -407,14 +398,12 @@
                         <property name="tag">done</property>
                         <property name="can-pop">False</property>
                         <property name="child">
-                          <object class="GtkBox">
-                            <property name="orientation">vertical</property>
-                            <child>
+                          <object class="AdwToolbarView">
+                            <child type="top">
                               <object class="AdwHeaderBar"/>
                             </child>
-                            <child>
+                            <property name="content">
                               <object class="AdwStatusPage" id="done_spage">
-                                <property name="vexpand">True</property>
                                 <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
                                 <property name="icon_name" bind-source="package_icon_image" bind-property="icon_name" bind-flags="sync-create"/>
                                 <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
@@ -434,7 +423,7 @@
                                   <class name="icon-dropshadow"/>
                                 </style>
                               </object>
-                            </child>
+                            </property>
                           </object>
                         </property>
                       </object>
@@ -445,14 +434,12 @@
                         <property name="title" translatable="yes">Failure</property>
                         <property name="can-pop">False</property>
                         <property name="child">
-                          <object class="GtkBox">
-                            <property name="orientation">vertical</property>
-                            <child>
+                          <object class="AdwToolbarView">
+                            <child type="top">
                               <object class="AdwHeaderBar"/>
                             </child>
-                            <child>
+                            <property name="content">
                               <object class="AdwStatusPage" id="error_spage">
-                                <property name="vexpand">True</property>
                                 <property name="icon_name">dialog-warning-symbolic</property>
                                 <property name="title" translatable="yes">A problem has occurred</property>
                                 <child>
@@ -466,7 +453,7 @@
                                   </object>
                                 </child>
                               </object>
-                            </child>
+                            </property>
                           </object>
                         </property>
                       </object>
@@ -476,14 +463,12 @@
                         <property name="tag">already-done</property>
                         <property name="can-pop">False</property>
                         <property name="child">
-                          <object class="GtkBox">
-                            <property name="orientation">vertical</property>
-                            <child>
+                          <object class="AdwToolbarView">
+                            <child type="top">
                               <object class="AdwHeaderBar"/>
                             </child>
-                            <child>
+                            <property name="content">
                               <object class="AdwStatusPage" id="already_done_spage">
-                                <property name="vexpand">True</property>
                                 <property name="paintable" bind-source="package_icon_image" bind-property="paintable" bind-flags="sync-create"/>
                                 <property name="icon_name" bind-source="package_icon_image" bind-property="icon_name" bind-flags="sync-create"/>
                                 <property name="title" bind-source="package_name_label" bind-property="label" bind-flags="sync-create"/>
@@ -508,7 +493,7 @@
                                   <class name="icon-dropshadow"/>
                                 </style>
                               </object>
-                            </child>
+                            </property>
                           </object>
                         </property>
                       </object>
@@ -519,14 +504,12 @@
                         <property name="title" translatable="yes">Missing Dependency</property>
                         <property name="can-pop">False</property>
                         <property name="child">
-                          <object class="GtkBox">
-                            <property name="orientation">vertical</property>
-                            <child>
+                          <object class="AdwToolbarView">
+                            <child type="top">
                               <object class="AdwHeaderBar"/>
                             </child>
-                            <child>
+                            <property name="content">
                               <object class="AdwStatusPage" id="missing_runtime_spage">
-                                <property name="vexpand">True</property>
                                 <property name="icon_name">dialog-question-symbolic</property>
                                 <property name="title" translatable="yes">Cannot Find Required Runtime</property>
                                 <child>
@@ -541,7 +524,7 @@
                                   </object>
                                 </child>
                               </object>
-                            </child>
+                            </property>
                           </object>
                         </property>
                       </object>
