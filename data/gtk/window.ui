@@ -10,13 +10,6 @@
         <child type="top">
           <object class="GtkHeaderBar">
             <child>
-              <object class="GtkButton" id="back_button">
-                <property name="action_name">win.go-back</property>
-                <property name="icon_name">go-previous-symbolic</property>
-                <property name="visible">False</property>
-              </object>
-            </child>
-            <child>
               <object class="GtkButton" id="open_button">
                 <property name="action_name">app.open</property>
                 <child>
