@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 use std::time::Duration;
 
 use adw::prelude::*;
@@ -24,22 +24,19 @@ use glib::{clone, ParamSpec, Properties};
 use gtk::glib;
 use once_cell::unsync::OnceCell;
 
-use crate::main::task::SkTask;
-
 mod imp {
     use super::*;
 
     #[derive(Debug, Default, Properties)]
     #[properties(wrapper_type = super::SkProgressBar)]
     pub struct SkProgressBar {
-        #[property(get, set = Self::set_task)]
-        task: RefCell<Option<SkTask>>,
+        #[property(get, set = Self::set_fraction)]
+        fraction: Cell<f32>,
+        #[property(get, set = Self::set_pulsing)]
+        pulsing: Cell<bool>,
 
         progressbar: gtk::ProgressBar,
         animation: OnceCell<TimedAnimation>,
-        is_pulsing: Cell<bool>,
-
-        watches: RefCell<Vec<gtk::ExpressionWatch>>,
     }
 
     #[glib::object_subclass]
@@ -87,76 +84,46 @@ mod imp {
     impl BinImpl for SkProgressBar {}
 
     impl SkProgressBar {
-        fn set_task(&self, task: Option<&SkTask>) {
-            while let Some(watch) = self.watches.borrow_mut().pop() {
-                watch.unwatch();
-            }
+        fn set_pulsing(&self, pulsing: bool) {
+            if pulsing {
+                self.progressbar.pulse();
+                // For whatever reason we need to do it twice to make the pulse animation to
+                // start instantly
+                self.progressbar.pulse();
 
-            if let Some(task) = task {
-                let watch = task.property_expression("progress").watch(
-                    glib::Object::NONE,
-                    clone!(@weak self as this => move|| this.update_fraction()),
-                );
-                self.watches.borrow_mut().push(watch);
-
-                let watch = task.property_expression("current-operation").watch(
-                    glib::Object::NONE,
-                    clone!(@weak self as this => move|| this.update()),
-                );
-                self.watches.borrow_mut().push(watch);
-            }
-
-            *self.task.borrow_mut() = task.cloned();
-            self.obj().notify("task");
-
-            self.update_fraction();
-        }
-
-        fn update(&self) {
-            let no_detailed_progress = if let Some(task) = self.obj().task() {
-                if let Some(operation) = task.current_operation() {
-                    operation.status().has_no_detailed_progress()
-                } else {
-                    false
-                }
-            } else {
-                false
-            };
-
-            // Show a pulse animation when there's a operation with no progress reporting
-            if no_detailed_progress && !self.is_pulsing.get() {
-                self.is_pulsing.set(true);
                 glib::timeout_add_local(
-                    Duration::from_secs(1),
+                    Duration::from_millis(500),
                     clone!(@weak self as this => @default-return Continue(false), move || {
-                        let is_pulsing = this.is_pulsing.get();
+                        let pulsing = this.pulsing.get();
 
-                        if is_pulsing {
+                        if pulsing {
                             this.progressbar.pulse();
-                        } else {
-                            this.update_fraction();
+                        }else{
+                            this.progressbar.set_fraction(this.fraction.get() as f64);
                         }
 
-                        Continue(is_pulsing)
+                        Continue(pulsing)
                     }),
                 );
-            } else {
-                self.is_pulsing.set(false);
             }
+
+            self.pulsing.set(pulsing);
+            self.obj().notify_pulsing();
         }
 
-        fn update_fraction(&self) {
+        fn set_fraction(&self, fraction: f32) {
             let animation = self.animation.get().unwrap();
 
-            if let Some(task) = self.obj().task() {
-                animation.skip();
-                let current_value = animation.value();
+            animation.skip();
+            let current_value = animation.value();
 
-                animation.reset();
-                animation.set_value_from(current_value);
-                animation.set_value_to(task.progress() as f64);
-                animation.play();
-            }
+            animation.reset();
+            animation.set_value_from(current_value);
+            animation.set_value_to(fraction as f64);
+            animation.play();
+
+            self.fraction.set(fraction);
+            self.obj().notify_fraction();
         }
     }
 }

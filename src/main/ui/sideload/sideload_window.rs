@@ -397,7 +397,16 @@ mod imp {
 
             // Setup progress view
             self.sideload_nav.push_by_tag("progress");
-            self.progress_bar.set_task(task);
+            task.bind_property("progress", &self.progress_bar.get(), "fraction")
+                .build();
+            task.property_expression("current-operation")
+                .chain_property::<SkOperation>("status")
+                .chain_closure::<bool>(closure!(
+                    |_: Option<glib::Object>, status: SkOperationStatus| {
+                        status.has_no_detailed_progress()
+                    }
+                ))
+                .bind(&self.progress_bar.get(), "pulsing", None::<&SkOperation>);
 
             task.property_expression("current-operation")
                 .chain_property::<SkOperation>("status")

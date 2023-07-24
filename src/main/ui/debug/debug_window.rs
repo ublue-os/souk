@@ -16,13 +16,13 @@
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::subclass;
+use glib::{closure, subclass};
 use gtk::{glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote};
 use crate::main::flatpak::package::SkPackage;
-use crate::main::task::{SkOperation, SkTask};
+use crate::main::task::{SkOperation, SkOperationStatus, SkTask};
 use crate::main::ui::SkProgressBar;
 
 mod imp {
@@ -148,11 +148,40 @@ mod imp {
             factory.connect_setup(|_factory, item| {
                 let progressbar = SkProgressBar::new();
 
+                // SkTask
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 item.set_child(Some(&progressbar));
                 item.property_expression("item")
                     .chain_property::<gtk::TreeListRow>("item")
-                    .bind(&progressbar, "task", None::<&gtk::TreeListRow>);
+                    .chain_property::<SkTask>("progress")
+                    .bind(&progressbar, "fraction", None::<&gtk::TreeListRow>);
+
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkTask>("current-operation")
+                    .chain_property::<SkOperation>("status")
+                    .chain_closure::<bool>(closure!(
+                        |_: Option<glib::Object>, status: SkOperationStatus| {
+                            status.has_no_detailed_progress()
+                        }
+                    ))
+                    .bind(&progressbar, "pulsing", None::<&SkOperation>);
+
+                // SkOperation
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkOperation>("progress")
+                    .bind(&progressbar, "fraction", None::<&gtk::TreeListRow>);
+
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkOperation>("status")
+                    .chain_closure::<bool>(closure!(
+                        |_: Option<glib::Object>, status: SkOperationStatus| {
+                            status.has_no_detailed_progress()
+                        }
+                    ))
+                    .bind(&progressbar, "pulsing", None::<&SkOperation>);
             });
             self.add_column("Progress", factory);
 
