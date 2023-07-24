@@ -16,7 +16,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::shared::task::response::{TaskActivity, TaskResult};
+use crate::shared::task::response::{OperationActivity, TaskResult};
 use crate::shared::task::Task;
 
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
@@ -27,10 +27,10 @@ pub struct TaskResponse {
 }
 
 impl TaskResponse {
-    pub fn new_activity(task: Task, activity: TaskActivity) -> Self {
+    pub fn new_operation_activity(task: Task, activity: Vec<OperationActivity>) -> Self {
         Self {
             task,
-            kind: TaskResponseKind::Activity(activity),
+            kind: TaskResponseKind::OperationActivity(activity),
         }
     }
 
@@ -44,6 +44,6 @@ impl TaskResponse {
 
 #[derive(Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum TaskResponseKind {
-    Activity(TaskActivity),
+    OperationActivity(Vec<OperationActivity>),
     Result(TaskResult),
 }

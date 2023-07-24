@@ -32,7 +32,7 @@ use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageKind};
 use crate::main::flatpak::sideload::{SkSideloadKind, SkSideloadable};
 use crate::main::flatpak::SkFlatpakOperationKind;
 use crate::main::i18n::{i18n, i18n_f};
-use crate::main::task::{SkTask, SkTaskStatus};
+use crate::main::task::{SkOperation, SkOperationStatus, SkTask};
 use crate::main::ui::badge::SkBadge;
 use crate::main::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::main::ui::installation::SkInstallationListBox;
@@ -424,13 +424,15 @@ mod imp {
             self.sideload_leaflet.set_visible_child_name("progress");
             self.progress_bar.set_task(task);
 
-            task.property_expression("status")
+            task.property_expression("current-operation")
+                .chain_property::<SkOperation>("status")
                 .chain_closure::<String>(closure!(
-                    |_: Option<glib::Object>, status: SkTaskStatus| { status.to_string() }
+                    |_: Option<glib::Object>, status: SkOperationStatus| { status.to_string() }
                 ))
                 .bind(&self.progress_status_label.get(), "label", None::<&SkTask>);
 
-            task.property_expression("download-rate")
+            task.property_expression("current-operation")
+                .chain_property::<SkOperation>("download-rate")
                 .chain_closure::<String>(closure!(|_: Option<glib::Object>, download_rate: u64| {
                     if download_rate != 0 {
                         i18n_f(

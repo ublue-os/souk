@@ -14,12 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod operation;
+mod operation_kind;
+mod operation_model;
+mod operation_status;
 #[allow(clippy::module_inception)]
 mod task;
 mod task_kind;
 mod task_model;
 mod task_status;
 
+pub use operation::SkOperation;
+pub use operation_kind::SkOperationKind;
+pub use operation_model::SkOperationModel;
+pub use operation_status::SkOperationStatus;
 pub use task::SkTask;
 pub use task_kind::SkTaskKind;
 pub use task_model::SkTaskModel;

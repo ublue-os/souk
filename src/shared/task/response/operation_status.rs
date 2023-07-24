@@ -1,4 +1,4 @@
-// Souk - task_status.rs
+// Souk - operation_status.rs
 // Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@ use flatpak::TransactionOperationType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
-pub enum TaskStatus {
+pub enum OperationStatus {
     Pending,
     Installing,
     InstallingBundle,
@@ -29,7 +29,7 @@ pub enum TaskStatus {
     None,
 }
 
-impl From<TransactionOperationType> for TaskStatus {
+impl From<TransactionOperationType> for OperationStatus {
     fn from(op: TransactionOperationType) -> Self {
         match op {
             TransactionOperationType::Install => Self::Installing,

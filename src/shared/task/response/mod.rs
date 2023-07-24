@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod task_activity;
+mod operation_activity;
+mod operation_status;
 mod task_response;
 mod task_result;
-mod task_status;
 
-pub use task_activity::TaskActivity;
+pub use operation_activity::OperationActivity;
+pub use operation_status::OperationStatus;
 pub use task_response::{TaskResponse, TaskResponseKind};
 pub use task_result::TaskResult;
-pub use task_status::TaskStatus;

@@ -99,7 +99,7 @@ mod imp {
                 );
                 self.watches.borrow_mut().push(watch);
 
-                let watch = task.property_expression("status").watch(
+                let watch = task.property_expression("current-operation").watch(
                     glib::Object::NONE,
                     clone!(@weak self as this => move|| this.update()),
                 );
@@ -113,28 +113,35 @@ mod imp {
         }
 
         fn update(&self) {
-            if let Some(task) = self.obj().task() {
-                // Show a pulse animation, since we don't have any progress information
-                // available when a Flatpak bundle gets installed.
-                if task.status().has_no_detailed_progress() && !self.is_pulsing.get() {
-                    self.is_pulsing.set(true);
-                    glib::timeout_add_local(
-                        Duration::from_secs(1),
-                        clone!(@weak self as this => @default-return Continue(false), move || {
-                            let is_pulsing = this.is_pulsing.get();
-
-                            if is_pulsing {
-                                this.progressbar.pulse();
-                            } else {
-                                this.update_fraction();
-                            }
-
-                            Continue(is_pulsing)
-                        }),
-                    );
+            let no_detailed_progress = if let Some(task) = self.obj().task() {
+                if let Some(operation) = task.current_operation() {
+                    operation.status().has_no_detailed_progress()
                 } else {
-                    self.is_pulsing.set(false);
+                    false
                 }
+            } else {
+                false
+            };
+
+            // Show a pulse animation when there's a operation with no progress reporting
+            if no_detailed_progress && !self.is_pulsing.get() {
+                self.is_pulsing.set(true);
+                glib::timeout_add_local(
+                    Duration::from_secs(1),
+                    clone!(@weak self as this => @default-return Continue(false), move || {
+                        let is_pulsing = this.is_pulsing.get();
+
+                        if is_pulsing {
+                            this.progressbar.pulse();
+                        } else {
+                            this.update_fraction();
+                        }
+
+                        Continue(is_pulsing)
+                    }),
+                );
+            } else {
+                self.is_pulsing.set(false);
             }
         }
 

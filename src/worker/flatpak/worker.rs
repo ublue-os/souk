@@ -33,7 +33,7 @@ use isahc::ReadResponseExt;
 use crate::shared::flatpak::dry_run::{DryRun, DryRunPackage};
 use crate::shared::flatpak::info::RemoteInfo;
 use crate::shared::flatpak::FlatpakOperationKind;
-use crate::shared::task::response::{TaskActivity, TaskResponse, TaskResult};
+use crate::shared::task::response::{OperationActivity, TaskResponse, TaskResult};
 use crate::shared::task::{FlatpakTask, FlatpakTaskKind};
 use crate::shared::WorkerError;
 use crate::worker::appstream;
@@ -117,12 +117,12 @@ impl FlatpakWorker {
         info!("Install Flatpak: {}", ref_);
 
         if task.uninstall_before_install {
-            self.uninstall_ref(task, ref_)?;
+            self.uninstall_before_install(task, ref_)?;
         }
 
         let transaction = self.new_transaction(task)?;
         transaction.add_install(&remote.name, ref_, &[])?;
-        self.run_transaction(task, transaction)?;
+        self.run_transaction(task, transaction, false)?;
 
         Ok(())
     }
@@ -135,12 +135,12 @@ impl FlatpakWorker {
         if task.uninstall_before_install {
             let bundle = BundleRef::new(&file)?;
             let ref_ = bundle.format_ref().unwrap();
-            self.uninstall_ref(task, &ref_)?;
+            self.uninstall_before_install(task, &ref_)?;
         }
 
         let transaction = self.new_transaction(task)?;
         transaction.add_install_bundle(&file, None)?;
-        self.run_transaction(task, transaction)?;
+        self.run_transaction(task, transaction, false)?;
 
         Ok(())
     }
@@ -208,12 +208,12 @@ impl FlatpakWorker {
             keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
 
             let ref_ = Self::parse_ref_file(&keyfile)?;
-            self.uninstall_ref(task, &ref_)?;
+            self.uninstall_before_install(task, &ref_)?;
         }
 
         let transaction = self.new_transaction(task)?;
         transaction.add_install_flatpakref(&bytes)?;
-        self.run_transaction(task, transaction)?;
+        self.run_transaction(task, transaction, false)?;
 
         Ok(())
     }
@@ -258,10 +258,26 @@ impl FlatpakWorker {
         Ok(())
     }
 
+    #[allow(dead_code)]
+    fn uninstall_flatpak(&self, task: &FlatpakTask) -> Result<(), WorkerError> {
+        let ref_ = task.ref_.as_ref().unwrap();
+        info!("Uninstall Flatpak: {}", ref_);
+
+        let transaction = self.new_transaction(task)?;
+        transaction.add_uninstall(ref_)?;
+        self.run_transaction(task, transaction, false)?;
+
+        Ok(())
+    }
+
+    /// If `skip_task_result` is set, no [TaskResult::Done] gets emitted.
+    /// Required if the Flatpak transaction is only part of a task and therefore
+    /// does not complete it.
     fn run_transaction(
         &self,
         task: &FlatpakTask,
         transaction: Transaction,
+        skip_task_result: bool,
     ) -> Result<(), WorkerError> {
         transaction.connect_add_new_remote(move |_, _, _, _, _| true);
 
@@ -272,8 +288,12 @@ impl FlatpakWorker {
                     return true;
                 }
 
-                let task_activity = TaskActivity::from_flatpak_transaction(&task, transaction);
-                let response = TaskResponse::new_activity(task.clone().into(), task_activity);
+                let mut operation_activities = Vec::new();
+                for op in transaction.operations() {
+                    operation_activities.push(OperationActivity::from_flatpak_operation(transaction, &op, None, false));
+                }
+
+                let response = TaskResponse::new_operation_activity(task.clone().into(), operation_activities);
                 sender.try_send(response).unwrap();
 
                 // Real transaction -> start (unlike dryrun)
@@ -283,27 +303,25 @@ impl FlatpakWorker {
 
         transaction.connect_new_operation(
             clone!(@strong task, @weak self.sender as sender => move |transaction, operation, progress| {
-                let task_activity = TaskActivity::from_flatpak_operation(
-                    &task,
+                let operation_activity = OperationActivity::from_flatpak_operation(
                     transaction,
                     operation,
                     Some(progress),
                     false
                 );
-                let response = TaskResponse::new_activity(task.clone().into(), task_activity);
+                let response = TaskResponse::new_operation_activity(task.clone().into(), vec![operation_activity]);
                 sender.try_send(response).unwrap();
 
                 progress.set_update_frequency(750);
                 progress.connect_changed(
                     clone!(@strong task, @weak sender, @weak transaction, @weak operation => move |progress|{
-                        let task_activity = TaskActivity::from_flatpak_operation(
-                            &task,
+                        let operation_activity = OperationActivity::from_flatpak_operation(
                             &transaction,
                             &operation,
                             Some(progress),
                             false,
                         );
-                        let response = TaskResponse::new_activity(task.clone().into(), task_activity);
+                        let response = TaskResponse::new_operation_activity(task.clone().into(), vec![operation_activity]);
                         sender.try_send(response).unwrap();
                     }),
                 );
@@ -311,24 +329,24 @@ impl FlatpakWorker {
         );
 
         transaction.connect_operation_done(
-            clone!(@strong task, @weak self.sender as sender  => move |transaction, operation, _, _| {
-                let task_activity = TaskActivity::from_flatpak_operation(
-                    &task,
+            clone!(@strong task, @strong skip_task_result, @weak self.sender as sender  => move |transaction, operation, _, _| {
+                let operation_activity = OperationActivity::from_flatpak_operation(
                     transaction,
                     operation,
                     None,
                     true,
                 );
-                let response = TaskResponse::new_activity(task.clone().into(), task_activity);
+                let response = TaskResponse::new_operation_activity(task.clone().into(), vec![operation_activity]);
                 sender.try_send(response).unwrap();
 
-                // Check if this was the last operation -> whole task is done
                 let index = transaction
                     .operations()
                     .iter()
                     .position(|o| o == operation)
                     .unwrap();
-                if index +1 == transaction.operations().len() {
+
+                // Check if this was the last operation -> whole task is done
+                if index +1 == transaction.operations().len() && !skip_task_result{
                     let result = TaskResult::Done;
                     let response = TaskResponse::new_result(task.clone().into(), result);
                     sender.try_send(response).unwrap();
@@ -597,16 +615,23 @@ impl FlatpakWorker {
         }
     }
 
-    fn uninstall_ref(&self, task: &FlatpakTask, ref_: &str) -> Result<(), WorkerError> {
-        debug!("Uninstall: {}", ref_);
+    /// Uninstalls a ref before installing as it cannot be directly
+    /// replaced/upgraded (e.g. a Flatpak bundle where the remote differs)
+    /// Must be run as a separate Flatpak transaction, otherwise the
+    /// installation will fail ("X is already installed"). It seems that
+    /// Flatpak updates which refs are installed (and which aren't) only after a
+    /// transaction.
+    fn uninstall_before_install(&self, task: &FlatpakTask, ref_: &str) -> Result<(), WorkerError> {
+        debug!("Uninstall before install: {}", ref_);
 
-        // TODO: Add progress reporting, and explain why it's not possible to do it in
-        // the same transaction
+        // Ensure that ref is set
+        let mut task_cloned = task.clone();
+        task_cloned.ref_ = Some(ref_.to_string());
 
-        // TODO: Add failsafe check
-        let transaction = self.new_transaction(task)?;
+        let transaction = self.new_transaction(&task_cloned)?;
         transaction.add_uninstall(ref_)?;
-        transaction.run(Cancellable::NONE)?;
+        self.run_transaction(&task_cloned, transaction, true)?;
+
         Ok(())
     }
 

@@ -35,5 +35,5 @@ adw = { version = "0.3", package = "libadwaita", features = ["v1_2"] }
 gtk = { version = "0.6", package = "gtk4", features = ["v4_8"] }
 gdk = { version = "0.6", package = "gdk4", features = ["v4_6"] }
 gtk-macros = "0.3"
-flatpak = { version = "0.3", package = "libflatpak", features = ["v1_9_1"] }
+flatpak = { git = "https://gitlab.gnome.org/haecker-felix/libflatpak-rs", branch = "v0.3-release", package = "libflatpak", features = ["v1_9_1"] }
 xb = { version = "0.3", package = "libxmlb"}

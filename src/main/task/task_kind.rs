@@ -1,5 +1,5 @@
 // Souk - task_kind.rs
-// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 use glib::Enum;
 use gtk::glib;
 
-use crate::shared::flatpak::FlatpakOperationKind;
 use crate::shared::task::{FlatpakTaskKind, Task, TaskKind};
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
@@ -35,8 +34,6 @@ pub enum SkTaskKind {
     FlatpakUpdate,
     /// A whole Flatpak installation gets updated
     FlatpakUpdateInstallation,
-    /// Never should be get used (placeholder)
-    Unknown,
     #[default]
     None,
     // Appstream...,
@@ -52,7 +49,8 @@ impl SkTaskKind {
             }
         }
 
-        Self::Unknown
+        error!("Unable to determine task kind from data: {:#?}", data);
+        Self::None
     }
 }
 
@@ -66,18 +64,6 @@ impl From<FlatpakTaskKind> for SkTaskKind {
             FlatpakTaskKind::UpdateInstallation => Self::FlatpakUpdateInstallation,
             FlatpakTaskKind::Uninstall => Self::FlatpakUninstall,
             FlatpakTaskKind::None => Self::None,
-        }
-    }
-}
-
-impl From<FlatpakOperationKind> for SkTaskKind {
-    fn from(kind: FlatpakOperationKind) -> Self {
-        match kind {
-            FlatpakOperationKind::Install => Self::FlatpakInstall,
-            FlatpakOperationKind::InstallBundle => Self::FlatpakInstall,
-            FlatpakOperationKind::Update => Self::FlatpakUpdate,
-            FlatpakOperationKind::Uninstall => Self::FlatpakUninstall,
-            FlatpakOperationKind::None => Self::None,
         }
     }
 }

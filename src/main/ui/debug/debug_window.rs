@@ -16,13 +16,13 @@
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::{closure, subclass};
+use glib::subclass;
 use gtk::{glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote};
 use crate::main::flatpak::package::SkPackage;
-use crate::main::task::{SkTask, SkTaskModel};
+use crate::main::task::{SkOperation, SkTask};
 use crate::main::ui::task::SkTaskProgressBar;
 
 mod imp {
@@ -58,8 +58,8 @@ mod imp {
             let worker = SkApplication::default().worker();
 
             let tree_model = gtk::TreeListModel::new(worker.tasks(), false, true, |item| {
-                let task: &SkTask = item.downcast_ref().unwrap();
-                Some(task.dependencies().upcast())
+                item.downcast_ref::<SkTask>()
+                    .map(|task| task.operations().upcast())
             });
 
             let model = gtk::NoSelection::new(Some(tree_model));
@@ -73,7 +73,7 @@ mod imp {
 
                 let expander = gtk::TreeExpander::new();
                 expander.set_child(Some(&text));
-                expander.set_width_request(350);
+                expander.set_width_request(125);
 
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 item.set_child(Some(&expander));
@@ -87,32 +87,26 @@ mod imp {
                     .downcast::<gtk::TreeExpander>()
                     .unwrap();
 
-                // Hide expander icon if there are no dependency tasks
-                item.property_expression("item")
-                    .chain_property::<gtk::TreeListRow>("item")
-                    .chain_property::<SkTask>("dependencies")
-                    .chain_closure::<bool>(closure!(
-                        |_: Option<glib::Object>, deps: Option<SkTaskModel>| {
-                            if let Some(deps) = deps {
-                                deps.n_items() == 0
-                            } else {
-                                false
-                            }
-                        }
-                    ))
-                    .bind(&expander, "hide-expander", None::<&SkTask>);
-
                 let listrow = item.item().unwrap().downcast::<gtk::TreeListRow>().unwrap();
                 expander.set_list_row(Some(&listrow));
-
-                let task = listrow.item().unwrap().downcast::<SkTask>().unwrap();
 
                 let text = expander
                     .child()
                     .unwrap()
                     .downcast::<gtk::Inscription>()
                     .unwrap();
-                text.set_text(Some(&task.uuid()));
+
+                if let Some(task) = listrow.item().unwrap().downcast_ref::<SkTask>() {
+                    // Shorten uuid to first block for better readability
+                    let mut uuid = task.uuid();
+                    uuid.truncate(8);
+
+                    text.set_text(Some(&uuid));
+                } else if let Some(operation) =
+                    listrow.item().unwrap().downcast_ref::<SkOperation>()
+                {
+                    text.set_text(Some(&format!("Operation {}", &operation.index())));
+                }
             });
             self.add_column("Task", factory);
 
@@ -120,17 +114,29 @@ mod imp {
             factory.connect_setup(|_factory, item| {
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 let text = Self::setup_text_widget(item);
+
                 item.property_expression("item")
                     .chain_property::<gtk::TreeListRow>("item")
                     .chain_property::<SkTask>("kind")
                     .bind(&text, "text", None::<&SkTask>);
+
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkOperation>("kind")
+                    .bind(&text, "text", None::<&SkOperation>);
             });
-            self.add_column("Type", factory);
+            self.add_column("Kind", factory);
 
             let factory = gtk::SignalListItemFactory::new();
             factory.connect_setup(|_factory, item| {
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 let text = Self::setup_text_widget(item);
+
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkOperation>("status")
+                    .bind(&text, "text", None::<&SkTask>);
+
                 item.property_expression("item")
                     .chain_property::<gtk::TreeListRow>("item")
                     .chain_property::<SkTask>("status")
@@ -156,7 +162,7 @@ mod imp {
                 let text = Self::setup_text_widget(item);
                 item.property_expression("item")
                     .chain_property::<gtk::TreeListRow>("item")
-                    .chain_property::<SkTask>("package")
+                    .chain_property::<SkOperation>("package")
                     .chain_property::<SkPackage>("name")
                     .bind(&text, "text", None::<&SkPackage>);
             });
@@ -168,7 +174,19 @@ mod imp {
                 let text = Self::setup_text_widget(item);
                 item.property_expression("item")
                     .chain_property::<gtk::TreeListRow>("item")
-                    .chain_property::<SkTask>("package")
+                    .chain_property::<SkOperation>("package")
+                    .chain_property::<SkPackage>("branch")
+                    .bind(&text, "text", None::<&SkPackage>);
+            });
+            self.add_column("Branch", factory);
+
+            let factory = gtk::SignalListItemFactory::new();
+            factory.connect_setup(|_factory, item| {
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+                let text = Self::setup_text_widget(item);
+                item.property_expression("item")
+                    .chain_property::<gtk::TreeListRow>("item")
+                    .chain_property::<SkOperation>("package")
                     .chain_property::<SkPackage>("remote")
                     .chain_property::<SkRemote>("name")
                     .bind(&text, "text", None::<&SkRemote>);
@@ -181,7 +199,7 @@ mod imp {
                 let text = Self::setup_text_widget(item);
                 item.property_expression("item")
                     .chain_property::<gtk::TreeListRow>("item")
-                    .chain_property::<SkTask>("package")
+                    .chain_property::<SkOperation>("package")
                     .chain_property::<SkPackage>("remote")
                     .chain_property::<SkRemote>("installation")
                     .chain_property::<SkInstallation>("name")

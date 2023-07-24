@@ -1,5 +1,5 @@
-// Souk - task_status.rs
-// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
+// Souk - operation_kind.rs
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,22 +17,29 @@
 use glib::Enum;
 use gtk::glib;
 
+use crate::shared::flatpak::FlatpakOperationKind;
+
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
-#[enum_type(name = "SkTaskStatus")]
+#[enum_type(name = "SkOperationKind")]
 #[derive(Default)]
-pub enum SkTaskStatus {
+pub enum SkOperationKind {
+    FlatpakInstall,
+    FlatpakUninstall,
+    FlatpakUpdate,
     #[default]
     None,
-    Pending,
-    Processing,
-    Done,
-    Cancelled,
-    Error,
+    // Appstream...,
 }
 
-impl SkTaskStatus {
-    pub fn is_completed(&self) -> bool {
-        self == &Self::Done || self == &Self::Cancelled || self == &Self::Error
+impl From<FlatpakOperationKind> for SkOperationKind {
+    fn from(kind: FlatpakOperationKind) -> Self {
+        match kind {
+            FlatpakOperationKind::Install => Self::FlatpakInstall,
+            FlatpakOperationKind::InstallBundle => Self::FlatpakInstall,
+            FlatpakOperationKind::Update => Self::FlatpakUpdate,
+            FlatpakOperationKind::Uninstall => Self::FlatpakUninstall,
+            FlatpakOperationKind::None => Self::None,
+        }
     }
 }

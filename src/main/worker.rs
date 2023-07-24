@@ -105,16 +105,14 @@ mod imp {
                         debug!("Task response: {:#?}", response);
 
                         match response.kind {
-                            TaskResponseKind::Activity(activity) => {
+                            TaskResponseKind::OperationActivity(activity) => {
                                 match self.obj().tasks().task(&response.task.uuid) {
                                     Some(task) => task.handle_activity(&activity),
                                     None => {
                                         debug!("Received activity response for unknown task!");
-                                        let task = SkTask::new(
-                                            Some(&response.task),
-                                            Some(&activity),
-                                            None,
-                                        );
+                                        let task = SkTask::new(&response.task);
+                                        task.handle_activity(&activity);
+
                                         self.obj().tasks().add_task(&task);
                                     }
                                 }
@@ -149,7 +147,7 @@ impl SkWorker {
         let task_data =
             FlatpakTask::new_install(&package.info(), uninstall_before_install, dry_run);
 
-        let task = SkTask::new(Some(&task_data.into()), None, None);
+        let task = SkTask::new(&task_data.into());
         self.imp().run_task(&task).await?;
 
         Ok(task)
@@ -173,7 +171,7 @@ impl SkWorker {
             dry_run,
         );
 
-        let task = SkTask::new(Some(&task_data.into()), None, None);
+        let task = SkTask::new(&task_data.into());
         self.imp().run_task(&task).await?;
 
         Ok(task)
@@ -197,7 +195,7 @@ impl SkWorker {
             dry_run,
         );
 
-        let task = SkTask::new(Some(&task_data.into()), None, None);
+        let task = SkTask::new(&task_data.into());
         self.imp().run_task(&task).await?;
 
         Ok(task)
