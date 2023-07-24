@@ -188,7 +188,7 @@ mod imp {
                 false,
                 clone!(@weak self as this => @default-return None, move |_|{
                     let fut = async move {
-                        if this.sideload_nav.visible_page().unwrap().tag().unwrap() == "select-installation"{
+                        if this.sideload_nav.visible_page().is_some_and(|p| p.tag().unwrap() == "select-installation") {
                             this.sideload_nav.pop();
                         }
 
@@ -356,8 +356,6 @@ mod imp {
                 );
             }
 
-            self.sideload_nav.pop_to_tag("details");
-
             // Show "already done" page when there are no changes
             if sideloadable.no_changes() {
                 self.sideload_nav.push_by_tag("already-done");
@@ -508,6 +506,8 @@ mod imp {
 
             let worker = SkApplication::default().worker();
             let sideloadable = worker.load_sideloadable(&file, &installation).await;
+
+            self.sideload_nav.pop_to_tag("details");
 
             match sideloadable {
                 Ok(sideloadable) => self.set_sideloadable(Some(&sideloadable)),
