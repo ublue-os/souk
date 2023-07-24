@@ -72,7 +72,8 @@ mod imp {
             self.parent_constructed();
             let installation = self.obj().installation();
 
-            self.obj().set_icon_name(Some(&installation.icon_name()));
+            let icon = gtk::Image::from_icon_name(&installation.icon_name());
+            self.obj().add_prefix(&icon);
             self.obj().set_title(&installation.title());
             self.obj().set_subtitle(&installation.description());
 
