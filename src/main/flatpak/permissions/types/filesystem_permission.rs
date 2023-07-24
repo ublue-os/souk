@@ -295,7 +295,7 @@ impl PermissionDetails for SkFilesystemPermission {
         let title_object_name = if is_folder {
             i18n_f("{} Folder", &[&permission_object])
         } else {
-            format!("{}", permission_object)
+            permission_object.to_string()
         };
 
         let title = if let Some(title) = permission_title {
