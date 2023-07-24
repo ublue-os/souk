@@ -65,7 +65,7 @@ impl fmt::Display for SkOperationStatus {
             Self::InstallingBundle => i18n("Installing Bundle…"),
             Self::Updating => i18n("Updating…"),
             Self::Uninstalling => i18n("Uninstalling…"),
-            Self::Done => i18n("Done"),
+            Self::Done => String::new(),
             Self::None => i18n("Unknown"),
         };
 
