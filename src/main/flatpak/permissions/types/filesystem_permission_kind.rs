@@ -25,3 +25,12 @@ pub enum SkFilesystemPermissionKind {
     ReadWrite,
     Create,
 }
+
+impl SkFilesystemPermissionKind {
+    pub const fn can_write(&self) -> bool {
+        match self {
+            Self::ReadOnly => false,
+            Self::ReadWrite | Self::Create => true,
+        }
+    }
+}

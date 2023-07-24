@@ -40,6 +40,7 @@ pub fn show(parent: &SkApplicationWindow) {
     window.set_developers(&[
         "Christopher Davis <christopherdavis@gnome.org>",
         "Felix Häcker <haeckerfelix@gnome.org>",
+        "Zander Brown <zbrown@gnome.org>",
     ]);
     window.set_issue_url("https://gitlab.gnome.org/haecker-felix/souk/-/issues");
     window.set_license_type(gtk::License::Gpl30);

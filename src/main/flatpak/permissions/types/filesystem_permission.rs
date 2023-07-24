@@ -127,218 +127,437 @@ impl PermissionDetails for SkFilesystemPermission {
     }
 
     fn context_details(&self) -> Vec<SkContextDetail> {
-        let path = if self.path().starts_with("~/") {
-            self.path().replace("~/", "home/")
-        } else {
-            self.path()
+        let path = self.path();
+
+        vec![Details::new(self.kind().can_write(), &path).into()]
+    }
+}
+
+enum Details<'a> {
+    Home {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Host(bool),
+    HostOs(bool),
+    HostEtc(bool),
+    Desktop {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Documents {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Download {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Music {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Pictures {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Public {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Videos {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Templates {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Config {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Cache {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Data {
+        can_write: bool,
+        subdir: Option<&'a str>,
+    },
+    Runtime {
+        can_write: bool,
+        name: &'a str,
+    },
+    Path {
+        can_write: bool,
+        path: &'a str,
+    },
+}
+
+impl<'a> Details<'a> {
+    fn new(can_write: bool, path: &'a str) -> Self {
+        let (permission, subdir) = match path.split_once('/') {
+            Some(("", path)) => (path, None),
+            Some((path, subdir)) => (path, Some(subdir)),
+            None => (path, None),
         };
 
-        let mut subdir = None;
-        let permission = if path.contains('/') && !path.starts_with('/') {
-            let p = &path;
-            let split = p.splitn(2, '/').collect::<Vec<&str>>();
-            subdir = Some(split.last().unwrap().to_string());
-            split.first().unwrap().to_string()
-        } else {
-            path.clone()
-        };
-
-        let kind = SkContextDetailKind::Icon;
-        let mut icon_name = "folder-documents-symbolic".to_string();
-        let mut level = if self.kind() == SkFilesystemPermissionKind::ReadOnly {
-            SkContextDetailLevel::Moderate
-        } else {
-            SkContextDetailLevel::Warning
-        };
-
-        let permission_object;
-        let mut permission_title = None;
-        let mut permission_description = None;
-        let mut is_folder = true;
-
-        match permission.as_str() {
-            "home" => {
-                permission_object = i18n("Home");
-                icon_name = "user-home-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-
-                if subdir.is_none() {
-                    if self.kind() == SkFilesystemPermissionKind::ReadOnly {
-                        permission_title = Some(i18n("Home Folder Read/Write Access"));
-                        permission_description =
-                            Some(i18n("Can read and write all data in your home directory"));
-                    } else {
-                        permission_title = Some(i18n("Home Folder Read-Only Access"));
-                        permission_description =
-                            Some(i18n("Can read all data in your home directory"));
-                    }
-                }
-            }
-            "host" => {
-                permission_object = i18n("Host");
-                icon_name = "drive-harddisk-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-                is_folder = false;
-
-                if subdir.is_none() {
-                    if self.kind() == SkFilesystemPermissionKind::ReadOnly {
-                        permission_title = Some(i18n("Full File System Read/Write Access"));
-                        permission_description =
-                            Some(i18n("Can read and write all data on the file system"));
-                    } else {
-                        permission_title = Some(i18n("Full File System Read-Only Access"));
-                        permission_description = Some(i18n("Can read all data on the file system"));
-                    }
-                }
-            }
-            "host-os" => {
-                permission_object = i18n("Host-os");
-                icon_name = "drive-harddisk-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-                is_folder = false;
-
-                if subdir.is_none() {
-                    permission_title =
-                        Some(i18n("Full Access to System Libraries and Executables"));
-                    permission_description = Some(i18n(
-                        "Can access system libraries, executables and static data",
-                    ));
-                }
-            }
-            "host-etc" => {
-                permission_object = i18n("Host-etc");
-                icon_name = "drive-harddisk-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-                is_folder = false;
-
-                if subdir.is_none() {
-                    permission_title = Some(i18n("Full Access to System Configuration"));
-                    permission_description =
-                        Some(i18n("Can access system configuration data from “/etc”"));
-                }
-            }
-            "xdg-desktop" => {
-                permission_object = i18n("Desktop");
-                icon_name = "user-desktop-symbolic".into();
-            }
-            "xdg-documents" => {
-                permission_object = i18n("Documents");
-                icon_name = "emblem-documents-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-            }
-            "xdg-download" => {
-                permission_object = i18n("Downloads");
-                icon_name = "folder-download-symbolic".into();
-            }
-            "xdg-music" => {
-                permission_object = i18n("Music");
-                icon_name = "folder-music-symbolic".into();
-            }
-            "xdg-pictures" => {
-                permission_object = i18n("Pictures");
-                icon_name = "folder-pictures-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-            }
-            "xdg-public-share" => {
-                permission_object = i18n("Public");
-                icon_name = "folder-publicshare-symbolic".into();
-            }
-            "xdg-videos" => {
-                permission_object = i18n("Videos");
-                icon_name = "folder-videos-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-            }
-            "xdg-templates" => {
-                permission_object = i18n("Templates");
-                icon_name = "folder-templates-symbolic".into();
-            }
-            "xdg-config" => {
-                permission_object = i18n("Application Configuration");
-                icon_name = "emblem-system-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-            }
-            "xdg-cache" => {
-                permission_object = i18n("Application Cache");
-                icon_name = "folder-symbolic".into();
-            }
-            "xdg-data" => {
-                permission_object = i18n("Application Data");
-                icon_name = "folder-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-            }
-            "xdg-run" => {
-                permission_object = i18n("Runtime");
-                icon_name = "system-run-symbolic".into();
-                level = SkContextDetailLevel::Bad;
-            }
-            _ => {
-                permission_object = permission;
-                is_folder = false;
-
-                warn!("Unknown permission object: {}", permission_object);
-
-                // We don't know what this is about -> bad by default
-                level = SkContextDetailLevel::Bad;
-            }
+        match permission {
+            "home" | "~" => Self::Home { can_write, subdir },
+            "host" => Self::Host(can_write),
+            "host-os" => Self::HostOs(can_write),
+            "host-etc" => Self::HostEtc(can_write),
+            "xdg-desktop" => Self::Desktop { can_write, subdir },
+            "xdg-documents" => Self::Documents { can_write, subdir },
+            "xdg-download" => Self::Download { can_write, subdir },
+            "xdg-music" => Self::Music { can_write, subdir },
+            "xdg-pictures" => Self::Pictures { can_write, subdir },
+            "xdg-public-share" => Self::Public { can_write, subdir },
+            "xdg-videos" => Self::Videos { can_write, subdir },
+            "xdg-templates" => Self::Templates { can_write, subdir },
+            "xdg-config" => Self::Config { can_write, subdir },
+            "xdg-cache" => Self::Cache { can_write, subdir },
+            "xdg-data" => Self::Data { can_write, subdir },
+            "xdg-run" => Self::Runtime {
+                can_write,
+                name: subdir.unwrap_or("*"),
+            },
+            _ => Self::Path { can_write, path },
         }
+    }
 
-        if self.kind() != SkFilesystemPermissionKind::ReadOnly
-            && path.contains("/flatpak/overrides")
-        {
-            permission_title = Some(i18n("Explicit Access to Flatpak System Folder"));
-            permission_description = Some(i18n(
-                "Can set arbitrary permissions, or change the permissions of other applications",
-            ));
-            level = SkContextDetailLevel::Bad;
+    const fn icon_name(&self) -> &'static str {
+        match self {
+            Self::Home { .. } => "user-home-symbolic",
+            Self::Host(_) | Self::HostOs(_) | Self::HostEtc(_) => "drive-harddisk-symbolic",
+            Self::Desktop { .. } => "user-desktop-symbolic",
+            Self::Documents { .. } => "user-documents-symbolic",
+            Self::Download { .. } => "folder-download-symbolic",
+            Self::Music { .. } => "folder-music-symbolic",
+            Self::Pictures { .. } => "folder-pictures-symbolic",
+            Self::Public { .. } => "folder-publicshare-symbolic",
+            Self::Videos { .. } => "folder-videos-symbolic",
+            Self::Templates { .. } => "folder-templates-symbolic",
+            Self::Config { .. } => "emblem-system-symbolic",
+            Self::Cache { .. } => "folder-symbolic",
+            Self::Data { .. } => "folder-symbolic",
+            Self::Runtime { .. } => "system-run-symbolic",
+            Self::Path { .. } => "folder-symbolic",
         }
+    }
 
-        let title_object_name = if is_folder {
-            i18n_f("{} Folder", &[&permission_object])
-        } else {
-            permission_object.as_str().to_string()
-        };
+    fn level(&self) -> SkContextDetailLevel {
+        match self {
+            Self::Runtime {
+                name: "app/com.discordapp.Discord",
+                ..
+            } => SkContextDetailLevel::Moderate,
+            Self::Home { .. }
+            | Self::Host(_)
+            | Self::HostOs(_)
+            | Self::HostEtc(_)
+            | Self::Documents { .. }
+            | Self::Pictures { .. }
+            | Self::Videos { .. }
+            | Self::Config { .. }
+            | Self::Data { .. }
+            | Self::Runtime { .. } => SkContextDetailLevel::Bad,
+            Self::Desktop {
+                can_write: false, ..
+            }
+            | Self::Download {
+                can_write: false, ..
+            }
+            | Self::Music {
+                can_write: false, ..
+            }
+            | Self::Public {
+                can_write: false, ..
+            }
+            | Self::Templates {
+                can_write: false, ..
+            }
+            | Self::Cache {
+                can_write: false, ..
+            } => SkContextDetailLevel::Moderate,
+            Self::Desktop { .. }
+            | Self::Download { .. }
+            | Self::Music { .. }
+            | Self::Public { .. }
+            | Self::Templates { .. }
+            | Self::Cache { .. } => SkContextDetailLevel::Warning,
+            // We don't know what this is about -> bad by default
+            Self::Path { .. } => SkContextDetailLevel::Bad,
+        }
+    }
 
-        let title = if let Some(title) = permission_title {
-            title
-        } else if self.kind() == SkFilesystemPermissionKind::ReadOnly {
-            i18n_f("{} Read-Only Access", &[&title_object_name])
-        } else {
-            i18n_f("{} Read/Write Access", &[&title_object_name])
-        };
-
-        let description = if let Some(description) = permission_description {
-            description
-        } else if self.kind() == SkFilesystemPermissionKind::ReadOnly {
-            if let Some(subdir) = subdir {
+    fn describe(&self) -> (String, String) {
+        match self {
+            Self::Home {
+                can_write: false,
+                subdir: None,
+            } => (
+                i18n("Home Folder Read-Only Access"),
+                i18n("Can read all data in your home directory"),
+            ),
+            Self::Home { subdir: None, .. } => (
+                i18n("Home Folder Read/Write Access"),
+                i18n("Can read and write all data in your home directory"),
+            ),
+            Self::Home {
+                can_write: false,
+                subdir: Some(dir),
+            } => (
+                i18n("Home Folder Read-Only Access"),
+                i18n_f("Can read data under “{}” in your home directory", &[dir]),
+            ),
+            Self::Home {
+                subdir: Some(dir), ..
+            } => (
+                i18n("Home Folder Read/Write Access"),
                 i18n_f(
-                    "Can read “{}” in the “{}” directory",
-                    &[&subdir, &permission_object],
-                )
-            } else if is_folder {
-                i18n_f("Can read data in the “{}” directory", &[&permission_object])
-            } else {
-                i18n_f("Can read “{}”", &[&permission_object])
-            }
-        } else if let Some(subdir) = subdir {
-            i18n_f(
-                "Can read and write to “{}” in the “{}” directory",
-                &[&subdir, &permission_object],
-            )
-        } else if is_folder {
-            i18n_f(
-                "Can read and write data to the “{}” directory",
-                &[&permission_object],
-            )
-        } else {
-            i18n_f("Can read and write to “{}”", &[&permission_object])
-        };
+                    "Can read and write data under “{}” in your home directory",
+                    &[dir],
+                ),
+            ),
+            Self::Host(false) => (
+                i18n("Full File System Read-Only Access"),
+                i18n("Can read all data in the file system"),
+            ),
+            Self::Host(true) => (
+                i18n("Full File System Read/Write Access"),
+                i18n("Can read and write all data in the file system"),
+            ),
+            Self::HostOs(false) => (
+                i18n("Full Access to System Libraries and Executables"),
+                i18n("Can access system libraries, executables and static data"),
+            ),
+            Self::HostOs(true) => (
+                i18n("Full Access to System Libraries and Executables"),
+                i18n("Can access and modify system libraries, executables and static data"),
+            ),
+            Self::HostEtc(false) => (
+                i18n("Full Access to System Configuration"),
+                i18n("Can access system configuration data from “/etc”"),
+            ),
+            Self::HostEtc(true) => (
+                i18n("Full Access to System Configuration"),
+                i18n("Can access and modify system configuration data under “/etc”"),
+            ),
+            Self::Desktop { can_write: true, subdir: None } => (
+                i18n("Desktop Folder Read/Write Access"),
+                i18n("Can read and write data in “Desktop”")
+            ),
+            Self::Desktop { can_write: false, subdir: None } => (
+                i18n("Desktop Folder Read-Only Access"),
+                i18n("Can read data in “Desktop”")
+            ),
+            Self::Desktop { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Desktop Folder “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write data in “{}” on the Desktop", &[dir])
+            ),
+            Self::Desktop { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Desktop Folder “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read data in “{}” on the Desktop", &[dir])
+            ),
+            Self::Documents { can_write: true, subdir: None } => (
+                i18n("Documents Folder Read/Write Access"),
+                i18n("Can read and write data in Documents")
+            ),
+            Self::Documents { can_write: false, subdir: None } => (
+                i18n("Documents Folder Read-Only Access"),
+                i18n("Can read data in Documents")
+            ),
+            Self::Documents { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Documents Folder “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write data under “{}” in Documents", &[dir])
+            ),
+            Self::Documents { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Documents Folder “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read data under “{}” in Documents", &[dir])
+            ),
+            Self::Download { can_write: true, subdir: None } => (
+                i18n("Download Folder Read/Write Access"),
+                i18n("Can read and write data in Downloads")
+            ),
+            Self::Download { can_write: false, subdir: None } => (
+                i18n("Download Folder Read-Only Access"),
+                i18n("Can read data in Downloads")
+            ),
+            Self::Download { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Downloads Folder “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write data under “{}” in Downloads", &[dir])
+            ),
+            Self::Download { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Downloads Folder “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read data under “{}” in Downloads", &[dir])
+            ),
+            Self::Music { can_write: true, subdir: None } => (
+                i18n("Music Folder Read/Write Access"),
+                i18n("Can read and write data in Music")
+            ),
+            Self::Music { can_write: false, subdir: None } => (
+                i18n("Music Folder Read-Only Access"),
+                i18n("Can read data in Music")
+            ),
+            Self::Music { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Music Folder “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write data under “{}” in Music", &[dir])
+            ),
+            Self::Music { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Music Folder “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read data under “{}” in Music", &[dir])
+            ),
+            Self::Pictures { can_write: true, subdir: None } => (
+                i18n("Pictures Folder Read/Write Access"),
+                i18n("Can read and write data in Pictures")
+            ),
+            Self::Pictures { can_write: false, subdir: None } => (
+                i18n("Pictures Folder Read-Only Access"),
+                i18n("Can read data in Pictures")
+            ),
+            Self::Pictures { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Pictures Folder “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write data under “{}” in Pictures", &[dir])
+            ),
+            Self::Pictures { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Pictures Folder “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read data under “{}” in Pictures", &[dir])
+            ),
+            Self::Public { can_write: true, subdir: None } => (
+                i18n("Public Folder Read/Write Access"),
+                i18n("Can read and write data in Public")
+            ),
+            Self::Public { can_write: false, subdir: None } => (
+                i18n("Public Folder Read-Only Access"),
+                i18n("Can read data in Public")
+            ),
+            Self::Public { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Public Folder “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write data under “{}” in Public", &[dir])
+            ),
+            Self::Public { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Public Folder “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read data under “{}” in Public", &[dir])
+            ),
+            Self::Videos { can_write: true, subdir: None } => (
+                i18n("Videos Folder Read/Write Access"),
+                i18n("Can read and write data in Videos")
+            ),
+            Self::Videos { can_write: false, subdir: None } => (
+                i18n("Videos Folder Read-Only Access"),
+                i18n("Can read data in Videos")
+            ),
+            Self::Videos { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Videos Folder “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write data under “{}” in Videos", &[dir])
+            ),
+            Self::Videos { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Videos Folder “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read data under “{}” in Videos", &[dir])
+            ),
+            Self::Templates { can_write: true, subdir: None } => (
+                i18n("Templates Folder Read/Write Access"),
+                i18n("Can read and write data in Templates")
+            ),
+            Self::Templates { can_write: false, subdir: None } => (
+                i18n("Templates Folder Read-Only Access"),
+                i18n("Can read data in Templates")
+            ),
+            Self::Templates { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Templates Folder “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write data under “{}” in Templates", &[dir])
+            ),
+            Self::Templates { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Templates Folder “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read data under “{}” in Templates", &[dir])
+            ),
+            Self::Config { can_write: true, subdir: None } => (
+                i18n("Application Configuration Read/Write Access"),
+                i18n("Can read and write all Application Configuration")
+            ),
+            Self::Config { can_write: false, subdir: None } => (
+                i18n("Application Configuration Folder Read-Only Access"),
+                i18n("Can read all Application Configuration")
+            ),
+            Self::Config { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Application Configuration “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write “{}” Application Configuration", &[dir])
+            ),
+            Self::Config { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Application Configuration “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read “{}” Application Configuration", &[dir])
+            ),
+            Self::Cache { can_write: true, subdir: None } => (
+                i18n("Application Cache Read/Write Access"),
+                i18n("Can read and write data in the Application Cache")
+            ),
+            Self::Cache { can_write: false, subdir: None } => (
+                i18n("Application Cache Read-Only Access"),
+                i18n("Can read data in the Application Cache")
+            ),
+            Self::Cache { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Application Cache “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write data in the “{}” Application Cache", &[dir])
+            ),
+            Self::Cache { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Application Cache “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read data under the “{}” Application Cache", &[dir])
+            ),
+            Self::Data { can_write: true, subdir: None } => (
+                i18n("Application Data Read/Write Access"),
+                i18n("Can read and write all Application Data")
+            ),
+            Self::Data { can_write: false, subdir: None } => (
+                i18n("Application Data Read-Only Access"),
+                i18n("Can read all Application Data")
+            ),
+            Self::Data { can_write: true, subdir: Some(dir) } => (
+                i18n_f("Application Data “{}” Read/Write Access", &[dir]),
+                i18n_f("Can read and write in “{}” Application Data", &[dir])
+            ),
+            Self::Data { can_write: false, subdir: Some(dir) } => (
+                i18n_f("Application Data “{}” Read-Only Access", &[dir]),
+                i18n_f("Can read “{}” Application Data", &[dir])
+            ),
+            Self::Runtime {  name: "app/com.discordapp.Discord", .. } => (
+                i18n("Discord IPC Access"),
+                i18n("Can interact with Discord")
+            ),
+            Self::Runtime { can_write: true, name } => (
+                i18n_f("“{}” Runtime Folder Read/Write Access", &[name]),
+                i18n_f("Can read and write runtime under “{}”", &[name])
+            ),
+            Self::Runtime { can_write: false, name } => (
+                i18n_f("“{}” Runtime Folder Read-Only Access", &[name]),
+                i18n_f("Can read runtime under “{}”", &[name])
+            ),
+            Self::Path { can_write: true, path } if path.contains("/flatpak/overrides")  => (
+                i18n("Explicit Access to Flatpak System Folder"),
+                i18n("Can set arbitrary permissions, or change the permissions of other applications")
+            ),
+            Self::Path { can_write: true, path } => (
+                i18n_f("“{}” Read/Write Access", &[path]),
+                i18n_f("Can read and write “{}”", &[path])
+            ),
+            Self::Path { can_write: false, path } => (
+                i18n_f("“{}” Read-Only Access", &[path]),
+                i18n_f("Can read “{}”", &[path])
+            ),
+        }
+    }
+}
 
-        vec![SkContextDetail::new(
-            kind,
-            &icon_name,
-            level,
+impl<'a> From<Details<'a>> for SkContextDetail {
+    fn from(value: Details) -> Self {
+        let (title, description) = value.describe();
+        Self::new(
+            SkContextDetailKind::Icon,
+            value.icon_name(),
+            value.level(),
             &title,
             &description,
-        )]
+        )
     }
 }
