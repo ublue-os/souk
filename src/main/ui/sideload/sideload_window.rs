@@ -36,7 +36,7 @@ use crate::main::task::{SkOperation, SkOperationStatus, SkTask};
 use crate::main::ui::badge::SkBadge;
 use crate::main::ui::context::{SkContextBox, SkContextDetailRow};
 use crate::main::ui::installation::SkInstallationListBox;
-use crate::main::ui::task::SkTaskProgressBar;
+use crate::main::ui::SkProgressBar;
 use crate::shared::{config, WorkerError};
 
 mod imp {
@@ -107,7 +107,7 @@ mod imp {
         #[template_child]
         progress_page: TemplateChild<adw::NavigationPage>,
         #[template_child]
-        progress_bar: TemplateChild<SkTaskProgressBar>,
+        progress_bar: TemplateChild<SkProgressBar>,
         #[template_child]
         progress_status_label: TemplateChild<gtk::Label>,
         #[template_child]

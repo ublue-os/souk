@@ -1,4 +1,4 @@
-// Souk - task_progressbar.rs
+// Souk - progressbar.rs
 // Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -30,8 +30,8 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default, Properties)]
-    #[properties(wrapper_type = super::SkTaskProgressBar)]
-    pub struct SkTaskProgressBar {
+    #[properties(wrapper_type = super::SkProgressBar)]
+    pub struct SkProgressBar {
         #[property(get, set = Self::set_task)]
         task: RefCell<Option<SkTask>>,
 
@@ -43,13 +43,13 @@ mod imp {
     }
 
     #[glib::object_subclass]
-    impl ObjectSubclass for SkTaskProgressBar {
-        const NAME: &'static str = "SkTaskProgressBar";
+    impl ObjectSubclass for SkProgressBar {
+        const NAME: &'static str = "SkProgressBar";
         type ParentType = adw::Bin;
-        type Type = super::SkTaskProgressBar;
+        type Type = super::SkProgressBar;
     }
 
-    impl ObjectImpl for SkTaskProgressBar {
+    impl ObjectImpl for SkProgressBar {
         fn properties() -> &'static [ParamSpec] {
             Self::derived_properties()
         }
@@ -82,11 +82,11 @@ mod imp {
         }
     }
 
-    impl WidgetImpl for SkTaskProgressBar {}
+    impl WidgetImpl for SkProgressBar {}
 
-    impl BinImpl for SkTaskProgressBar {}
+    impl BinImpl for SkProgressBar {}
 
-    impl SkTaskProgressBar {
+    impl SkProgressBar {
         fn set_task(&self, task: Option<&SkTask>) {
             while let Some(watch) = self.watches.borrow_mut().pop() {
                 watch.unwatch();
@@ -162,18 +162,18 @@ mod imp {
 }
 
 glib::wrapper! {
-    pub struct SkTaskProgressBar(
-        ObjectSubclass<imp::SkTaskProgressBar>)
+    pub struct SkProgressBar(
+        ObjectSubclass<imp::SkProgressBar>)
         @extends gtk::Widget, adw::Bin;
 }
 
-impl SkTaskProgressBar {
+impl SkProgressBar {
     pub fn new() -> Self {
         glib::Object::new()
     }
 }
 
-impl Default for SkTaskProgressBar {
+impl Default for SkProgressBar {
     fn default() -> Self {
         Self::new()
     }

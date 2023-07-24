@@ -19,11 +19,12 @@ pub mod context;
 pub mod debug;
 pub mod installation;
 pub mod sideload;
-pub mod task;
 
 pub mod about_window;
 pub mod utils;
 
+mod progressbar;
 mod window;
 
+pub use progressbar::SkProgressBar;
 pub use window::SkApplicationWindow;

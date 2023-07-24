@@ -23,7 +23,7 @@ use crate::main::app::SkApplication;
 use crate::main::flatpak::installation::{SkInstallation, SkRemote};
 use crate::main::flatpak::package::SkPackage;
 use crate::main::task::{SkOperation, SkTask};
-use crate::main::ui::task::SkTaskProgressBar;
+use crate::main::ui::SkProgressBar;
 
 mod imp {
     use super::*;
@@ -146,7 +146,7 @@ mod imp {
 
             let factory = gtk::SignalListItemFactory::new();
             factory.connect_setup(|_factory, item| {
-                let progressbar = SkTaskProgressBar::new();
+                let progressbar = SkProgressBar::new();
 
                 let item = item.downcast_ref::<gtk::ListItem>().unwrap();
                 item.set_child(Some(&progressbar));
