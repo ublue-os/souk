@@ -102,7 +102,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/ostreedev/ostree.git",
-                    "tag" : "v2022.7"
+                    "tag" : "v2023.5"
                 }
             ]
         },
@@ -226,7 +226,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/flatpak/flatpak.git",
-                    "branch" : "1.14.3"
+                    "branch" : "1.14.4"
                 },
                 {
                     "type" : "file",
