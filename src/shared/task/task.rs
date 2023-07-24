@@ -33,6 +33,6 @@ pub struct Task {
 
 #[derive(Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum TaskKind {
-    Flatpak(FlatpakTask),
-    Appstream(AppstreamTask),
+    Flatpak(Box<FlatpakTask>),
+    Appstream(Box<AppstreamTask>),
 }

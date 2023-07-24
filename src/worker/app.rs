@@ -189,14 +189,14 @@ mod imp {
                         TaskKind::Flatpak(task) => {
                             thread_pool.spawn(
                                 clone!(@strong self.flatpak_worker as worker, @strong task => async move {
-                                    worker.process_task(task);
+                                    worker.process_task(*task);
                                 }),
                             );
                         }
                         TaskKind::Appstream(task) => {
                             thread_pool.spawn(
                                 clone!(@strong self.appstream_worker as worker, @strong task => async move {
-                                    worker.process_task(task);
+                                    worker.process_task(*task);
                                 }),
                             );
                         }

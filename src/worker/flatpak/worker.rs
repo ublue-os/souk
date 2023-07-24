@@ -95,7 +95,7 @@ impl FlatpakWorker {
                 let response = TaskResponse::new_result(task.into(), result);
                 self.sender.try_send(response).unwrap();
             } else {
-                let result = TaskResult::Error(err);
+                let result = TaskResult::Error(Box::new(err));
                 let response = TaskResponse::new_result(task.into(), result);
                 self.sender.try_send(response).unwrap();
             }
@@ -190,7 +190,7 @@ impl FlatpakWorker {
             res.package.appstream_component = Some(json);
         }
 
-        let result = TaskResult::DoneDryRun(res);
+        let result = TaskResult::DoneDryRun(Box::new(res));
         let response = TaskResponse::new_result(task.clone().into(), result);
         self.sender.try_send(response).unwrap();
 
@@ -251,7 +251,7 @@ impl FlatpakWorker {
             }
         }
 
-        let result = TaskResult::DoneDryRun(res);
+        let result = TaskResult::DoneDryRun(Box::new(res));
         let response = TaskResponse::new_result(task.clone().into(), result);
         self.sender.try_send(response).unwrap();
 

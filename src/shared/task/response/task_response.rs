@@ -30,20 +30,20 @@ impl TaskResponse {
     pub fn new_operation_activity(task: Task, activity: Vec<OperationActivity>) -> Self {
         Self {
             task,
-            kind: TaskResponseKind::OperationActivity(activity),
+            kind: TaskResponseKind::OperationActivity(Box::new(activity)),
         }
     }
 
     pub fn new_result(task: Task, result: TaskResult) -> Self {
         Self {
             task,
-            kind: TaskResponseKind::Result(result),
+            kind: TaskResponseKind::Result(Box::new(result)),
         }
     }
 }
 
 #[derive(Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub enum TaskResponseKind {
-    OperationActivity(Vec<OperationActivity>),
-    Result(TaskResult),
+    OperationActivity(Box<Vec<OperationActivity>>),
+    Result(Box<TaskResult>),
 }

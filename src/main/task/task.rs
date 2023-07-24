@@ -178,7 +178,7 @@ impl SkTask {
                 SkTaskStatus::Done
             }
             TaskResult::DoneDryRun(dry_run) => {
-                let result_dry_run = SkDryRun::new(dry_run.clone());
+                let result_dry_run = SkDryRun::new(*dry_run.clone());
                 imp.result_dry_run.set(result_dry_run).unwrap();
 
                 imp.progress.set(1.0);
@@ -189,9 +189,9 @@ impl SkTask {
                 SkTaskStatus::Done
             }
             TaskResult::Error(worker_error) => {
-                imp.result_error.set(worker_error.clone()).unwrap();
+                imp.result_error.set(*worker_error.clone()).unwrap();
 
-                self.emit_by_name::<()>("error", &[&worker_error]);
+                self.emit_by_name::<()>("error", &[&*(*worker_error)]);
                 imp.finished_sender.get().unwrap().try_send(()).unwrap();
 
                 SkTaskStatus::Error

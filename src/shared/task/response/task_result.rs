@@ -24,9 +24,9 @@ pub enum TaskResult {
     /// Task completed successfully.
     Done,
     /// Task completed successfully, with an [DryRun] as result
-    DoneDryRun(DryRun),
+    DoneDryRun(Box<DryRun>),
     /// Task failed. See [ResponseType.error] for more details.
-    Error(WorkerError),
+    Error(Box<WorkerError>),
     /// Task got cancelled (most likely by user).
     Cancelled,
     #[default]

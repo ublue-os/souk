@@ -120,7 +120,7 @@ impl From<FlatpakTask> for Task {
         Task {
             uuid: flatpak_task.uuid.clone(),
             cancellable: flatpak_task.kind != FlatpakTaskKind::Uninstall,
-            kind: TaskKind::Flatpak(flatpak_task),
+            kind: TaskKind::Flatpak(Box::new(flatpak_task)),
         }
     }
 }
