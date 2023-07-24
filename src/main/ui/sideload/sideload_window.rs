@@ -188,6 +188,10 @@ mod imp {
                 false,
                 clone!(@weak self as this => @default-return None, move |_|{
                     let fut = async move {
+                        if this.sideload_nav.visible_page().unwrap().tag().unwrap() == "select-installation"{
+                            this.sideload_nav.pop();
+                        }
+
                         this.update_sideloadable().await;
                     };
                     spawn!(fut);
