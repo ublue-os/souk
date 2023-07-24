@@ -503,8 +503,14 @@ impl FlatpakWorker {
             }
 
             if is_targeted_ref {
-                // Target ref -> Normally the application that is to be installed
+                // Target ref -> Normally the application that is to be installed (but also can
+                // be a runtime)
                 result.package = package;
+
+                // Non bundle installs always have an update source
+                if operation.operation_type() == TransactionOperationType::Install {
+                    result.has_update_source = true;
+                }
             } else {
                 // No -> A dependency / runtime.
                 result.runtimes.push(package);
