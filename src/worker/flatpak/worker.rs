@@ -83,7 +83,11 @@ impl FlatpakWorker {
                 unimplemented!();
             }
             FlatpakTaskKind::Uninstall => {
-                unimplemented!();
+                if task.dry_run {
+                    unimplemented!();
+                } else {
+                    self.uninstall_flatpak(&task)
+                }
             }
             FlatpakTaskKind::None => return,
         };
@@ -258,7 +262,6 @@ impl FlatpakWorker {
         Ok(())
     }
 
-    #[allow(dead_code)]
     fn uninstall_flatpak(&self, task: &FlatpakTask) -> Result<(), WorkerError> {
         let ref_ = task.ref_.as_ref().unwrap();
         info!("Uninstall Flatpak: {}", ref_);
@@ -456,8 +459,18 @@ impl FlatpakWorker {
             if let Some(installed_ref) = &installed_ref {
                 let origin = installed_ref.origin().unwrap();
 
-                // Check if the ref is already installed, but from a different remote
-                if origin != op_remote {
+                if installed_ref.commit().unwrap() == op_commit {
+                    // Same commit is already installed - nothing to do!
+                    debug!("[skip] {op_ref_str}: commit is already installed.");
+                    package.operation_kind = FlatpakOperationKind::None;
+
+                    // Skip this operation, except it's the targeted ref
+                    if !is_targeted_ref {
+                        continue;
+                    }
+                } else if origin != op_remote {
+                    // Check if the ref is already installed, but from a different remote
+
                     // If yes, it then uninstall the installed ref first. This is not strictly
                     // necessary, but can prevent some common issues (eg. gpg mismatch)
                     debug!("[remote] {op_ref_str}: Already installed from different origin \"{origin}\".");
@@ -467,15 +480,6 @@ impl FlatpakWorker {
                         result.is_replacing_remote = Some(remote_info);
                     } else {
                         warn!("Non-targeted ref {op_ref_str} is already installed in {origin} instead of {op_remote}. This behaviour is undefined.");
-                    }
-                } else if installed_ref.commit().unwrap() == op_commit {
-                    // Same commit is already installed - nothing to do!
-                    debug!("[skip] {op_ref_str}: commit is already installed.");
-                    package.operation_kind = FlatpakOperationKind::None;
-
-                    // Skip this operation, except it's the targeted ref
-                    if !is_targeted_ref {
-                        continue;
                     }
                 } else {
                     // Commit differs - Ref gets updated during transaction!
