@@ -135,7 +135,7 @@ impl PermissionDetails for SkFilesystemPermission {
 
         let mut subdir = None;
         let permission = if path.contains('/') && !path.starts_with('/') {
-            let p = path.clone();
+            let p = &path;
             let split = p.splitn(2, '/').collect::<Vec<&str>>();
             subdir = Some(split.last().unwrap().to_string());
             split.first().unwrap().to_string()
@@ -295,7 +295,7 @@ impl PermissionDetails for SkFilesystemPermission {
         let title_object_name = if is_folder {
             i18n_f("{} Folder", &[&permission_object])
         } else {
-            permission_object.clone()
+            format!("{}", permission_object)
         };
 
         let title = if let Some(title) = permission_title {
