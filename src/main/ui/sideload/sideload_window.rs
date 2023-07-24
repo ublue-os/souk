@@ -352,6 +352,8 @@ mod imp {
                 );
             }
 
+            self.sideload_nav.pop_to_tag("details");
+
             // Show "already done" page when there are no changes
             if sideloadable.no_changes() {
                 self.sideload_nav.push_by_tag("already-done");
