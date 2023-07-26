@@ -7,6 +7,7 @@
     <file compressed="true" preprocess="xml-stripblanks">gtk/debug_window.ui</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="gtk/help-overlay.ui">gtk/help_overlay.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/installation_row.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">gtk/page/installed_page.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/remote_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/sidebar.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/sideload_window.ui</file>

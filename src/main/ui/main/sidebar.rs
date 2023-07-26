@@ -60,7 +60,6 @@ mod imp {
 
         fn class_init(klass: &mut Self::Class) {
             Self::bind_template(klass);
-            Self::bind_template_callbacks(klass);
         }
 
         fn instance_init(obj: &subclass::InitializingObject<Self>) {
@@ -137,7 +136,6 @@ mod imp {
 
     impl BinImpl for SkSidebar {}
 
-    #[gtk::template_callbacks]
     impl SkSidebar {
         fn add_item(&self, tag: &str, icon_name: &str, position: RowPosition) {
             let page = self.obj().navigation_view().find_page(tag).unwrap();

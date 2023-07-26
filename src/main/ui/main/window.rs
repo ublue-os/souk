@@ -21,6 +21,7 @@ use gtk::{gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
 use crate::main::ui::main::SkSidebar;
+use crate::main::ui::page::SkInstalledPage;
 use crate::shared::config;
 
 mod imp {
@@ -33,6 +34,9 @@ mod imp {
         sidebar: TemplateChild<SkSidebar>,
         #[template_child]
         split_view: TemplateChild<adw::NavigationSplitView>,
+
+        #[template_child]
+        installed_page: TemplateChild<SkInstalledPage>,
 
         #[template_child]
         status_page: TemplateChild<adw::StatusPage>,

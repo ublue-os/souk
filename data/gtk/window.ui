@@ -84,6 +84,9 @@
                   <object class="AdwNavigationPage">
                     <property name="title" translatable="yes">Installed</property>
                     <property name="tag">installed</property>
+                    <child>
+                      <object class="SkInstalledPage" id="installed_page"/>
+                    </child>
                   </object>
                 </child>
                 <child>

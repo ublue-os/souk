@@ -177,9 +177,8 @@ mod imp {
             self.obj().insert_action_group("sideload", Some(&actions));
 
             // Preselect preferred installation
-            let preferred = worker.installations().preferred();
-            self.installation_listbox
-                .set_selected_installation(&preferred);
+            let inst = worker.installations().preferred();
+            self.installation_listbox.set_selected_installation(&inst);
 
             // When the installation changes, we also have to update the sideloadable,
             // since it depends on the installation
