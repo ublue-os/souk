@@ -200,7 +200,7 @@ mod imp {
             let mut index = 0;
             while let Some(row) = listbox.row_at_index(index) {
                 let row: &SkSidebarItemRow = row.downcast_ref().unwrap();
-                if &row.tag() == selected_tag {
+                if row.tag() == selected_tag {
                     listbox.select_row(Some(row));
                 }
                 index += 1;
@@ -222,7 +222,7 @@ impl SkSidebar {
     ) -> Self {
         glib::Object::builder()
             .property("navigation-view", navigation_view)
-            .property("split-view", &split_view)
+            .property("split-view", split_view)
             .build()
     }
 }

@@ -55,7 +55,7 @@
   <menu id="app_menu">
     <section>
       <item>
-        <attribute name="label" translatable="yes">_Open File</attribute>
+        <attribute name="label" translatable="yes">_Open</attribute>
         <attribute name="action">app.open</attribute>
       </item>
     </section>
