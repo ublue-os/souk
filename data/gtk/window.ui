@@ -3,56 +3,117 @@
   <template class="SkApplicationWindow" parent="AdwApplicationWindow">
     <property name="width_request">350</property>
     <property name="height_request">400</property>
-    <property name="default_width">700</property>
-    <property name="default_height">500</property>
+    <property name="default_width">1000</property>
+    <property name="default_height">700</property>
     <child>
-      <object class="AdwToolbarView">
-        <child type="top">
-          <object class="GtkHeaderBar">
+      <object class="AdwBreakpoint">
+        <condition>max-width: 400px</condition>
+        <setter object="split_view" property="collapsed">True</setter>
+      </object>
+    </child>
+    <child>
+      <object class="AdwNavigationSplitView" id="split_view">
+        <child type="content">
+          <object class="AdwNavigationPage">
+            <property name="title" translatable="yes">Content</property>
             <child>
-              <object class="GtkButton" id="open_button">
-                <property name="action_name">app.open</property>
+              <object class="AdwNavigationView" id="navigation_view">
                 <child>
-                  <object class="AdwButtonContent">
-                    <property name="label" translatable="true">Open</property>
-                    <property name="icon_name">document-open-symbolic</property>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Discover</property>
+                    <property name="tag">discover</property>
+                    <child>
+                      <object class="AdwToolbarView">
+                        <child type="top">
+                          <object class="AdwHeaderBar"/>
+                        </child>
+                        <property name="content">
+                          <object class="AdwStatusPage" id="status_page">
+                            <property name="icon_name" translatable="true">package-x-generic-symbolic</property>
+                            <property name="title" translatable="true">Install Flatpak Packages</property>
+                            <property name="description" translatable="true">Open a Flatpak package or repository file from the file manager, or drag and drop them here.</property>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Search</property>
+                    <property name="tag">search</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Create</property>
+                    <property name="tag">create</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Work</property>
+                    <property name="tag">work</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Play</property>
+                    <property name="tag">play</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Socialise</property>
+                    <property name="tag">socialise</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Learn</property>
+                    <property name="tag">learn</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Develop</property>
+                    <property name="tag">develop</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Installed</property>
+                    <property name="tag">installed</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">Updates</property>
+                    <property name="tag">updates</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwNavigationPage">
+                    <property name="title" translatable="yes">My Account</property>
+                    <property name="tag">account</property>
                   </object>
                 </child>
               </object>
             </child>
-            <child type="end">
-              <object class="GtkMenuButton">
-                <property name="icon_name">open-menu-symbolic</property>
-                <property name="menu_model">app_menu</property>
-                <property name="primary">True</property>
+          </object>
+        </child>
+        <child type="sidebar">
+          <object class="AdwNavigationPage">
+            <property name="title">Souk</property>
+            <child>
+              <object class="SkSidebar" id="sidebar">
+                <property name="navigation-view">navigation_view</property>
+                <property name="split-view">split_view</property>
               </object>
             </child>
           </object>
         </child>
-        <property name="content">
-          <object class="AdwToastOverlay" id="toast_overlay">
-            <child>
-              <object class="AdwStatusPage" id="status_page">
-                <property name="icon_name" translatable="true">package-x-generic-symbolic</property>
-                <property name="title" translatable="true">Install Flatpak Packages</property>
-                <property name="description" translatable="true">Open a Flatpak package or repository file from the file manager, or drag and drop them here.</property>
-              </object>
-            </child>
-          </object>
-        </property>
       </object>
     </child>
   </template>
-  <menu id="app_menu">
-    <section>
-      <item>
-        <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
-        <attribute name="action">win.show-help-overlay</attribute>
-      </item>
-      <item>
-        <attribute name="label" translatable="yes">_About Souk</attribute>
-        <attribute name="action">app.about</attribute>
-      </item>
-    </section>
-  </menu>
 </interface>

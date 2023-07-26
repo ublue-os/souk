@@ -24,9 +24,10 @@ use once_cell::sync::OnceCell;
 
 use crate::main::flatpak::sideload::SkSideloadKind;
 use crate::main::i18n::i18n;
+use crate::main::ui::about_window;
 use crate::main::ui::debug::SkDebugWindow;
+use crate::main::ui::main::SkApplicationWindow;
 use crate::main::ui::sideload::SkSideloadWindow;
-use crate::main::ui::{about_window, SkApplicationWindow};
 use crate::main::worker::SkWorker;
 use crate::shared::config;
 

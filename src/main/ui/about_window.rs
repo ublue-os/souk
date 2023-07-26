@@ -17,7 +17,7 @@
 use gtk::prelude::*;
 
 use crate::main::i18n::*;
-use crate::main::ui::SkApplicationWindow;
+use crate::main::ui::main::SkApplicationWindow;
 use crate::shared::config;
 
 pub fn show(parent: &SkApplicationWindow) {

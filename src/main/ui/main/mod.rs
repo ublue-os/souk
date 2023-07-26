@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,15 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod badge;
-pub mod context;
-pub mod debug;
-pub mod installation;
-pub mod main;
-pub mod sideload;
+mod sidebar;
+mod sidebar_item_row;
+mod window;
 
-pub mod about_window;
-pub mod utils;
-
-mod progressbar;
-pub use progressbar::SkProgressBar;
+pub use sidebar::SkSidebar;
+pub use sidebar_item_row::SkSidebarItemRow;
+pub use window::SkApplicationWindow;

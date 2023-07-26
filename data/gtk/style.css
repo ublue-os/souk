@@ -99,3 +99,34 @@
   background-color: alpha(@red_2, .25);
 }
 
+.regular-sidebar row box {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  margin-left: 6px;
+  margin-right: 6px;
+}
+
+.regular-sidebar row image {
+  margin-right: 12px;
+}
+
+.regular-sidebar .row-arrow {
+  opacity: 0;
+  -gtk-icon-size: 1px;
+  margin-right: 0px;
+}
+.collapsed-sidebar row box {
+  min-height: 50px;
+}
+
+.collapsed-sidebar row image {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+.collapsed-sidebar list {
+  margin-top: 6px;
+  margin-bottom: 12px;
+  margin-right: 12px;
+  margin-left: 12px;
+}

@@ -132,7 +132,6 @@ glib::wrapper! {
     pub struct SkRemoteRow(
         ObjectSubclass<imp::SkRemoteRow>)
         @extends gtk::Widget, gtk::ListBoxRow, adw::PreferencesRow, adw::ActionRow;
-
 }
 
 impl SkRemoteRow {

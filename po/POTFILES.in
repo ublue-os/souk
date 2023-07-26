@@ -4,6 +4,7 @@
 data/gtk/sideload_window.ui
 data/gtk/debug_window.ui
 data/gtk/help_overlay.ui
+data/gtk/sidebar.ui
 data/gtk/window.ui
 
 src/main/context/context.rs

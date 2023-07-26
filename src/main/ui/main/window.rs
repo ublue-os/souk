@@ -20,6 +20,7 @@ use glib::subclass;
 use gtk::{gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
+use crate::main::ui::main::SkSidebar;
 use crate::shared::config;
 
 mod imp {
@@ -28,6 +29,11 @@ mod imp {
     #[derive(Debug, Default, CompositeTemplate)]
     #[template(resource = "/de/haeckerfelix/Souk/gtk/window.ui")]
     pub struct SkApplicationWindow {
+        #[template_child]
+        sidebar: TemplateChild<SkSidebar>,
+        #[template_child]
+        split_view: TemplateChild<adw::NavigationSplitView>,
+
         #[template_child]
         status_page: TemplateChild<adw::StatusPage>,
     }
