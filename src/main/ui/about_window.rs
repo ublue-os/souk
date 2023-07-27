@@ -36,7 +36,11 @@ pub fn show(parent: &SkApplicationWindow) {
     window.set_copyright("© 2020-2023 Felix Häcker");
     window.set_debug_info(&vcs_tag);
     window.set_developer_name("Felix Häcker");
-    window.set_developers(&["Felix Häcker <haeckerfelix@gnome.org>"]);
+    // Sorted alphabetically
+    window.set_developers(&[
+        "Christopher Davis <christopherdavis@gnome.org>",
+        "Felix Häcker <haeckerfelix@gnome.org>",
+    ]);
     window.set_issue_url("https://gitlab.gnome.org/haecker-felix/souk/-/issues");
     window.set_license_type(gtk::License::Gpl30);
     window.set_translator_credits(&i18n("translator-credits"));
