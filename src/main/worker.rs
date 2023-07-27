@@ -137,15 +137,15 @@ glib::wrapper! {
 }
 
 impl SkWorker {
-    /// Install new Flatpak by ref name
+    /// Install new Flatpak
     pub async fn install_flatpak(
         &self,
-        package: SkPackage,
+        package: &SkPackage,
         uninstall_before_install: bool,
         dry_run: bool,
     ) -> Result<SkTask, Error> {
-        let task_data =
-            FlatpakTask::new_install(&package.info(), uninstall_before_install, dry_run);
+        let info = package.info();
+        let task_data = FlatpakTask::new_install(&info, uninstall_before_install, dry_run);
 
         let task = SkTask::new(&task_data.into());
         self.imp().run_task(&task).await?;
@@ -194,6 +194,20 @@ impl SkWorker {
             uninstall_before_install,
             dry_run,
         );
+
+        let task = SkTask::new(&task_data.into());
+        self.imp().run_task(&task).await?;
+
+        Ok(task)
+    }
+
+    /// Uninstall Flatpak
+    pub async fn uninstall_flatpak(
+        &self,
+        package: &SkPackage,
+        dry_run: bool,
+    ) -> Result<SkTask, Error> {
+        let task_data = FlatpakTask::new_uninstall(&package.info(), dry_run);
 
         let task = SkTask::new(&task_data.into());
         self.imp().run_task(&task).await?;

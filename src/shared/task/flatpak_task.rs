@@ -101,14 +101,16 @@ impl FlatpakTask {
         }
     }
 
-    pub fn new_uninstall(installation: &InstallationInfo, remote: &RemoteInfo, ref_: &str) -> Self {
+    pub fn new_uninstall(package: &PackageInfo, dry_run: bool) -> Self {
+        let installation = package.remote.installation.as_ref().unwrap().clone();
+
         Self {
             uuid: Uuid::new_v4().to_string(),
             kind: FlatpakTaskKind::Uninstall,
-            installation: installation.clone(),
-            dry_run: false,
-            ref_: Some(ref_.to_owned()),
-            remote: Some(remote.to_owned()),
+            installation,
+            dry_run,
+            ref_: Some(package.ref_.clone()),
+            remote: Some(package.remote.clone()),
             uninstall_before_install: false,
             ..Default::default()
         }

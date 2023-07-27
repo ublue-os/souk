@@ -21,7 +21,6 @@ use adw::subclass::prelude::*;
 use glib::{clone, subclass, ParamSpec, Properties};
 use gtk::{glib, CompositeTemplate};
 
-use crate::main::flatpak::installation::SkInstallation;
 use crate::main::flatpak::package::SkPackage;
 use crate::main::ui::installation::SkInstallationListBox;
 use crate::main::SkApplication;
@@ -100,12 +99,32 @@ mod imp {
             self.listbox.unbind_model();
 
             let inst = self.installation_listbox.selected_installation().unwrap();
-            self.listbox.bind_model(Some(&inst.packages()), clone!(@weak self as this => @default-panic, move |package|{
-                let package: &SkPackage = package.downcast_ref().unwrap();
+            self.listbox.bind_model(
+                Some(&inst.packages()),
+                clone!(@weak self as this => @default-panic, move |package|{
+                    let package: &SkPackage = package.downcast_ref().unwrap();
 
-                let row = adw::ActionRow::builder().title(&package.name()).subtitle(&package.remote().name()).icon_name("emblem-system-symbolic").build();
-                row.into()
-            }));
+                    let uninstall_button = gtk::Button::from_icon_name("user-trash-symbolic");
+                    uninstall_button.connect_clicked(clone!(@weak package => move |btn|{
+                        btn.set_sensitive(false);
+
+                        let worker = SkApplication::default().worker();
+                        let fut = async move {
+                            let _ = worker.uninstall_flatpak(&package, false).await;
+                        };
+                        spawn!(fut);
+                    }));
+
+                    let row = adw::ActionRow::builder()
+                        .title(&package.name())
+                        .subtitle(&package.remote().name())
+                        .icon_name("emblem-system-symbolic")
+                        .build();
+
+                    row.add_suffix(&uninstall_button);
+                    row.into()
+                }),
+            );
         }
     }
 }
