@@ -20,6 +20,7 @@ use gtk::gio;
 use serde::{Deserialize, Serialize};
 
 use super::OperationStatus;
+use crate::shared::appstream::AppstreamOperationKind;
 use crate::shared::flatpak::info::{PackageInfo, RemoteInfo};
 use crate::shared::flatpak::FlatpakOperationKind;
 
@@ -30,8 +31,9 @@ pub struct OperationActivity {
     pub download_rate: u64,
 
     pub flatpak_operation: FlatpakOperationKind,
-    // pub appstream_operation: AppstreamOperationKind,
+    pub appstream_operation: AppstreamOperationKind,
     pub package: Option<PackageInfo>,
+    pub remote: Option<RemoteInfo>,
 }
 
 impl OperationActivity {
@@ -73,7 +75,7 @@ impl OperationActivity {
 
         // Retrieve package info
         let ref_ = operation.get_ref().unwrap();
-        let package = PackageInfo::new(ref_.to_string(), remote_info);
+        let package_info = PackageInfo::new(ref_.to_string(), remote_info.clone());
         let flatpak_operation = operation.operation_type().into();
 
         Self {
@@ -81,13 +83,41 @@ impl OperationActivity {
             progress,
             download_rate,
             flatpak_operation,
-            package: Some(package),
+            package: Some(package_info),
+            remote: Some(remote_info),
+            ..Default::default()
         }
     }
 
+    pub fn new_appstream(remote: Option<&RemoteInfo>, status: OperationStatus) -> Self {
+        let appstream_operation = if remote.is_some() {
+            AppstreamOperationKind::Sync
+        } else {
+            AppstreamOperationKind::Compile
+        };
+
+        let progress = if status == OperationStatus::Done {
+            100
+        } else {
+            0
+        };
+
+        Self {
+            status,
+            progress,
+            remote: remote.cloned(),
+            appstream_operation,
+            ..Default::default()
+        }
+    }
+
+    /// Required for [SkOperationModel] - we can't use the task uuid here, since
+    /// it wouldn't differ for different operations
     pub fn identifier(&self) -> String {
-        if let Some(package) = &self.package {
-            format!("{:?}:{}", self.flatpak_operation, package.ref_)
+        if self.flatpak_operation != FlatpakOperationKind::None {
+            format!("{:?}:{:?}", self.flatpak_operation, self.package)
+        } else if self.appstream_operation != AppstreamOperationKind::None {
+            format!("{:?}:{:?}", self.appstream_operation, self.remote)
         } else {
             error!("Unable to generate identifier for operation activity");
             String::new()

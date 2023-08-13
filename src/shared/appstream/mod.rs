@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,12 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod appstream;
-pub mod flatpak;
-pub mod task;
-mod worker_error;
+mod operation_kind;
 
-pub use worker_error::WorkerError;
-#[rustfmt::skip]
-pub mod config;
-pub mod path;
+pub use operation_kind::AppstreamOperationKind;

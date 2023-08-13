@@ -32,6 +32,7 @@ pub enum SkOperationStatus {
     InstallingBundle,
     Updating,
     Uninstalling,
+    Processing,
     Done,
     #[default]
     None,
@@ -51,6 +52,7 @@ impl From<OperationStatus> for SkOperationStatus {
             OperationStatus::InstallingBundle => Self::InstallingBundle,
             OperationStatus::Updating => Self::Updating,
             OperationStatus::Uninstalling => Self::Uninstalling,
+            OperationStatus::Processing => Self::Processing,
             OperationStatus::Done => Self::Done,
             OperationStatus::None => Self::None,
         }
@@ -65,6 +67,7 @@ impl fmt::Display for SkOperationStatus {
             Self::InstallingBundle => i18n("Installing Bundle…"),
             Self::Updating => i18n("Updating…"),
             Self::Uninstalling => i18n("Uninstalling…"),
+            Self::Processing => i18n("Processing…"),
             Self::Done => String::new(),
             Self::None => i18n("Unknown"),
         };

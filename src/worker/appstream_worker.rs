@@ -27,10 +27,12 @@ use gio::prelude::*;
 use gio::Cancellable;
 use glib::{clone, Downgrade};
 use gtk::{gio, glib};
+use indexmap::IndexMap;
 use xb::prelude::*;
 
 use crate::shared::flatpak::dry_run::DryRunPackage;
-use crate::shared::task::response::{TaskResponse, TaskResult};
+use crate::shared::flatpak::info::RemoteInfo;
+use crate::shared::task::response::{OperationActivity, OperationStatus, TaskResponse, TaskResult};
 use crate::shared::task::{AppstreamTask, AppstreamTaskKind};
 use crate::shared::{path, WorkerError};
 
@@ -93,6 +95,9 @@ impl AppstreamWorker {
 
             if !is_missing_remote {
                 debug!("Found silo with all remotes. Nothing to do.");
+                let response = TaskResponse::new_result(task.clone().into(), TaskResult::Done);
+                self.sender.try_send(response).unwrap();
+
                 return Ok(silo);
             }
         } else {
@@ -107,19 +112,13 @@ impl AppstreamWorker {
     // generated, sideloading tries to access it at the same time)
     fn update(&self, task: &AppstreamTask) -> Result<xb::Silo, WorkerError> {
         debug!("Update silo...");
-
         // TODO: Add a fallback for apps without appstream data by using the desktop
         // file
 
-        let installations = Self::all_installations();
-        let builder = xb::Builder::new();
+        let mut remotes: IndexMap<String, (Remote, Installation)> = IndexMap::new();
+        let mut op_activities = Vec::new();
 
-        for locale in glib::language_names() {
-            builder.add_locale(&locale);
-        }
-
-        let mut added_remotes = Vec::new();
-        for inst in installations {
+        for inst in Self::all_installations() {
             debug!(
                 "Querying remotes for installation {:?}.",
                 inst.id().unwrap()
@@ -131,34 +130,74 @@ impl AppstreamWorker {
                 // name, since it could point to different repository urls in
                 // different installations)
                 let remote_hash = Self::remote_hash(&remote);
-                if added_remotes.contains(&remote_hash) {
+                if remotes.contains_key(&remote_hash) {
                     debug!("Skip remote {:?}: Already added.", remote.name().unwrap());
-                    continue;
-                }
+                } else {
+                    remotes.insert(remote_hash, (remote.clone(), inst.clone()));
 
-                match Self::remote_builder_source(&remote, &inst) {
-                    Ok(source) => {
-                        builder.import_source(&source);
-                        added_remotes.push(remote_hash);
-                    }
-                    Err(err) => {
-                        warn!(
-                            "Skip remote {:?}: {}",
-                            remote.name().unwrap(),
-                            err.to_string()
-                        );
-
-                        // Create empty placeholder entry
-                        let node = xb::BuilderNode::new("components");
-                        node.set_attr("origin", &remote_hash);
-                        node.set_attr("error", &err.to_string());
-                        builder.import_node(&node);
-                    }
+                    let remote_info: RemoteInfo = RemoteInfo::from_flatpak(&remote, &inst);
+                    let activity = OperationActivity::new_appstream(
+                        Some(&remote_info),
+                        OperationStatus::Pending,
+                    );
+                    op_activities.push(activity);
                 }
             }
         }
 
+        let xmlb_activity = OperationActivity::new_appstream(None, OperationStatus::Pending);
+        op_activities.push(xmlb_activity);
+
+        let response =
+            TaskResponse::new_operation_activity(task.clone().into(), op_activities.clone());
+        self.sender.try_send(response).unwrap();
+
+        let builder = xb::Builder::new();
+        for locale in glib::language_names() {
+            builder.add_locale(&locale);
+        }
+
+        for (remote_hash, (remote, inst)) in &remotes {
+            let remote_info: RemoteInfo = RemoteInfo::from_flatpak(&remote, &inst);
+
+            let activity =
+                OperationActivity::new_appstream(Some(&remote_info), OperationStatus::Updating);
+            let response =
+                TaskResponse::new_operation_activity(task.clone().into(), vec![activity]);
+            self.sender.try_send(response).unwrap();
+
+            match Self::remote_builder_source(&remote, &inst) {
+                Ok(source) => {
+                    builder.import_source(&source);
+                }
+                Err(err) => {
+                    warn!(
+                        "Skip remote {:?}: {}",
+                        remote.name().unwrap(),
+                        err.to_string()
+                    );
+
+                    // Create empty placeholder entry
+                    let node = xb::BuilderNode::new("components");
+                    node.set_attr("origin", &remote_hash);
+                    node.set_attr("error", &err.to_string());
+                    builder.import_node(&node);
+                }
+            }
+
+            let activity =
+                OperationActivity::new_appstream(Some(&remote_info), OperationStatus::Done);
+            let response =
+                TaskResponse::new_operation_activity(task.clone().into(), vec![activity]);
+            self.sender.try_send(response).unwrap();
+        }
+
         debug!("Ensure compiled xmlb is up to date.");
+        let xmlb_activity = OperationActivity::new_appstream(None, OperationStatus::Processing);
+        let response =
+            TaskResponse::new_operation_activity(task.clone().into(), vec![xmlb_activity]);
+        self.sender.try_send(response).unwrap();
+
         let xmlb = gio::File::for_path(path::APPSTREAM_CACHE.clone());
         let silo = builder.ensure(
             &xmlb,
@@ -167,6 +206,14 @@ impl AppstreamWorker {
         )?;
 
         debug!("Done.");
+        let xmlb_activity = OperationActivity::new_appstream(None, OperationStatus::Done);
+        let response =
+            TaskResponse::new_operation_activity(task.clone().into(), vec![xmlb_activity]);
+        self.sender.try_send(response).unwrap();
+
+        let response = TaskResponse::new_result(task.clone().into(), TaskResult::Done);
+        self.sender.try_send(response).unwrap();
+
         Ok(silo)
     }
 

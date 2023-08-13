@@ -215,8 +215,7 @@ mod imp {
                 let text = Self::setup_text_widget(item);
                 item.property_expression("item")
                     .chain_property::<gtk::TreeListRow>("item")
-                    .chain_property::<SkOperation>("package")
-                    .chain_property::<SkPackage>("remote")
+                    .chain_property::<SkOperation>("remote")
                     .chain_property::<SkRemote>("name")
                     .bind(&text, "text", None::<&SkRemote>);
             });

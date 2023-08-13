@@ -1,4 +1,4 @@
-// Souk - operation_status.rs
+// Souk - operation_kind.rs
 // Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,36 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use flatpak::TransactionOperationType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
-pub enum OperationStatus {
-    Pending,
-    Installing,
-    InstallingBundle,
-    Updating,
-    Uninstalling,
-    Processing,
-    Done,
+pub enum AppstreamOperationKind {
+    Sync,
+    Compile,
     #[default]
     None,
-}
-
-impl From<TransactionOperationType> for OperationStatus {
-    fn from(op: TransactionOperationType) -> Self {
-        match op {
-            TransactionOperationType::Install => Self::Installing,
-            TransactionOperationType::Update => Self::Updating,
-            TransactionOperationType::InstallBundle => Self::InstallingBundle,
-            TransactionOperationType::Uninstall => Self::Uninstalling,
-            _ => {
-                warn!(
-                    "Unknown Flatpak transaction operation type {}",
-                    op.to_str().unwrap()
-                );
-                Self::None
-            }
-        }
-    }
 }

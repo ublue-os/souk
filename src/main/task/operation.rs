@@ -22,8 +22,11 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use once_cell::unsync::OnceCell;
 
+use crate::main::flatpak::installation::SkRemote;
 use crate::main::flatpak::package::SkPackage;
 use crate::main::task::{SkOperationKind, SkOperationStatus};
+use crate::shared::appstream::AppstreamOperationKind;
+use crate::shared::flatpak::FlatpakOperationKind;
 use crate::shared::task::response::OperationActivity;
 
 mod imp {
@@ -41,6 +44,8 @@ mod imp {
         kind: OnceCell<SkOperationKind>,
         #[property(get, set, construct_only)]
         package: RefCell<Option<SkPackage>>,
+        #[property(get, set, construct_only)]
+        remote: RefCell<Option<SkRemote>>,
 
         // Dynamic values
         #[property(get, builder(SkOperationStatus::Pending))]
@@ -78,14 +83,24 @@ glib::wrapper! {
 
 impl SkOperation {
     pub fn new(index: u32, activity: &OperationActivity) -> Self {
-        let kind = SkOperationKind::from(activity.flatpak_operation.clone());
+        let kind = if activity.flatpak_operation != FlatpakOperationKind::None {
+            SkOperationKind::from(activity.flatpak_operation.clone())
+        } else if activity.appstream_operation != AppstreamOperationKind::None {
+            SkOperationKind::from(activity.appstream_operation.clone())
+        } else {
+            warn!("Unable to determine operation kind");
+            SkOperationKind::None
+        };
+
         let package = activity.package.as_ref().map(SkPackage::new);
+        let remote = activity.remote.as_ref().map(SkRemote::new);
 
         let operation: Self = glib::Object::builder()
             .property("index", index)
             .property("identifier", activity.identifier())
             .property("kind", kind)
             .property("package", package)
+            .property("remote", remote)
             .build();
 
         operation.handle_activity(activity);

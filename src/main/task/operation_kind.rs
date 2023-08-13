@@ -17,6 +17,7 @@
 use glib::Enum;
 use gtk::glib;
 
+use crate::shared::appstream::AppstreamOperationKind;
 use crate::shared::flatpak::FlatpakOperationKind;
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
@@ -27,9 +28,10 @@ pub enum SkOperationKind {
     FlatpakInstall,
     FlatpakUninstall,
     FlatpakUpdate,
+    AppstreamSync,
+    AppstreamCompile,
     #[default]
     None,
-    // Appstream...,
 }
 
 impl From<FlatpakOperationKind> for SkOperationKind {
@@ -40,6 +42,16 @@ impl From<FlatpakOperationKind> for SkOperationKind {
             FlatpakOperationKind::Update => Self::FlatpakUpdate,
             FlatpakOperationKind::Uninstall => Self::FlatpakUninstall,
             FlatpakOperationKind::None => Self::None,
+        }
+    }
+}
+
+impl From<AppstreamOperationKind> for SkOperationKind {
+    fn from(kind: AppstreamOperationKind) -> Self {
+        match kind {
+            AppstreamOperationKind::Sync => Self::AppstreamSync,
+            AppstreamOperationKind::Compile => Self::AppstreamCompile,
+            AppstreamOperationKind::None => Self::None,
         }
     }
 }
