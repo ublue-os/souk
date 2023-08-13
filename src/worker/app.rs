@@ -33,9 +33,8 @@ use zbus::{Connection, ConnectionBuilder, SignalContext};
 use crate::shared::config;
 use crate::shared::task::response::TaskResponse;
 use crate::shared::task::{Task, TaskKind};
-use crate::worker::appstream::AppstreamWorker;
 use crate::worker::dbus_server::WorkerServer;
-use crate::worker::flatpak::FlatpakWorker;
+use crate::worker::{AppstreamWorker, FlatpakWorker};
 
 /// Specifies how many tasks can be executed in parallel
 const WORKER_THREADS: usize = 4;

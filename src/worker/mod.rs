@@ -14,12 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-/// Parsing appstream metadata, creation of xmlb exports
-mod appstream;
-/// Handling of Flatpak transactions / dry running
-mod flatpak;
-
 mod app;
+mod appstream_worker;
+/// Parsing appstream metadata, creation of xmlb exports
 mod dbus_server;
+/// Handling of Flatpak transactions / dry running
+mod flatpak_worker;
 
 pub use app::SkWorkerApplication;
+use appstream_worker::AppstreamWorker;
+use flatpak_worker::FlatpakWorker;

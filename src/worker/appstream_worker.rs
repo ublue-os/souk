@@ -202,8 +202,7 @@ impl AppstreamWorker {
         Ok(source)
     }
 
-    // TODO: make this pub(super)
-    pub fn set_dry_run_package_appstream(
+    pub(super) fn set_dry_run_package_appstream(
         &self,
         package: &mut DryRunPackage,
         ref_str: &str,
