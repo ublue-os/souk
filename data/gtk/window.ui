@@ -12,110 +12,135 @@
       </object>
     </child>
     <child>
-      <object class="AdwNavigationSplitView" id="split_view">
-        <child type="content">
-          <object class="AdwNavigationPage">
-            <property name="title" translatable="yes">Content</property>
-            <child>
-              <object class="AdwNavigationView" id="navigation_view">
+      <object class="GtkStack" id="stack">
+        <property name="transition-type">crossfade</property>
+        <child>
+          <object class="AdwNavigationSplitView" id="split_view">
+            <child type="content">
+              <object class="AdwNavigationPage">
+                <property name="title" translatable="yes">Content</property>
                 <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Discover</property>
-                    <property name="tag">discover</property>
+                  <object class="AdwNavigationView" id="navigation_view">
                     <child>
-                      <object class="AdwToolbarView">
-                        <child type="top">
-                          <object class="AdwHeaderBar"/>
-                        </child>
-                        <property name="content">
-                          <object class="AdwStatusPage" id="status_page">
-                            <property name="icon_name" translatable="true">package-x-generic-symbolic</property>
-                            <property name="title" translatable="true">Install Flatpak Packages</property>
-                            <property name="description" translatable="true">Open a Flatpak package or repository file from the file manager, or drag and drop them here.</property>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Discover</property>
+                        <property name="tag">discover</property>
+                        <child>
+                          <object class="AdwToolbarView">
+                            <child type="top">
+                              <object class="AdwHeaderBar"/>
+                            </child>
+                            <property name="content">
+                              <object class="AdwStatusPage" id="status_page">
+                                <property name="icon_name" translatable="true">package-x-generic-symbolic</property>
+                                <property name="title" translatable="true">Install Flatpak Packages</property>
+                                <property name="description" translatable="true">Open a Flatpak package or repository file from the file manager, or drag and drop them here.</property>
+                              </object>
+                            </property>
                           </object>
-                        </property>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Search</property>
+                        <property name="tag">search</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Create</property>
+                        <property name="tag">create</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Work</property>
+                        <property name="tag">work</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Play</property>
+                        <property name="tag">play</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Socialise</property>
+                        <property name="tag">socialise</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Learn</property>
+                        <property name="tag">learn</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Develop</property>
+                        <property name="tag">develop</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Installed</property>
+                        <property name="tag">installed</property>
+                        <child>
+                          <object class="SkInstalledPage" id="installed_page"/>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">Updates</property>
+                        <property name="tag">updates</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwNavigationPage">
+                        <property name="title" translatable="yes">My Account</property>
+                        <property name="tag">account</property>
                       </object>
                     </child>
                   </object>
                 </child>
+              </object>
+            </child>
+            <child type="sidebar">
+              <object class="AdwNavigationPage">
+                <property name="title">Souk</property>
                 <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Search</property>
-                    <property name="tag">search</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Create</property>
-                    <property name="tag">create</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Work</property>
-                    <property name="tag">work</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Play</property>
-                    <property name="tag">play</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Socialise</property>
-                    <property name="tag">socialise</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Learn</property>
-                    <property name="tag">learn</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Develop</property>
-                    <property name="tag">develop</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Installed</property>
-                    <property name="tag">installed</property>
-                    <child>
-                      <object class="SkInstalledPage" id="installed_page"/>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">Updates</property>
-                    <property name="tag">updates</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="AdwNavigationPage">
-                    <property name="title" translatable="yes">My Account</property>
-                    <property name="tag">account</property>
+                  <object class="SkSidebar" id="sidebar">
+                    <property name="navigation-view">navigation_view</property>
+                    <property name="split-view">split_view</property>
                   </object>
                 </child>
               </object>
             </child>
           </object>
         </child>
-        <child type="sidebar">
-          <object class="AdwNavigationPage">
-            <property name="title">Souk</property>
+        <child>
+          <object class="AdwToolbarView" id="initial_view">
+            <child type="top">
+              <object class="AdwHeaderBar">
+                <property name="show-title">false</property>
+              </object>
+            </child>
             <child>
-              <object class="SkSidebar" id="sidebar">
-                <property name="navigation-view">navigation_view</property>
-                <property name="split-view">split_view</property>
+              <object class="AdwStatusPage" id="initial_status_page">
+                <property name="vexpand">True</property>
+                <property name="description" translatable="yes">Downloading software catalogue…</property>
+                <child>
+                  <object class="SkProgressBar" id="initial_progressbar">
+                    <property name="halign">center</property>
+                  </object>
+                </child>
               </object>
             </child>
           </object>
-        </child>
+        </child>"
       </object>
     </child>
   </template>

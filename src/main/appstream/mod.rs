@@ -1,5 +1,5 @@
 // Souk - mod.rs
-// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,13 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#[allow(clippy::module_inception)]
-mod package;
-mod package_kind;
-mod package_model;
-mod package_subref_kind;
+mod package_appstream;
+pub mod utils;
 
-pub use package::{SkPackage, SkPackageExt, SkPackageImpl};
-pub use package_kind::SkPackageKind;
-pub use package_model::SkPackageModel;
-pub use package_subref_kind::SkPackageSubrefKind;
+pub use package_appstream::SkPackageAppstream;

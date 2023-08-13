@@ -158,6 +158,7 @@ impl AppstreamWorker {
             builder.add_locale(&locale);
         }
 
+        let mut imported_source = false;
         for (remote_hash, (remote, inst)) in &remotes {
             let remote_info = Some(RemoteInfo::from_flatpak(&remote, &inst));
             let activity = OperationActivity::new_appstream(remote_info, OperationStatus::Updating);
@@ -167,6 +168,7 @@ impl AppstreamWorker {
             match Self::remote_builder_source(&remote, &inst) {
                 Ok(source) => {
                     builder.import_source(&source);
+                    imported_source = true;
                 }
                 Err(err) => {
                     warn!(
@@ -187,6 +189,12 @@ impl AppstreamWorker {
             let activity = OperationActivity::new_appstream(remote_info, OperationStatus::Done);
             let response = TaskResponse::new_activity(task.clone().into(), vec![activity]);
             self.sender.try_send(response).unwrap();
+        }
+
+        if !imported_source {
+            let glib_error = glib::Error::new(flatpak::Error::Aborted, "");
+            warn!("Unable to retrieve Flatpak appstream data.");
+            return Err(glib_error.into());
         }
 
         debug!("Ensure compiled xmlb is up to date.");

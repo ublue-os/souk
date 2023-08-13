@@ -22,6 +22,7 @@ use gtk::prelude::*;
 use gtk::{gio, glib, FileChooserAction, FileChooserNative};
 use once_cell::sync::OnceCell;
 
+use crate::main::appstream::utils;
 use crate::main::flatpak::sideload::SkSideloadKind;
 use crate::main::i18n::i18n;
 use crate::main::ui::about_window;
@@ -142,9 +143,8 @@ mod imp {
             let _ = self.window.set(window.downgrade());
             info!("Created application window.");
 
-            let fut = clone!(@weak self as this => async move {
-                // TODO: do something with the task
-                let _task = this.worker.ensure_appstream().await;
+            let fut = clone!(@weak self as this, @weak window => async move {
+                this.populate_views().await;
             });
             spawn!(fut);
         }
@@ -172,6 +172,28 @@ mod imp {
     }
 
     impl SkApplication {
+        async fn populate_views(&self) {
+            // Wait till worker is ready, otherwise there's a chance that responses get lost
+            self.worker.wait_ready().await;
+
+            // Show initial view if there's no appstream data available to display
+            if !utils::check_appstream_silo_exists() {
+                debug!("No appstream data available, trigger update.");
+                let task = self
+                    .worker
+                    .update_appstream()
+                    .await
+                    .expect("Unable to spawn update appstream task");
+
+                if let Some(window) = self.app_window() {
+                    window.show_initial_view(&task);
+                }
+            } else {
+                // Appstream data exists -> update it
+                // TODO: this ^
+            }
+        }
+
         fn app_window(&self) -> Option<SkApplicationWindow> {
             if let Some(window) = self.window.get() {
                 window.upgrade()

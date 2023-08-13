@@ -16,12 +16,15 @@
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use glib::subclass;
+use glib::{clone, subclass};
 use gtk::{gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
+use crate::main::i18n::{i18n, i18n_f};
+use crate::main::task::SkTask;
 use crate::main::ui::main::SkSidebar;
 use crate::main::ui::page::SkInstalledPage;
+use crate::main::ui::SkProgressBar;
 use crate::shared::config;
 
 mod imp {
@@ -31,15 +34,25 @@ mod imp {
     #[template(resource = "/de/haeckerfelix/Souk/gtk/window.ui")]
     pub struct SkApplicationWindow {
         #[template_child]
-        sidebar: TemplateChild<SkSidebar>,
-        #[template_child]
-        split_view: TemplateChild<adw::NavigationSplitView>,
+        pub stack: TemplateChild<gtk::Stack>,
 
         #[template_child]
-        installed_page: TemplateChild<SkInstalledPage>,
+        pub initial_view: TemplateChild<adw::ToolbarView>,
+        #[template_child]
+        pub initial_status_page: TemplateChild<adw::StatusPage>,
+        #[template_child]
+        pub initial_progressbar: TemplateChild<SkProgressBar>,
 
         #[template_child]
-        status_page: TemplateChild<adw::StatusPage>,
+        pub sidebar: TemplateChild<SkSidebar>,
+        #[template_child]
+        pub split_view: TemplateChild<adw::NavigationSplitView>,
+
+        #[template_child]
+        pub installed_page: TemplateChild<SkInstalledPage>,
+
+        #[template_child]
+        pub status_page: TemplateChild<adw::StatusPage>,
     }
 
     #[glib::object_subclass]
@@ -79,6 +92,11 @@ mod imp {
                 false
             });
             self.status_page.add_controller(drop_target);
+
+            // Initial view
+            self.initial_status_page.set_icon_name(Some(config::APP_ID));
+            let title = i18n_f("Welcome to {}", &[&config::NAME]);
+            self.initial_status_page.set_title(&title);
         }
     }
 
@@ -102,6 +120,34 @@ glib::wrapper! {
 impl SkApplicationWindow {
     pub fn new() -> Self {
         glib::Object::new()
+    }
+
+    pub fn show_initial_view(&self, task: &SkTask) {
+        let imp = self.imp();
+        imp.stack.set_visible_child(&imp.initial_view.get());
+
+        task.bind_property("progress", &imp.initial_progressbar.get(), "fraction")
+            .build();
+
+        task.connect_local(
+            "done",
+            false,
+            clone!(@weak imp => @default-return None, move |_|{
+                imp.stack.set_visible_child(&imp.split_view.get());
+                None
+            }),
+        );
+
+        task.connect_local(
+            "error",
+            false,
+            clone!(@weak imp => @default-return None, move |_|{
+                let msg = i18n("Unable to load software catalogue. Make sure you have a working internet connection and restart the application.");
+                imp.initial_status_page.set_description(Some(&msg));
+                imp.initial_progressbar.set_visible(false);
+                None
+            }),
+        );
     }
 }
 

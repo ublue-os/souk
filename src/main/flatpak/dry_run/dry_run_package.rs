@@ -22,8 +22,9 @@ use gtk::subclass::prelude::*;
 use once_cell::unsync::OnceCell;
 use url::Url;
 
+use crate::main::appstream::SkPackageAppstream;
 use crate::main::context::{SkContext, SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
-use crate::main::flatpak::package::{SkPackage, SkPackageAppstream, SkPackageExt, SkPackageImpl};
+use crate::main::flatpak::package::{SkPackage, SkPackageExt, SkPackageImpl};
 use crate::main::flatpak::permissions::SkAppPermissions;
 use crate::main::flatpak::SkFlatpakOperationKind;
 use crate::main::i18n::i18n_f;

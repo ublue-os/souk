@@ -14,12 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use async_std::channel::{Receiver, Sender};
 use futures_util::stream::StreamExt;
 use gio::File;
 use glib::{clone, KeyFile, ParamSpec, Properties};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
+use once_cell::unsync::OnceCell;
 
 use crate::main::dbus_proxy::WorkerProxy;
 use crate::main::error::Error;
@@ -47,6 +49,7 @@ mod imp {
         installations: SkInstallationModel,
 
         pub proxy: WorkerProxy<'static>,
+        pub ready_rx: OnceCell<Receiver<bool>>,
     }
 
     #[glib::object_subclass]
@@ -67,8 +70,12 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
 
+            // Needed for `wait_ready` method
+            let (tx, rx) = async_std::channel::unbounded();
+            self.ready_rx.set(rx).unwrap();
+
             let fut = clone!(@weak self as this => async move {
-                this.receive_task_response().await;
+                this.receive_task_response(tx).await;
             });
             gtk_macros::spawn!(fut);
         }
@@ -95,8 +102,9 @@ mod imp {
         }
 
         /// Handle incoming task responses from worker process
-        pub async fn receive_task_response(&self) {
+        pub async fn receive_task_response(&self, sender: Sender<bool>) {
             let mut response = self.proxy.receive_task_response().await.unwrap();
+            sender.send(true).await.unwrap();
 
             while let Some(response) = response.next().await {
                 let response_json = response.args().unwrap().task_response_json;
@@ -307,6 +315,11 @@ impl SkWorker {
             // Never should happen (in theory)
             Err(Error::UnsupportedSideloadType)
         }
+    }
+
+    /// Waits till worker is ready and can accept responses from worker process
+    pub async fn wait_ready(&self) {
+        let _ = self.imp().ready_rx.get().unwrap().recv().await;
     }
 }
 
