@@ -296,7 +296,7 @@ impl FlatpakWorker {
                     operation_activities.push(OperationActivity::from_flatpak_operation(transaction, &op, None, false));
                 }
 
-                let response = TaskResponse::new_operation_activity(task.clone().into(), operation_activities);
+                let response = TaskResponse::new_activity(task.clone().into(), operation_activities);
                 sender.try_send(response).unwrap();
 
                 // Real transaction -> start (unlike dryrun)
@@ -312,7 +312,7 @@ impl FlatpakWorker {
                     Some(progress),
                     false
                 );
-                let response = TaskResponse::new_operation_activity(task.clone().into(), vec![operation_activity]);
+                let response = TaskResponse::new_activity(task.clone().into(), vec![operation_activity]);
                 sender.try_send(response).unwrap();
 
                 progress.set_update_frequency(750);
@@ -324,7 +324,7 @@ impl FlatpakWorker {
                             Some(progress),
                             false,
                         );
-                        let response = TaskResponse::new_operation_activity(task.clone().into(), vec![operation_activity]);
+                        let response = TaskResponse::new_activity(task.clone().into(), vec![operation_activity]);
                         sender.try_send(response).unwrap();
                     }),
                 );
@@ -339,7 +339,7 @@ impl FlatpakWorker {
                     None,
                     true,
                 );
-                let response = TaskResponse::new_operation_activity(task.clone().into(), vec![operation_activity]);
+                let response = TaskResponse::new_activity(task.clone().into(), vec![operation_activity]);
                 sender.try_send(response).unwrap();
 
                 let index = transaction

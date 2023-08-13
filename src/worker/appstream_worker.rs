@@ -139,7 +139,7 @@ impl AppstreamWorker {
 
                     let remote_info: RemoteInfo = RemoteInfo::from_flatpak(&remote, &inst);
                     let activity = OperationActivity::new_appstream(
-                        Some(&remote_info),
+                        Some(remote_info),
                         OperationStatus::Pending,
                     );
                     op_activities.push(activity);
@@ -150,8 +150,7 @@ impl AppstreamWorker {
         let xmlb_activity = OperationActivity::new_appstream(None, OperationStatus::Pending);
         op_activities.push(xmlb_activity);
 
-        let response =
-            TaskResponse::new_operation_activity(task.clone().into(), op_activities.clone());
+        let response = TaskResponse::new_activity(task.clone().into(), op_activities.clone());
         self.sender.try_send(response).unwrap();
 
         let builder = xb::Builder::new();
@@ -160,12 +159,9 @@ impl AppstreamWorker {
         }
 
         for (remote_hash, (remote, inst)) in &remotes {
-            let remote_info: RemoteInfo = RemoteInfo::from_flatpak(&remote, &inst);
-
-            let activity =
-                OperationActivity::new_appstream(Some(&remote_info), OperationStatus::Updating);
-            let response =
-                TaskResponse::new_operation_activity(task.clone().into(), vec![activity]);
+            let remote_info = Some(RemoteInfo::from_flatpak(&remote, &inst));
+            let activity = OperationActivity::new_appstream(remote_info, OperationStatus::Updating);
+            let response = TaskResponse::new_activity(task.clone().into(), vec![activity]);
             self.sender.try_send(response).unwrap();
 
             match Self::remote_builder_source(&remote, &inst) {
@@ -187,17 +183,15 @@ impl AppstreamWorker {
                 }
             }
 
-            let activity =
-                OperationActivity::new_appstream(Some(&remote_info), OperationStatus::Done);
-            let response =
-                TaskResponse::new_operation_activity(task.clone().into(), vec![activity]);
+            let remote_info = Some(RemoteInfo::from_flatpak(&remote, &inst));
+            let activity = OperationActivity::new_appstream(remote_info, OperationStatus::Done);
+            let response = TaskResponse::new_activity(task.clone().into(), vec![activity]);
             self.sender.try_send(response).unwrap();
         }
 
         debug!("Ensure compiled xmlb is up to date.");
         let xmlb_activity = OperationActivity::new_appstream(None, OperationStatus::Processing);
-        let response =
-            TaskResponse::new_operation_activity(task.clone().into(), vec![xmlb_activity]);
+        let response = TaskResponse::new_activity(task.clone().into(), vec![xmlb_activity]);
         self.sender.try_send(response).unwrap();
 
         let xmlb = gio::File::for_path(path::APPSTREAM_CACHE.clone());
@@ -209,8 +203,7 @@ impl AppstreamWorker {
 
         debug!("Done.");
         let xmlb_activity = OperationActivity::new_appstream(None, OperationStatus::Done);
-        let response =
-            TaskResponse::new_operation_activity(task.clone().into(), vec![xmlb_activity]);
+        let response = TaskResponse::new_activity(task.clone().into(), vec![xmlb_activity]);
         self.sender.try_send(response).unwrap();
 
         if task.kind != AppstreamTaskKind::Dependency {

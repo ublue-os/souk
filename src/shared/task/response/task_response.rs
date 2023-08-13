@@ -27,7 +27,7 @@ pub struct TaskResponse {
 }
 
 impl TaskResponse {
-    pub fn new_operation_activity(task: Task, activity: Vec<OperationActivity>) -> Self {
+    pub fn new_activity(task: Task, activity: Vec<OperationActivity>) -> Self {
         Self {
             task,
             kind: TaskResponseKind::OperationActivity(Box::new(activity)),

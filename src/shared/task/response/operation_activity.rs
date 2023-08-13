@@ -89,7 +89,7 @@ impl OperationActivity {
         }
     }
 
-    pub fn new_appstream(remote: Option<&RemoteInfo>, status: OperationStatus) -> Self {
+    pub fn new_appstream(remote: Option<RemoteInfo>, status: OperationStatus) -> Self {
         let appstream_operation = if remote.is_some() {
             AppstreamOperationKind::Sync
         } else {
@@ -105,7 +105,7 @@ impl OperationActivity {
         Self {
             status,
             progress,
-            remote: remote.cloned(),
+            remote,
             appstream_operation,
             ..Default::default()
         }
