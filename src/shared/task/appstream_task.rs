@@ -17,6 +17,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use super::FlatpakTask;
 use crate::shared::task::{Task, TaskKind};
 
 #[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
@@ -30,6 +31,15 @@ impl AppstreamTask {
         Self {
             uuid: Uuid::new_v4().to_string(),
             kind,
+        }
+    }
+}
+
+impl From<FlatpakTask> for AppstreamTask {
+    fn from(flatpak_task: FlatpakTask) -> Self {
+        AppstreamTask {
+            uuid: flatpak_task.uuid.clone(),
+            kind: AppstreamTaskKind::Dependency,
         }
     }
 }
@@ -48,6 +58,10 @@ impl From<AppstreamTask> for Task {
 pub enum AppstreamTaskKind {
     Ensure,
     Update,
+    /// When flatpak worker has some appstream operation activities, like
+    /// `set_dry_run_package_appstream`, we need to convert the [FlatpakTask]
+    /// into a [AppstreamTask] using the kind `Dependency`
+    Dependency,
     #[default]
     None,
 }

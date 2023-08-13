@@ -78,6 +78,7 @@ impl From<AppstreamTaskKind> for SkTaskKind {
         match kind {
             AppstreamTaskKind::Ensure => Self::AppstreamEnsure,
             AppstreamTaskKind::Update => Self::AppstreamUpdate,
+            AppstreamTaskKind::Dependency => Self::None,
             AppstreamTaskKind::None => Self::None,
         }
     }

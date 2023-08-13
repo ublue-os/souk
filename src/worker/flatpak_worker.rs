@@ -506,6 +506,7 @@ impl FlatpakWorker {
             if operation.operation_type() != TransactionOperationType::InstallBundle {
                 let appstream_worker = SkWorkerApplication::default().appstream_worker();
                 appstream_worker.set_dry_run_package_appstream(
+                    &task.clone().into(),
                     &mut package,
                     &op_ref_str,
                     &remote,

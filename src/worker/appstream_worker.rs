@@ -52,7 +52,7 @@ impl AppstreamWorker {
         let result = match &task.kind {
             AppstreamTaskKind::Ensure => self.ensure(&task),
             AppstreamTaskKind::Update => self.update(&task),
-            AppstreamTaskKind::None => return,
+            _ => return,
         };
 
         if let Err(err) = result {
@@ -95,8 +95,10 @@ impl AppstreamWorker {
 
             if !is_missing_remote {
                 debug!("Found silo with all remotes. Nothing to do.");
-                let response = TaskResponse::new_result(task.clone().into(), TaskResult::Done);
-                self.sender.try_send(response).unwrap();
+                if task.kind != AppstreamTaskKind::Dependency {
+                    let response = TaskResponse::new_result(task.clone().into(), TaskResult::Done);
+                    self.sender.try_send(response).unwrap();
+                }
 
                 return Ok(silo);
             }
@@ -211,8 +213,10 @@ impl AppstreamWorker {
             TaskResponse::new_operation_activity(task.clone().into(), vec![xmlb_activity]);
         self.sender.try_send(response).unwrap();
 
-        let response = TaskResponse::new_result(task.clone().into(), TaskResult::Done);
-        self.sender.try_send(response).unwrap();
+        if task.kind != AppstreamTaskKind::Dependency {
+            let response = TaskResponse::new_result(task.clone().into(), TaskResult::Done);
+            self.sender.try_send(response).unwrap();
+        }
 
         Ok(silo)
     }
@@ -251,6 +255,7 @@ impl AppstreamWorker {
 
     pub(super) fn set_dry_run_package_appstream(
         &self,
+        task: &AppstreamTask,
         package: &mut DryRunPackage,
         ref_str: &str,
         remote: &Remote,
@@ -261,9 +266,6 @@ impl AppstreamWorker {
             "Retrieve appstream data for dry run package: {} (\"{remote_name}\")",
             package.info.ref_
         );
-
-        // TODO: Well... we have no task information here? :(
-        let task = AppstreamTask::default();
         let default_silo = self.ensure(&task)?;
 
         let silo = if Self::query_remote(&default_silo, &remote).is_some() {
