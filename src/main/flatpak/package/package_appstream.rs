@@ -125,7 +125,7 @@ mod imp {
             let locale = self.locale().unwrap_or("C".to_string());
             value
                 .get_for_locale(&locale)
-                .unwrap_or_else(|| value.get_default().unwrap())
+                .unwrap_or_else(|| value.get_default().unwrap()) // TODO: This can be `None` and panics
                 .to_string()
         }
 

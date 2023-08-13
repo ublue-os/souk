@@ -141,6 +141,12 @@ mod imp {
             let window = self.create_window();
             let _ = self.window.set(window.downgrade());
             info!("Created application window.");
+
+            let fut = clone!(@weak self as this => async move {
+                // TODO: do something with the task
+                let _task = this.worker.ensure_appstream().await;
+            });
+            spawn!(fut);
         }
 
         fn open(&self, files: &[gio::File], hint: &str) {

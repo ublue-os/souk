@@ -33,7 +33,8 @@ pub struct FlatpakTask {
     /// corresponding installation.
     pub dry_run: bool,
 
-    /// A Flatpak ref. Needed for [FlatpakTaskKind::Install] operations.
+    /// A Flatpak ref. Needed for [FlatpakTaskKind::Install],
+    /// [FlatpakTaskKind::Uninstall] or [FlatpakTaskKind::Update] operations.
     pub ref_: Option<String>,
     /// A Flatpak remote. Needed for [FlatpakTaskKind::Install] operations.
     pub remote: Option<RemoteInfo>,

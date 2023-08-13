@@ -21,6 +21,6 @@ mod flatpak_task;
 #[allow(clippy::module_inception)]
 mod task;
 
-pub use appstream_task::AppstreamTask;
+pub use appstream_task::{AppstreamTask, AppstreamTaskKind};
 pub use flatpak_task::{FlatpakTask, FlatpakTaskKind};
 pub use task::{Task, TaskKind};

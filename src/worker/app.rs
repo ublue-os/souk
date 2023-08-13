@@ -54,8 +54,8 @@ mod imp {
         cancel_receiver: Receiver<Task>,
         response_receiver: Receiver<TaskResponse>,
 
-        flatpak_worker: FlatpakWorker,
-        appstream_worker: AppstreamWorker,
+        pub flatpak_worker: FlatpakWorker,
+        pub appstream_worker: AppstreamWorker,
 
         dbus_connection: RefCell<Option<Connection>>,
         thread_pool: RefCell<Option<ThreadPool>>,
@@ -290,6 +290,14 @@ impl SkWorkerApplication {
 
         // Start mainloop
         app.run()
+    }
+
+    pub(super) fn flatpak_worker(&self) -> FlatpakWorker {
+        self.imp().flatpak_worker.clone()
+    }
+
+    pub(super) fn appstream_worker(&self) -> AppstreamWorker {
+        self.imp().appstream_worker.clone()
     }
 }
 

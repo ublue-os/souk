@@ -1,5 +1,5 @@
 // Souk - path.rs
-// Copyright (C) 2021-2022  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,25 +22,31 @@ use once_cell::sync::Lazy;
 
 use crate::shared::config;
 
-pub static DATA: Lazy<PathBuf> = Lazy::new(|| {
+pub static DATA_DIR: Lazy<PathBuf> = Lazy::new(|| {
     let mut path = glib::user_data_dir();
     path.push(config::NAME);
     path
 });
 
-pub static CONFIG: Lazy<PathBuf> = Lazy::new(|| {
+pub static CONFIG_DIR: Lazy<PathBuf> = Lazy::new(|| {
     let mut path = glib::user_config_dir();
     path.push(config::NAME);
     path
 });
 
-pub static CACHE: Lazy<PathBuf> = Lazy::new(|| {
+pub static CACHE_DIR: Lazy<PathBuf> = Lazy::new(|| {
     let mut path = glib::user_cache_dir();
     path.push(config::NAME);
     path
 });
 
-pub static BIN: Lazy<PathBuf> = Lazy::new(|| {
+pub static APPSTREAM_CACHE: Lazy<PathBuf> = Lazy::new(|| {
+    let mut file = CACHE_DIR.clone();
+    file.push("appstream.xmlb");
+    file
+});
+
+pub static BIN_DIR: Lazy<PathBuf> = Lazy::new(|| {
     let mut path = glib::home_dir();
     path.push(".local");
     path.push("bin");
@@ -48,9 +54,9 @@ pub static BIN: Lazy<PathBuf> = Lazy::new(|| {
 });
 
 pub fn init() -> std::io::Result<()> {
-    fs::create_dir_all(DATA.to_owned())?;
-    fs::create_dir_all(CONFIG.to_owned())?;
-    fs::create_dir_all(CACHE.to_owned())?;
-    fs::create_dir_all(BIN.to_owned())?;
+    fs::create_dir_all(DATA_DIR.to_owned())?;
+    fs::create_dir_all(CONFIG_DIR.to_owned())?;
+    fs::create_dir_all(CACHE_DIR.to_owned())?;
+    fs::create_dir_all(BIN_DIR.to_owned())?;
     Ok(())
 }

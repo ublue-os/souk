@@ -1,4 +1,4 @@
-// Souk - task.rs
+// Souk - appstream_task.rs
 // Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,9 +15,39 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+use crate::shared::task::{Task, TaskKind};
 
 #[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
 pub struct AppstreamTask {
-    // implement
-    pub dummy: String,
+    pub uuid: String,
+    pub kind: AppstreamTaskKind,
+}
+
+impl AppstreamTask {
+    pub fn new(kind: AppstreamTaskKind) -> Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            kind,
+        }
+    }
+}
+
+impl From<AppstreamTask> for Task {
+    fn from(appstream_task: AppstreamTask) -> Self {
+        Task {
+            uuid: appstream_task.uuid.clone(),
+            cancellable: false,
+            kind: TaskKind::Appstream(Box::new(appstream_task)),
+        }
+    }
+}
+
+#[derive(Default, Deserialize, Serialize, Eq, PartialEq, Debug, Clone, Hash)]
+pub enum AppstreamTaskKind {
+    Ensure,
+    Update,
+    #[default]
+    None,
 }

@@ -30,7 +30,7 @@ use crate::main::flatpak::utils;
 use crate::main::task::{SkTask, SkTaskModel};
 use crate::shared::flatpak::info::RemoteInfo;
 use crate::shared::task::response::{TaskResponse, TaskResponseKind};
-use crate::shared::task::FlatpakTask;
+use crate::shared::task::{AppstreamTask, AppstreamTaskKind, FlatpakTask};
 
 /// Number of tasks that are completed and still remain in log
 const KEEP_COMPLETED_TASKS: u32 = 5;
@@ -208,6 +208,27 @@ impl SkWorker {
         dry_run: bool,
     ) -> Result<SkTask, Error> {
         let task_data = FlatpakTask::new_uninstall(&package.info(), dry_run);
+
+        let task = SkTask::new(&task_data.into());
+        self.imp().run_task(&task).await?;
+
+        Ok(task)
+    }
+
+    /// Download latest appstream data for all Flatpak remotes, and update the
+    /// xmlb cache
+    pub async fn update_appstream(&self) -> Result<SkTask, Error> {
+        let task_data = AppstreamTask::new(AppstreamTaskKind::Update);
+
+        let task = SkTask::new(&task_data.into());
+        self.imp().run_task(&task).await?;
+
+        Ok(task)
+    }
+
+    /// Ensures the xmlb cache exists and includes all remotes
+    pub async fn ensure_appstream(&self) -> Result<SkTask, Error> {
+        let task_data = AppstreamTask::new(AppstreamTaskKind::Ensure);
 
         let task = SkTask::new(&task_data.into());
         self.imp().run_task(&task).await?;

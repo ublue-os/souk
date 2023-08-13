@@ -36,7 +36,7 @@ use crate::shared::flatpak::FlatpakOperationKind;
 use crate::shared::task::response::{OperationActivity, TaskResponse, TaskResult};
 use crate::shared::task::{FlatpakTask, FlatpakTaskKind};
 use crate::shared::WorkerError;
-use crate::worker::appstream;
+use crate::worker::SkWorkerApplication;
 
 #[derive(Debug, Clone, Downgrade)]
 pub struct FlatpakWorker {
@@ -419,14 +419,15 @@ impl FlatpakWorker {
             // transaction.
             let is_targeted_ref = operations.peek().is_none();
 
-            // Retrieve remote
+            // Retrieve remote_name, remote_installation (required for appstream),
+            // remote_info and the actual Flatpak remote object.
             let remote_name = operation.remote().unwrap().to_string();
-            let (remote, remote_info) = match real_installation
+            let (remote, remote_installation, remote_info) = match real_installation
                 .remote_by_name(&remote_name, Cancellable::NONE)
             {
                 Ok(remote) => {
                     let remote_info = RemoteInfo::from_flatpak(&remote, &real_installation);
-                    (remote, remote_info)
+                    (remote, &real_installation, remote_info)
                 }
                 Err(_) => {
                     // Remote doesn't exist in real installation
@@ -436,7 +437,7 @@ impl FlatpakWorker {
                         r.url().unwrap_or_default().into(),
                         None,
                     );
-                    (r, remote_info)
+                    (r, &dry_run_installation, remote_info)
                 }
             };
 
@@ -503,7 +504,13 @@ impl FlatpakWorker {
             // Retrieve appstream data unless it is a Flatpak bundle which includes the data
             // in the bundle file itself (and doesn't have a "real" remote)
             if operation.operation_type() != TransactionOperationType::InstallBundle {
-                appstream::utils::set_dry_run_package_appstream(&mut package, &op_ref_str, &remote);
+                let appstream_worker = SkWorkerApplication::default().appstream_worker();
+                appstream_worker.set_dry_run_package_appstream(
+                    &mut package,
+                    &op_ref_str,
+                    &remote,
+                    remote_installation,
+                )?;
             }
 
             if is_targeted_ref {

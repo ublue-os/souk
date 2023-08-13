@@ -17,7 +17,7 @@
 use glib::Enum;
 use gtk::glib;
 
-use crate::shared::task::{FlatpakTaskKind, Task, TaskKind};
+use crate::shared::task::{AppstreamTaskKind, FlatpakTaskKind, Task, TaskKind};
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Enum)]
 #[repr(u32)]
@@ -34,9 +34,12 @@ pub enum SkTaskKind {
     FlatpakUpdate,
     /// A whole Flatpak installation gets updated
     FlatpakUpdateInstallation,
+    /// Ensures appstream data exists
+    AppstreamEnsure,
+    /// Updates entire appstream data
+    AppstreamUpdate,
     #[default]
     None,
-    // Appstream...,
 }
 
 impl SkTaskKind {
@@ -47,6 +50,8 @@ impl SkTaskKind {
             } else {
                 return flatpak_task.kind.clone().into();
             }
+        } else if let TaskKind::Appstream(appstream_task) = &data.kind {
+            return appstream_task.kind.clone().into();
         }
 
         error!("Unable to determine task kind from data: {:#?}", data);
@@ -64,6 +69,16 @@ impl From<FlatpakTaskKind> for SkTaskKind {
             FlatpakTaskKind::UpdateInstallation => Self::FlatpakUpdateInstallation,
             FlatpakTaskKind::Uninstall => Self::FlatpakUninstall,
             FlatpakTaskKind::None => Self::None,
+        }
+    }
+}
+
+impl From<AppstreamTaskKind> for SkTaskKind {
+    fn from(kind: AppstreamTaskKind) -> Self {
+        match kind {
+            AppstreamTaskKind::Ensure => Self::AppstreamEnsure,
+            AppstreamTaskKind::Update => Self::AppstreamUpdate,
+            AppstreamTaskKind::None => Self::None,
         }
     }
 }
