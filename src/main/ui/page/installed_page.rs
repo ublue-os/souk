@@ -1,5 +1,5 @@
 // Souk - installed_page.rs
-// Copyright (C) 2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2023-2024  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -118,7 +118,6 @@ mod imp {
                     let row = adw::ActionRow::builder()
                         .title(package.name())
                         .subtitle(package.remote().name())
-                        .icon_name("emblem-system-symbolic")
                         .build();
 
                     row.add_suffix(&uninstall_button);

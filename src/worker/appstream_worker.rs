@@ -75,7 +75,10 @@ impl AppstreamWorker {
         let xmlb = gio::File::for_path(path::APPSTREAM_CACHE.clone());
         let silo = xb::Silo::new();
 
-        if let Ok(_) = silo.load_from_file(&xmlb, xb::SiloLoadFlags::NONE, Cancellable::NONE) {
+        if silo
+            .load_from_file(&xmlb, xb::SiloLoadFlags::NONE, Cancellable::NONE)
+            .is_ok()
+        {
             // Ensure that all known remotes are available from that silo
             let mut is_missing_remote = false;
 
