@@ -1,5 +1,5 @@
 // Souk - package_appstream.rs
-// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2024  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -123,9 +123,10 @@ mod imp {
 
         fn translated_value(&self, value: &TranslatableString) -> String {
             let locale = self.locale().unwrap_or("C".to_string());
+            let fallback = "–".to_string();
             value
                 .get_for_locale(&locale)
-                .unwrap_or_else(|| value.get_default().unwrap()) // TODO: This can be `None` and panics
+                .unwrap_or_else(|| value.get_default().unwrap_or(&fallback))
                 .to_string()
         }
 
