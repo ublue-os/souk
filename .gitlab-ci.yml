@@ -25,7 +25,7 @@ checks:
   image: "rustlang/rust:nightly-slim"
   stage: check
   script:
-    - apt update && apt install --no-install-recommends perl perl-modules-5.32 make -y
+    - apt update && apt install --no-install-recommends perl perl-modules-5.36 make -y
     - build-aux/checks.sh --verbose --force-install
 
 # Lint the code
