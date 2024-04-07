@@ -437,46 +437,32 @@ mod imp {
 
         fn set_labels(&self, kind: LabelKind) {
             // Label of the button which starts the sideloading
-            let start_button = vec![i18n("Install"), i18n("Update"), i18n("Add")];
+            let start_button = [i18n("Install"), i18n("Update"), i18n("Add")];
 
             // Dialog title
-            let details_title = vec![
-                i18n("Install Package"),
+            let details_title = [i18n("Install Package"),
                 i18n("Update Package"),
-                i18n("Add Software Source"),
-            ];
-            let progress_title = vec![
-                i18n("Installing Package"),
+                i18n("Add Software Source")];
+            let progress_title = [i18n("Installing Package"),
                 i18n("Updating Package"),
-                i18n("Adding Software Source"),
-            ];
-            let already_done_title = vec![
-                i18n("Already Installed"),
+                i18n("Adding Software Source")];
+            let already_done_title = [i18n("Already Installed"),
                 String::new(),
-                i18n("Already Added Source"),
-            ];
-            let done_title = vec![
-                i18n("Installation Complete"),
+                i18n("Already Added Source")];
+            let done_title = [i18n("Installation Complete"),
                 i18n("Update Complete"),
-                i18n("Added Software Source"),
-            ];
-            let error_title = vec![
-                i18n("Installation Failed"),
+                i18n("Added Software Source")];
+            let error_title = [i18n("Installation Failed"),
                 i18n("Update Failed"),
-                i18n("Adding Source Failed"),
-            ];
+                i18n("Adding Source Failed")];
 
             // Descriptions which get displayed in status pages
-            let already_done_desc = vec![
-                i18n("This application or runtime is already installed."),
+            let already_done_desc = [i18n("This application or runtime is already installed."),
                 String::new(),
-                i18n("This software source is already added."),
-            ];
-            let done_desc = vec![
-                i18n("Successfully installed!"),
+                i18n("This software source is already added.")];
+            let done_desc = [i18n("Successfully installed!"),
                 i18n("Successfully updated!"),
-                i18n("Successfully added!"),
-            ];
+                i18n("Successfully added!")];
 
             let i = match kind {
                 LabelKind::PackageInstall => 0,

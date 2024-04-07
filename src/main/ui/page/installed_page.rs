@@ -116,8 +116,8 @@ mod imp {
                     }));
 
                     let row = adw::ActionRow::builder()
-                        .title(&package.name())
-                        .subtitle(&package.remote().name())
+                        .title(package.name())
+                        .subtitle(package.remote().name())
                         .icon_name("emblem-system-symbolic")
                         .build();
 

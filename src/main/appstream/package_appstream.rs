@@ -97,7 +97,7 @@ mod imp {
         fn version(&self) -> String {
             let mut releases = self.obj().component().0.releases;
             releases.sort_by(|r1, r2| r2.version.cmp(&r1.version));
-            if let Some(release) = releases.get(0) {
+            if let Some(release) = releases.first() {
                 release.version.clone()
             } else {
                 "–".into()
@@ -183,7 +183,7 @@ impl SkPackageAppstream {
         releases.sort_by(|r1, r2| r2.version.cmp(&r1.version));
 
         let branch = self.imp().package.get().unwrap().branch();
-        let version = if let Some(release) = releases.get(0) {
+        let version = if let Some(release) = releases.first() {
             if include_branch {
                 format!("{} ({})", release.version.clone(), branch)
             } else {

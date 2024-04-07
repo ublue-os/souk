@@ -32,7 +32,7 @@ pub fn check_appstream_silo_exists() -> bool {
     {
         // Ensure that silo contains plausible data and isn't entirely empty
         if let Ok(result) = silo.query("components", 1) {
-            if result.len() > 0 {
+            if !result.is_empty() {
                 return true;
             }
         }
