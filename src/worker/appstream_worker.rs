@@ -1,5 +1,5 @@
 // Souk - worker.rs
-// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2024  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ impl AppstreamWorker {
             let installations = Self::all_installations();
             'outer: for inst in installations {
                 for remote in inst.list_remotes(Cancellable::NONE)? {
-                    if !Self::query_remote(&silo, &remote).is_some() {
+                    if Self::query_remote(&silo, &remote).is_none() {
                         debug!(
                             "Silo is missing remote {:?}",
                             remote.name().unwrap_or_default()
@@ -106,7 +106,7 @@ impl AppstreamWorker {
             debug!("Could not load silo from file, may not exist yet.");
         }
 
-        Ok(self.update(task)?)
+        self.update(task)
     }
 
     /// Updates the appstream silo, no matter if it's up to date or not
@@ -114,8 +114,6 @@ impl AppstreamWorker {
     // generated, sideloading tries to access it at the same time)
     fn update(&self, task: &AppstreamTask) -> Result<xb::Silo, WorkerError> {
         debug!("Update silo...");
-        // TODO: Add a fallback for apps without appstream data by using the desktop
-        // file
 
         let mut remotes: IndexMap<String, (Remote, Installation)> = IndexMap::new();
         let mut op_activities = Vec::new();
@@ -160,12 +158,12 @@ impl AppstreamWorker {
 
         let mut imported_source = false;
         for (remote_hash, (remote, inst)) in &remotes {
-            let remote_info = Some(RemoteInfo::from_flatpak(&remote, &inst));
+            let remote_info = Some(RemoteInfo::from_flatpak(remote, inst));
             let activity = OperationActivity::new_appstream(remote_info, OperationStatus::Updating);
             let response = TaskResponse::new_activity(task.clone().into(), vec![activity]);
             self.sender.try_send(response).unwrap();
 
-            match Self::remote_builder_source(&remote, &inst) {
+            match Self::remote_builder_source(remote, inst) {
                 Ok(source) => {
                     builder.import_source(&source);
                     imported_source = true;
@@ -179,13 +177,13 @@ impl AppstreamWorker {
 
                     // Create empty placeholder entry
                     let node = xb::BuilderNode::new("components");
-                    node.set_attr("origin", &remote_hash);
+                    node.set_attr("origin", remote_hash);
                     node.set_attr("error", &err.to_string());
                     builder.import_node(&node);
                 }
             }
 
-            let remote_info = Some(RemoteInfo::from_flatpak(&remote, &inst));
+            let remote_info = Some(RemoteInfo::from_flatpak(remote, inst));
             let activity = OperationActivity::new_appstream(remote_info, OperationStatus::Done);
             let response = TaskResponse::new_activity(task.clone().into(), vec![activity]);
             self.sender.try_send(response).unwrap();
@@ -249,7 +247,7 @@ impl AppstreamWorker {
             Cancellable::NONE,
         )?;
 
-        Self::add_source_fixups(&source, &remote);
+        Self::add_source_fixups(&source, remote);
 
         Ok(source)
     }
@@ -267,9 +265,9 @@ impl AppstreamWorker {
             "Retrieve appstream data for dry run package: {} (\"{remote_name}\")",
             package.info.ref_
         );
-        let default_silo = self.ensure(&task)?;
+        let default_silo = self.ensure(task)?;
 
-        let silo = if Self::query_remote(&default_silo, &remote).is_some() {
+        let silo = if Self::query_remote(&default_silo, remote).is_some() {
             debug!("Remote \"{remote_name}\" is known, load cached silo from file.");
             default_silo
         } else {
@@ -327,7 +325,7 @@ impl AppstreamWorker {
         }
 
         // Icon
-        if let Some(node) = Self::query_remote(&silo, &remote) {
+        if let Some(node) = Self::query_remote(&silo, remote) {
             let appstream_path = gio::File::for_parse_name(&node.attr("path"));
             let icon_file = appstream_path.child(format!("icons/128x128/{}.png", name));
 
@@ -347,7 +345,7 @@ impl AppstreamWorker {
         remote: &Remote,
     ) -> Result<Option<Component>, WorkerError> {
         let ref_escaped = ref_str.replace('/', r"\/");
-        let remote_hash = Self::remote_hash(&remote);
+        let remote_hash = Self::remote_hash(remote);
         let xpath = format!(
             "components[@origin='{remote_hash}']/component/bundle[text()='{ref_escaped}']/.."
         );
@@ -367,7 +365,7 @@ impl AppstreamWorker {
     }
 
     fn query_remote(silo: &xb::Silo, remote: &Remote) -> Option<xb::Node> {
-        let remote_hash = Self::remote_hash(&remote);
+        let remote_hash = Self::remote_hash(remote);
         let xpath = format!("components[@origin='{remote_hash}']");
         silo.query_first(&xpath).ok()
     }
@@ -426,7 +424,7 @@ impl AppstreamWorker {
         // Add tokens to allow much faster searching
         let fixup = xb::BuilderFixup::new("TextTokenize", |_, node, _| {
             if let Some(element) = node.element() {
-                let tokens = vec!["id", "keyword", "launchable", "mimetype", "name", "summary"];
+                let tokens = ["id", "keyword", "launchable", "mimetype", "name", "summary"];
 
                 if tokens.contains(&element.as_str()) {
                     node.tokenize_text();
