@@ -1,61 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2020-2022 Felix Häcker -->
 <component type="desktop-application">
+  <!-- Meson Build -->
   <id>@APP_ID@</id>
   <name>@NAME@</name>
-  <summary>Flatpak App Store</summary>
   <translation type="gettext">@PKGNAME@</translation>
-  <developer_name>Felix Häcker</developer_name>
-  <update_contact>haeckerfelix@gnome.org</update_contact>
-  <metadata_license>CC0-1.0</metadata_license>
-  <project_license>GPL-3.0-or-later</project_license>
   <launchable type="desktop-id">@APP_ID@.desktop</launchable>
-  <content_rating type="oars-1.1"/>
 
+  <!-- General -->
+  <summary>Discover new Flatpaks</summary>
   <description>
     <p>
-      Souk is an Flatpak App Store.
+      Souk is an App Store that allows you to discover, search, install and update your Flatpaks.
     </p>
   </description>
+  <content_rating type="oars-1.1" />
 
-  <screenshots>
-    <screenshot type="default" height="1072" width="772">
-      <image>https://gitlab.gnome.org/haecker-felix/souk/raw/main/data/screenshots/1.png</image>
-    </screenshot>
-    <screenshot height="1072" width="772">
-      <image>https://gitlab.gnome.org/haecker-felix/souk/raw/main/data/screenshots/2.png</image>
-    </screenshot>
-    <screenshot height="1072" width="772">
-      <image>https://gitlab.gnome.org/haecker-felix/souk/raw/main/data/screenshots/3.png</image>
-    </screenshot>
-  </screenshots>
+  <!-- Branding -->
+  <developer_name>Felix Häcker</developer_name>
+  <developer id="de.haeckerfelix">
+    <name>Felix Häcker</name>
+  </developer>
+  <branding>
+    <!-- Yellow 4 and Brown 4 -->
+    <color type="primary" scheme_preference="light">#f9f06b</color>
+    <color type="primary" scheme_preference="dark">#e5a50a</color>
+  </branding>
 
+  <!-- License -->
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <!-- URLs -->
   <url type="homepage">https://gitlab.gnome.org/haecker-felix/souk</url>
   <url type="bugtracker">https://gitlab.gnome.org/haecker-felix/souk/issues</url>
   <url type="donation">https://liberapay.com/haecker-felix</url>
+  <!-- TODO <url type="translate">https://l10n.gnome.org/module/Souk/</url> -->
+  <url type="contact">https://matrix.to/#/#souk:haecker.io</url>
+  <url type="vcs-browser">https://gitlab.gnome.org/haecker-felix/souk</url>
+  <!-- TODO <url type="contribute">https://welcome.gnome.org/app/Souk/</url> -->
 
-  <kudos>
-    <kudo>HiDpiIcon</kudo>
-    <kudo>ModernToolkit</kudo>
-    <kudo>Notifications</kudo>
-  </kudos>
-
+  <!-- Supported Hardware -->
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
   <recommends>
     <control>keyboard</control>
     <control>pointing</control>
     <control>touch</control>
   </recommends>
 
-  <requires>
-    <display_length compare="ge">360</display_length>
-  </requires>
+  <!-- Screenshots -->
+  <screenshots>
+    <screenshot type="default">
+      <image>https://gitlab.gnome.org/haecker-felix/souk/-/raw/souk-next/data/screenshots/1.png</image>
+      <caption>Discover new apps</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://gitlab.gnome.org/haecker-felix/souk/-/raw/souk-next/data/screenshots/2.png</image>
+      <caption>Manage installed apps</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://gitlab.gnome.org/haecker-felix/souk/-/raw/souk-next/data/screenshots/3.png</image>
+      <caption>Sideload new Flatpak bundles</caption>
+    </screenshot>
+  </screenshots>
 
+  <!-- Releases -->
   <releases>
-    <release version="0.0" date="2022-06-21"/>
+    <release version="0.0" date="2022-06-21" />
   </releases>
-
-  <custom>
-    <value key="Purism::form_factor">workstation</value>
-    <value key="Purism::form_factor">mobile</value>
-  </custom>
 </component>
