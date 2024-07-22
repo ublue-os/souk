@@ -33,20 +33,6 @@ if profile == 'development'
   app_id = '@0@.Devel'.format(app_id)
 endif
 
-# Setup pre-commit hook to run checks before changes are getting committed
-if profile == 'development'
-  message('Setting up git pre-commit hook..')
-  run_command('mkdir', '.git/hooks/')
-  run_command('cp', '-f', 'build-aux/pre-commit.hook', '.git/hooks/pre-commit')
-endif
-
-# Vendor all Rust dependencies for release tarballs
-meson.add_dist_script(
-  'build-aux/dist-vendor.sh',
-  meson.project_source_root(),
-  join_paths(meson.project_build_root(), 'meson-dist', meson.project_name() + '-' + meson.project_version())
-)
-
 subdir('data')
 subdir('src')
 subdir('po')
