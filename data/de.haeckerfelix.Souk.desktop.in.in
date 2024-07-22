@@ -6,7 +6,7 @@ Exec=@PKGNAME@
 Terminal=false
 Type=Application
 StartupNotify=true
-Categories=GNOME;GTK;
+Categories=GNOME;GTK;System;
 # Translators: Search terms to find this application. Do NOT translate or localize the semicolons! The list MUST also end with a semicolon!
 Keywords=Flatpak;Store;Apps;
 DBusActivatable=true
