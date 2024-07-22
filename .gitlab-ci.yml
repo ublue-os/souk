@@ -1,64 +1,54 @@
-include: 'https://gitlab.gnome.org/GNOME/citemplates/raw/master/flatpak/flatpak_ci_initiative.yml'
-
-stages:
-  - check
-  - test
-  - doc
+include:
+  - project: "GNOME/citemplates"
+    file: "flatpak/flatpak_ci_initiative.yml"
 
 variables:
-  BUNDLE: "de.haeckerfelix.Souk.Devel.flatpak"
-  MANIFEST_PATH: "build-aux/flatpak/de.haeckerfelix.Souk.Devel.json"
-  FLATPAK_MODULE: "souk"
-  APP_ID: "de.haeckerfelix.Souk.Devel"
+  BUNDLE: "de.haeckerfelix.Shortwave.Devel.flatpak"
+  MANIFEST_PATH: "build-aux/de.haeckerfelix.Shortwave.Devel.json"
+  FLATPAK_MODULE: "shortwave"
+  APP_ID: "de.haeckerfelix.Shortwave.Devel"
   RUNTIME_REPO: "https://nightly.gnome.org/gnome-nightly.flatpakrepo"
-  CI_IMAGE_X86_64: "quay.io/gnome_infrastructure/gnome-runtime-images:gnome-master"
+  RUNTIME_IMAGE: "quay.io/gnome_infrastructure/gnome-runtime-images:gnome-master"
 
+# x86_64 Flatpak bundle
 flatpak@x86_64:
   extends: ".flatpak@x86_64"
 
+# aarch64 Flatpak bundle
 flatpak@aarch64:
   extends: ".flatpak@aarch64"
 
-# Configure and run code checks
-# Exits and fails if an error is encountered
-checks:
-  image: "rustlang/rust:nightly-slim"
-  stage: check
-  script:
-    - apt update && apt install --no-install-recommends perl perl-modules-5.36 make -y
-    - build-aux/checks.sh --verbose --force-install
-
-# Lint the code
-cargo-clippy:
-  image: '${CI_IMAGE_X86_64}'
-  stage: check
-  tags:
-    - flatpak
-  script:
-    - flatpak-builder --keep-build-dirs --user --disable-rofiles-fuse --stop-at=${FLATPAK_MODULE} flatpak_app --repo=repo ${BRANCH:+--default-branch=$BRANCH} ${MANIFEST_PATH}
-    - echo "cargo clippy -- -D warnings" | flatpak-builder --disable-rofiles-fuse --build-shell=${FLATPAK_MODULE} flatpak_app ${MANIFEST_PATH}
-
-# Build the docs
-pages:
-  image: '${CI_IMAGE}'
-  stage: doc
+.flatpak-command: &flatpak-command
+  image: '${RUNTIME_IMAGE}'
   tags:
     - flatpak
   script:
     - flatpak-builder --user --disable-rofiles-fuse --keep-build-dirs --stop-at=${FLATPAK_MODULE} flatpak_app ${MANIFEST_PATH}
-    - flatpak build-finish --socket=x11 --share=network flatpak_app
-    - >
-      flatpak-builder --user --disable-rofiles-fuse --build-shell=${FLATPAK_MODULE} flatpak_app ${MANIFEST_PATH} <<END
-        ninja src/doc
+    - flatpak build-finish --share=network flatpak_app
+    - echo "cd .. && ${COMMAND}" | flatpak-builder --user --disable-rofiles-fuse --build-shell=${FLATPAK_MODULE} flatpak_app ${MANIFEST_PATH}
 
-      END
-    - mkdir public
-    - cp -r .flatpak-builder/build/${FLATPAK_MODULE}/_flatpak_build/target/doc public/code-doc
-    - chmod -R a=rwx public
-  artifacts:
-    paths:
-      - 'public'
-  only:
-    refs:
-      - main
-      - souk-next
+cargo-fmt:
+  <<: *flatpak-command
+  variables:
+    COMMAND: "./build-aux/checks.sh cargo_fmt"
+
+cargo-typos:
+  <<: *flatpak-command
+  variables:
+    COMMAND: "cargo install typos-cli && ./build-aux/checks.sh cargo_typos"
+
+cargo-deny:
+  <<: *flatpak-command
+  variables:
+    COMMAND: "cargo install cargo-deny && ./build-aux/checks.sh cargo_deny"
+
+cargo-clippy:
+  <<: *flatpak-command
+  variables:
+    COMMAND: "./build-aux/checks.sh cargo_clippy"
+
+potfiles:
+  image: alpine
+  script:
+    - apk add --no-cache git
+    - ./build-aux/checks.sh potfiles
