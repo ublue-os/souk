@@ -3,10 +3,10 @@ include:
     file: "flatpak/flatpak_ci_initiative.yml"
 
 variables:
-  BUNDLE: "de.haeckerfelix.Shortwave.Devel.flatpak"
-  MANIFEST_PATH: "build-aux/de.haeckerfelix.Shortwave.Devel.json"
-  FLATPAK_MODULE: "shortwave"
-  APP_ID: "de.haeckerfelix.Shortwave.Devel"
+  BUNDLE: "de.haeckerfelix.Souk.Devel.flatpak"
+  MANIFEST_PATH: "build-aux/de.haeckerfelix.Souk.Devel.json"
+  FLATPAK_MODULE: "souk"
+  APP_ID: "de.haeckerfelix.Souk.Devel"
   RUNTIME_REPO: "https://nightly.gnome.org/gnome-nightly.flatpakrepo"
   RUNTIME_IMAGE: "quay.io/gnome_infrastructure/gnome-runtime-images:gnome-master"
 
