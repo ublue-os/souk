@@ -232,7 +232,7 @@
             "post-install": [
                 "cp /usr/bin/update-mime-database /app/bin",
                 "cp /usr/bin/update-desktop-database /app/bin",
-                "install -m a+rx flatpak-bwrap-wrapper.sh /app/bin/flatpak-bwrap"
+                "install -m a+rx ../flatpak-bwrap-wrapper.sh /app/bin/flatpak-bwrap"
             ],
             "sources": [
                 {
