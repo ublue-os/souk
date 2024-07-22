@@ -9,7 +9,7 @@ conf.set('NAME', name)
 desktop_file = i18n.merge_file(
   input: configure_file(
     input: '@0@.desktop.in.in'.format(base_id),
-    output: '@0@.desktop.in'.format(base_id),
+    output: '@0@.desktop.in'.format(app_id),
     configuration: conf
   ),
   output: '@0@.desktop'.format(app_id),
@@ -35,7 +35,7 @@ conf.set('NAME', name)
 appdata_file = i18n.merge_file(
   input: configure_file(
     input: '@0@.metainfo.xml.in.in'.format(base_id),
-    output: '@0@.metainfo.xml.in'.format(base_id),
+    output: '@0@.metainfo.xml.in'.format(app_id),
     configuration: conf
   ),
   output: '@0@.metainfo.xml'.format(app_id),
@@ -45,12 +45,12 @@ appdata_file = i18n.merge_file(
 )
 
 # Validate Appdata
-appstream_util = find_program('appstream-util', required: false)
-if appstream_util.found()
+appstreamcli = find_program('appstreamcli', required: false)
+if appstreamcli.found()
   test(
-    'Validate appdata', appstream_util,
+    'Validate appdata file', appstreamcli,
     args: [
-      'validate', '--nonet', appdata_file.full_path()
+      'validate', '--no-net', '--explain', appdata_file.full_path()
     ]
   )
 endif
@@ -58,6 +58,7 @@ endif
 # GSchema
 conf = configuration_data()
 conf.set('APP_ID', app_id)
+conf.set('PATH_ID', path_id)
 conf.set('PKGNAME', meson.project_name())
 configure_file(
   input: '@0@.gschema.xml.in'.format(base_id),
@@ -102,13 +103,22 @@ configure_file(
 )
 
 # Resources
+conf = configuration_data()
+conf.set('PATH_ID', path_id)
+conf.set('APP_ID', app_id)
+configure_file(
+  input: '@0@.gresource.xml.in'.format(base_id),
+  output: '@0@.gresource.xml'.format(app_id),
+  configuration: conf,
+)
 gnome.compile_resources(
   app_id,
-  '@0@.gresource.xml'.format(base_id),
+  join_paths(meson.project_build_root(), 'data', '@0@.gresource.xml'.format(app_id)),
   gresource_bundle: true,
-  source_dir: meson.current_build_dir(),
+  source_dir: join_paths(meson.project_build_root(), 'data'),
   install: true,
-  install_dir: join_paths(datadir, meson.project_name())
+  install_dir: join_paths(datadir, meson.project_name()),
+  dependencies: appdata_file,
 )
 
 # Run required post-install steps
