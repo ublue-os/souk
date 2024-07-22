@@ -1,3 +1,6 @@
+[files]
+extend-exclude = ["build-aux/flatpak/*"]
+
 [type.po]
 extend-glob = ["*.po"]
 check-file = false
