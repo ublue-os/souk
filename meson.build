@@ -21,8 +21,9 @@ dependency('libadwaita-1', version: '>=1.1.0')
 # Initialize project variables
 name       = 'Souk'
 base_id    = 'de.haeckerfelix.Souk'
-app_id     = 'de.haeckerfelix.Souk'
-vcs_tag    = run_command('git', 'rev-parse', '--short', 'HEAD').stdout().strip()
+path_id    = '/de/haeckerfelix/Souk'
+app_id     = base_id
+vcs_tag    = run_command('git', 'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
 profile    = get_option('profile')
 datadir    = join_paths(get_option('prefix'), get_option('datadir'))
 localedir  = join_paths(get_option('prefix'), get_option('localedir'))
