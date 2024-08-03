@@ -73,54 +73,43 @@ mod imp {
             // Setup `app` level GActions
             let obj = self.obj();
 
-            // app.quit
-            action!(
-                obj,
-                "quit",
-                clone!(@weak obj => move |_, _| {
-                    for window in obj.windows() {
-                        window.close();
-                    }
-                })
-            );
+            let actions = [
+                gio::ActionEntryBuilder::new("quit")
+                    .activate(|app: &super::SkApplication, _, _| {
+                        for window in app.windows() {
+                            window.close();
+                        }
+                    })
+                    .build(),
+                gio::ActionEntryBuilder::new("about")
+                    .activate(|app: &Self::Type, _, _| {
+                        if let Some(window) = app.imp().app_window() {
+                            about_window::show(&window);
+                        }
+                    })
+                    .build(),
+                gio::ActionEntryBuilder::new("open")
+                    .activate(|app: &super::SkApplication, _, _| {
+                        app.imp().show_filechooser();
+                    })
+                    .build(),
+                gio::ActionEntryBuilder::new("refresh-installations")
+                    .activate(|app: &super::SkApplication, _, _| {
+                        let installations = app.worker().installations();
+                        installations.refresh();
+                    })
+                    .build(),
+                gio::ActionEntryBuilder::new("debug")
+                    .activate(|_, _, _| {
+                        SkDebugWindow::new().show();
+                    })
+                    .build(),
+            ];
+            obj.add_action_entries(actions);
+
             obj.set_accels_for_action("app.quit", &["<primary>q"]);
-
-            // app.about
-            action!(
-                obj,
-                "about",
-                clone!(@weak self as this => move |_, _| {
-                    if let Some(window) = this.app_window() {
-                        about_window::show(&window);
-                    }
-                })
-            );
-
-            // app.open
-            action!(
-                obj,
-                "open",
-                clone!(@weak self as this => move |_, _| {
-                    this.show_filechooser();
-                })
-            );
             obj.set_accels_for_action("app.open", &["<primary>o"]);
-
-            // app.refresh-installations
-            action!(
-                obj,
-                "refresh-installations",
-                clone!(@weak obj => move |_, _| {
-                    let installations = obj.worker().installations();
-                    installations.refresh();
-                })
-            );
             obj.set_accels_for_action("app.refresh-installations", &["<primary>r"]);
-
-            // app.debug
-            action!(obj, "debug", move |_, _| {
-                SkDebugWindow::new().show();
-            });
             obj.set_accels_for_action("app.debug", &["<primary>d"]);
 
             // Trigger refresh of all available Flatpak installations/remotes
