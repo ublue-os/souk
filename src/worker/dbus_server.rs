@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use async_std::channel::Sender;
-use zbus::{dbus_interface, SignalContext};
+use zbus::SignalContext;
 
 use crate::shared::task::Task;
 
@@ -25,7 +25,7 @@ pub struct WorkerServer {
     pub cancel_sender: Sender<Task>,
 }
 
-#[dbus_interface(name = "de.haeckerfelix.Souk.Worker1")]
+#[zbus::interface(name = "de.haeckerfelix.Souk.Worker1")]
 impl WorkerServer {
     async fn run_task(&self, task_json: &str) {
         match serde_json::from_str(task_json) {
@@ -47,7 +47,7 @@ impl WorkerServer {
         }
     }
 
-    #[dbus_interface(signal)]
+    #[zbus(signal)]
     pub async fn task_response(
         signal_ctxt: &SignalContext<'_>,
         task_response_json: &str,

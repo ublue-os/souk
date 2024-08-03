@@ -16,13 +16,13 @@
 
 use crate::shared::config;
 
-#[zbus::dbus_proxy(interface = "de.haeckerfelix.Souk.Worker1")]
+#[zbus::proxy(interface = "de.haeckerfelix.Souk.Worker1")]
 trait Worker {
     fn run_task(&self, task_json: &str) -> zbus::Result<()>;
 
     fn cancel_task(&self, task_json: &str) -> zbus::Result<()>;
 
-    #[dbus_proxy(signal)]
+    #[zbus(signal)]
     fn task_response(&self, task_response_json: &str) -> zbus::Result<()>;
 }
 
