@@ -103,7 +103,7 @@ mod imp {
                 let mut map = self.map.borrow_mut();
                 match map.get_index_of(info) {
                     Some(pos) => {
-                        map.remove(info);
+                        map.swap_remove(info);
                         Some(pos)
                     }
                     None => {

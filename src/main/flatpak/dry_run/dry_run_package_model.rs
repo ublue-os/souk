@@ -80,7 +80,7 @@ mod imp {
                 let mut map = self.map.borrow_mut();
                 match map.get_index_of(data) {
                     Some(pos) => {
-                        map.remove(data);
+                        map.swap_remove(data);
                         Some(pos)
                     }
                     None => {
