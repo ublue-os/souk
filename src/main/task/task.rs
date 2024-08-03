@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::cell::{Cell, RefCell};
+use std::sync::LazyLock;
 
 use async_std::channel::{unbounded, Receiver, Sender};
 use glib::subclass::Signal;
@@ -22,7 +23,6 @@ use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::sync::Lazy;
 use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
@@ -83,7 +83,7 @@ mod imp {
         }
 
         fn signals() -> &'static [Signal] {
-            static SIGNALS: Lazy<Vec<Signal>> = Lazy::new(|| {
+            static SIGNALS: LazyLock<Vec<Signal>> = LazyLock::new(|| {
                 vec![
                     // Activated, regardless of the result of the task
                     Signal::builder("completed").build(),

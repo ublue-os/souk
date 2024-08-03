@@ -14,19 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::sync::LazyLock;
+
 use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use lazy_static::lazy_static;
 use once_cell::unsync::OnceCell;
 
 use crate::main::context::{SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
 use crate::main::flatpak::permissions::{PermissionDetails, SkPermissionSummary};
 use crate::main::i18n::{i18n, i18n_f};
 
-lazy_static! {
-    static ref SENSITIVE_SERVICES: Vec<&'static str> = vec![
+static SENSITIVE_SERVICES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    vec![
         "org.gnome.SessionManager",
         "org.freedesktop.PackageKit",
         "org.freedesktop.NetworkManager",
@@ -34,9 +35,9 @@ lazy_static! {
         "ca.desrt.dconf",
         "org.gnome.SettingsDaemon",
         "org.freedesktop.secrets",
-        "org.freedesktop.Flatpak"
-    ];
-}
+        "org.freedesktop.Flatpak",
+    ]
+});
 
 mod imp {
     use super::*;

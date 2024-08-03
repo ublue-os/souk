@@ -14,27 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::sync::LazyLock;
+
 use gio::ListStore;
 use glib::{KeyFile, ParamSpec, Properties};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use lazy_static::lazy_static;
 use once_cell::unsync::OnceCell;
 
 use super::types::*;
 
-lazy_static! {
-    static ref SERVICE_WHITELIST: Vec<&'static str> = vec![
+static SERVICE_WHITELIST: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    vec![
         "org.kde.StatusNotifier",
         "org.mpris.MediaPlayer",
         "org.freedesktop.Notifications",
         "com.canonical.AppMenu.Registrar",
         "com.canonical.indicator.application",
         "com.canonical.Unity.LauncherEntry",
-        "org.a11y.Bus"
-    ];
-}
+        "org.a11y.Bus",
+    ]
+});
 
 mod imp {
     use super::*;

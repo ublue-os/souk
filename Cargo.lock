@@ -2092,7 +2092,6 @@ dependencies = [
  "gtk4",
  "indexmap",
  "isahc",
- "lazy_static",
  "libadwaita",
  "libflatpak",
  "libxmlb",

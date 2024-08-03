@@ -16,6 +16,7 @@
 
 use std::cell::RefCell;
 use std::env::var;
+use std::sync::LazyLock;
 use std::time::Duration;
 
 use adw::subclass::prelude::*;
@@ -25,7 +26,6 @@ use gio::subclass::prelude::ApplicationImpl;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{gio, glib};
-use lazy_static::lazy_static;
 use once_cell::unsync::OnceCell;
 use rusty_pool::ThreadPool;
 use zbus::{Connection, ConnectionBuilder, SignalContext};
@@ -39,9 +39,8 @@ use crate::worker::{AppstreamWorker, FlatpakWorker};
 /// Specifies how many tasks can be executed in parallel
 const WORKER_THREADS: usize = 4;
 
-lazy_static! {
-    static ref NO_INACTIVITY_TIMEOUT: bool = var("NO_INACTIVITY_TIMEOUT").is_ok();
-}
+static NO_INACTIVITY_TIMEOUT: LazyLock<bool> =
+    LazyLock::new(|| var("NO_INACTIVITY_TIMEOUT").is_ok());
 
 mod imp {
     use super::*;

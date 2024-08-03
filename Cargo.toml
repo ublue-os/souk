@@ -5,9 +5,9 @@ authors = ["Felix Häcker <haeckerfelix@gnome.org>"]
 edition = "2021"
 license = "GPL-3.0-or-later"
 default-run = "souk"
+rust-version = "1.80"
 
 [dependencies]
-lazy_static = "1.4"
 appstream = { version = "0.2", features = ["gzip"] }
 xmltree = "0.10"
 log = "0.4"

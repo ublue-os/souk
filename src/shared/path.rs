@@ -16,37 +16,37 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 
 use gtk::glib;
-use once_cell::sync::Lazy;
 
 use crate::shared::config;
 
-pub static DATA_DIR: Lazy<PathBuf> = Lazy::new(|| {
+pub static DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     let mut path = glib::user_data_dir();
     path.push(config::NAME);
     path
 });
 
-pub static CONFIG_DIR: Lazy<PathBuf> = Lazy::new(|| {
+pub static CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     let mut path = glib::user_config_dir();
     path.push(config::NAME);
     path
 });
 
-pub static CACHE_DIR: Lazy<PathBuf> = Lazy::new(|| {
+pub static CACHE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     let mut path = glib::user_cache_dir();
     path.push(config::NAME);
     path
 });
 
-pub static APPSTREAM_CACHE: Lazy<PathBuf> = Lazy::new(|| {
+pub static APPSTREAM_CACHE: LazyLock<PathBuf> = LazyLock::new(|| {
     let mut file = CACHE_DIR.clone();
     file.push("appstream.xmlb");
     file
 });
 
-pub static BIN_DIR: Lazy<PathBuf> = Lazy::new(|| {
+pub static BIN_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     let mut path = glib::home_dir();
     path.push(".local");
     path.push("bin");
