@@ -32,8 +32,6 @@
 
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate gtk_macros;
 
 /// Graphical user interface with relevant Flatpak components
 pub mod main;

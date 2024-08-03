@@ -135,7 +135,7 @@ mod imp {
             let fut = clone!(@weak self as this, @weak window => async move {
                 this.populate_views().await;
             });
-            spawn!(fut);
+            crate::main::spawn_future_local(fut);
         }
 
         fn open(&self, files: &[gio::File], hint: &str) {

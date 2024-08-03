@@ -77,7 +77,7 @@ mod imp {
             let fut = clone!(@weak self as this => async move {
                 this.receive_task_response(tx).await;
             });
-            gtk_macros::spawn!(fut);
+            crate::main::spawn_future_local(fut);
         }
     }
 

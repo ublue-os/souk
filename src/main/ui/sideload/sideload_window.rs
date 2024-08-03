@@ -193,7 +193,7 @@ mod imp {
 
                         this.update_sideloadable().await;
                     };
-                    spawn!(fut);
+                    crate::main::spawn_future_local(fut);
                     None
                 }),
             );
@@ -202,7 +202,7 @@ mod imp {
             let fut = clone!(@weak self as this => async move {
                 this.update_sideloadable().await;
             });
-            spawn!(fut);
+            crate::main::spawn_future_local(fut);
         }
     }
 
@@ -571,7 +571,7 @@ mod imp {
             let fut = clone!(@weak self as this => async move{
                 this.start_sideload().await;
             });
-            spawn!(fut);
+            crate::main::spawn_future_local(fut);
         }
 
         #[template_callback]
@@ -585,7 +585,7 @@ mod imp {
                     this.show_error_message(&err.to_string());
                 }
             });
-            spawn!(fut);
+            crate::main::spawn_future_local(fut);
         }
 
         #[template_callback]
@@ -599,7 +599,7 @@ mod imp {
 
                 this.obj().close();
             });
-            spawn!(fut);
+            crate::main::spawn_future_local(fut);
         }
     }
 }

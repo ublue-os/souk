@@ -116,7 +116,7 @@ mod imp {
                 let f3 = this.receive_responses();
                 futures::join!(f1, f2, f3);
             });
-            spawn!(fut);
+            crate::main::spawn_future_local(fut);
 
             self.parent_activate();
             debug!("Application -> activate");

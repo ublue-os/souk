@@ -112,7 +112,7 @@ mod imp {
                         let fut = async move {
                             let _ = worker.uninstall_flatpak(&package, false).await;
                         };
-                        spawn!(fut);
+                        crate::main::spawn_future_local(fut);
                     }));
 
                     let row = adw::ActionRow::builder()

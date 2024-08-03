@@ -27,3 +27,11 @@ mod i18n;
 mod worker;
 
 pub use app::SkApplication;
+
+// https://gtk-rs.org/gtk-rs-core/git/docs/glib/fn.spawn_future_local.html
+pub fn spawn_future_local<R: 'static, F: std::future::Future<Output = R> + 'static>(
+    f: F,
+) -> gtk::glib::JoinHandle<R> {
+    let ctx = gtk::glib::MainContext::ref_thread_default();
+    ctx.spawn_local(f)
+}
