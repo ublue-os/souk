@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::convert::TryInto;
 
 use glib::{ParamSpec, Properties};
@@ -22,7 +22,6 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
 use indexmap::map::IndexMap;
-use once_cell::unsync::OnceCell;
 
 use crate::main::context::SkContextDetail;
 

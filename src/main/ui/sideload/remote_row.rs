@@ -14,12 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::OnceCell;
+
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{clone, ParamSpec, Properties};
 use gtk::gio::File;
 use gtk::{glib, CompositeTemplate};
-use once_cell::unsync::OnceCell;
 
 use crate::main::flatpak::installation::SkRemote;
 use crate::main::i18n::i18n;

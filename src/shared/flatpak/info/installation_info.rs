@@ -16,7 +16,6 @@
 
 use flatpak::prelude::*;
 use flatpak::Installation;
-use gtk::prelude::*;
 use gtk::{gio, glib};
 use serde::{Deserialize, Serialize};
 

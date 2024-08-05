@@ -14,14 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gio::{File, ListStore};
 use glib::{clone, closure, subclass, ParamSpec, Properties};
 use gtk::{gio, glib, CompositeTemplate};
-use once_cell::sync::OnceCell;
 
 use super::SkRemoteRow;
 use crate::main::app::SkApplication;
@@ -254,7 +253,7 @@ mod imp {
                     .set_value(package.remote().name());
 
                 // Context information
-                let contexts = ListStore::new(SkContext::static_type());
+                let contexts = ListStore::new::<SkContext>();
 
                 let download_size_context = dry_run.download_size_context();
                 contexts.append(&download_size_context);

@@ -15,13 +15,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use core::fmt::Debug;
+use std::cell::OnceCell;
 
 use glib::{ParamSpec, Properties};
 use gtk::gio::File;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;

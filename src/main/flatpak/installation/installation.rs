@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::OnceCell;
+
 use async_std::process::Command;
 use flatpak::prelude::*;
 use flatpak::{Installation, Remote};
 use gio::{Cancellable, File, FileMonitor};
 use glib::{clone, ParamSpec, Properties};
-use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
 use crate::main::flatpak::installation::{SkRemote, SkRemoteModel};

@@ -14,15 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 
 use flatpak::prelude::*;
 use flatpak::{Installation, Remote};
 use glib::{ParamSpec, Properties};
-use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use once_cell::unsync::OnceCell;
 
 use super::SkInstallation;
 use crate::main::SkApplication;

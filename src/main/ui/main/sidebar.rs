@@ -14,13 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::Cell;
+use std::cell::{Cell, OnceCell};
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{clone, subclass, ParamSpec, Properties};
 use gtk::{glib, CompositeTemplate};
-use once_cell::unsync::OnceCell;
 
 use super::SkSidebarItemRow;
 

@@ -23,7 +23,6 @@ use async_std::channel::Sender;
 use flatpak::functions::system_installations;
 use flatpak::prelude::*;
 use flatpak::{Installation, Ref, RefKind, Remote};
-use gio::prelude::*;
 use gio::Cancellable;
 use glib::{clone, Downgrade};
 use gtk::{gio, glib};

@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::OnceCell;
+
 use adw::subclass::prelude::*;
 use gio::subclass::prelude::ApplicationImpl;
-use glib::{clone, ObjectExt, ParamSpec, Properties};
+use glib::{clone, ParamSpec, Properties};
 use gtk::glib::WeakRef;
 use gtk::prelude::*;
 use gtk::{gio, glib, FileChooserAction, FileChooserNative};
-use once_cell::sync::OnceCell;
 
 use crate::main::appstream::utils;
 use crate::main::flatpak::sideload::SkSideloadKind;

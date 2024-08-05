@@ -14,11 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::OnceCell;
+
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{subclass, ParamSpec, Properties};
 use gtk::{glib, CompositeTemplate};
-use once_cell::sync::OnceCell;
 
 use crate::main::context::{SkContextDetail, SkContextDetailKind, SkContextDetailLevel};
 use crate::main::ui::utils;

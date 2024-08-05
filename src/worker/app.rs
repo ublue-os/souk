@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::env::var;
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -26,7 +26,6 @@ use gio::subclass::prelude::ApplicationImpl;
 use glib::clone;
 use gtk::prelude::*;
 use gtk::{gio, glib};
-use once_cell::unsync::OnceCell;
 use rusty_pool::ThreadPool;
 use zbus::{Connection, ConnectionBuilder, SignalContext};
 

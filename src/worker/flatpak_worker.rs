@@ -24,7 +24,6 @@ use ::appstream::Collection;
 use async_std::channel::Sender;
 use flatpak::prelude::*;
 use flatpak::{BundleRef, Installation, Ref, Remote, Transaction, TransactionOperationType};
-use gio::prelude::*;
 use gio::Cancellable;
 use glib::{clone, Downgrade, KeyFile};
 use gtk::{gio, glib};

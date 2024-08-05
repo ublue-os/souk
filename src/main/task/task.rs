@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::{Cell, RefCell};
+use std::cell::{Cell, OnceCell, RefCell};
 use std::sync::LazyLock;
 
 use async_std::channel::{unbounded, Receiver, Sender};
@@ -23,7 +23,6 @@ use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::unsync::OnceCell;
 
 use crate::main::error::Error;
 use crate::main::flatpak::dry_run::SkDryRun;

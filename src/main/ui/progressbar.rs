@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::Cell;
+use std::cell::{Cell, OnceCell};
 use std::time::Duration;
 
 use adw::prelude::*;
@@ -22,7 +22,6 @@ use adw::subclass::prelude::*;
 use adw::{PropertyAnimationTarget, TimedAnimation};
 use glib::{clone, ParamSpec, Properties};
 use gtk::glib;
-use once_cell::unsync::OnceCell;
 
 mod imp {
     use super::*;
@@ -93,16 +92,16 @@ mod imp {
 
                 glib::timeout_add_local(
                     Duration::from_millis(500),
-                    clone!(@weak self as this => @default-return Continue(false), move || {
+                    clone!(@weak self as this => @default-return glib::ControlFlow::Break, move || {
                         let pulsing = this.pulsing.get();
 
                         if pulsing {
                             this.progressbar.pulse();
+                            glib::ControlFlow::Continue
                         }else{
                             this.progressbar.set_fraction(this.fraction.get() as f64);
+                            glib::ControlFlow::Break
                         }
-
-                        Continue(pulsing)
                     }),
                 );
             }

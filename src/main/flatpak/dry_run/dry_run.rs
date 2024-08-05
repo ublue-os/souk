@@ -14,11 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::OnceCell;
+
 use glib::{ParamSpec, Properties};
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::unsync::OnceCell;
 
 use super::{SkDryRunPackage, SkDryRunPackageModel};
 use crate::main::context::{

@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::OnceCell;
 use std::sync::LazyLock;
 
 use gio::ListStore;
@@ -21,7 +22,6 @@ use glib::{KeyFile, ParamSpec, Properties};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use once_cell::unsync::OnceCell;
 
 use super::types::*;
 
@@ -108,7 +108,7 @@ impl SkAppPermissions {
     }
 
     pub fn from_metadata(keyfile: &KeyFile) -> Self {
-        let filesystems = ListStore::new(SkFilesystemPermission::static_type());
+        let filesystems = ListStore::new::<SkFilesystemPermission>();
         if let Ok(filesystem_list) = keyfile.string_list("Context", "filesystems") {
             for filesystem in filesystem_list {
                 let value = SkFilesystemPermission::from_flatpak(filesystem.to_str());
@@ -116,7 +116,7 @@ impl SkAppPermissions {
             }
         }
 
-        let services = ListStore::new(SkServicePermission::static_type());
+        let services = ListStore::new::<SkServicePermission>();
         if let Ok(session_list) = keyfile.keys("Session Bus Policy") {
             for service in session_list {
                 if imp::SkAppPermissions::is_whitelisted(
@@ -176,7 +176,7 @@ impl SkAppPermissions {
         let sockets = other.sockets().difference(self.sockets());
         let subsystems = other.subsystems().difference(self.subsystems());
 
-        let filesystems = ListStore::new(SkFilesystemPermission::static_type());
+        let filesystems = ListStore::new::<SkFilesystemPermission>();
         for filesystem in other.filesystems().snapshot() {
             let filesystem: SkFilesystemPermission = filesystem.downcast().unwrap();
             if !self.filesystems().snapshot().iter().any(|a| {
@@ -187,7 +187,7 @@ impl SkAppPermissions {
             }
         }
 
-        let services = ListStore::new(SkServicePermission::static_type());
+        let services = ListStore::new::<SkServicePermission>();
         for service in other.services().snapshot() {
             let service: SkServicePermission = service.downcast().unwrap();
             if !self.services().snapshot().iter().any(|a| {

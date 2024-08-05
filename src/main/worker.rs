@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::OnceCell;
+
 use async_std::channel::{Receiver, Sender};
 use futures_util::stream::StreamExt;
 use gio::File;
@@ -21,7 +23,6 @@ use glib::{clone, KeyFile, ParamSpec, Properties};
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib};
-use once_cell::unsync::OnceCell;
 
 use crate::main::dbus_proxy::WorkerProxy;
 use crate::main::error::Error;

@@ -14,12 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::cell::OnceCell;
+
 use glib::{Bytes, KeyFile, KeyFileFlags, ParamSpec, Properties};
 use gtk::gdk::Paintable;
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use once_cell::unsync::OnceCell;
 use url::Url;
 
 use crate::main::appstream::SkPackageAppstream;
