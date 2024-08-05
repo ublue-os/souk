@@ -78,10 +78,16 @@ mod imp {
             self.installation_listbox.connect_local(
                 "notify::selected-installation",
                 false,
-                clone!(@weak self as this => @default-return None, move |_|{
-                    this.update_selected_installation();
-                    None
-                }),
+                clone!(
+                    #[weak(rename_to = this)]
+                    self,
+                    #[upgrade_or]
+                    None,
+                    move |_| {
+                        this.update_selected_installation();
+                        None
+                    }
+                ),
             );
 
             // Preselect preferred installation
@@ -99,13 +105,14 @@ mod imp {
             self.listbox.unbind_model();
 
             let inst = self.installation_listbox.selected_installation().unwrap();
-            self.listbox.bind_model(
-                Some(&inst.packages()),
-                clone!(@weak self as this => @default-panic, move |package|{
-                    let package: &SkPackage = package.downcast_ref().unwrap();
+            self.listbox.bind_model(Some(&inst.packages()), |package| {
+                let package: &SkPackage = package.downcast_ref().unwrap();
 
-                    let uninstall_button = gtk::Button::from_icon_name("user-trash-symbolic");
-                    uninstall_button.connect_clicked(clone!(@weak package => move |btn|{
+                let uninstall_button = gtk::Button::from_icon_name("user-trash-symbolic");
+                uninstall_button.connect_clicked(clone!(
+                    #[weak]
+                    package,
+                    move |btn| {
                         btn.set_sensitive(false);
 
                         let worker = SkApplication::default().worker();
@@ -113,17 +120,17 @@ mod imp {
                             let _ = worker.uninstall_flatpak(&package, false).await;
                         };
                         crate::main::spawn_future_local(fut);
-                    }));
+                    }
+                ));
 
-                    let row = adw::ActionRow::builder()
-                        .title(package.name())
-                        .subtitle(package.remote().name())
-                        .build();
+                let row = adw::ActionRow::builder()
+                    .title(package.name())
+                    .subtitle(package.remote().name())
+                    .build();
 
-                    row.add_suffix(&uninstall_button);
-                    row.into()
-                }),
-            );
+                row.add_suffix(&uninstall_button);
+                row.into()
+            });
         }
     }
 }

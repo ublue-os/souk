@@ -133,9 +133,13 @@ mod imp {
             let _ = self.window.set(window.downgrade());
             info!("Created application window.");
 
-            let fut = clone!(@weak self as this, @weak window => async move {
-                this.populate_views().await;
-            });
+            let fut = clone!(
+                #[weak(rename_to = this)]
+                self,
+                async move {
+                    this.populate_views().await;
+                }
+            );
             crate::main::spawn_future_local(fut);
         }
 
@@ -236,21 +240,28 @@ mod imp {
             all_filter.add_pattern("*");
             dialog.add_filter(&all_filter);
 
-            dialog.connect_response(clone!(@weak dialog, @weak self as this => move |_, resp| {
-                if resp == gtk::ResponseType::Accept {
-                    let mut files = Vec::new();
-                    for pos in 0..dialog.files().n_items() {
-                    let file = dialog.files()
-                        .item(pos)
-                        .unwrap()
-                        .downcast::<gio::File>()
-                        .unwrap();
-                        files.push(file);
-                    }
+            dialog.connect_response(clone!(
+                #[weak]
+                dialog,
+                #[weak(rename_to = this)]
+                self,
+                move |_, resp| {
+                    if resp == gtk::ResponseType::Accept {
+                        let mut files = Vec::new();
+                        for pos in 0..dialog.files().n_items() {
+                            let file = dialog
+                                .files()
+                                .item(pos)
+                                .unwrap()
+                                .downcast::<gio::File>()
+                                .unwrap();
+                            files.push(file);
+                        }
 
-                    this.open(&files, "");
+                        this.open(&files, "");
+                    }
                 }
-            }));
+            ));
 
             dialog.show();
         }

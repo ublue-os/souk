@@ -104,11 +104,17 @@ mod imp {
             self.add_item("updates", "view-refresh-symbolic", RowPosition::Bottom);
             self.add_item("account", "user-info-symbolic", RowPosition::Bottom);
 
-            let activated_closure = clone!(@weak self as this => move |_: &gtk::ListBox, row: &gtk::ListBoxRow| {
-                let row: &SkSidebarItemRow = row.downcast_ref().unwrap();
-                this.obj().navigation_view().replace_with_tags(&[&row.tag()]);
-                this.obj().split_view().set_show_content(true);
-            });
+            let activated_closure = clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |_: &gtk::ListBox, row: &gtk::ListBoxRow| {
+                    let row: &SkSidebarItemRow = row.downcast_ref().unwrap();
+                    this.obj()
+                        .navigation_view()
+                        .replace_with_tags(&[&row.tag()]);
+                    this.obj().split_view().set_show_content(true);
+                }
+            );
 
             self.top_listbox
                 .connect_row_activated(activated_closure.clone());
@@ -117,11 +123,15 @@ mod imp {
             self.bottom_listbox
                 .connect_row_activated(activated_closure.clone());
 
-            self.obj().navigation_view().connect_visible_page_notify(
-                clone!(@weak self as this => move |_|{
-                    this.update_selection();
-                }),
-            );
+            self.obj()
+                .navigation_view()
+                .connect_visible_page_notify(clone!(
+                    #[weak(rename_to = this)]
+                    self,
+                    move |_| {
+                        this.update_selection();
+                    }
+                ));
 
             self.obj()
                 .split_view()

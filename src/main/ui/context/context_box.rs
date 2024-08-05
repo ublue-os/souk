@@ -17,7 +17,7 @@
 use std::cell::RefCell;
 
 use adw::prelude::*;
-use glib::{clone, subclass, ParamSpec, Properties};
+use glib::{subclass, ParamSpec, Properties};
 use gtk::subclass::prelude::*;
 use gtk::{glib, CompositeTemplate};
 
@@ -129,22 +129,21 @@ mod imp {
             self.description_label
                 .set_markup(&context.summary().description());
 
-            self.details_listbox.bind_model(
-                Some(&context.details()),
-                clone!(@weak self as this => @default-panic, move |detail_group| {
+            self.details_listbox
+                .bind_model(Some(&context.details()), |detail_group| {
                     let detail_group = detail_group.downcast_ref::<SkContextDetailGroup>().unwrap();
 
                     let group_box = adw::PreferencesGroup::new();
                     group_box.set_margin_bottom(12);
 
-                    if let Some(title) = detail_group.title(){
+                    if let Some(title) = detail_group.title() {
                         group_box.set_title(&title);
                     }
-                    if let Some(description) = detail_group.description(){
+                    if let Some(description) = detail_group.description() {
                         group_box.set_description(Some(&description));
                     }
 
-                    for detail in detail_group.snapshot().iter(){
+                    for detail in detail_group.snapshot().iter() {
                         let detail = detail.downcast_ref::<SkContextDetail>().unwrap();
                         group_box.add(&SkContextDetailRow::new(detail, false));
                     }
@@ -154,8 +153,7 @@ mod imp {
                     row.set_activatable(false);
 
                     row.upcast()
-                }),
-            );
+                });
         }
     }
 }

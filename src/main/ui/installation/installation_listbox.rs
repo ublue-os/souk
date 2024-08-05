@@ -66,8 +66,10 @@ mod imp {
 
             let worker = SkApplication::default().worker();
 
-            self.listbox
-                .connect_row_activated(clone!(@weak self as this => move |_, row|{
+            self.listbox.connect_row_activated(clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |_, row| {
                     let row = row.downcast_ref::<SkInstallationRow>().unwrap();
 
                     this.unselect_all();
@@ -75,7 +77,8 @@ mod imp {
 
                     *this.selected_installation.borrow_mut() = Some(row.installation());
                     this.obj().notify("selected-installation");
-                }));
+                }
+            ));
 
             self.listbox
                 .bind_model(Some(&worker.installations()), |installation| {
@@ -83,13 +86,15 @@ mod imp {
                     SkInstallationRow::new(installation).upcast()
                 });
 
-            worker.installations().connect_items_changed(
-                clone!(@weak self as this => move |_, _, _, _|{
-                    if let Some(selected) = this.obj().selected_installation(){
+            worker.installations().connect_items_changed(clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |_, _, _, _| {
+                    if let Some(selected) = this.obj().selected_installation() {
                         let mut index = 0;
                         while let Some(row) = this.listbox.row_at_index(index) {
                             let row = row.downcast_ref::<SkInstallationRow>().unwrap();
-                            if row.installation() == selected{
+                            if row.installation() == selected {
                                 row.set_selected(true);
                                 return;
                             }
@@ -97,8 +102,8 @@ mod imp {
                             index += 1;
                         }
                     }
-                }),
-            );
+                }
+            ));
         }
     }
 

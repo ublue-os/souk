@@ -92,17 +92,23 @@ mod imp {
 
                 glib::timeout_add_local(
                     Duration::from_millis(500),
-                    clone!(@weak self as this => @default-return glib::ControlFlow::Break, move || {
-                        let pulsing = this.pulsing.get();
+                    clone!(
+                        #[weak(rename_to = this)]
+                        self,
+                        #[upgrade_or]
+                        glib::ControlFlow::Break,
+                        move || {
+                            let pulsing = this.pulsing.get();
 
-                        if pulsing {
-                            this.progressbar.pulse();
-                            glib::ControlFlow::Continue
-                        }else{
-                            this.progressbar.set_fraction(this.fraction.get() as f64);
-                            glib::ControlFlow::Break
+                            if pulsing {
+                                this.progressbar.pulse();
+                                glib::ControlFlow::Continue
+                            } else {
+                                this.progressbar.set_fraction(this.fraction.get() as f64);
+                                glib::ControlFlow::Break
+                            }
                         }
-                    }),
+                    ),
                 );
             }
 

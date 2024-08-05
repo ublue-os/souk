@@ -283,62 +283,93 @@ impl FlatpakWorker {
     ) -> Result<(), WorkerError> {
         transaction.connect_add_new_remote(move |_, _, _, _, _| true);
 
-        transaction.connect_ready(
-            clone!(@strong task, @weak self.sender as sender => @default-return true, move |transaction|{
-                if transaction.operations().is_empty(){
+        transaction.connect_ready(clone!(
+            #[strong]
+            task,
+            #[weak(rename_to = sender)]
+            self.sender,
+            #[upgrade_or]
+            true,
+            move |transaction| {
+                if transaction.operations().is_empty() {
                     warn!("Transaction has no operations.");
                     return true;
                 }
 
                 let mut operation_activities = Vec::new();
                 for op in transaction.operations() {
-                    operation_activities.push(OperationActivity::from_flatpak_operation(transaction, &op, None, false));
+                    operation_activities.push(OperationActivity::from_flatpak_operation(
+                        transaction,
+                        &op,
+                        None,
+                        false,
+                    ));
                 }
 
-                let response = TaskResponse::new_activity(task.clone().into(), operation_activities);
+                let response =
+                    TaskResponse::new_activity(task.clone().into(), operation_activities);
                 sender.try_send(response).unwrap();
 
                 // Real transaction -> start (unlike dryrun)
                 true
-            }),
-        );
+            }
+        ));
 
-        transaction.connect_new_operation(
-            clone!(@strong task, @weak self.sender as sender => move |transaction, operation, progress| {
+        transaction.connect_new_operation(clone!(
+            #[strong]
+            task,
+            #[weak(rename_to = sender)]
+            self.sender,
+            move |transaction, operation, progress| {
                 let operation_activity = OperationActivity::from_flatpak_operation(
                     transaction,
                     operation,
                     Some(progress),
-                    false
+                    false,
                 );
-                let response = TaskResponse::new_activity(task.clone().into(), vec![operation_activity]);
+                let response =
+                    TaskResponse::new_activity(task.clone().into(), vec![operation_activity]);
                 sender.try_send(response).unwrap();
 
                 progress.set_update_frequency(750);
-                progress.connect_changed(
-                    clone!(@strong task, @weak sender, @weak transaction, @weak operation => move |progress|{
+                progress.connect_changed(clone!(
+                    #[strong]
+                    task,
+                    #[weak]
+                    sender,
+                    #[weak]
+                    transaction,
+                    #[weak]
+                    operation,
+                    move |progress| {
                         let operation_activity = OperationActivity::from_flatpak_operation(
                             &transaction,
                             &operation,
                             Some(progress),
                             false,
                         );
-                        let response = TaskResponse::new_activity(task.clone().into(), vec![operation_activity]);
+                        let response = TaskResponse::new_activity(
+                            task.clone().into(),
+                            vec![operation_activity],
+                        );
                         sender.try_send(response).unwrap();
-                    }),
-                );
-            }),
-        );
+                    }
+                ));
+            }
+        ));
 
-        transaction.connect_operation_done(
-            clone!(@strong task, @strong skip_task_result, @weak self.sender as sender  => move |transaction, operation, _, _| {
-                let operation_activity = OperationActivity::from_flatpak_operation(
-                    transaction,
-                    operation,
-                    None,
-                    true,
-                );
-                let response = TaskResponse::new_activity(task.clone().into(), vec![operation_activity]);
+        transaction.connect_operation_done(clone!(
+            #[strong]
+            task,
+            #[strong]
+            skip_task_result,
+            #[weak(rename_to = sender)]
+            self.sender,
+            move |transaction, operation, _, _| {
+                let operation_activity =
+                    OperationActivity::from_flatpak_operation(transaction, operation, None, true);
+                let response =
+                    TaskResponse::new_activity(task.clone().into(), vec![operation_activity]);
                 sender.try_send(response).unwrap();
 
                 let index = transaction
@@ -348,13 +379,13 @@ impl FlatpakWorker {
                     .unwrap();
 
                 // Check if this was the last operation -> whole task is done
-                if index +1 == transaction.operations().len() && !skip_task_result{
+                if index + 1 == transaction.operations().len() && !skip_task_result {
                     let result = TaskResult::Done;
                     let response = TaskResponse::new_result(task.clone().into(), result);
                     sender.try_send(response).unwrap();
                 }
-            }),
-        );
+            }
+        ));
 
         let cancellable = gio::Cancellable::new();
         // Own scope so that the mutex gets unlocked again
@@ -385,13 +416,17 @@ impl FlatpakWorker {
         let dry_run_installation = transaction.installation().unwrap();
 
         // Check if new remotes are getting added during the transaction
-        transaction.connect_add_new_remote(
-            clone!(@weak result => @default-return false, move |_, _, _, name, url|{
+        transaction.connect_add_new_remote(clone!(
+            #[weak]
+            result,
+            #[upgrade_or]
+            false,
+            move |_, _, _, name, url| {
                 let remote_info = RemoteInfo::new(name.into(), url.into(), None);
                 result.borrow_mut().remotes.push(remote_info);
                 true
-            }),
-        );
+            }
+        ));
 
         // Ready -> Everything got resolved.
         transaction.connect_ready_pre_auth(move |_| {

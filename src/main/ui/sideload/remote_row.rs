@@ -113,10 +113,14 @@ mod imp {
             self.external_link_image.set_visible(has_homepage);
             self.obj().set_activatable(has_homepage);
 
-            self.obj().connect_activated(clone!(@weak remote => move|s|{
-                let window: gtk::Window = s.root().unwrap().downcast().unwrap();
-                gtk::show_uri(Some(&window), &remote.homepage(), gtk::gdk::CURRENT_TIME);
-            }));
+            self.obj().connect_activated(clone!(
+                #[weak]
+                remote,
+                move |s| {
+                    let window: gtk::Window = s.root().unwrap().downcast().unwrap();
+                    gtk::show_uri(Some(&window), &remote.homepage(), gtk::gdk::CURRENT_TIME);
+                }
+            ));
         }
     }
 

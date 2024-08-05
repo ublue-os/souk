@@ -104,17 +104,21 @@ mod imp {
             self.parent_startup();
             debug!("Application -> startup");
 
-            let fut = clone!(@weak self as this => async move {
-                if let Err(err) = this.start_dbus_server().await{
-                    error!("Unable to start DBus server: {}", err.to_string());
-                    this.obj().quit();
-                }
+            let fut = clone!(
+                #[weak(rename_to = this)]
+                self,
+                async move {
+                    if let Err(err) = this.start_dbus_server().await {
+                        error!("Unable to start DBus server: {}", err.to_string());
+                        this.obj().quit();
+                    }
 
-                let f1 = this.receive_tasks();
-                let f2 = this.receive_cancel_requests();
-                let f3 = this.receive_responses();
-                futures::join!(f1, f2, f3);
-            });
+                    let f1 = this.receive_tasks();
+                    let f2 = this.receive_cancel_requests();
+                    let f3 = this.receive_responses();
+                    futures::join!(f1, f2, f3);
+                }
+            );
             crate::main::spawn_future_local(fut);
 
             self.parent_activate();
@@ -184,18 +188,26 @@ mod imp {
                 if let Some(thread_pool) = &*thread_pool {
                     match task.kind {
                         TaskKind::Flatpak(task) => {
-                            thread_pool.spawn(
-                                clone!(@strong self.flatpak_worker as worker, @strong task => async move {
+                            thread_pool.spawn(clone!(
+                                #[strong(rename_to = worker)]
+                                self.flatpak_worker,
+                                #[strong]
+                                task,
+                                async move {
                                     worker.process_task(*task);
-                                }),
-                            );
+                                }
+                            ));
                         }
                         TaskKind::Appstream(task) => {
-                            thread_pool.spawn(
-                                clone!(@strong self.appstream_worker as worker, @strong task => async move {
+                            thread_pool.spawn(clone!(
+                                #[strong(rename_to = worker)]
+                                self.appstream_worker,
+                                #[strong]
+                                task,
+                                async move {
                                     worker.process_task(*task);
-                                }),
-                            );
+                                }
+                            ));
                         }
                     }
                 } else {

@@ -75,9 +75,13 @@ mod imp {
             let (tx, rx) = async_std::channel::unbounded();
             self.ready_rx.set(rx).unwrap();
 
-            let fut = clone!(@weak self as this => async move {
-                this.receive_task_response(tx).await;
-            });
+            let fut = clone!(
+                #[weak(rename_to = this)]
+                self,
+                async move {
+                    this.receive_task_response(tx).await;
+                }
+            );
             crate::main::spawn_future_local(fut);
         }
     }
@@ -88,10 +92,18 @@ mod imp {
             task.connect_local(
                 "completed",
                 false,
-                clone!(@weak self as this => @default-return None, move |_|{
-                    this.obj().tasks().remove_completed_tasks(KEEP_COMPLETED_TASKS);
-                    None
-                }),
+                clone!(
+                    #[weak(rename_to = this)]
+                    self,
+                    #[upgrade_or]
+                    None,
+                    move |_| {
+                        this.obj()
+                            .tasks()
+                            .remove_completed_tasks(KEEP_COMPLETED_TASKS);
+                        None
+                    }
+                ),
             );
 
             self.obj().tasks().add_task(task);

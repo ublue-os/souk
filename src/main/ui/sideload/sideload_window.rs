@@ -184,23 +184,37 @@ mod imp {
             self.installation_listbox.connect_local(
                 "notify::selected-installation",
                 false,
-                clone!(@weak self as this => @default-return None, move |_|{
-                    let fut = async move {
-                        if this.sideload_nav.visible_page().is_some_and(|p| p.tag().unwrap() == "select-installation") {
-                            this.sideload_nav.pop();
-                        }
+                clone!(
+                    #[weak(rename_to = this)]
+                    self,
+                    #[upgrade_or]
+                    None,
+                    move |_| {
+                        let fut = async move {
+                            if this
+                                .sideload_nav
+                                .visible_page()
+                                .is_some_and(|p| p.tag().unwrap() == "select-installation")
+                            {
+                                this.sideload_nav.pop();
+                            }
 
-                        this.update_sideloadable().await;
-                    };
-                    crate::main::spawn_future_local(fut);
-                    None
-                }),
+                            this.update_sideloadable().await;
+                        };
+                        crate::main::spawn_future_local(fut);
+                        None
+                    }
+                ),
             );
 
             // Load initial sideloadable
-            let fut = clone!(@weak self as this => async move {
-                this.update_sideloadable().await;
-            });
+            let fut = clone!(
+                #[weak(rename_to = this)]
+                self,
+                async move {
+                    this.update_sideloadable().await;
+                }
+            );
             crate::main::spawn_future_local(fut);
         }
     }
@@ -266,19 +280,30 @@ mod imp {
 
                 self.package_context_listbox.bind_model(
                     Some(&contexts),
-                    clone!(@weak self as this => @default-panic, move |context|{
-                        let context: &SkContext = context.downcast_ref().unwrap();
-                        let row = SkContextDetailRow::new(&context.summary(), true);
-                        row.set_activatable(true);
-                        row.set_subtitle_lines(2);
+                    clone!(
+                        #[weak(rename_to = this)]
+                        self,
+                        #[upgrade_or_panic]
+                        move |context| {
+                            let context: &SkContext = context.downcast_ref().unwrap();
+                            let row = SkContextDetailRow::new(&context.summary(), true);
+                            row.set_activatable(true);
+                            row.set_subtitle_lines(2);
 
-                        row.connect_activated(clone!(@weak this, @weak context => move |_|{
-                            this.context_box.set_context(&context);
-                            this.sideload_nav.push_by_tag("context-information");
-                        }));
+                            row.connect_activated(clone!(
+                                #[weak]
+                                this,
+                                #[weak]
+                                context,
+                                move |_| {
+                                    this.context_box.set_context(&context);
+                                    this.sideload_nav.push_by_tag("context-information");
+                                }
+                            ));
 
-                        row.upcast()
-                    }),
+                            row.upcast()
+                        }
+                    ),
                 );
 
                 // Show warning for packages without update source
@@ -344,14 +369,11 @@ mod imp {
                     self.remotes_group.set_description(Some(&msg));
                 }
 
-                self.remotes_listbox.bind_model(
-                    Some(&remotes),
-                    clone!(@weak self as this => @default-panic, move |remote|{
-                        let remote: &SkRemote = remote.downcast_ref().unwrap();
-                        let remote_row = SkRemoteRow::new(remote);
-                        remote_row.upcast()
-                    }),
-                );
+                self.remotes_listbox.bind_model(Some(&remotes), |remote| {
+                    let remote: &SkRemote = remote.downcast_ref().unwrap();
+                    let remote_row = SkRemoteRow::new(remote);
+                    remote_row.upcast()
+                });
             }
 
             // Show "already done" page when there are no changes
@@ -370,29 +392,47 @@ mod imp {
             task.connect_local(
                 "done",
                 false,
-                clone!(@weak self as this => @default-return None, move |_|{
-                    this.sideload_nav.push_by_tag("done");
-                    None
-                }),
+                clone!(
+                    #[weak(rename_to = this)]
+                    self,
+                    #[upgrade_or]
+                    None,
+                    move |_| {
+                        this.sideload_nav.push_by_tag("done");
+                        None
+                    }
+                ),
             );
 
             task.connect_local(
                 "cancelled",
                 false,
-                clone!(@weak self as this => @default-return None, move |_|{
-                    this.obj().close();
-                    None
-                }),
+                clone!(
+                    #[weak(rename_to = this)]
+                    self,
+                    #[upgrade_or]
+                    None,
+                    move |_| {
+                        this.obj().close();
+                        None
+                    }
+                ),
             );
 
             task.connect_local(
                 "error",
                 false,
-                clone!(@weak self as this => @default-return None, move |error|{
-                    let error: WorkerError = error[1].get().unwrap();
-                    this.show_error_message(&error.to_string());
-                    None
-                }),
+                clone!(
+                    #[weak(rename_to = this)]
+                    self,
+                    #[upgrade_or]
+                    None,
+                    move |error| {
+                        let error: WorkerError = error[1].get().unwrap();
+                        this.show_error_message(&error.to_string());
+                        None
+                    }
+                ),
             );
 
             // Setup progress view
@@ -567,37 +607,49 @@ mod imp {
 
         #[template_callback]
         fn start_sideload_clicked(&self) {
-            let fut = clone!(@weak self as this => async move{
-                this.start_sideload().await;
-            });
+            let fut = clone!(
+                #[weak(rename_to = this)]
+                self,
+                async move {
+                    this.start_sideload().await;
+                }
+            );
             crate::main::spawn_future_local(fut);
         }
 
         #[template_callback]
         fn cancel_sideload_clicked(&self) {
-            let fut = clone!(@weak self as this => async move{
-                let task = this.obj().task().unwrap();
-                let worker = SkApplication::default().worker();
+            let fut = clone!(
+                #[weak(rename_to = this)]
+                self,
+                async move {
+                    let task = this.obj().task().unwrap();
+                    let worker = SkApplication::default().worker();
 
-                this.cancel_sideload_button.set_sensitive(false);
-                if let Err(err) = worker.cancel_task(&task).await {
-                    this.show_error_message(&err.to_string());
+                    this.cancel_sideload_button.set_sensitive(false);
+                    if let Err(err) = worker.cancel_task(&task).await {
+                        this.show_error_message(&err.to_string());
+                    }
                 }
-            });
+            );
             crate::main::spawn_future_local(fut);
         }
 
         #[template_callback]
         fn launch_app_clicked(&self) {
-            let fut = clone!(@weak self as this => async move{
-                let sideloadable = this.obj().sideloadable().unwrap();
-                let installation = sideloadable.installation();
+            let fut = clone!(
+                #[weak(rename_to = this)]
+                self,
+                async move {
+                    let sideloadable = this.obj().sideloadable().unwrap();
+                    let installation = sideloadable.installation();
 
-                let package: SkPackage = sideloadable.dry_run().unwrap().package().upcast();
-                installation.launch_app(&package);
+                    let package: SkPackage = sideloadable.dry_run().unwrap().package().upcast();
+                    installation.launch_app(&package);
 
-                this.obj().close();
-            });
+                    this.obj().close();
+                }
+            );
             crate::main::spawn_future_local(fut);
         }
     }

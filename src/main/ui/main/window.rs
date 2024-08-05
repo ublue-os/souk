@@ -132,16 +132,22 @@ impl SkApplicationWindow {
         task.connect_local(
             "done",
             false,
-            clone!(@weak imp => @default-return None, move |_|{
-                imp.stack.set_visible_child(&imp.split_view.get());
-                None
-            }),
+            clone!(
+                #[weak]
+                imp,
+                #[upgrade_or]
+                None,
+                move |_| {
+                    imp.stack.set_visible_child(&imp.split_view.get());
+                    None
+                }
+            ),
         );
 
         task.connect_local(
             "error",
             false,
-            clone!(@weak imp => @default-return None, move |_|{
+            clone!(#[weak] imp , #[upgrade_or] None, move |_|{
                 let msg = i18n("Unable to load software catalogue. Make sure you have a working internet connection and restart the application.");
                 imp.initial_status_page.set_description(Some(&msg));
                 imp.initial_progressbar.set_visible(false);

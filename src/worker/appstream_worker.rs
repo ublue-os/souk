@@ -441,22 +441,26 @@ impl AppstreamWorker {
         // Set origin / apstream path
         let fixup = xb::BuilderFixup::new(
             "SetOrigin",
-            clone!(@strong remote => @default-panic, move |_, node, _| {
-                if let Some(element) = node.element() {
-                    if element.as_str() == "components" {
-                        let hash = Self::remote_hash(&remote);
-                        let path: String = remote
-                            .appstream_dir(None)
-                            .map(|f| f.parse_name().to_string())
-                            .unwrap_or_default();
+            clone!(
+                #[strong]
+                remote,
+                move |_, node, _| {
+                    if let Some(element) = node.element() {
+                        if element.as_str() == "components" {
+                            let hash = Self::remote_hash(&remote);
+                            let path: String = remote
+                                .appstream_dir(None)
+                                .map(|f| f.parse_name().to_string())
+                                .unwrap_or_default();
 
-                        node.set_attr("origin", &hash);
-                        node.set_attr("path", &path);
+                            node.set_attr("origin", &hash);
+                            node.set_attr("path", &path);
+                        }
                     }
-                }
 
-                true
-            }),
+                    true
+                }
+            ),
         );
         fixup.set_max_depth(1);
         source.add_fixup(&fixup);

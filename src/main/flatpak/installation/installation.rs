@@ -87,10 +87,14 @@ mod imp {
             // in/uninstall, remote changes)
             let f_inst = Installation::from(&info);
             let monitor = f_inst.create_monitor(Cancellable::NONE).unwrap();
-            monitor.connect_changed(clone!(@weak obj as this => move |_,_,_,_|{
-                debug!("Detected change in Flatpak installation.");
-                this.refresh();
-            }));
+            monitor.connect_changed(clone!(
+                #[weak(rename_to = this)]
+                obj,
+                move |_, _, _, _| {
+                    debug!("Detected change in Flatpak installation.");
+                    this.refresh();
+                }
+            ));
             self.monitor.set(monitor).unwrap();
 
             // Set a more user friendly installation title, a description and an icon which
