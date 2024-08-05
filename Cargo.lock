@@ -2014,7 +2014,6 @@ dependencies = [
  "derivative",
  "futures",
  "futures-util",
- "gdk4",
  "gettext-rs",
  "gtk4",
  "indexmap",

@@ -32,6 +32,5 @@ base64 = "0.22.0"
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
 adw = { version = "0.7", package = "libadwaita", features = ["v1_4"] }
 gtk = { version = "0.9", package = "gtk4", features = ["v4_8"] }
-gdk = { version = "0.9", package = "gdk4", features = ["v4_6"] }
 flatpak = { version = "0.6.0", package = "libflatpak", features = ["v1_9_1"] }
 xb = { version = "0.4.2", package = "libxmlb" }

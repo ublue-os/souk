@@ -22,8 +22,8 @@ use flatpak::prelude::*;
 use flatpak::{Installation, Ref};
 use glib::{ParamSpec, Properties};
 use gtk::gdk::Paintable;
-use gtk::glib;
 use gtk::subclass::prelude::*;
+use gtk::{gdk, glib};
 
 use crate::main::flatpak::package::{SkPackage, SkPackageKind, SkPackageSubrefKind};
 use crate::main::i18n::{i18n, i18n_f};

@@ -17,7 +17,7 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use glib::{clone, subclass};
-use gtk::{gio, glib, CompositeTemplate};
+use gtk::{gdk, gio, glib, CompositeTemplate};
 
 use crate::main::app::SkApplication;
 use crate::main::i18n::{i18n, i18n_f};

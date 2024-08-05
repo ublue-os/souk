@@ -18,9 +18,9 @@ use std::cell::OnceCell;
 
 use glib::{Bytes, KeyFile, KeyFileFlags, ParamSpec, Properties};
 use gtk::gdk::Paintable;
-use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
+use gtk::{gdk, glib};
 use url::Url;
 
 use crate::main::appstream::SkPackageAppstream;
