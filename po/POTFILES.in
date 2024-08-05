@@ -70,7 +70,7 @@ src/main/task/task.rs
 src/main/task/task_kind.rs
 src/main/task/task_model.rs
 src/main/task/task_status.rs
-src/main/ui/about_window.rs
+src/main/ui/about_dialog.rs
 src/main/ui/badge/badge.rs
 src/main/ui/badge/badge_kind.rs
 src/main/ui/badge/mod.rs

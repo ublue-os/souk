@@ -13,7 +13,7 @@
       Souk is an App Store that allows you to discover, search, install and update your Flatpaks.
     </p>
   </description>
-  <content_rating type="oars-1.1" />
+  <content_rating type="oars-1.1"/>
 
   <!-- Branding -->
   <developer_name>Felix Häcker</developer_name>
@@ -21,7 +21,6 @@
     <name>Felix Häcker</name>
   </developer>
   <branding>
-    <!-- Yellow 4 and Brown 4 -->
     <color type="primary" scheme_preference="light">#f9f06b</color>
     <color type="primary" scheme_preference="dark">#e5a50a</color>
   </branding>
@@ -67,6 +66,7 @@
 
   <!-- Releases -->
   <releases>
-    <release version="0.0" date="2022-06-21" />
+    <release version="0.0" date="2022-06-21"/>
   </releases>
 </component>
+

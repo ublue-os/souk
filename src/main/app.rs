@@ -1,5 +1,5 @@
 // Souk - app.rs
-// Copyright (C) 2021-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2021-2024  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ use gtk::{gio, glib, FileChooserAction, FileChooserNative};
 use crate::main::appstream::utils;
 use crate::main::flatpak::sideload::SkSideloadKind;
 use crate::main::i18n::i18n;
-use crate::main::ui::about_window;
+use crate::main::ui::about_dialog;
 use crate::main::ui::debug::SkDebugWindow;
 use crate::main::ui::main::SkApplicationWindow;
 use crate::main::ui::sideload::SkSideloadWindow;
@@ -85,7 +85,7 @@ mod imp {
                 gio::ActionEntryBuilder::new("about")
                     .activate(|app: &Self::Type, _, _| {
                         if let Some(window) = app.imp().app_window() {
-                            about_window::show(&window);
+                            about_dialog::show(&window);
                         }
                     })
                     .build(),
