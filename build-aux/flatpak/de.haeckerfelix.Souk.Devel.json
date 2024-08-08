@@ -38,9 +38,7 @@
         "append-path": "/usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm18/bin",
         "env": {
             "MOUNT_FUSE_PATH": "../tmp/",
-            "RUSTFLAGS": "-C force-frame-pointers=yes -C symbol-mangling-version=v0",
-            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER": "clang",
-            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS": "-C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold"
+            "RUSTFLAGS": "-C force-frame-pointers=yes -C symbol-mangling-version=v0 -C linker=clang -C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold"
         },
         "build-args": [
             "--share=network"
