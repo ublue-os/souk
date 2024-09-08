@@ -9,25 +9,24 @@ rust-version = "1.80"
 
 [dependencies]
 appstream = { version = "0.2", features = ["gzip"] }
-xmltree = "0.10"
-log = "0.4"
-pretty_env_logger = "0.5"
-serde = "1.0"
-serde_json = "1.0"
-serde_derive = "1.0"
-url = "2.2"
-uuid = { version = "1.10", features = ["v4"] }
-indexmap = "2.3"
+async-std = { version = "1.11", features = ["unstable"] }
+derivative = "2.2"
 futures = "0.3"
 futures-util = "0.3"
-async-std = { version = "1.11", features = ["unstable"] }
-regex = "1.4"
-zbus = "4.4"
-thiserror = "1.0"
+indexmap = "2.3"
 isahc = "1.7"
-derivative = "2.2"
+log = "0.4"
+pretty_env_logger = "0.5"
+regex = "1.4"
 rusty_pool = "0.7"
-base64 = "0.22.0"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+thiserror = "1.0"
+url = "2.2"
+uuid = { version = "1.10", features = ["v4"] }
+xmltree = "0.11"
+zbus = "4.4"
 
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
 adw = { version = "0.7", package = "libadwaita", features = ["v1_5"] }
