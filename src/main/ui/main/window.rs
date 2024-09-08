@@ -95,7 +95,7 @@ mod imp {
 
             // Initial view
             self.initial_status_page.set_icon_name(Some(config::APP_ID));
-            let title = i18n_f("Welcome to {}", &[&config::NAME]);
+            let title = i18n_f("Welcome to {}", &[config::NAME]);
             self.initial_status_page.set_title(&title);
         }
     }

@@ -290,7 +290,7 @@ impl SkWorkerApplication {
         );
 
         let app: Self = glib::Object::builder()
-            .property("application-id", &Some(app_id))
+            .property("application-id", Some(app_id))
             .property("flags", gio::ApplicationFlags::IS_SERVICE)
             .build();
 

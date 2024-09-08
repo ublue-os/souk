@@ -1,5 +1,5 @@
 // Souk - context_detail.rs
-// Copyright (C) 2022-2023  Felix Häcker <haeckerfelix@gnome.org>
+// Copyright (C) 2022-2024  Felix Häcker <haeckerfelix@gnome.org>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ impl SkContextDetail {
     pub fn new_neutral_size(size: u64, title: &str, description: &str) -> Self {
         glib::Object::builder()
             .property("kind", SkContextDetailKind::Size)
-            .property("kind-value", &size.to_string())
+            .property("kind-value", size.to_string())
             .property("level", SkContextDetailLevel::Neutral)
             .property("title", title)
             .property("description", description)
@@ -96,7 +96,7 @@ impl SkContextDetail {
     pub fn new_neutral_text(text: &str, title: &str, description: &str) -> Self {
         glib::Object::builder()
             .property("kind", SkContextDetailKind::Text)
-            .property("kind-value", &text.to_string())
+            .property("kind-value", text.to_string())
             .property("level", SkContextDetailLevel::Neutral)
             .property("title", title)
             .property("description", description)

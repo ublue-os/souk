@@ -354,7 +354,7 @@ impl AppstreamWorker {
 
         if let Ok(node) = silo.query_first(&xpath) {
             let xml = node.export(xb::NodeExportFlags::NONE).unwrap().to_string();
-            let element = xmltree::Element::parse(xml.as_bytes()).unwrap();
+            let element = appstream::xmltree::Element::parse(xml.as_bytes()).unwrap();
 
             if let Ok(component) = Component::try_from(&element) {
                 return Ok(Some(component));
